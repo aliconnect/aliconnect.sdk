@@ -1,0 +1,38 @@
+{
+  "name": "@aliconnect/sdk",
+  "version": "1.0.1",
+  "description": "Aliconnect AIM",
+  "homepage": "https://aliconnect.nl",
+  "author": "Max van Kampen",
+  "keywords": [
+    "aliconnect",
+    "aim",
+    "commonmark",
+    "markdown",
+    "markdown-plugin"
+  ],
+  "scripts": {
+    "test1": "node lib/test.js",
+    "setup-control": "npm i jsmodbus",
+    "test": "echo \"AIMMMMM Error: no test specified\" && exit 1"
+  },
+  "repository": "aliconnect/aim",
+  "license": "MIT",
+  "main": "dist/public/js/aim.js",
+  "files": [
+    "index.js",
+    "dist/"
+  ],
+  "dependencies": {
+    "http": "0.0.1-security",
+    "ws": "^7.5.4",
+    "atob": "^2.1.2",
+    "check-disk-space": "^2.1.0",
+    "jsmodbus": "^4.0.6",
+    "mssql": "^5.1.5",
+    "node-cmd": "^4.0.0",
+    "os-utils": "0.0.14",
+    "snmp-native": "^1.2.0"
+  },
+  "devDependencies": {}
+}
