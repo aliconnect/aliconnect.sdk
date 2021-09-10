@@ -14,45 +14,37 @@
             crossorigin="anonymous"></script>
     ```
 1. Aliconnect Web Builder
-
-  ```html
-  <link href="https://aliconnect.github.io/aliconnect-sdk//src/public/css/elem.css" rel="stylesheet" />
-  <script src="https://aliconnect.github.io/aliconnect-sdk//src/public/js/elem.js"></script>
-  ```
-
+    ```html
+    <link href="https://aliconnect.github.io/aliconnect-sdk//src/public/css/elem.css" rel="stylesheet" />
+    <script src="https://aliconnect.github.io/aliconnect-sdk//src/public/js/elem.js"></script>
+    ```
 1. Aliconnect Document View Stylesheet Builder
-
-  ```html
-  <link href="https://aliconnect.github.io/aliconnect-sdk//src/public/css/doc.css" rel="stylesheet" />
-  ```
-
+    ```html
+    <link href="https://aliconnect.github.io/aliconnect-sdk//src/public/css/doc.css" rel="stylesheet" />
+    ```
 1. Aliconnect Object Manager Web Application
-
-  ```html
-  <link href="https://aliconnect.github.io/aliconnect-sdk//src/public/css/om.css" rel="stylesheet" />
-  <script src="https://aliconnect.github.io/aliconnect-sdk//src/public/js/om.js"></script>
-  ```
-
+    ```html
+    <link href="https://aliconnect.github.io/aliconnect-sdk//src/public/css/om.css" rel="stylesheet" />
+    <script src="https://aliconnect.github.io/aliconnect-sdk//src/public/js/om.js"></script>
+    ```
 1. Aliconnect Markdown
-
-  ```html
-  <link href="https://aliconnect.github.io/aliconnect-sdk//src/public/markdown/markdown.css" rel="stylesheet" />
-  <script src="https://aliconnect.github.io/aliconnect-sdk//src/public/markdown/markdown.js"></script>
-  ```
-
+    ```html
+    <link href="https://aliconnect.github.io/aliconnect-sdk//src/public/markdown/markdown.css" rel="stylesheet" />
+    <script src="https://aliconnect.github.io/aliconnect-sdk//src/public/markdown/markdown.js"></script>
+    ```
 1. Use Aliconnect on Local Server
   1. [Clone aliconnect-sdk form GitHub](https://github.com/aliconnect/aliconnect-sdk)
-    ```command
-    git clone https://github.com/aliconnect/aliconnect-sdk.git
-    ```
+      ```command
+      git clone https://github.com/aliconnect/aliconnect-sdk.git
+      ```
   1. [Install aliconnect-sdk for NodeJS with npm](https://www.npmjs.com/package/@aliconnect/sdk)
-    ```command
-    npm i @aliconnect/sdk
-    ```
+      ```command
+      npm i @aliconnect/sdk
+      ```
   1. [Install aliconnect-sdk for PHP with composer from packagist](https://packagist.org/packages/aliconnect/sdk)
-    ```command
-    composer require @aliconnect/sdk
-    ```
+      ```command
+      composer require @aliconnect/sdk
+      ```
 1. Tutorials
   1. [Get started](https://aliconnect.github.io/aliconnect-training/)
     1. [with JavaScript](https://aliconnect.github.io/aliconnect-training/)
