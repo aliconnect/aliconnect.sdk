@@ -5,10 +5,10 @@
   "license": "proprietary",
   "autoload": {
     "psr-4": {
-      "Aliconnect\\": "src/"
+      "Aliconnect\\": "src/php/"
     },
     "classmap": [
-      "src/"
+      "src/php/"
     ]
   },
   "authors": [
@@ -17,6 +17,14 @@
       "email": "max.van.kampen@alicon.nl"
     }
   ],
-  "require": {},
+  "require": {
+
+  },
+  "suggest": {
+    "phpmailer/phpmailer": "dev-master",
+    "dompdf/dompdf": "dev-master",
+    "messagebird/php-rest-api": "dev-master",
+    "google/apiclient": "^2.10"
+  },
   "minimum-stability": "dev"
 }
