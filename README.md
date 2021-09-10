@@ -1,20 +1,18 @@
 # Aliconnect Software Development Kit
 
 1. Aliconnect Icons
-
-  ```html
-  <link href="https://aliconnect.github.io/aliconnect-sdk//dist/public/fonts/aliconnect-icon.css" rel="stylesheet" />`
-  ```
+    ```html
+    <link href="https://aliconnect.github.io/aliconnect-sdk//dist/public/fonts/aliconnect-icon.css" rel="stylesheet" />`
+    ```
+1. Sign-in on [aliconnect.nl](https://aliconnect.nl)
 
 1. Aliconnect Client
-
-  ```html
-  <script src="https://aliconnect.github.io/aliconnect-sdk//src/public/js/aim.js"
-          scope="openid profile name email"
-          client_id="your-client-id"
-          crossorigin="anonymous"></script>
-  ```
-
+    ```html
+    <script src="https://aliconnect.github.io/aliconnect-sdk//src/public/js/aim.js"
+            scope="openid profile name email"
+            client_id="your-client-id"
+            crossorigin="anonymous"></script>
+    ```
 1. Aliconnect Web Builder
 
   ```html
@@ -42,14 +40,19 @@
   <script src="https://aliconnect.github.io/aliconnect-sdk//src/public/markdown/markdown.js"></script>
   ```
 
-1. Aliconnect NodeJS (Control) Client Server (https://www.npmjs.com/package/@aliconnect/sdk)
-
-  ```command
-  npm i @aliconnect/sdk
-  ```
-
-1. Aliconnect PHP Client Server (https://packagist.org/packages/aliconnect/sdk)
-
-  ```command
-  composer require @aliconnect/sdk
-  ```
+1. Use Aliconnect on Local Server
+  1. [Clone aliconnect-sdk form GitHub](https://github.com/aliconnect/aliconnect-sdk)
+    ```command
+    git clone https://github.com/aliconnect/aliconnect-sdk.git
+    ```
+  1. [Install aliconnect-sdk for NodeJS with npm](https://www.npmjs.com/package/@aliconnect/sdk)
+    ```command
+    npm i @aliconnect/sdk
+    ```
+  1. [Install aliconnect-sdk for PHP with composer from packagist](https://packagist.org/packages/aliconnect/sdk)
+    ```command
+    composer require @aliconnect/sdk
+    ```
+1. Tutorials
+  1. [Get started](https://aliconnect.github.io/aliconnect-training/)
+    1. [with JavaScript](https://aliconnect.github.io/aliconnect-training/)
