@@ -1,7 +1,6 @@
 <?php
 namespace Aliconnect\Server\Data;
 
-// die('a');
 use function yaml_parse_file;
 use \Aliconnect;
 use function \Aliconnect\http_response;
@@ -57,7 +56,7 @@ class Api extends \Aliconnect\Server\Api {
     $this->init();
   }
   public function init() {
-    debug(2);
+    debug(1);
   //   http_response_code(500);
   //   // debug($this->root,$this->pathname);
   //   $client_id = $this->client_id;
