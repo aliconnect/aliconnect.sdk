@@ -990,8 +990,9 @@ function idToUrl(id){
       if (!param) {
         return this.input.data;
       }
+      console.log(param.constructor.name);
       switch(param.constructor.name) {
-        case 'Event': {
+        case 'SubmitEvent': {
           param.preventDefault();
           this.input.data = new FormData(param.target);
           if (param.submitter){
@@ -999,7 +1000,7 @@ function idToUrl(id){
           };
           break;
         }
-        case 'Element': {
+        case 'HTMLFormElement': {
           this.input.data = new FormData(param);
           break;
         }
@@ -1213,7 +1214,7 @@ function idToUrl(id){
           // console.log(xhr);
           const elem = Aim(document.body).append(
             Aim('pre').class('message error')
-            .text(`${xhr.status} (${xhr.statusText})\n${e.body && e.body.error ? e.body.error.message : ''}\n${this.method.toUpperCase()} ${decodeURI(xhr.request.URL.href)}`)
+            .text(`${xhr.status} (${xhr.statusText})\n${e.body && e.body.error ? e.body.error.message : ''}\n${this.method.toUpperCase()} ${decodeURI(xhr.request.url.href)}`)
             .on('click', e => e.target.remove())
           );
           // console.error(xhr.getResponseHeader('content-type'), e.body, e);
@@ -2169,91 +2170,6 @@ function idToUrl(id){
         itemmenu.state.menu = item.attributes.state.options;
       }
       return itemmenu;
-    },},
-    prompt: {value: function (selector, context) {
-      return Aim.prompt(selector, context);
-    },},
-    promptform: {value: function (url, prompt, title = '', options = {}){
-      options.description = options.description || Aim.his.translate.get('prompt-'+title+'-description') || '';
-      title = Aim.his.translate.get('prompt-'+title+'-title') || title;
-      console.log([title, options.description]);
-      options.properties = options.properties || {};
-      // Object.entries(Aim.sessionPost).forEach(([key,value])=>Object.assign(options.properties[key] = options.properties[key] || {type:'hidden'}, {value: value, checked: ''}));
-      Aim.sessionPost = Aim.sessionPost || {};
-      //console.log('Aim.sessionPost', Aim.sessionPost);
-      Object.entries(Aim.sessionPost).forEach(([selector,value])=>Object.assign(selector = (options.properties[selector] = options.properties[selector] || {type:'hidden'}), {value: selector.value || value, checked: ''}));
-      return prompt.form = Aim('form').parent(prompt.is.text('')).class('col aco').append(
-        Aim('h1').ttext(title),
-        prompt.div = Aim('div').md(options.description),
-      )
-      .properties(options.properties)
-      .append(options.append)
-      .btns(options.btns)
-      .on('submit', e => url.query(document.location.search).post(e).then(e => {
-        console.log(e.body);
-
-        self.sessionStorage.setItem('post', JSON.stringify(Aim.sessionPost = e.body));
-        // return;
-        // return console.log('Aim.sessionPost', Aim.sessionPost);
-        if (Aim.sessionPost.id_token) {
-          localStorage.setItem('id_token', Aim.sessionPost.id_token);
-          Aim().send({ to: { nonce: Aim.sessionPost.nonce }, id_token: Aim.sessionPost.id_token });
-        }
-        if (Aim.sessionPost.url) {
-          if (Aim.messageHandler) {
-            Aim.messageHandler.source.postMessage({
-              url: Aim.sessionPost.url,
-            }, Aim.messageHandler.origin);
-            self.close();
-            return;
-          }
-          document.location.href = Aim.sessionPost.url;
-        }
-
-
-        if (Aim.sessionPost.prompt) prompt = Aim().prompt(Aim.sessionPost.prompt);
-        if (Aim.sessionPost.msg && prompt && prompt.div) {
-          prompt.div.text('').html(Aim.sessionPost.msg);
-        }
-        if (Aim.sessionPost.socket_id) {
-          return Aim().send({to:{sid:Aim.sessionPost.socket_id}, body:Aim.sessionPost});
-        }
-        // return;
-        // // //console.log(e.target.responseText);
-        // if (!e.body) return;
-        // Aim.sessionPost = e.body;
-        // Aim.responseProperties = Object.fromEntries(Object.entries(Aim.sessionPost).map(([key,value])=>[key,{format:'hidden',value:value}]));
-        //
-        // // //console.log('Aim.sessionPost', Aim.sessionPost);
-        // [...document.getElementsByClassName('AccountName')].forEach((element)=>{
-        //   element.innerText = Aim.sessionPost.AccountName;
-        // });
-        // if (e.body.msg) {
-        //   e.target.formElement.messageElement.innerHTML = e.body.msg;
-        //   //console.log(e.target.formElement.messageElement);
-        // } else if (e.body.socket_id) {
-        //   //console.log('socket_id', e.body);
-        //   // return;
-        //   Aim.WebsocketClient.request({
-        //     to: { sid: e.body.socket_id },
-        //     body: e.body,
-        //   });
-        //   self.close();
-        // } else if (e.body.url) {
-        //   // return //console.error(e.body.url);
-        //   // if ()
-        //
-        //   document.location.href = e.body.url;
-        // } else {
-        //   //console.log(e.body);
-        //   // document.location.href = '/api/oauth' + document.location.search;
-        // }
-      }).catch(err => {
-        console.error(err, prompt, prompt.div);
-        if (err.error && prompt && prompt.div) {
-          prompt.div.text('').html(err.error.message);
-        }
-      }))
     },},
     schemas: {value: function schemas(selector, context){
       if (!selector) return this.get('schemas');
@@ -3564,444 +3480,6 @@ function idToUrl(id){
     }},
   });
 
-  Object.defineProperties(Aim, {
-    Client: { value: Client },
-    UserAgentApplication: { value: UserAgentApplication },
-    InteractionRequiredAuthError: { value: function () { } },
-
-    url: {value: Request },
-
-    config: { value: {
-      listAttributes: 'header0,header1,header2,name,schemaPath,Master,Src,Class,Tagname,InheritedID,HasChildren,HasAttachements,State,Categories,CreatedDateTime,LastModifiedDateTime,LastVisitDateTime,StartDateTime,EndDateTime,FinishDateTime',
-      trackLocalSessionTime: 5000, // timeout between tracking local cookie login session
-      trackSessionTime: 30000, // timeout between tracking login session
-      debug: 1,
-      minMs: 60000,
-      auth: {
-        url: AUTHORIZATION_URL,
-      },
-      cache: {
-        cacheLocation: "localStorage",
-        storeAuthStateInCookie: false,
-        forceRefresh: false
-      },
-      clients: [],
-      url: dmsUrl,
-      app: {
-        url: dmsOrigin,
-      },
-    } },
-    const: { value: {
-      prompt: {
-        menu: {
-          prompts: [
-            // 'qrscan',
-            'lang',
-            // 'chat',
-            // 'msg',
-            // 'task',
-            // 'shop',
-            'config',
-            'help',
-          ]
-        },
-        config: {
-          prompts: [
-            // 'upload_datafile',
-            // 'import_outlook_mail',
-            // 'import_outlook_contact',
-            // 'account_create',
-            // 'account_domain',
-            'account_config',
-            // 'sitemap',
-            // 'get_api_key',
-            'get_aliconnector_key',
-            'verwerkingsregister',
-          ]
-        },
-      },
-      languages: {
-        ab:{iso:'Abkhazian', native:'аҧсуа бызшәа, аҧсшәа'},
-        aa:{iso:'Afar', native:'Afaraf'},
-        af:{iso:'Afrikaans', native:'Afrikaans'},
-        ak:{iso:'Akan', native:'Akan'},
-        sq:{iso:'Albanian', native:'Shqip'},
-        am:{iso:'Amharic', native:'አማርኛ'},
-        ar:{iso:'Arabic', native:'العربية'},
-        an:{iso:'Aragonese', native:'aragonés'},
-        hy:{iso:'Armenian', native:'Հայերեն'},
-        as:{iso:'Assamese', native:'অসমীয়া'},
-        av:{iso:'Avaric', native:'авар мацӀ, магӀарул мацӀ'},
-        ae:{iso:'Avestan', native:'avesta'},
-        ay:{iso:'Aymara', native:'aymar aru'},
-        az:{iso:'Azerbaijani', native:'azərbaycan dili'},
-        bm:{iso:'Bambara', native:'bamanankan'},
-        ba:{iso:'Bashkir', native:'башҡорт теле'},
-        eu:{iso:'Basque', native:'euskara, euskera'},
-        be:{iso:'Belarusian', native:'беларуская мова'},
-        bn:{iso:'Bengali', native:'বাংলা'},
-        bh:{iso:'Bihari languages', native:'भोजपुरी'},
-        bi:{iso:'Bislama', native:'Bislama'},
-        bs:{iso:'Bosnian', native:'bosanski jezik'},
-        br:{iso:'Breton', native:'brezhoneg'},
-        bg:{iso:'Bulgarian', native:'български език'},
-        my:{iso:'Burmese', native:'ဗမာစာ'},
-        ca:{iso:'Catalan, Valencian', native:'català, valencià'},
-        ch:{iso:'Chamorro', native:'Chamoru'},
-        ce:{iso:'Chechen', native:'нохчийн мотт'},
-        ny:{iso:'Chichewa, Chewa, Nyanja', native:'chiCheŵa, chinyanja'},
-        zh:{iso:'Chinese', native:'中文 (Zhōngwén), 汉语, 漢語'},
-        cv:{iso:'Chuvash', native:'чӑваш чӗлхи'},
-        kw:{iso:'Cornish', native:'Kernewek'},
-        co:{iso:'Corsican', native:'corsu, lingua corsa'},
-        cr:{iso:'Cree', native:'ᓀᐦᐃᔭᐍᐏᐣ'},
-        hr:{iso:'Croatian', native:'hrvatski jezik'},
-        cs:{iso:'Czech', native:'čeština, český jazyk'},
-        da:{iso:'Danish', native:'dansk'},
-        dv:{iso:'Divehi, Dhivehi, Maldivian', native:'ދިވެހި'},
-        nl:{iso:'Dutch, Flemish', native:'Nederlands, Vlaams'},
-        dz:{iso:'Dzongkha', native:'རྫོང་ཁ'},
-        en:{iso:'English', native:'English'},
-        eo:{iso:'Esperanto', native:'Esperanto'},
-        et:{iso:'Estonian', native:'eesti, eesti keel'},
-        ee:{iso:'Ewe', native:'Eʋegbe'},
-        fo:{iso:'Faroese', native:'føroyskt'},
-        fj:{iso:'Fijian', native:'vosa Vakaviti'},
-        fi:{iso:'Finnish', native:'suomi, suomen kieli'},
-        fr:{iso:'French', native:'français, langue française'},
-        ff:{iso:'Fulah', native:'Fulfulde, Pulaar, Pular'},
-        gl:{iso:'Galician', native:'Galego'},
-        ka:{iso:'Georgian', native:'ქართული'},
-        de:{iso:'German', native:'Deutsch'},
-        el:{iso:'Greek, Modern (1453-)', native:'ελληνικά'},
-        gn:{iso:'Guarani', native:'Avañe\'ẽ'},
-        gu:{iso:'Gujarati', native:'ગુજરાતી'},
-        ht:{iso:'Haitian, Haitian Creole', native:'Kreyòl ayisyen'},
-        ha:{iso:'Hausa', native:'(Hausa) هَوُسَ'},
-        he:{iso:'Hebrew', native:'עברית'},
-        hz:{iso:'Herero', native:'Otjiherero'},
-        hi:{iso:'Hindi', native:'हिन्दी, हिंदी'},
-        ho:{iso:'Hiri Motu', native:'Hiri Motu'},
-        hu:{iso:'Hungarian', native:'magyar'},
-        ia:{iso:'Interlingua (International Auxiliary Language Association)', native:'Interlingua'},
-        id:{iso:'Indonesian', native:'Bahasa Indonesia'},
-        ie:{iso:'Interlingue, Occidental', native:'(originally:) Occidental, (after WWII:) Interlingue'},
-        ga:{iso:'Irish', native:'Gaeilge'},
-        ig:{iso:'Igbo', native:'Asụsụ Igbo'},
-        ik:{iso:'Inupiaq', native:'Iñupiaq, Iñupiatun'},
-        io:{iso:'Ido', native:'Ido'},
-        is:{iso:'Icelandic', native:'Íslenska'},
-        it:{iso:'Italian', native:'Italiano'},
-        iu:{iso:'Inuktitut', native:'ᐃᓄᒃᑎᑐᑦ'},
-        ja:{iso:'Japanese', native:'日本語 (にほんご)'},
-        jv:{iso:'Javanese', native:'ꦧꦱꦗꦮ, Basa Jawa'},
-        kl:{iso:'Kalaallisut, Greenlandic', native:'kalaallisut, kalaallit oqaasii'},
-        kn:{iso:'Kannada', native:'ಕನ್ನಡ'},
-        kr:{iso:'Kanuri', native:'Kanuri'},
-        ks:{iso:'Kashmiri', native:'कश्मीरी, كشميري‎'},
-        kk:{iso:'Kazakh', native:'қазақ тілі'},
-        km:{iso:'Central Khmer', native:'ខ្មែរ, ខេមរភាសា, ភាសាខ្មែរ'},
-        ki:{iso:'Kikuyu, Gikuyu', native:'Gĩkũyũ'},
-        rw:{iso:'Kinyarwanda', native:'Ikinyarwanda'},
-        ky:{iso:'Kirghiz, Kyrgyz', native:'Кыргызча, Кыргыз тили'},
-        kv:{iso:'Komi', native:'коми кыв'},
-        kg:{iso:'Kongo', native:'Kikongo'},
-        ko:{iso:'Korean', native:'한국어'},
-        ku:{iso:'Kurdish', native:'Kurdî, کوردی‎'},
-        kj:{iso:'Kuanyama, Kwanyama', native:'Kuanyama'},
-        la:{iso:'Latin', native:'latine, lingua latina'},
-        lb:{iso:'Luxembourgish, Letzeburgesch', native:'Lëtzebuergesch'},
-        lg:{iso:'Ganda', native:'Luganda'},
-        li:{iso:'Limburgan, Limburger, Limburgish', native:'Limburgs'},
-        ln:{iso:'Lingala', native:'Lingála'},
-        lo:{iso:'Lao', native:'ພາສາລາວ'},
-        lt:{iso:'Lithuanian', native:'lietuvių kalba'},
-        lu:{iso:'Luba-Katanga', native:'Kiluba'},
-        lv:{iso:'Latvian', native:'latviešu valoda'},
-        gv:{iso:'Manx', native:'Gaelg, Gailck'},
-        mk:{iso:'Macedonian', native:'македонски јазик'},
-        mg:{iso:'Malagasy', native:'fiteny malagasy'},
-        ms:{iso:'Malay', native:'Bahasa Melayu, بهاس ملايو‎'},
-        ml:{iso:'Malayalam', native:'മലയാളം'},
-        mt:{iso:'Maltese', native:'Malti'},
-        mi:{iso:'Maori', native:'te reo Māori'},
-        mr:{iso:'Marathi', native:'मराठी'},
-        mh:{iso:'Marshallese', native:'Kajin M̧ajeļ'},
-        mn:{iso:'Mongolian', native:'Монгол хэл'},
-        na:{iso:'Nauru', native:'Dorerin Naoero'},
-        nv:{iso:'Navajo, Navaho', native:'Diné bizaad'},
-        nd:{iso:'North Ndebele', native:'isiNdebele'},
-        ne:{iso:'Nepali', native:'नेपाली'},
-        ng:{iso:'Ndonga', native:'Owambo'},
-        nb:{iso:'Norwegian Bokmål', native:'Norsk Bokmål'},
-        nn:{iso:'Norwegian Nynorsk', native:'Norsk Nynorsk'},
-        no:{iso:'Norwegian', native:'Norsk'},
-        ii:{iso:'Sichuan Yi, Nuosu', native:'ꆈꌠ꒿ Nuosuhxop'},
-        nr:{iso:'South Ndebele', native:'isiNdebele'},
-        oc:{iso:'Occitan', native:'occitan, lenga d\'òc'},
-        oj:{iso:'Ojibwa', native:'ᐊᓂᔑᓈᐯᒧᐎᓐ'},
-        cu:{iso:'Church Slavic, Old Slavonic, Church Slavonic, Old Bulgarian, Old Church Slavonic', native:'ѩзыкъ словѣньскъ'},
-        om:{iso:'Oromo', native:'Afaan Oromoo'},
-        or:{iso:'Oriya', native:'ଓଡ଼ିଆ'},
-        os:{iso:'Ossetian, Ossetic', native:'ирон æвзаг'},
-        pa:{iso:'Punjabi, Panjabi', native:'ਪੰਜਾਬੀ, پنجابی‎'},
-        pi:{iso:'Pali', native:'पालि, पाळि'},
-        fa:{iso:'Persian', native:'فارسی'},
-        pl:{iso:'Polish', native:'język polski, polszczyzna'},
-        ps:{iso:'Pashto, Pushto', native:'پښتو'},
-        pt:{iso:'Portuguese', native:'Português'},
-        qu:{iso:'Quechua', native:'Runa Simi, Kichwa'},
-        rm:{iso:'Romansh', native:'Rumantsch Grischun'},
-        rn:{iso:'Rundi', native:'Ikirundi'},
-        ro:{iso:'Romanian, Moldavian, Moldovan', native:'Română'},
-        ru:{iso:'Russian', native:'русский'},
-        sa:{iso:'Sanskrit', native:'संस्कृतम्'},
-        sc:{iso:'Sardinian', native:'sardu'},
-        sd:{iso:'Sindhi', native:'सिन्धी, سنڌي، سندھی‎'},
-        se:{iso:'Northern Sami', native:'Davvisámegiella'},
-        sm:{iso:'Samoan', native:'gagana fa\'a Samoa'},
-        sg:{iso:'Sango', native:'yângâ tî sängö'},
-        sr:{iso:'Serbian', native:'српски језик'},
-        gd:{iso:'Gaelic, Scottish Gaelic', native:'Gàidhlig'},
-        sn:{iso:'Shona', native:'chiShona'},
-        si:{iso:'Sinhala, Sinhalese', native:'සිංහල'},
-        sk:{iso:'Slovak', native:'Slovenčina, Slovenský Jazyk'},
-        sl:{iso:'Slovenian', native:'Slovenski Jezik, Slovenščina'},
-        so:{iso:'Somali', native:'Soomaaliga, af Soomaali'},
-        st:{iso:'Southern Sotho', native:'Sesotho'},
-        es:{iso:'Spanish, Castilian', native:'Español'},
-        su:{iso:'Sundanese', native:'Basa Sunda'},
-        sw:{iso:'Swahili', native:'Kiswahili'},
-        ss:{iso:'Swati', native:'SiSwati'},
-        sv:{iso:'Swedish', native:'Svenska'},
-        ta:{iso:'Tamil', native:'தமிழ்'},
-        te:{iso:'Telugu', native:'తెలుగు'},
-        tg:{iso:'Tajik', native:'тоҷикӣ, toçikī, تاجیکی‎'},
-        th:{iso:'Thai', native:'ไทย'},
-        ti:{iso:'Tigrinya', native:'ትግርኛ'},
-        bo:{iso:'Tibetan', native:'བོད་ཡིག'},
-        tk:{iso:'Turkmen', native:'Türkmen, Түркмен'},
-        tl:{iso:'Tagalog', native:'Wikang Tagalog'},
-        tn:{iso:'Tswana', native:'Setswana'},
-        to:{iso:'Tonga (Tonga Islands)', native:'Faka Tonga'},
-        tr:{iso:'Turkish', native:'Türkçe'},
-        ts:{iso:'Tsonga', native:'Xitsonga'},
-        tt:{iso:'Tatar', native:'татар теле, tatar tele'},
-        tw:{iso:'Twi', native:'Twi'},
-        ty:{iso:'Tahitian', native:'Reo Tahiti'},
-        ug:{iso:'Uighur, Uyghur', native:'ئۇيغۇرچە‎, Uyghurche'},
-        uk:{iso:'Ukrainian', native:'Українська'},
-        ur:{iso:'Urdu', native:'اردو'},
-        uz:{iso:'Uzbek', native:'Oʻzbek, Ўзбек, أۇزبېك‎'},
-        ve:{iso:'Venda', native:'Tshivenḓa'},
-        vi:{iso:'Vietnamese', native:'Tiếng Việt'},
-        vo:{iso:'Volapük', native:'Volapük'},
-        wa:{iso:'Walloon', native:'Walon'},
-        cy:{iso:'Welsh', native:'Cymraeg'},
-        wo:{iso:'Wolof', native:'Wollof'},
-        fy:{iso:'Western Frisian', native:'Frysk'},
-        xh:{iso:'Xhosa', native:'isiXhosa'},
-        yi:{iso:'Yiddish', native:'ייִדיש'},
-        yo:{iso:'Yoruba', native:'Yorùbá'},
-        za:{iso:'Zhuang, Chuang', native:'Saɯ cueŋƅ, Saw cuengh'},
-        zu:{iso:'Zulu', native:'isiZulu'},
-      },
-    } },
-    extend: { value: function extend (parent, selector, context) {
-      if (!selector) {
-        selector = parent;
-        parent = this;
-      }
-      // console.log(111, parent, selector);
-      const objects = [];
-      if (context) {
-        Object.entries(context).forEach(entry => Object.defineProperty(parent, ...entry))
-      }
-      if (selector) {
-        (function recurse(parent, selector, context){
-          if (parent && selector && selector instanceof Object) {
-            for (let [key, value] of Object.entries(selector)) {
-              if (typeof parent[key] === 'function' && typeof value !== 'function') {
-                // console.log(key, value, parent[key]);
-                parent[key](value)
-              } else if (typeof value === 'function' && !parent.hasOwnProperty(key)) {
-                parent[key] = value;
-                // Object.defineProperty(parent, key, {
-                //   enumerable: false,
-                //   configurable: false,
-                //   writable: false,
-                //   value: value,
-                // });
-              }
-              if (typeof value !== 'object' || Array.isArray(value) || !(key in parent) || objects.includes(value)) {
-                parent[key] = value;
-              } else {
-                objects.push(value);
-                recurse(parent[key], selector[key]);
-              }
-            }
-          }
-        })(parent, selector, context);
-      }
-      return parent;
-    } },
-    handleData: { value: function handleData (data){
-      return Aim.promise( 'handle data', async resolve => {
-        // console.debug('handleData');
-        if (data.path){
-          Aim().url(data.path).setmethod(data.method).exec();
-        }
-        const body = data.body;
-        if (body){
-          const reindex = [];
-          function handleData(data) {
-            // console.debug('handleData', data);
-            if (data.method === 'patch'){
-              const body = data.body;
-              const itemId = body.ID || data.ID;
-              if (Aim.his.map.has(itemId)) {
-                const item = Aim.his.map.get(itemId);
-                if (body.Master) {
-                  const parentID = body.Master.LinkID;
-                  const index = body.Master.Data;
-                  const parent = Aim.his.map.get(parentID);
-                  if (item) {
-                    if (item.parent) {
-                      if (item.parent !== parent && item.elemTreeLi) {
-                        // DEBUG: MAX FOUT
-                        // item.parent.items.splice(item.parent.items.indexOf(item), 1);
-                        item.elemTreeLi.elem.remove();
-                        reindex.push(item.parent);
-                      }
-                      // if (item.elemTreeLi) {
-                      // }
-                    }
-                    // const master = [].concat(item.data.Master).shift();
-                    // master.LinkID = parentID;
-                    // master.Data = index;
-                    if (parent && parent.items) {
-                      if (!parent.items.includes(item)) {
-                        // parent.items.push(item);
-                      }
-                      reindex.push(parent);
-                    }
-                  }
-                }
-                Object.entries(body).forEach(entry=>item.attr(...entry));
-                item.refresh();
-              }
-            }
-          }
-          if (body.requests){
-            body.requests.forEach(handleData)
-          } else {
-            handleData(data);
-          }
-          reindex.unique().forEach(parent => parent ? parent.reindex() : null);
-        }
-        resolve();
-        //
-        //
-        //
-        // // console.debug('handleRequest', req);
-        // if (req.method && req.method.toLowerCase() === 'patch'){
-        //   const [tag] = req.path.match(/\w+\(\d+\)/);
-        //   const item = Item.get(tag);
-        //   if (item){
-        //     for (let [attributeName, value] of Object.entries(req.body)){
-        //       if (item.properties[attributeName].setValue){
-        //         item.properties[attributeName].setValue(value);
-        //       }
-        //       // console.debug(item, tag, attributeName, value, item.properties[attributeName]);
-        //     }
-        //   }
-        // } else {//if (isModule){
-        //   // isModule foorwaarde is opgenomen zodat bericht niet gaat rondzingen.
-        //   for (var name in req){
-        //     if (typeof Aim[name] === 'function'){
-        //       Aim[name].apply(this, req[name]);
-        //     }
-        //   }
-        //   try {
-        //     console.error('DO FORWARD', isModule, req);
-        //
-        //     if (req.body){
-        //       Aim.handleAimItems(req.body);
-        //     }
-        //
-        //
-        //
-        //
-        //     Aim.forward = req.forward;
-        //     // Aim().exec(req, res => {
-        //     // 	res.id = req.id;
-        //     // });
-        //   } catch (err){
-        //     console.error(err)
-        //   }
-        //   Aim.forward = null;
-        //   if (req.message_id && Aim.WebsocketClient.requests[req.message_id]){
-        //     Aim.WebsocketClient.requests[req.message_id](req);
-        //   }
-        // }
-        // Aim().emit('message', req);
-        // return;
-        //
-      });
-    } },
-    his: { value: new His() },
-    // importScript: { value: importScript, },
-    log: { value: function log () {
-      if (self.document && document.getElementById('console')) {
-        Aim('console').append(Aim('div').text(...arguments))
-      } else if (Aim().statusElem) {
-        Aim().statusElem.text(...arguments);
-      } else {
-        console.msg(...arguments)
-      }
-      return arguments;
-    },},
-    maps: { value: function maps () {
-      return Aim.promise( 'maps', resolve => {
-        if (self.google) resolve (self.google.maps);
-        else Aim('script').parent(document.head)
-        .attr('src', 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAKNir6jia2uSgmEoLFvrbcMztx-ao_Oys&libraries=places')
-        .on('load', e => resolve (self.google.maps))
-      });
-    },},
-    object: { value: {
-      isFile(ofile) {
-        return (ofile.type || '').indexOf('image') != -1 || Aim.string.isImgSrc(ofile.src)
-      },
-    },},
-    promise: { value: function promise(selector, context) {
-      const messageElem = Aim.his.elem.statusbar ? Aim('span').parent(Aim.his.elem.statusbar.main).text(selector) : null;
-      // Aim().progress(1, 1);
-      // const progressElem = Aim.his.elem.statusbar.progress;
-      // progressElem.elem.max += 1;
-      // progressElem.elem.value = (progressElem.elem.value || 0) + 1;
-      if (Aim.LOGPROMISE) {
-        console.debug(selector, 'start');
-      }
-      return new Promise( context ).then( result => {
-        // Aim().progress(-1, -1);
-        if (messageElem) {
-          messageElem.remove();
-        }
-        if (Aim.LOGPROMISE) {
-          console.debug(selector, 'end');
-        }
-        return result;
-      }).catch( err => {
-        // Aim().progress(-1, -1);
-        if (messageElem) {
-          messageElem.text(selector, err).css('color','red');
-        }
-        // console.error('aaaaa', err, arguments);
-        throw err;
-      })
-    },},
-  });
 
   Attribute = function (){};
   Object.defineProperties(Attribute.prototype, {
@@ -5845,556 +5323,129 @@ function idToUrl(id){
     },
   });
 
-  function NodeApplication(config) {
-    // console.log('NodeApplication', config);
-    // console.debug('NODE SRC');
-    // try {
-    //   const ws = require.resolve("ws");
-    // } catch(e) {
-    //   console.error("WS is not found");
-    // }
-    // try {
-    //   const jsmodbus = require.resolve("jsmodbus");
-    // } catch(e) {
-    //   console.error("jsmodbus is not found");
-    // }
-    //
-    // return;
-    //
-    // // process.exit();
-    //
-    // console.log(1, this.WebSocket);
-
-    setTitle = function (title) {
-      console.log(process.title = [...arguments].filter(Boolean).join(' '));
-    };
-    fs = require('fs');
-    atob = require('atob');
-    crypto = require('crypto');
 
 
 
+  function Server(config) {
+    // console.log('a');
 
+    const fs = require('fs');
+    const atob = require('atob');
+    let paths = [];
+    (function addpath(module) {
+      if (module.parent) addpath(module.parent);
+      paths.push(...module.paths.map(path => path.replace(/node_modules$/,'public')));
+    })(module);
+    paths = paths.unique().filter(path => fs.existsSync(path));
 
+    // console.log(paths);
 
-    Object.assign (console, {
-      color : {
-        black: "\x1b[30m",
-        red: "\x1b[31m",
-        green: "\x1b[32m",
-        yellow: "\x1b[33m",
-        blue: "\x1b[34m",
-        magenta: "\x1b[35m",
-        steelblue: "\x1b[36m",
-        white: "\x1b[37m",
-        debug: "\x1b[33m",
-        error: "\x1b[31m",
-      },
-      bgColor : {
-        black: "\x1b[40m",
-        red: "\x1b[41m",
-        green: "\x1b[42m",
-        yellow: "\x1b[43m",
-        blue: "\x1b[44m",
-        magenta: "\x1b[45m",
-        steelblue: "\x1b[46m",
-        white: "\x1b[47m",
-        debug: "\x1b[40m",
-        error: "\x1b[47m",
-      },
-      code : {
-        reset: "\x1b[0m",
-        bright: "\x1b[1m",
-        dim: "\x1b[2m",
-        underscore: "\x1b[4m",
-        blink: "\x1b[5m",
-        reverse: "\x1b[7m",
-        hidden: "\x1b[8m",
-      },
-    });
-    ['debug'].forEach(name => {
-      console[name] = function () {
-        // console.log('DEBUG', Aim.config.debug);
-        // if (Aim.config && !Aim.config.debug) return;
-        var args = [...arguments];//, sCode = '', color = '', bgColor = '';
-        // console.log('DEBUG', Aim.config.debug, args);
-        //if (args[0] && colors[args[0]]) sCode += colors[color = args.shift()];
-        //if (args[0] && bgColors[args[0]]) sCode += bgColors[bgColor = args.shift()];
-        args = args.filter(val => val != null);
-        // args = args.map(val => val instanceof Object ? Aim.stringify(val).substr(0,1000): val);
-        var initiator = 'unknown place';
-        try { throw new Error(); }
-        catch (event) {
-          if (typeof event.stack === 'string') {
-            let isFirst = true;
-            for (var line of event.stack.split('\n')) {
-              const matches = line.match(/^\s+at\s+(.*)/);
-              if (matches) {
-                if (!isFirst) { // first line - current function
-                  // second line - caller (what we are looking for)
-                  initiator = matches[1];
-                  break;
-                }
-                isFirst = false;
+    function processRequest (req, res) {
+      function end(statusCode, header, body) {
+        res.writeHead(res.statusCode = statusCode, header);
+        res.end(body);
+      }
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Headers', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+      res.setHeader('Access-Control-Request-Method', '*');
+
+      var url = new URL(req.url, 'http://localhost');
+      console.log(url.pathname, fname);
+
+      if (url.pathname === '/config.js') {
+        return end(200, { 'Content-Type': 'application/json' }, 'config='+JSON.stringify(config));
+      }
+      if (url.pathname === '/sql.json') {
+        const sql = `SELECT TOP 1000 * FROM his.attr WHERE ${url.searchParams.get('filter')}`;
+        debug(sql);
+        return new mssql.Request().query(sql, (err, res) => {
+          if (err) console.log(err);
+          end(200, { 'Content-Type': 'application/json' }, JSON.stringify(res.recordsets));
+        })
+      }
+
+      for (var path of paths) {
+        for (var fname of [path+url.pathname, path+url.pathname+'index.html']) {
+          if (fs.existsSync(fname) && fs.statSync(fname).isFile()) {
+            return fs.readFile(fname, (err, data) => {
+              if (err) {
+                return end(404, { 'Content-Type': 'text/html' }, `404 Not Found 1 ${req.url}`);
               }
-            }
-          }
-        }
-        initiator = initiator.split('\\').pop().split('/').pop().split(':').slice(0, 2).join(':').replace('.js', '').padEnd(12, ' ');
-        process.stdout.write(console.bgColor[name] + console.color[name]);
-        console.log.apply(console, [initiator, ...args]);
-        process.stdout.write(console.code.reset);
-      };
-    });
-
-    console.msg = function (msg) {
-      var args = [...arguments];
-      var args = [].concat(args.shift().padEnd(16) + '\x1b[36m', ...args, '\x1b[0m');
-      console.log.apply(this, [...args]);
-    }
-    hasKey = function (obj, keys) {
-      var o = obj;
-      keys.slice(0, -1).forEach(function (key) {
-        o = (o[key] || {});
-      });
-      var key = keys[keys.length - 1];
-      return key in o;
-    };
-    isNumber = function (x) {
-      if (typeof x === 'number') return true;
-      if (/^0x[0-9a-f]+Aim/i.test(x)) return true;
-      return /^[-+]?(?:\d+(?:\.\d*)?|\.\d+)(event[-+]?\d+)?Aim/.test(x);
-    };
-    bitTo = function (typename, s) {
-      var s = s.match(/.{1,16}/g).reverse().join('');
-      var type = types[typename], arr = s.replace(/ /g, '').split(''), sign = type.signed ? (Number(arr.shift()) ? -1 : 1) : 1;
-      if (!type.exponent) return parseInt(arr.join(''), 2) * sign;
-      var mantissa = 0, exponent = parseInt(exp = arr.splice(0, type.exponent).join(''), 2) - (Math.pow(2, type.exponent - 1) - 1);
-      arr.unshift(1);
-      arr.forEach(function (val, i) { if (Number(val)) mantissa += Math.pow(2, -i); });
-      return sign * mantissa * Math.pow(2, exponent);
-    };
-    strToOid = function (oid) {
-      oid = oid.split(".");
-      oid.forEach(function (nr, i) { oid[i] = Number(nr); });
-      return oid;
-    };
-    writeCommand = function (cmd, path) {
-      var buffer = new Buffer(cmd + "\n");
-      //// console.log('MKA', cmd , path);
-      var fd = fs.open(path, "w", undefined, function (err, fd) {
-        if (err)
-          console.debug("Error opening file: " + err);
-        else {
-          fs.write(fd, buffer, 0, buffer.length, -1, function (error, written, buffer) {
-            //return;
-            if (error)
-              console.error("Error occured writing to " + path + ": " + error);
-            else
-              fs.close(fd, function (err) { });
-          });
-        }
-      });
-    }
-
-    for (var topparent = module; topparent.parent; topparent = topparent.parent);
-    approot = topparent.filename.replace(/\\/g,'/').split('/');
-    approot.pop();
-    approot = approot.join('/');
-    projectroot = process.cwd();
-
-
-    // console.log(approot, projectroot,__dirname, search_dirnames, module.paths, process.mainModule.filename
-    // console.log(
-    //   module.paths.map(fname => fname.replace(/node_modulesAim/,'public'))
-    //   .concat(module.paths.map(fname => fname.replace(/node_modulesAim/,'webroot')))
-    //   .concat(process.mainModule.paths.map(fname => fname.replace(/node_modulesAim/,'public')))
-    //   .concat(process.mainModule.paths.map(fname => fname.replace(/node_modulesAim/,'webroot')))
-    //   .filter(fname => fs.existsSync(fname)),
-    //   // process.mainModule.paths
-    // );
-
-    // const search_dirnames = this.search_dirnames = [
-    //   __dirname,
-    //   projectroot,
-    //   approot + '/webroot',
-    //   approot + '/public',
-    //   // approot,
-    //   // __dirname + '/..',
-    //   // __dirname + '/../..',
-    //   // __dirname + '/../../..',
-    //   // __dirname + '/../../../..',
-    //   // __dirname + '/../../../../..',
-    //   projectroot + '/webroot',
-    //   projectroot + '/public',
-    //   // projectroot,
-    //   // projectroot + '/..',
-    //   // projectroot + '/../..',
-    //   // projectroot + '/../../..',
-    //   // approot,
-    //   // approot + '/..',
-    //   // approot + '/../..',
-    //   // approot + '/../../..',
-    //   approot + '/node_modules/@aliconnect',
-    // ]
-    // .map(
-    //   path => path
-    //   .replace(/\\/g,'/')
-    //   // .replace(/\/(public|webroot).*/g,''))
-    //   // .map(path => [
-    //   //   path + '/webroot',
-    //   //   path + '/public',
-    //   //   // path + '/node_modules',
-    //   // ])
-    // )
-    // .filter(fname => fs.existsSync(fname))
-    // .unique();
-
-    // console.log(search_dirnames, module.paths);
-
-
-    const virtual_maps = new Map();
-    virtual_maps.set ('sdk', __dirname.replace(/\\public\\.*/,''));
-    // console.log(virtual_maps);
-
-    this.addVirtualMap = (name, path) => {
-      virtual_maps.set(name, path);
-      console.log(virtual_maps);
-    };
-
-    function getFileExists(basename) {
-      return search_dirnames
-      .map(path => path + basename)
-      // .map(path => { console.log(path); return path; }) // DEBUG:
-      .find(fname => !console.log(fname) && fs.existsSync(fname) && (fileExists = fs.statSync(fname).isFile()))
-    };
-    function requireExists(basename) {
-      var filename = getFileExists(basename);
-      return filename ? require(filename) : {};
-    };
-    function parseCookies(request) {
-      var list = {},
-      rc = request.headers.cookie;
-
-      rc && rc.split(';').forEach(function (cookie) {
-        var parts = cookie.split('=');
-        list[parts.shift().trim()] = decodeURI(parts.join('='));
-      });
-
-      return list;
-    };
-    function createMachine(stateMachineDefinition) {
-      Object.assign(this,stateMachineDefinition);
-      // this.stateMachineDefinition = stateMachineDefinition;
-      this.transition = (destinationState) => {
-        // console.debug('switch state from',this.value,'to',destinationState)
-        this.destinationState = destinationState;
-        const currentStateDefinition = this[this.value];
-        const destinationTransition = currentStateDefinition[destinationState];
-        if (destinationTransition) {
-          if (typeof destinationTransition === 'string') eval(destinationTransition);
-          else destinationTransition.call(this);
-        }
-        // const destinationState = event//destinationTransition.target
-        const destinationStateDefinition = this[destinationState];
-        if (currentStateDefinition.onExit) {
-          if (typeof currentStateDefinition.onExit === 'string') eval(currentStateDefinition.onExit);
-          else currentStateDefinition.onExit.call(this);
-        }
-        if (destinationStateDefinition.onEnter) {
-          if (typeof destinationStateDefinition.onEnter === 'string') eval(destinationStateDefinition.onEnter);
-          else destinationStateDefinition.onEnter.call(this);
-        }
-        this.value = destinationState
-        // // console.debug('switch state DONE',this.value)
-        return this.value;
-      }
-      this.value =  stateMachineDefinition.initialState
-      const currentStateDefinition = this[this.value];
-      if (currentStateDefinition) {
-        if (typeof currentStateDefinition.onEnter === 'string') eval(currentStateDefinition.onEnter);
-        else currentStateDefinition.onEnter.call(this);
-      }
-    };
-    function isFile(fname) {
-      return fs.existsSync(fname) && fs.statSync(fname).isFile();
-    }
-    function getData(fname) {
-      return isFile(fname) ? require(fname) : {}
-    }
-
-    aimconfig = {};
-    [
-      { info:package = getData(approot + '/package.json')},
-      getData(approot + '/config.json'),
-      getData(projectroot + '/config.json'),
-      getData(projectroot + '/secret.json'),
-      config,
-      minimist(process.argv.slice(2)),
-    ].forEach(config => Aim.extend(aimconfig, config));
-
-
-    // Aim().extend(aimconfig);
-
-    // config = Aim().config;
-
-    // [
-    //   { info:package = getData(approot + '/package.json')},
-    //   getData(approot + '/config.json'),
-    //   getData(projectroot + '/config.json'),
-    //   getData(projectroot + '/secret.json'),
-    //   minimist(process.argv.slice(2)),
-    // ].forEach(data => Aim().extend(data))
-
-    // console.debug(Aim());process.exit();
-    // console.log(projectroot, approot, require(projectroot + '/config.json'));
-
-    const networkInterfaces = require('os').networkInterfaces();
-    const mac_addresses = {};
-    const ip_addresses = [];
-    const isIp = s => s.match(/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/);
-    const isMac = s => s.match(/[\w][\w]:[\w][\w]:[\w][\w]:[\w][\w]:[\w][\w]:[\w][\w]/);
-    Object.values(networkInterfaces).forEach(int => {
-      int.forEach(conn => {
-        if (conn.mac && isMac(conn.mac) && conn.mac !== '00:00:00:00:00:00' && isIp(conn.address)) {
-          ip_addresses.push(conn.address);
-          mac_addresses[conn.mac] = conn.address;
-        }
-      });
-    });
-
-    // console.log(approot, projectroot);
-
-
-    if (config.http && config.http.port) {
-      function httpServerRequest (req, res) {
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Headers', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
-        res.setHeader('Access-Control-Request-Method', '*');
-        // const pathname = new URL(req.url, 'https://aliconnect.nl').pathname.replace(/npm/, 'node_modules');
-
-
-        const cookies = parseCookies(req);
-        body = '';
-        req.on('data', chunk => body += chunk.toString());
-
-
-        var fname = new URL(req.url, 'https://aliconnect.nl').pathname
-        .replace(
-          /\/dist\//,'/'
-        );
-
-        virtual_maps.forEach((value, key) => {
-          fname = fname.replace(new RegExp(`^\/${key}\/`), `${value}/`);
-        });
-
-        fname = fname.replace(
-          /^\//,
-          process.cwd() + '/public/'
-        );
-
-        // console.log(1, req.url, fname);
-
-        function end(statusCode, header, body) {
-          res.writeHead(res.statusCode = statusCode, header);
-          res.end(body);
-        }
-
-        if (fname = [
-          '',
-          '.html',
-          'index.html',
-          'index.htm',
-          'README.md'
-        ]
-        .map(name => fname + name)
-        .find(fname => fs.existsSync(fname) && fs.statSync(fname).isFile())) {
-          // console.log(fname);
-          return fs.readFile(fname, (err, data) => {
-            if (err) {
-              return end(404, { 'Content-Type': 'text/html' }, `404 Not Found 1 ${req.url}`);
-            }
-            var ext = fname.split('.').pop()
-            // if (ext == 'md') {
-            // 	data = '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><link rel="stylesheet" href="/css/theme/aliconnect.css" /><link rel="stylesheet" href="/css/document.css" /><div class="doc-content">' + converter.makeHtml(String(data)) + '</div>';
-            // 	ext = 'html';
-            // }
-            if (config.access_token && config.id_token ) {
-              end(200, {
-                'Set-Cookie': 'access_token=' + config.access_token + '; id_token=' + config.id_token,
-                'Content-Type': ext == 'json' ? 'application/json' : 'text/' + ext
-              });
-            }
-            const headers = {
-              json: {
-                'Content-Type': 'application/json',
-                'OData-Version': '4.0',
-              },
-              js: {
-                'Content-Type': 'text/javascript',
-                'Service-Worker-Allowed': '/',
-              },
-              css: {
-                'Content-Type': 'text/css',
-                'Service-Worker-Allowed': '/',
-              },
-              html: {
-                'Content-Type': 'text/html',
-                'Service-Worker-Allowed': '/',
-              },
-            };
-            if (ext === 'html') {
-              // console.log(data.toString());
-              // data = data.toString().replace(/github.io/gs, '');
-              data = data.toString()
-              // .replace(/"\/\/.*?\//gs, '"/')
-              // .replace(/".*?(npm\/.*?)@\d.*?\//g, '"Aim1/')
-              .replace(/"\/\/(npm.aliconnect.nl\/sdk@\d+\.\d+\.\d+|aliconnect.github.io\/sdk\/dist)/g, '"/sdk')
-            }
-            end(200, headers[ext], data);
-          });
-        } else {
-          end(404, { 'Content-Type': 'text/html' }, `404 Not Found 2 ${req.url}`);
-        }
-        return;
-
-        if (!filename) {
-          if (req.url === ('/data.json')) {
-            const data = { config: {Aim: {headers: config.headers }}};
-            console.log(data);
-            [
-              { info:package = getData(approot + '/package.json')},
-              getData(approot + '/config.json'),
-              getData(approot + '/webroot/config.json'),
-              getData(projectroot + '/config.json'),
-              // require(data_filename),
-            ].forEach(options => Aim(data).extend(options))
-            // if (data.value) {
-            // 	data.value.forEach(item => Object.assign(item, Aim.find(item.ID).values));
-            // }
-            // console.log(data.config);
-
-            const content = JSON.stringifyReplacer({
-              info: data.info,
-              components: data.components,
-              value: data.value,
-            });
-            // console.log(config);
-            return req.on('end', () => {
-              res.writeHead(200, { 'Content-Type': 'application/json' });
-              res.write(content);
-              return res.end();
+              var ext = fname.split('.').pop();
+              const headers = {
+                json: {
+                  'Content-Type': 'application/json',
+                  'OData-Version': '4.0',
+                },
+                js: {
+                  'Content-Type': 'text/javascript',
+                  'Service-Worker-Allowed': '/',
+                },
+                css: {
+                  'Content-Type': 'text/css',
+                  'Service-Worker-Allowed': '/',
+                },
+                html: {
+                  'Content-Type': 'text/html',
+                  'Service-Worker-Allowed': '/',
+                },
+              };
+              if (fname.match(/\.html/)) {
+                data = String(data).replace(/=".*?public\//g, '="');
+              }
+              // console.log('JA');
+              end(200, headers[ext], data);
             })
           }
-
-          res.setHeader('OData-Version', '4.0');
-          if (root !== 'api') {
-            res.statusCode = 404;
-            res.writeHead(404, { 'Content-Type': 'text/html' });
-            return res.end("404 Not Found: " + req.url);
-          }
-          return req.on('end', () => {
-            req.search = req.url.split('?')[1];
-            req.search = !req.search ? {} : Object.assign.apply(Object, req.search.split('&').map(val => {
-              val = val.split('='); return {
-                [val.shift()]: val.shift()
-              };
-            }));
-
-
-
-            // if (req.search.code) return Aim.getTokenFromAuthCode(req.search.code, res);
-            try {
-              req.url = req.url.split('?').shift().replace('/api', '');
-              if (req.url === '/js/config') {
-                res.writeHead(200, { 'Content-Type': 'text/javascript' });
-                fs.readFile(config_filename, function read(err, data) {
-                  if (err) {
-                    throw err;
-                  }
-                  res.write(`Aim=${data};`);
-                  return res.end();
-                });
-                return;
-              } else {
-                // return // console.debug('DEBUG', req.url);
-                var result = Aim.request({ path: req.url, method: req.method, headers: req.headers, body: body }, res);
-                if (!result) {
-                  res.statusCode = 202; // no content
-                } else {
-                  res.writeHead(result ? 200 : 202, { 'Content-Type': 'application/json' });
-                  res.write(JSON.stringify(result));
-                }
-              }
-            } catch (err) {
-              // console.debug('ERROR', err);
-              //res.statusCode = err;
-            }
-            return res.end();
-          });
         }
       }
-      try {
-        if (config.http.cert && fs.existsSync(process.cwd() + config.http.key)) {
-          const options = {
-            key: fs.readFileSync(process.cwd() + config.http.key),
-            cert: fs.readFileSync(process.cwd() + config.http.cert),
-            ca: config.http.ca ? fs.readFileSync(process.cwd() + config.http.ca) : null,
-          };
-          var httpServer = require("https").createServer(options, httpServerRequest);
-        } else {
-          var httpServer = require("http").createServer(httpServerRequest);
+      return end(404, { 'Content-Type': 'text/html' }, `404 Not Found 1 ${req.url}`);
+      // console.log(url.pathname, fname);
+      //
+      //
+      //
+      // res.writeHead(200);
+      // //res.end(JSON.stringify({ clients: wss, a: a }));
+      //
+      // res.end("This is the Aliconnect messageserver");
+      //
+    };
+    function onconnection (wsc, req) {
+      console.log('connect');
+      wsc.remoteAddress = req.connection.remoteAddress.split(':').pop();
+      wsc.sid = Crypto.btoaToJson(req.headers['sec-websocket-key']);
+      wsc.access = {sid: wsc.sid};
+      console.msg('CONNECTION', wsc.sid, wsc.remoteAddress);
+      wsc.on('close', connection => {
+        if (wsc.access) {
+          const message = JSON.stringify({from_id: wsc.sid, state: 'disconnect'});
+          Array.from(wsServer.clients)
+          .filter(ws => ws !== wsc && ws.access && (ws.access.sub === wsc.access.sub || ws.access.aud === wsc.access.aud || ws.access.nonce === wsc.access.nonce))
+          .forEach(ws => ws.send(message));
         }
-        httpServer.listen(config.http.port);
-        console.log('HTTP loaded', config.http.port);
-      } catch(e) {
-        console.error("HTTP is not found");
-        process.exit();
-      }
-      try {
-        const ws = require("ws");
-        Aim.server = new ws.Server({ server: httpServer })
-        .on('connection', (wsc, req) => {
-          wsc.remoteAddress = req.connection.remoteAddress.split(':').pop();
-          wsc.sid = Crypto.btoaToJson(req.headers['sec-websocket-key']);
-          wsc.access = {sid: wsc.sid};
-          console.msg('CONNECTION', wsc.sid, wsc.remoteAddress);
-          wsc.on('close', connection => {
-            if (wsc.access) {
-              const message = JSON.stringify({from_id: wsc.sid, state: 'disconnect'});
-              [...Aim.server.clients]
-              .filter(ws => ws !== wsc && ws.access && (ws.access.sub === wsc.access.sub || ws.access.aud === wsc.access.aud || ws.access.nonce === wsc.access.nonce))
-              .forEach(ws => ws.send(message));
-            }
-            console.msg('DISCONNECT', wsc.sid, wsc.remoteAddress, wsc.access.sub);
-            // console.debug(userConnected);
+        console.msg('DISCONNECT', wsc.sid, wsc.remoteAddress, wsc.access.sub);
+        // console.debug(userConnected);
 
-            // Aim.server.clients.forEach(wsChild => {
-            // 	console.msg('DISCONNECT CHILDS', wsChild.sid);
-            // });
-            // Aim.server.clients.splice(Aim.server.clients.indexOf(wsc), 1);
-          });
-          wsc.onmessage = event => {
-            // if (!event.data) return;
-            // let data = event.data;
-            // console.log(event.data, JSON.parse(data));
-            // let data;
-            try {
-              // console.debug('ONMESSAGE', String(event.data));
-              data = wsc.response = JSON.parse(event.data);
-            } catch (err) {
-              console.error('json_error', event.data.substr(0,1000));
-            }
-            if (!data) {
-              console.error('no data');
-              return;
-            } else if (typeof data !== 'object') {
-              console.error('data is not object', data);
-              return;
-            }
-            console.log(wsc.sid);
-            if ('userstate' in data) {
+        // wsServer.clients.forEach(wsChild => {
+        // 	console.msg('DISCONNECT CHILDS', wsChild.sid);
+        // });
+        // wsServer.clients.splice(wsServer.clients.indexOf(wsc), 1);
+      });
+      wsc.on('message', data => {
+
+        try {
+          data = JSON.parse(data);
+        } catch (err) {
+          console.error('json_error', data.substr(0,1000));
+        }
+        if (data && typeof data === 'object') {
+          console.log(wsc.sid);
+          /** check user state
+            *
+            */
+          (function userstate(){
+            if (userstate) {
               const states = [
                 'unknown',
                 'offline',
@@ -6408,7 +5459,7 @@ function idToUrl(id){
                 'available',
               ];
               const userstate = states.indexOf(data.userstate);
-              var clients = [...Aim.server.clients].filter(ws => ws.access && ws.access.aud === wsc.access.aud);
+              var clients = Array.from(wsServer.clients).filter(ws => ws.access && ws.access.aud === wsc.access.aud);
               var subclients = clients.filter(ws => ws.access.sub === wsc.access.sub);
               const currentState = Math.max(...subclients.map(ws => ws.userstate || 0));
               wsc.userstate = userstate;
@@ -6417,26 +5468,26 @@ function idToUrl(id){
               if (currentState !== newState) {
                 console.log('state set', data.userstate, currentState, newState, subclients.map(ws => ws.userstate));
                 data.userstate = states[newState];
-                event.data = JSON.stringify(data);
-                clients.forEach(ws => ws.send(event.data));
+                const msg = JSON.stringify(data);
+                clients.forEach(ws => ws.send(msg));
               }
 
 
               // if (subclients.every(ws => ws.userstate < userstate)) {
               // 	console.log('newstate', userstate, data.userstate);
-              // 	var clients = [...Aim.server.clients].filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud);
+              // 	var clients = wsServer.clients.filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud);
               // 	clients.forEach(ws => ws.send(event.data));
               // }
 
 
               // if (!subclients.some(ws => ws.userstate > userstate)) {
               // 	console.log('newstate', userstate, data.userstate);
-              // 	var clients = [...Aim.server.clients].filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud);
+              // 	var clients = wsServer.clients.filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud);
               // 	clients.forEach(ws => ws.send(event.data));
               // }
               // if (!subclients.some(ws => ws.userstate < userstate)) {
               // 	console.log('newstate some');
-              // 	var clients = [...Aim.server.clients].filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud && ws.userstate);
+              // 	var clients = wsServer.clients.filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud && ws.userstate);
               // 	clients.forEach(ws => ws.send(event.data));
               // }
 
@@ -6468,299 +5519,15 @@ function idToUrl(id){
               // }
               return;
 
-              // console.debug([...Aim.server.clients].map(ws => ws.access));
+              // console.debug(wsServer.clients.map(ws => ws.access));
 
               // console.debug('userstate',data,clients,sub);
             }
+          })();
 
-
-            if (data.itemsModified) {
-              // console.log('response.itemsModified FROM CLIENT');
-              if (data.body && data.body.requests) {
-                Aim.saveRequests(data.body.requests);
-              }
-              if (Aim.ws) {
-                Aim.ws.send(event.data);
-              }
-            }
-
-            if (data.forward && Aim.WebsocketClient && Aim.WebsocketClient.conn) {
-              // console.debug('FORWARD TO SERVER', response.forward, Aim.WebsocketClient.socket_id);
-              Aim.WebsocketClient.conn.send(event.data);
-              // Aim.server.forward(response, responseText, Aim.WebsocketClient.conn);
-            }
-
-
-            // CHAT ROOM
-            if (data.message_type) {
-              var { message_type, content, to } = data;
-              if (message_type === 'OPTIONS') {
-                wsc.options = content;
-                // return;
-              }
-              data.from = wsc.sid;
-              data.options = wsc.options;
-              let message = JSON.stringify(data);
-              if (to) {
-                var clients = [...Aim.server.clients]
-                .filter(ws => ws.options && ws.options.wall === wsc.options.wall && wsc !== ws && ws.readyState && ws.sid === to);
-              } else {
-                var clients = [...Aim.server.clients]
-                .filter(ws => ws.options && ws.options.wall === wsc.options.wall && wsc !== ws && ws.readyState && ws.sid);
-              }
-              clients.forEach(ws => {
-                console.msg('SEND', message_type, ws.sid);
-                ws.send(message);
-              });
-              return;
-            }
-
-            // console.debug('server ws client');
-            // Aim.onmessage.call(wsc, event);
-
-            if (this.response) {
-              try {
-                data = this.response = JSON.parse(this.responseText);
-              } catch (err) {
-                console.error('json_error', String(this.responseText).substr(0,1000));
-              }
-            }
-
-            if (wsc.response.headers) {
-              wsc.headers = wsc.response.headers;
-              // console.debug('wsc.headers', wsc.headers);
-              // this.hostname = this.response.hostname;
-              let apiKey = Object.keys(wsc.headers).find(key => ['api_key','api-key','x-api-key'].includes(key.toLowerCase()));
-              let accessToken;
-              if (apiKey) {
-                accessToken = wsc.headers[apiKey];
-              } else {
-                let authorizationKey = Object.keys(wsc.headers).find(key => ['authorization'].includes(key.toLowerCase()));
-                if (authorizationKey) {
-                  accessToken = wsc.headers[authorizationKey].split(' ')[1];
-                }
-              }
-              if (accessToken) {
-                let accessTokenArray = accessToken.split('.');
-                try {
-                  var data = wsc.response = JSON.parse(event.data);
-                } catch (err) {
-                  throw 'json_error';
-                }
-                try {
-                  let payload = wsc.access = JSON.parse(atob(accessTokenArray[1]));
-                  let domainName = payload.iss.split('.').shift();
-                  Aim().url('https://' + payload.iss + '/api/').query({
-                    request_type:'check_access_token',
-                    headers: {
-                      Authorization: 'Bearer ' + accessToken,
-                    },
-                  }).get().then(event => {
-                    console.msg('SIGNIN', wsc.sid );
-                    if (payload.nonce) {
-                      const message = JSON.stringify({signin: wsc.sid, access:wsc.access });
-                      [...Aim.server.clients]
-                      .filter(ws => ws !== wsc && ws.access.nonce === payload.nonce)
-                      .forEach(ws => ws.send(message));
-                    }
-                    wsc.send(JSON.stringify({ socket_id: wsc.sid, payload: payload }));
-                    return;
-                  });
-                } catch (err) {
-                  console.error(err, accessTokenArray)
-                }
-                return;
-              }
-            }
-            if (wsc.response.hostname) {
-              // console.msg('CONNECT', wsc.sid, wsc.remoteAddress, wsc.response.hostname, wsc.response);
-              console.msg('CONNECT', wsc.sid, wsc.remoteAddress, wsc.response.hostname);
-              wsc.access = wsc.response;
-              wsc.access.socket_id = wsc.sid;
-              return wsc.send(JSON.stringify(wsc.access));
-            }
-
-
-
-            // if (!this.access) return;
-            // console.debug('wsc.access && Aim.server.clients');
-            if (wsc.access && Aim.server.clients) {
-              data.from_id = wsc.sid;
-              data.nonce = wsc.access.nonce;
-              responseText = JSON.stringify(data);
-              var sendto = [];
-              // console.debug('server onmessage clients', this.response.path, this.response.form_id, 'aud', wsc.access.aud, 'sub', wsc.access.sub);
-              // console.msg('clients', response.to, this.responseText);
-              Aim.server.forward(data, responseText, wsc);
-            }
-
-          };
-        });
-        Aim.server.forward = function (response, responseText, wsc) {
-          // console.debug('FORWARD TO', response.forward);
-          // return;
-          // const clients = Aim.server.clients.filter(ws => ws !== wsc);
-          Aim.server.clients.forEach(ws => {
-            ws.access.sid = ws.sid;
-            // if (wsChild.readyState !== 1 || wsc === wsChild || !wsChild.access || wsChild.sid === response.forward) return;
-            if (ws.readyState !== 1 || wsc === ws || !ws.access ) return;
-            if (response.to) {
-              for (let [name, value] of Object.entries(response.to)) {
-                if (ws.access[name] && ws.access[name] == value) {
-                  ws.send(responseText);
-                  return;
-                }
-              }
-            } else {
-              if (
-                ws.access.sub == wsc.access.aud ||
-                ws.access.aud == wsc.access.sub ||
-                String(ws.access.aud).split(',').includes(String(wsc.access.aud))
-              ) {
-                return ws.send(responseText);
-              }
-            }
-          });
-        }
-        console.log('WS loaded');
-      } catch(e) {
-        console.error("WS is not found");
-        process.exit();
-      }
-      return;
-
-
-      if (config.http.cert && fs.existsSync(process.cwd() + config.http.key)) {
-        HttpServer = require('https').createServer({
-          key: fs.readFileSync(process.cwd() + config.http.key),
-          cert: fs.readFileSync(process.cwd() + config.http.cert),
-          ca: config.http.ca ? fs.readFileSync(process.cwd() + config.http.ca) : null,
-        }, httpServerRequest);
-      } else {
-        HttpServer = require('http').createServer(httpServerRequest);
-      }
-      HttpServer.listen(config.http.port);
-      Aim.server = new WebSocket
-      .Server({ server: HttpServer })
-      .on('connection', (wsc, req) => {
-        wsc.remoteAddress = req.connection.remoteAddress.split(':').pop();
-        wsc.sid = Crypto.btoaToJson(req.headers['sec-websocket-key']);
-        wsc.access = {sid: wsc.sid};
-        console.msg('CONNECTION', wsc.sid, wsc.remoteAddress);
-        wsc.on('close', connection => {
-          if (wsc.access) {
-            const message = JSON.stringify({from_id: wsc.sid, state: 'disconnect'});
-            [...Aim.server.clients]
-            .filter(ws => ws !== wsc && ws.access && (ws.access.sub === wsc.access.sub || ws.access.aud === wsc.access.aud || ws.access.nonce === wsc.access.nonce))
-            .forEach(ws => ws.send(message));
+          if (data.attr) {
+            attr(...data.attr);
           }
-          console.msg('DISCONNECT', wsc.sid, wsc.remoteAddress, wsc.access.sub);
-          // console.debug(userConnected);
-
-          // Aim.server.clients.forEach(wsChild => {
-          // 	console.msg('DISCONNECT CHILDS', wsChild.sid);
-          // });
-          // Aim.server.clients.splice(Aim.server.clients.indexOf(wsc), 1);
-        });
-        wsc.onmessage = event => {
-          // if (!event.data) return;
-          // let data = event.data;
-          // console.log(event.data, JSON.parse(data));
-          // let data;
-          try {
-            // console.debug('ONMESSAGE', String(event.data));
-            data = wsc.response = JSON.parse(event.data);
-          } catch (err) {
-            console.error('json_error', event.data.substr(0,1000));
-          }
-          if (!data) {
-            console.error('no data');
-            return;
-          } else if (typeof data !== 'object') {
-            console.error('data is not object', data);
-            return;
-          }
-          console.log(wsc.sid);
-          if ('userstate' in data) {
-            const states = [
-              'unknown',
-              'offline',
-              'blocked',
-              'busy_inactive',
-              'inactive',
-              'appear_away',
-              'urgentonly',
-              'donotdisturb',
-              'busy',
-              'available',
-            ];
-            const userstate = states.indexOf(data.userstate);
-            var clients = [...Aim.server.clients].filter(ws => ws.access && ws.access.aud === wsc.access.aud);
-            var subclients = clients.filter(ws => ws.access.sub === wsc.access.sub);
-            const currentState = Math.max(...subclients.map(ws => ws.userstate || 0));
-            wsc.userstate = userstate;
-            // var sub = wsc.access.sub;
-            const newState = Math.max(...subclients.map(ws => ws.userstate || 0));
-            if (currentState !== newState) {
-              console.log('state set', data.userstate, currentState, newState, subclients.map(ws => ws.userstate));
-              data.userstate = states[newState];
-              event.data = JSON.stringify(data);
-              clients.forEach(ws => ws.send(event.data));
-            }
-
-
-            // if (subclients.every(ws => ws.userstate < userstate)) {
-            // 	console.log('newstate', userstate, data.userstate);
-            // 	var clients = [...Aim.server.clients].filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud);
-            // 	clients.forEach(ws => ws.send(event.data));
-            // }
-
-
-            // if (!subclients.some(ws => ws.userstate > userstate)) {
-            // 	console.log('newstate', userstate, data.userstate);
-            // 	var clients = [...Aim.server.clients].filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud);
-            // 	clients.forEach(ws => ws.send(event.data));
-            // }
-            // if (!subclients.some(ws => ws.userstate < userstate)) {
-            // 	console.log('newstate some');
-            // 	var clients = [...Aim.server.clients].filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud && ws.userstate);
-            // 	clients.forEach(ws => ws.send(event.data));
-            // }
-
-            // var a = subclients.map(ws => ws.userstate);
-            // console.debug(data.userstate);
-            // console.log(subclients.filter(ws => ws.userstate === data.userstate).map(ws => ws.userstate));
-            // console.log(data.userstate, a, a.every(userstate => userstate == data.userstate));
-            // console.log(['ja','ja','ja','ja'].every(ws => ws === 'ja'));
-
-            // if (data.userstate === 'available' && !subclients.some(ws => ws.userstate === data.userstate)) {
-            // 	clients.forEach(ws => ws.send(event.data));
-            // 	console.debug('send', data.userstate);
-            // }
-            // wsc.userstate = data.userstate;
-            // if (data.userstate === 'inactive' && subclients.every(ws => ws.userstate === data.userstate)) {
-            // 	clients.forEach(ws => ws.send(event.data));
-            // 	console.debug('send', data.userstate);
-            // }
-
-
-            // if (data.userstate === 'available' && !subclients.some(ws => ws.userstate === data.userstate)) {
-            // 	clients.forEach(ws => ws.send(event.data));
-            // 	console.debug('send', data.userstate);
-            // }
-            // wsc.userstate = data.userstate;
-            // if (data.userstate === 'inactive' && subclients.every(ws => ws.userstate === data.userstate)) {
-            // 	clients.forEach(ws => ws.send(event.data));
-            // 	console.debug('send', data.userstate);
-            // }
-            return;
-
-            // console.debug([...Aim.server.clients].map(ws => ws.access));
-
-            // console.debug('userstate',data,clients,sub);
-          }
-
-
           if (data.itemsModified) {
             // console.log('response.itemsModified FROM CLIENT');
             if (data.body && data.body.requests) {
@@ -6774,7 +5541,7 @@ function idToUrl(id){
           if (data.forward && Aim.WebsocketClient && Aim.WebsocketClient.conn) {
             // console.debug('FORWARD TO SERVER', response.forward, Aim.WebsocketClient.socket_id);
             Aim.WebsocketClient.conn.send(event.data);
-            // Aim.server.forward(response, responseText, Aim.WebsocketClient.conn);
+            // forwardMessageFromClient(response, responseText, Aim.WebsocketClient.conn);
           }
 
 
@@ -6789,10 +5556,10 @@ function idToUrl(id){
             data.options = wsc.options;
             let message = JSON.stringify(data);
             if (to) {
-              var clients = [...Aim.server.clients]
+              var clients = wsServer.clients
               .filter(ws => ws.options && ws.options.wall === wsc.options.wall && wsc !== ws && ws.readyState && ws.sid === to);
             } else {
-              var clients = [...Aim.server.clients]
+              var clients = wsServer.clients
               .filter(ws => ws.options && ws.options.wall === wsc.options.wall && wsc !== ws && ws.readyState && ws.sid);
             }
             clients.forEach(ws => {
@@ -6813,26 +5580,28 @@ function idToUrl(id){
             }
           }
 
-          if (wsc.response.headers) {
-            wsc.headers = wsc.response.headers;
-            // console.debug('wsc.headers', wsc.headers);
+          if (data.headers) {
+            const headers = Object.fromEntries(Object.entries(data.headers).map(([key, value]) => [key.toLowerCase(), value]));
+            console.log('headers', headers)
             // this.hostname = this.response.hostname;
-            let apiKey = Object.keys(wsc.headers).find(key => ['api_key','api-key','x-api-key'].includes(key.toLowerCase()));
+            let apiKey = Object.keys(headers).find(key => ['api_key','api-key','x-api-key'].includes(key.toLowerCase()));
             let accessToken;
             if (apiKey) {
-              accessToken = wsc.headers[apiKey];
+              accessToken = headers[apiKey];
             } else {
-              let authorizationKey = Object.keys(wsc.headers).find(key => ['authorization'].includes(key.toLowerCase()));
+              let authorizationKey = Object.keys(headers).find(key => ['authorization'].includes(key.toLowerCase()));
               if (authorizationKey) {
-                accessToken = wsc.headers[authorizationKey].split(' ')[1];
+                accessToken = headers[authorizationKey].split(' ')[1];
               }
             }
+
             if (accessToken) {
+              console.log('accessToken', accessToken);
               let accessTokenArray = accessToken.split('.');
               try {
-                var data = wsc.response = JSON.parse(event.data);
+                var data = wsc.response = JSON.parse(data);
               } catch (err) {
-                throw 'json_error';
+                console.error('json_error');
               }
               try {
                 let payload = wsc.access = JSON.parse(atob(accessTokenArray[1]));
@@ -6846,7 +5615,7 @@ function idToUrl(id){
                   console.msg('SIGNIN', wsc.sid );
                   if (payload.nonce) {
                     const message = JSON.stringify({signin: wsc.sid, access:wsc.access });
-                    [...Aim.server.clients]
+                    wsServer.clients
                     .filter(ws => ws !== wsc && ws.access.nonce === payload.nonce)
                     .forEach(ws => ws.send(message));
                   }
@@ -6859,10 +5628,10 @@ function idToUrl(id){
               return;
             }
           }
-          if (wsc.response.hostname) {
+          if (data.hostname) {
             // console.msg('CONNECT', wsc.sid, wsc.remoteAddress, wsc.response.hostname, wsc.response);
-            console.msg('CONNECT', wsc.sid, wsc.remoteAddress, wsc.response.hostname);
-            wsc.access = wsc.response;
+            console.msg('CONNECT', wsc.sid, wsc.remoteAddress, data.hostname);
+            wsc.access = data;
             wsc.access.socket_id = wsc.sid;
             return wsc.send(JSON.stringify(wsc.access));
           }
@@ -6870,568 +5639,977 @@ function idToUrl(id){
 
 
           // if (!this.access) return;
-          // console.debug('wsc.access && Aim.server.clients');
-          if (wsc.access && Aim.server.clients) {
+          // console.debug('wsc.access && wsServer.clients');
+          if (wsc.access && wsServer.clients) {
             data.from_id = wsc.sid;
             data.nonce = wsc.access.nonce;
             responseText = JSON.stringify(data);
             var sendto = [];
             // console.debug('server onmessage clients', this.response.path, this.response.form_id, 'aud', wsc.access.aud, 'sub', wsc.access.sub);
             // console.msg('clients', response.to, this.responseText);
-            Aim.server.forward(data, responseText, wsc);
+            forwardMessageFromClient(data, responseText, wsc);
           }
 
-        };
-      });
-      Aim.server.forward = function (response, responseText, wsc) {
-        // console.debug('FORWARD TO', response.forward);
-        // return;
-        // const clients = Aim.server.clients.filter(ws => ws !== wsc);
-        Aim.server.clients.forEach(ws => {
-          ws.access.sid = ws.sid;
-          // if (wsChild.readyState !== 1 || wsc === wsChild || !wsChild.access || wsChild.sid === response.forward) return;
-          if (ws.readyState !== 1 || wsc === ws || !ws.access ) return;
-          if (response.to) {
-            for (let [name, value] of Object.entries(response.to)) {
-              if (ws.access[name] && ws.access[name] == value) {
-                ws.send(responseText);
-                return;
-              }
-            }
-          } else {
-            if (
-              ws.access.sub == wsc.access.aud ||
-              ws.access.aud == wsc.access.sub ||
-              String(ws.access.aud).split(',').includes(String(wsc.access.aud))
-            ) {
-              return ws.send(responseText);
-            }
-          }
-        });
-      }
-    }
 
-
-    console.log(aimconfig);
-    return console.debug(config);
-
-    try {
-      const ws = require.resolve("ws");
-    } catch(e) {
-      console.error("WS is not found");
-    }
-
-
-    WebSocket = module.parent.require('ws');
-    // btoa = require('btoa');
-
-    return;
-
-
-    // return module.exports = Aim;
-
-    Aim.saveRequests = function (param) {
-      // console.debug('SAFE ITEMS TO SQL', param);
-      param.forEach(row => {
-        for (let [attributeName, attribute] of Object.entries(row.body)) {
-          if (Aim.has(row.ID)) {
-            const item = Aim.get(row.ID);
-            item.data[attributeName] = Object.assign(item.data[attributeName] || {}, attribute);
-          }
-          var param = [ `itemID=${row.ID}`, `name='${attributeName}'` ];
-          for (let [key, value] of Object.entries(attribute)) {
-            param.push (key + '=' + (value === null || value === '' ? 'NULL' : `'${value}'` ) );
-          }
-          // sqlArray.push('EXEC item.setAttribute @' + param.join(',@'));
-          const sql = 'EXEC item.attr @' + param.join(',@');
-          Aim.log(sql);
-          executeStatement(sql);
         }
       });
-    }
-    Aim().on('load', async event => {
+      //var a = 2;
+    };
+    const protocol = config.http.ca ? "https" : "http";
+    const options = config.http.ca ? {
+      key: fs.readFileSync(process.cwd() + config.http.key),
+      cert: fs.readFileSync(process.cwd() + config.http.cert),
+      ca: config.http.ca ? fs.readFileSync(process.cwd() + config.http.ca) : null,
+    } : null;
+    // console.log(protocol, config.http.port, options);
+    const http = require(protocol);
+    const httpServer = http.createServer(options, processRequest).listen(config.http.port);
+    const ws = require('ws');
+    const wsServer = new ws.Server({server: httpServer}).on('connection', onconnection);
+    const clients = this.clients = wsServer.clients;
 
-      // console.log('LOAD', Aim().authProvider());
-
-      // await Aim().login();
-      // Aim().client({
-      //   servers: [
-      //     {
-      //       url: 'https://rws-tms.aliconnect.nl/api',
-      //     },
-      //   ]
-      // });
-
-      // const sub = Aim().authProvider().sub;
-      // process.exit();
-      // console.debug(Aim().authProvider());
-      // return;
-      // data_filename = projectroot + `/data_${sub}.json`;
-
-      // dataJsFilename = projectroot + `/webroot/data.js`;
-      // if (0 && isFile(dataJsFilename)) {
-      //   Aim.log('REQUIRE', dataJsFilename);
-      //   // require(projectroot + `/webroot/data1.js`);
-      //   require(dataJsFilename);
-      // } else {
-      //   console.log('LOAD1', sub);
-      //   Aim.log('GET', dataJsFilename)
-      //   await Aim()
-      //   .api('/')
-      //   .query('request_type', 'build_node_data')
-      //   // .patch({mac: mac_addresses})
-      //   .get()
-      //   .then(event => {
-      //     // return console.debug(event.target.responseText.substr(0,1000));
-      //     if (event.body) {
-      //       // Aim().extend(event.body)
-      //       fs.writeFile(dataJsFilename, `Aim().body=${event.target.responseText}`, err => {
-      //         if (err) throw err;
-      //         console.msg('SAVED', dataJsFilename);
-      //       });
-      //
-      //       data = JSON.parse(event.target.responseText);
-      //       data = {
-      //         info: data.info,
-      //         components: data.components,
-      //         value: data.value,
-      //       }
-      //
-      //
-      //       // fs.writeFile(data_filename, event.target.responseText, err => {
-      //       //   if (err) throw err;
-      //       //   console.msg('SAVED', data_filename);
-      //       // });
-      //       // if (!isFile(dataJsFilename)) {
-      //       //   fs.writeFile(projectroot + `/webroot/data.js`, `Aim().extend(${JSON.stringify(data,null,2)})`, err => {
-      //       //     if (err) throw err;
-      //       //     console.msg('SAVED', dataJsFilename);
-      //       //   });
-      //       // }
-      //     }
-      //   });
-      // }
-    })
-    .on('connect', event => {
-      console.log('CONNECT');
-      // Aim.WebsocketClient.login();
-      Aim().emit('init');
-    })
-    .on('ready', event => {
-      console.log('READY', config)
-      if (config.http) {
-        if (config.http.cert && fs.existsSync(process.cwd() + config.http.key)) {
-          HttpServer = require('https').createServer({
-            key: fs.readFileSync(process.cwd() + config.http.key),
-            cert: fs.readFileSync(process.cwd() + config.http.cert),
-            ca: config.http.ca ? fs.readFileSync(process.cwd() + config.http.ca) : null,
-          }, httpServerRequest);
+    function forwardMessageFromClient(response, responseText, wsc) {
+      Array.from(wsServer.clients).filter(ws => ws !== wsc).forEach(ws => {
+        ws.access.sid = ws.sid;
+        // if (wsChild.readyState !== 1 || wsc === wsChild || !wsChild.access || wsChild.sid === response.forward) return;
+        if (ws.readyState !== 1 || wsc === ws || !ws.access ) return;
+        if (response.to) {
+          for (let [name, value] of Object.entries(response.to)) {
+            if (ws.access[name] && ws.access[name] == value) {
+              ws.send(responseText);
+              return;
+            }
+          }
         } else {
-          HttpServer = require('http').createServer(httpServerRequest);
+          if (
+            ws.access.sub == wsc.access.aud ||
+            ws.access.aud == wsc.access.sub ||
+            String(ws.access.aud).split(',').includes(String(wsc.access.aud))
+          ) {
+            return ws.send(responseText);
+          }
         }
-        HttpServer.listen(config.http.port);
-        Aim.server = new WebSocket
-        .Server({ server: HttpServer })
-        .on('connection', (wsc, req) => {
-          wsc.remoteAddress = req.connection.remoteAddress.split(':').pop();
-          wsc.sid = Crypto.btoaToJson(req.headers['sec-websocket-key']);
-          wsc.access = {sid: wsc.sid};
-          console.msg('CONNECTION', wsc.sid, wsc.remoteAddress);
-          wsc.on('close', connection => {
-            if (wsc.access) {
-              const message = JSON.stringify({from_id: wsc.sid, state: 'disconnect'});
-              [...Aim.server.clients]
-              .filter(ws => ws !== wsc && ws.access && (ws.access.sub === wsc.access.sub || ws.access.aud === wsc.access.aud || ws.access.nonce === wsc.access.nonce))
-              .forEach(ws => ws.send(message));
+      });
+    }
+
+
+    Object.defineProperties(this.clients, {
+      send: { value: function(msg) {
+        msg = JSON.stringify(msg);
+        clients.filter(wsa => wsa.readyState === wsa.OPEN).forEach(wsa => wsa.send(msg))
+      }}
+    });
+  }
+  Object.defineProperties(Server.prototype, {
+
+  });
+  function Sql() {}
+  Object.defineProperties(Sql.prototype, {
+    requests: {value: []},
+    // busy: {value: false, writeable: true},
+    connect: {value: function(config) {
+      return new Promise((succes,fail) => {
+        const options = {
+          port: config.port || 1433,
+          server: config.server,
+          options: {
+            database: config.database,
+            encrypt: true,
+            validateBulkLoadParameters: true,
+            trustServerCertificate: true,
+            cryptoCredentialsDetails: {
+              minVersion: 'TLSv1'
             }
-            console.msg('DISCONNECT', wsc.sid, wsc.remoteAddress, wsc.access.sub);
-            // console.debug(userConnected);
-
-            // Aim.server.clients.forEach(wsChild => {
-            // 	console.msg('DISCONNECT CHILDS', wsChild.sid);
-            // });
-            // Aim.server.clients.splice(Aim.server.clients.indexOf(wsc), 1);
-          });
-          wsc.onmessage = event => {
-            // if (!event.data) return;
-            // let data = event.data;
-            // console.log(event.data, JSON.parse(data));
-            // let data;
-            try {
-              // console.debug('ONMESSAGE', String(event.data));
-              data = wsc.response = JSON.parse(event.data);
-            } catch (err) {
-              console.error('json_error', event.data.substr(0,1000));
+          },
+          authentication: {
+            type: 'default',
+            options: {
+              userName: config.user,
+              password: config.password,
             }
-            if (!data) {
-              console.error('no data');
-              return;
-            } else if (typeof data !== 'object') {
-              console.error('data is not object', data);
-              return;
+          },
+        };
+        this.tedious = require('tedious');
+        this.conn = new this.tedious.Connection(options);
+        this.conn.on('connect', err => err ? fail(err) : succes());
+        this.conn.connect();
+      })
+    }},
+    query: {value: function(sql) {
+      return new Promise((succes,fail) => {
+        if (sql) this.requests.push([sql,succes,fail]);
+        else this.busy = false;
+        if (!this.busy && this.requests.length) {
+          this.busy = true;
+          [sql,succes,fail] = this.requests.shift();
+          const rows = [];
+          const request = new this.tedious.Request(sql, err => err ? fail(err) : succes(rows) || this.query());
+          request.on('row', columns => rows.push(Object.fromEntries(columns.map(col => [col.metadata.colName, col.value]))));
+          this.conn.execSql(request);
+        }
+      });
+    }},
+  });
+
+  function WebsocketClient(){
+    $(this).extend(...arguments);
+    this.clients = new Map();
+    // return this.connect(...arguments)
+  }
+
+  function EventManager() {}
+  Object.defineProperties(EventManager.prototype, {
+    _events: {value: {}},
+    on: {value: function on(selector, context) {
+      // console.log('ON', selector, context)
+      // const events = this._events = this._events || {};
+      (this._events[selector] = this._events[selector] || []).push(context);
+    }},
+    emit: {value: function emit(selector, data) {
+      if (this._events && this._events[selector]) {
+        this._events[selector].forEach(callback => callback(data));
+      }
+    }},
+  });
+  function WebsocketClient(options = {}){
+    options.url = options.url || document.location.origin.replace(/^http/, 'ws');
+    this.options = options;
+    // this.ws = new window.WebSocket(url);
+    // const self = this;
+    // let ws;
+    // function send(msg) {
+    //   msg = JSON.stringify(msg);
+    //   ws.send(msg);
+    // }
+    // Object.defineProperties(this, {
+    //   send: {value: send },
+    // });
+    // (function connect() {
+    //
+    // })()
+    // // Object.defineProperties(this, EventManager);
+
+  }
+  WebsocketClient.prototype = new EventManager;
+  Object.defineProperties(WebsocketClient.prototype, {
+    // prop: {value: {}},
+    send: {value: function (msg){
+      msg = JSON.stringify(msg);
+      this.ws.send(msg);
+    }},
+
+    connect: {value: function () {
+      return new Promise((resolve, fail) => {
+        console.log('WS CONNECT', this.options.url);
+        const ws = this.ws = new window.WebSocket(this.options.url);
+        ws.addEventListener('open', e => {
+          aimClient.getAccessToken().then(accessToken => {
+            // console.log('accessToken', accessToken);
+            const msg = {
+              hostname: this.hostname || 'aliconnect',
+              // nonce: this.nonce,
+              // PHPSESSID: this.PHPSESSID,
+            };
+            if (accessToken) {
+              msg.headers = { Authorization: 'Bearer ' + accessToken }
             }
-            console.log(wsc.sid);
-            if ('userstate' in data) {
-              const states = [
-                'unknown',
-                'offline',
-                'blocked',
-                'busy_inactive',
-                'inactive',
-                'appear_away',
-                'urgentonly',
-                'donotdisturb',
-                'busy',
-                'available',
-              ];
-              const userstate = states.indexOf(data.userstate);
-              var clients = [...Aim.server.clients].filter(ws => ws.access && ws.access.aud === wsc.access.aud);
-              var subclients = clients.filter(ws => ws.access.sub === wsc.access.sub);
-              const currentState = Math.max(...subclients.map(ws => ws.userstate || 0));
-              wsc.userstate = userstate;
-              // var sub = wsc.access.sub;
-              const newState = Math.max(...subclients.map(ws => ws.userstate || 0));
-              if (currentState !== newState) {
-                console.log('state set', data.userstate, currentState, newState, subclients.map(ws => ws.userstate));
-                data.userstate = states[newState];
-                event.data = JSON.stringify(data);
-                clients.forEach(ws => ws.send(event.data));
-              }
-
-
-              // if (subclients.every(ws => ws.userstate < userstate)) {
-              // 	console.log('newstate', userstate, data.userstate);
-              // 	var clients = [...Aim.server.clients].filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud);
-              // 	clients.forEach(ws => ws.send(event.data));
-              // }
-
-
-              // if (!subclients.some(ws => ws.userstate > userstate)) {
-              // 	console.log('newstate', userstate, data.userstate);
-              // 	var clients = [...Aim.server.clients].filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud);
-              // 	clients.forEach(ws => ws.send(event.data));
-              // }
-              // if (!subclients.some(ws => ws.userstate < userstate)) {
-              // 	console.log('newstate some');
-              // 	var clients = [...Aim.server.clients].filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud && ws.userstate);
-              // 	clients.forEach(ws => ws.send(event.data));
-              // }
-
-              // var a = subclients.map(ws => ws.userstate);
-              // console.debug(data.userstate);
-              // console.log(subclients.filter(ws => ws.userstate === data.userstate).map(ws => ws.userstate));
-              // console.log(data.userstate, a, a.every(userstate => userstate == data.userstate));
-              // console.log(['ja','ja','ja','ja'].every(ws => ws === 'ja'));
-
-              // if (data.userstate === 'available' && !subclients.some(ws => ws.userstate === data.userstate)) {
-              // 	clients.forEach(ws => ws.send(event.data));
-              // 	console.debug('send', data.userstate);
-              // }
-              // wsc.userstate = data.userstate;
-              // if (data.userstate === 'inactive' && subclients.every(ws => ws.userstate === data.userstate)) {
-              // 	clients.forEach(ws => ws.send(event.data));
-              // 	console.debug('send', data.userstate);
-              // }
-
-
-              // if (data.userstate === 'available' && !subclients.some(ws => ws.userstate === data.userstate)) {
-              // 	clients.forEach(ws => ws.send(event.data));
-              // 	console.debug('send', data.userstate);
-              // }
-              // wsc.userstate = data.userstate;
-              // if (data.userstate === 'inactive' && subclients.every(ws => ws.userstate === data.userstate)) {
-              // 	clients.forEach(ws => ws.send(event.data));
-              // 	console.debug('send', data.userstate);
-              // }
-              return;
-
-              // console.debug([...Aim.server.clients].map(ws => ws.access));
-
-              // console.debug('userstate',data,clients,sub);
-            }
-
-
-            if (data.itemsModified) {
-              // console.log('response.itemsModified FROM CLIENT');
-              if (data.body && data.body.requests) {
-                Aim.saveRequests(data.body.requests);
-              }
-              if (Aim.ws) {
-                Aim.ws.send(event.data);
-              }
-            }
-
-            if (data.forward && Aim.WebsocketClient && Aim.WebsocketClient.conn) {
-              // console.debug('FORWARD TO SERVER', response.forward, Aim.WebsocketClient.socket_id);
-              Aim.WebsocketClient.conn.send(event.data);
-              // Aim.server.forward(response, responseText, Aim.WebsocketClient.conn);
-            }
-
-
-            // CHAT ROOM
-            if (data.message_type) {
-              var { message_type, content, to } = data;
-              if (message_type === 'OPTIONS') {
-                wsc.options = content;
-                // return;
-              }
-              data.from = wsc.sid;
-              data.options = wsc.options;
-              let message = JSON.stringify(data);
-              if (to) {
-                var clients = [...Aim.server.clients]
-                .filter(ws => ws.options && ws.options.wall === wsc.options.wall && wsc !== ws && ws.readyState && ws.sid === to);
-              } else {
-                var clients = [...Aim.server.clients]
-                .filter(ws => ws.options && ws.options.wall === wsc.options.wall && wsc !== ws && ws.readyState && ws.sid);
-              }
-              clients.forEach(ws => {
-                console.msg('SEND', message_type, ws.sid);
-                ws.send(message);
-              });
-              return;
-            }
-
-            // console.debug('server ws client');
-            // Aim.onmessage.call(wsc, event);
-
-            if (this.response) {
-              try {
-                data = this.response = JSON.parse(this.responseText);
-              } catch (err) {
-                console.error('json_error', String(this.responseText).substr(0,1000));
-              }
-            }
-
-            if (wsc.response.headers) {
-              wsc.headers = wsc.response.headers;
-              // console.debug('wsc.headers', wsc.headers);
-              // this.hostname = this.response.hostname;
-              let apiKey = Object.keys(wsc.headers).find(key => ['api_key','api-key','x-api-key'].includes(key.toLowerCase()));
-              let accessToken;
-              if (apiKey) {
-                accessToken = wsc.headers[apiKey];
-              } else {
-                let authorizationKey = Object.keys(wsc.headers).find(key => ['authorization'].includes(key.toLowerCase()));
-                if (authorizationKey) {
-                  accessToken = wsc.headers[authorizationKey].split(' ')[1];
-                }
-              }
-              if (accessToken) {
-                let accessTokenArray = accessToken.split('.');
-                try {
-                  var data = wsc.response = JSON.parse(event.data);
-                } catch (err) {
-                  throw 'json_error';
-                }
-                try {
-                  let payload = wsc.access = JSON.parse(atob(accessTokenArray[1]));
-                  let domainName = payload.iss.split('.').shift();
-                  Aim().url('https://' + payload.iss + '/api/').query({
-                    request_type:'check_access_token',
-                    headers: {
-                      Authorization: 'Bearer ' + accessToken,
-                    },
-                  }).get().then(event => {
-                    console.msg('SIGNIN', wsc.sid );
-                    if (payload.nonce) {
-                      const message = JSON.stringify({signin: wsc.sid, access:wsc.access });
-                      [...Aim.server.clients]
-                      .filter(ws => ws !== wsc && ws.access.nonce === payload.nonce)
-                      .forEach(ws => ws.send(message));
-                    }
-                    wsc.send(JSON.stringify({ socket_id: wsc.sid, payload: payload }));
-                    return;
-                  });
-                } catch (err) {
-                  console.error(err, accessTokenArray)
-                }
-                return;
-              }
-            }
-            if (wsc.response.hostname) {
-              // console.msg('CONNECT', wsc.sid, wsc.remoteAddress, wsc.response.hostname, wsc.response);
-              console.msg('CONNECT', wsc.sid, wsc.remoteAddress, wsc.response.hostname);
-              wsc.access = wsc.response;
-              wsc.access.socket_id = wsc.sid;
-              return wsc.send(JSON.stringify(wsc.access));
-            }
-
-
-
-            // if (!this.access) return;
-            // console.debug('wsc.access && Aim.server.clients');
-            if (wsc.access && Aim.server.clients) {
-              data.from_id = wsc.sid;
-              data.nonce = wsc.access.nonce;
-              responseText = JSON.stringify(data);
-              var sendto = [];
-              // console.debug('server onmessage clients', this.response.path, this.response.form_id, 'aud', wsc.access.aud, 'sub', wsc.access.sub);
-              // console.msg('clients', response.to, this.responseText);
-              Aim.server.forward(data, responseText, wsc);
-            }
-
-          };
+            this.send(msg);
+          })
         });
-        Aim.server.forward = function (response, responseText, wsc) {
-          // console.debug('FORWARD TO', response.forward);
-          // return;
-          // const clients = Aim.server.clients.filter(ws => ws !== wsc);
-          Aim.server.clients.forEach(ws => {
-            ws.access.sid = ws.sid;
-            // if (wsChild.readyState !== 1 || wsc === wsChild || !wsChild.access || wsChild.sid === response.forward) return;
-            if (ws.readyState !== 1 || wsc === ws || !ws.access ) return;
-            if (response.to) {
-              for (let [name, value] of Object.entries(response.to)) {
-                if (ws.access[name] && ws.access[name] == value) {
-                  ws.send(responseText);
-                  return;
+        ws.addEventListener('error', e => console.log('ERROR',e));
+        ws.addEventListener('close', e => setTimeout(connect, 5000));
+        ws.addEventListener('message', e => {
+          console.debug('ws.onmessage', e.data);
+          try {
+            const data = JSON.parse(e.data);
+            // data = JSON.parse(e.data);
+            if (data.attr) {
+              if (data.attr.systemId) {
+                const system = systems[data.attr.systemId];
+                if (system) {
+                  const attr = system.data[data.attr.name];
+                  // console.log(attr);
+                  const oldValue = attr.value;
+                  if (attr.state != data.attr.state) {
+                    setItemTypeValue(attr.item, data.attr.state, -1);
+                    setItemTypeValue(attr.item, attr.state, 1);
+                  }
+                  Object.assign(attr, data.attr);
+                  if (attr.AttributeType) {
+                    setItemTypeValue(system, attr.AttributeType, - Number(oldValue));
+                    setItemTypeValue(system, attr.AttributeType, Number(attr.value));
+                  }
+                  attributeRowUpdate(attr);
                 }
               }
-            } else {
-              if (
-                ws.access.sub == wsc.access.aud ||
-                ws.access.aud == wsc.access.sub ||
-                String(ws.access.aud).split(',').includes(String(wsc.access.aud))
-              ) {
-                return ws.send(responseText);
-              }
             }
-          });
-        }
-      }
-      /* download source files form server */
-      if (Aim.src) {
-        for (var i = 0, cfg; cfg = Aim.src[i]; i++) {
-          const req = require("https").request({ hostname: 'aliconnect.nl', port: 443, method: 'GET', path: '/' + cfg.source }, function (res) {
-            res.on('data', function (d) {
-              // console.debug('974 data', String(d));
-              fs.writeFile(process.cwd() + '/' + this.dest, String(d), function (err) {
-                if (err) throw err;
-              }.bind(this));
 
-            }.bind(this));
-          }.bind(cfg));
-          req.on('error', (error) => { console.error(error) });
-          //req.write(par.input);
-          req.end();
-        }
-      }
-      if (Aim.require) {
-        // Aim.require.forEach(function (fname) {
-        // 	Aim.extend(Aim, require(fname));
-        // });
-        for (var name in Aim.require) {
-          const req = require('https').request({ hostname: 'aliconnect.nl', port: 443, method: 'GET', path: '/' + Aim.require[name] }, function (res) {
-            res.on('data', function (d) {
-              fs.writeFile(process.cwd() + '/' + this.name + '.js', String(d), function (err) {
-                if (err) throw err;
-                module[this.name] = require(process.cwd() + '/' + this.name + '.js');
-              }.bind(this));
-            }.bind(this));
-          }.bind({ name: name }));
-          req.on('error', (error) => { console.error(error) });
-          req.end();
-        }
-      }
+            const ws = e.target;
+            // return;
+            // const config = this.config;
+            // let data = e.data;
+            // try {
+            //   this.data = data = JSON.parse(data);
+            //   // $().status('ws', `${new Date().toLocaleString()} ${data.from_id || ''}`);
+            // } catch (err){
+            //   return $().status('wsm', 'error');
+            //   // return console.error('ws.onmessage error', data.substr(0,1000));
+            // }
 
-      if (this.data) {
-        Aim.extend(this.data);
-        Aim.emit('config');
-        Aim.operations = Aim.operations || {};
-        // console.log(Aim.operations);
-        // console.log('paths', data.paths);
-
-
-        if (this.data.value) {
-          const ids = data.value.map(item => item.ID);
-          executeStatement(`SELECT ItemID AS ID,* FROM attribute.vw WHERE ItemID IN (${ids.join(',')})`, rows => {
-            rows.forEach(row => {
-              const item = data.value.find(item => item.ID == row.ItemID);
-              item[row.AttributeName] = row;
-            })
-            Aim.evalData(data);
-            for (let [schemaName, schema] of Object.entries(data.components.schemas)) {
-              // let [schemaName] = item;
-              // console.log(1, schemaName);
-              if (schema.operations && Aim.ref[schemaName]) {
-                Aim.ref[schemaName].forEach(item => {
-                  // eval(schemaName + `=item;`);
-                  for (let [operationName, operation] of Object.entries(schema.operations)) {
-                    if (operation.js) {
-                      try {
-                        let code = operation.js.replace(/\b([A-Z_]+)\b/g,'"Aim1"');
-                        // console.log(operationName,code);
-                        // code = `console.log('${'ja'}');`;
-                        item[operationName] = new Function(schemaName + `=this;` + code);
-                      } catch (err) {
-                        console.debug('error js code', schemaName, operationName, code);
-                      }
+            if (data.body) {
+              if (data.body.notify) {
+                console.log('NOTIFY', window.document.hasFocus());
+                if (!window.document.hasFocus()) {
+                  if ("Notification" in window) {
+                    if (Notification.permission === "granted") {
+                      // var notification = new Notification(...Object.values(data.body.notify));
+                      // notification.onclick = function(e) {
+                      //   window.focus();
+                      //   console.log('CLICKED', data.body.notify);
+                      // }
+                      new $().sw.showNotification(...Object.values(data.body.notify));
+                      // `test modified SW`, {
+                      //   body: `Bla Bla`,
+                      //   icon: 'https://aliconnect.nl/favicon.ico',
+                      //   image: 'https://aliconnect.nl/shared/265090/2020/07/09/5f0719fb8fa69.png',
+                      //   data: {
+                      //     url: document.location.href,
+                      //   },
+                      //   actions: [
+                      //     {
+                      //       action: 'new',
+                      //       title: 'New',
+                      //       // icon: 'https://aliconnect.nl/favicon.ico',
+                      //     },
+                      //     {
+                      //       action: 'open',
+                      //       title: 'Open',
+                      //       // icon: 'https://aliconnect.nl/favicon.ico',
+                      //     },
+                      //     // {
+                      //     //   action: 'gramophone-action',
+                      //     //   title: 'gramophone',
+                      //     //   icon: '/images/demos/action-3-128x128.png'
+                      //     // },
+                      //     // {
+                      //     //   action: 'atom-action',
+                      //     //   title: 'Atom',
+                      //     //   icon: '/images/demos/action-4-128x128.png'
+                      //     // }
+                      //   ]
+                      // });
                     }
                   }
-
-                  Aim.operations[schemaName] = id => Aim.find(id);
-                    // this.id = 'TEST';
-                    // console.log(schemaName, id, item.Aimid, this.title, operations);
-                    // return operations;
-                    // console.log(schemaName, operationName, id, Verkeersbuis.title, operation.js);
-                    // return new Function(operation.js);
-                  // }
-                });
+                }
+              }
+              if (data.body.accept) {
+                $().prompt('accept').accept_scope(data.body.accept.scopes, data.from_id);
+                // console.log($().prompt('accept_scope'), $.his.map.get('accept_scope'));
               }
             }
-          });
-          {
-            // 	Aim.items.forEach(Aim.get);
+            if (data.state === 'disconnect') {
+              console.log('disconnect', $().aliconnector_id, data.from_id);
+              // return;
+              if ($().aliconnector_id === data.from_id) {
+                $().status('aliconnector', 'offline');
+                $().aliconnector_id = null;
+              }
+            }
+            console.error(data);
+            if (data.id_token) {
+              const id = JSON.parse(atob(data.id_token.split('.')[1]));
+              console.log(id, getId(id.sub), getUid(id.sub), aimClient.sub);
+              if (getId(id.sub) !== getId(aimClient.sub)) {
+                return $().logout();
+              }
+            }
+            // console.debug('ws.onmessage', data);
 
-            // Unselect all unselected items
-            // 	Aim.ref.forEach(function (item) {
-            // 		if (item.selected == 0) {
-            // 			(recursive = function (item) {
-            // 				item = items[item.detailID || item.id];
-            // 				item.selected = 0;
-            // 				(item.values.Value = item.values.Value || {}).value = item.Value = null;
-            // 				item.Children.forEach(recursive);
-            // 			})(item);
-            // 		}
-            // 	});
 
-            // attributeChange on all items
-            // 	Aim.ref.forEach(Aim.attributeChange);
-            // 	control_items(Aim.ref);
-            // 	Aim.emit('data');
-            // 	return // console.debug('done');
+            // if (this.clients.has(data.from_id)){
+            //   console.log('REPLY FROM', data.from_id);
+            //   this.clients.get(data.from_id)(data.body);
+            //   this.clients.delete(data.from_id);
+            //   return
+            // }
 
-            // 	setState(items[Aim.freeMemID], 'connect');
-            // 	setState(items[Aim.freeDiskSpaceID], 'connect');
-            // 	setState(items[Aim.timeSyncID], 'connect');
 
+            if (data.from_id === $().aliconnector_id) {
+              if (data.param) {
+                if (data.param.filedownload) {
+                  console.log('filedownload', data.param.filedownload);
+                }
+                if (data.param.fileupload) {
+                  console.log('fileupload', data.param.fileupload);
+                }
+              }
+            }
+            if ('userstate' in data){
+              console.debug('userstate', data);
+              console.debug(Item.items, Item.items.filter(item => item.ID == data.sub));
+              Item.items
+              .filter(item => item.ID == data.sub)
+              .forEach(item => item.elements.forEach(element => element.hasAttribute('userstate') ? element.setAttribute('userstate', data.userstate) : null))
+            }
+            if ('socket_id' in data){
+              console.warn(this, 'socket_id', data);
+              this.socket_id = data.socket_id;
+              let currentState = ws.state;
+              if (data.socket_id === 1){
+                this.setState('UNAUTHORIZED');
+              } else if (data.payload){
+                this.setState('AUTHORIZED');
+                setState = (state) => {
+                  this.setState(state);
+                  // broadcast message with state
+                  // op ws server bijhouden alle connecties van gebruiker,
+                  // alleen als alle connecties offline zijn dan bericht sturen.
+                  // timeout opnemen in geval van omschakelen naar andere app
+                }
+                // window.addEventListener('focus', e => setTimeout(() => setState('focussed')))
+                // window.addEventListener('blur', e => setTimeout(() => setState('online')))
+              } else {
+                // this.setState('CONNECTED');
+                // ws.login();
+              }
+              resolve(this);
+              // this.resolve(this);
+              // self.emit("connect", self);
+              data.type = 'connect';
+              if (currentState === 'CONNECTING'){
+                $().emit('connect', data);
+              }
+              while (message = ws.messages.shift()){
+                console.debug('MESSAGE', message);
+                ws.send(message);
+              }
+            } else {
+              $.handleData(data);
+            }
+            return;
+            if (data.aliconnector) {
+              console.log(data);
+              if (data.aliconnector === 'online') {
+                $().status('aliconnector', 'online');
+                this.sendto($().aliconnector_id = data.from_id, { path: 'sign_in' });
+              }
+              // console.debug('aliconnector', data, data.from_id);
+              // $.Aliconnector.state = 'online';
+              // if (ws.infoElement){
+              //   ws.infoElement.innerText = ws.state + '+';
+              // }
+            }
+            // if ('reply' in data){
+            //   $.Aliconnector.reply(data.reply);
+            // }
+            // if ('signin' in data){
+            //   console.debug('SIGNIN', data);
+            //   const sub = config.id ? config.id.sub : (config.access ? config.access.sub : null);
+            //   if (data.access.sub != sub){
+            //     $.clipboard.reload();
+            //   }
+            // }
+            return;
+            if (((data.ref && data.ref.itemsModified) || data.forward) && data.from_id && this.wsServer){
+              this.wsServer.forwardMessageFromClient(data, e.data, ws);
+            }
+          } catch (err) {
+            // return $().status('wsm', 'error');
+            return console.error(err);
           }
-        }
+
+          // return;
+        });
+      });
+    }},
+
+
+    login: {value: function login(access_token){
+      return new Promise((resolve, fail) => {
+        this.connect().then(e => {
+          console.log('CONNN', e);
+        })
+        return;
+        console.debug('WS LOGIN');
+        // this.resolve = resolve;
+        if (!access_token || !this.WebSocket) return resolve(this);
+        this.WebSocket.send(JSON.stringify({
+          headers: {
+            authorization: 'Bearer '+access_token,
+          }
+        }));
+      })
+    }},
+    message: {value: function message(par){
+      console.error('$.WebsocketRequest', par);
+      let message='';
+      if (par){
+        // let req=par;
+        // const request = new $().url(...arguments);
+        // const res = request.req.res;
+        // message = request.message;
+        console.error('WebsocketRequest', par);
+        // return;
+        // if (req.message_id){
+        // 	message.message_id = req.message_id;
+        // }
+        // if (res){
+        // 	message.id = req.id = req.id || new Date().valueOf();
+        // 	$.WebsocketClient.requests[message.id] = res;
+        // }
+        message = JSON.stringify(par);
+        $.WebsocketClient.messages.push(message);
+        // req.device_id = $.his.cookie ? $.his.cookie.device_id : 'test_max';
       }
-      // if websocket configured, connect to server
-      // if (Aim.config.Aim.websocket) {
-      // 	new Aim.WebsocketRequest();
+      if (!$.WebsocketClient.conn){
+        // console.debug('STARTCONNECT',$.WebsocketClient);
+        return $.WebsocketClient.connect();
+      }
+      // console.debug('SERVER REQUEST', message);
+      if ($.WebsocketServer){
+        // console.debug('SERVER REQUEST', message);
+        $.WebsocketServer.clients.forEach(wsChild => wsChild.send(message));
+      }
+      if ($.WebsocketClient.conn.readyState !== 1){
+        return;
+      }
+      while (message = $.WebsocketClient.messages.shift()){
+        $.WebsocketClient.send(message);
+      }
+    }},
+    onmessage: {value: onmessage},
+    reply: {value: function reply(message){
+      console.debug('repl', message);
+      return this.sendto(this.data.from_id, {body: message});
+    }},
+    sendto: {value: function sendto(sid, message = {}){
+      console.debug('send to', this.state);
+      $().status('ws', 'ACTIVE');
+      message.to = { sid: sid };
+      return $.promise( 'send to', resolve => {
+        $().status('ws', this.state);
+        this.clients.set(sid, resolve);
+        this.send(message);
+      });
+    }},
+    setState: {value: function setState(state, message){
+      $().status('ws', this.state = state);
+      // if (window.document){
+      //   this.procstate = this.procstate || $().procstate();
+      //   this.procstate.text(message || '');
       // }
+    }},
 
-      setTitle(
-        // Aim.auth.access && Aim.auth.access.sub && Aim.find(Aim.auth.access.sub) ? Aim.find(Aim.auth.access.sub).title : null,
-        Aim().info.name,
-        // Aim.auth.access.sub,
-        Aim().info.version,
-        // ip_addresses.join(', ') + ':' + Aim().config.http.port,
-      );
-      if (Aim().info.description) {
-        console.log(Aim().info.description);
+    send1: {value: function(message){
+      // console.debug('send', message);
+      if (!this.WebSocket) return;
+      $().status('ws', 'ACTIVE');
+      setTimeout(() => {
+        $().status('ws', this.state);
+      },100);
+      message = JSON.stringifyReplacer(message);
+      this.WebSocket.send(message);
+      if ($.server) {
+        $.server.clients.forEach(ws => ws.send(message));
       }
-      console.log('READY END')
-    })
+    }},
 
 
-    // require("./node.js");
-    setTimeout(async e => await Aim().emit('load') && await Aim().emit('ready'));
-  };
-  NodeApplication.prototype = new Application;
+    connect1: {value: function(){
+      return $.promise( 'connect', resolve => {
+        this.setState('CONNECTING', `Connecting ${this.url}`);
+        if (this.WebSocket) return resolve(this);
+        this.resolve = resolve;
+        // console.debug('connect', this.url);
+        Object.assign(this.WebSocket = new window.WebSocket(this.url), {
+          messages: [],
+          requests: {},
+          message: message => {
+            // alert('SEND'+JSON.stringify(message));
+            // console.debug('MESSAGE', ws.readyState, webSocket, this.ws, this);
+            webSocket.send(message);
+            if ($.wsServer && $.wsServer){
+              $.wsServer.forEach(ws => ws.send(message))
+            }
+          },
+          // onconnect: e => {
+          // 	console.debug('onconnect', ws, e.target);
+          // },
+          onmessage: e => this.onmessage(e),
+          onopen: e => {
+            this.setState('OPEN');
+            this.WebSocket.send(JSON.stringify({
+              hostname: this.hostname || 'aliconnect',
+              nonce: this.nonce,
+              PHPSESSID: this.PHPSESSID,
+              headers: aimClient.getAccessToken()
+              ? {
+                Authorization:'Bearer ' + aimClient.getAccessToken()
+              }
+              : null
+            }));
+            // console.debug('ONOPEN', e.target, webSocket, this.ws);
+            // resolve(webSocket);
+          },
+          onclose: e => {
+            this.setState('DISCONNECTED');
+            this.WebSocket = null;
+            setTimeout(() => this.connect(), 5000);
+            // clearTimeout(this.pingTimeout);
+            //this.pingTimeout=setTimeout(function, 1000);
+            // $().emit('wscClose');
+          },
+          onerror: e => {
+            this.setState('ERROR');
+            // $().emit('wscClose');
+          },
+        });
+        return this;
+      })
+    }},
+  });
+
+  Object.defineProperties(Aim, {
+    Client: { value: Client },
+    Server: { value: Server },
+    sql: { value: new Sql },
+
+    WebsocketClient: { value: WebsocketClient },
+
+    UserAgentApplication: { value: UserAgentApplication },
+    InteractionRequiredAuthError: { value: function () { } },
+    url: {value: Request },
+    config: { value: {
+      listAttributes: 'header0,header1,header2,name,schemaPath,Master,Src,Class,Tagname,InheritedID,HasChildren,HasAttachements,State,Categories,CreatedDateTime,LastModifiedDateTime,LastVisitDateTime,StartDateTime,EndDateTime,FinishDateTime',
+      trackLocalSessionTime: 5000, // timeout between tracking local cookie login session
+      trackSessionTime: 30000, // timeout between tracking login session
+      debug: 1,
+      minMs: 60000,
+      auth: {
+        url: AUTHORIZATION_URL,
+      },
+      cache: {
+        cacheLocation: "localStorage",
+        storeAuthStateInCookie: false,
+        forceRefresh: false
+      },
+      clients: [],
+      url: dmsUrl,
+      app: {
+        url: dmsOrigin,
+      },
+    } },
+    const: { value: {
+      prompt: {
+        menu: {
+          prompts: [
+            // 'qrscan',
+            'lang',
+            // 'chat',
+            // 'msg',
+            // 'task',
+            // 'shop',
+            'config',
+            'help',
+          ]
+        },
+        config: {
+          prompts: [
+            // 'upload_datafile',
+            // 'import_outlook_mail',
+            // 'import_outlook_contact',
+            // 'account_create',
+            // 'account_domain',
+            'account_config',
+            // 'sitemap',
+            // 'get_api_key',
+            'get_aliconnector_key',
+            'verwerkingsregister',
+          ]
+        },
+      },
+      languages: {
+        ab:{iso:'Abkhazian', native:'аҧсуа бызшәа, аҧсшәа'},
+        aa:{iso:'Afar', native:'Afaraf'},
+        af:{iso:'Afrikaans', native:'Afrikaans'},
+        ak:{iso:'Akan', native:'Akan'},
+        sq:{iso:'Albanian', native:'Shqip'},
+        am:{iso:'Amharic', native:'አማርኛ'},
+        ar:{iso:'Arabic', native:'العربية'},
+        an:{iso:'Aragonese', native:'aragonés'},
+        hy:{iso:'Armenian', native:'Հայերեն'},
+        as:{iso:'Assamese', native:'অসমীয়া'},
+        av:{iso:'Avaric', native:'авар мацӀ, магӀарул мацӀ'},
+        ae:{iso:'Avestan', native:'avesta'},
+        ay:{iso:'Aymara', native:'aymar aru'},
+        az:{iso:'Azerbaijani', native:'azərbaycan dili'},
+        bm:{iso:'Bambara', native:'bamanankan'},
+        ba:{iso:'Bashkir', native:'башҡорт теле'},
+        eu:{iso:'Basque', native:'euskara, euskera'},
+        be:{iso:'Belarusian', native:'беларуская мова'},
+        bn:{iso:'Bengali', native:'বাংলা'},
+        bh:{iso:'Bihari languages', native:'भोजपुरी'},
+        bi:{iso:'Bislama', native:'Bislama'},
+        bs:{iso:'Bosnian', native:'bosanski jezik'},
+        br:{iso:'Breton', native:'brezhoneg'},
+        bg:{iso:'Bulgarian', native:'български език'},
+        my:{iso:'Burmese', native:'ဗမာစာ'},
+        ca:{iso:'Catalan, Valencian', native:'català, valencià'},
+        ch:{iso:'Chamorro', native:'Chamoru'},
+        ce:{iso:'Chechen', native:'нохчийн мотт'},
+        ny:{iso:'Chichewa, Chewa, Nyanja', native:'chiCheŵa, chinyanja'},
+        zh:{iso:'Chinese', native:'中文 (Zhōngwén), 汉语, 漢語'},
+        cv:{iso:'Chuvash', native:'чӑваш чӗлхи'},
+        kw:{iso:'Cornish', native:'Kernewek'},
+        co:{iso:'Corsican', native:'corsu, lingua corsa'},
+        cr:{iso:'Cree', native:'ᓀᐦᐃᔭᐍᐏᐣ'},
+        hr:{iso:'Croatian', native:'hrvatski jezik'},
+        cs:{iso:'Czech', native:'čeština, český jazyk'},
+        da:{iso:'Danish', native:'dansk'},
+        dv:{iso:'Divehi, Dhivehi, Maldivian', native:'ދިވެހި'},
+        nl:{iso:'Dutch, Flemish', native:'Nederlands, Vlaams'},
+        dz:{iso:'Dzongkha', native:'རྫོང་ཁ'},
+        en:{iso:'English', native:'English'},
+        eo:{iso:'Esperanto', native:'Esperanto'},
+        et:{iso:'Estonian', native:'eesti, eesti keel'},
+        ee:{iso:'Ewe', native:'Eʋegbe'},
+        fo:{iso:'Faroese', native:'føroyskt'},
+        fj:{iso:'Fijian', native:'vosa Vakaviti'},
+        fi:{iso:'Finnish', native:'suomi, suomen kieli'},
+        fr:{iso:'French', native:'français, langue française'},
+        ff:{iso:'Fulah', native:'Fulfulde, Pulaar, Pular'},
+        gl:{iso:'Galician', native:'Galego'},
+        ka:{iso:'Georgian', native:'ქართული'},
+        de:{iso:'German', native:'Deutsch'},
+        el:{iso:'Greek, Modern (1453-)', native:'ελληνικά'},
+        gn:{iso:'Guarani', native:'Avañe\'ẽ'},
+        gu:{iso:'Gujarati', native:'ગુજરાતી'},
+        ht:{iso:'Haitian, Haitian Creole', native:'Kreyòl ayisyen'},
+        ha:{iso:'Hausa', native:'(Hausa) هَوُسَ'},
+        he:{iso:'Hebrew', native:'עברית'},
+        hz:{iso:'Herero', native:'Otjiherero'},
+        hi:{iso:'Hindi', native:'हिन्दी, हिंदी'},
+        ho:{iso:'Hiri Motu', native:'Hiri Motu'},
+        hu:{iso:'Hungarian', native:'magyar'},
+        ia:{iso:'Interlingua (International Auxiliary Language Association)', native:'Interlingua'},
+        id:{iso:'Indonesian', native:'Bahasa Indonesia'},
+        ie:{iso:'Interlingue, Occidental', native:'(originally:) Occidental, (after WWII:) Interlingue'},
+        ga:{iso:'Irish', native:'Gaeilge'},
+        ig:{iso:'Igbo', native:'Asụsụ Igbo'},
+        ik:{iso:'Inupiaq', native:'Iñupiaq, Iñupiatun'},
+        io:{iso:'Ido', native:'Ido'},
+        is:{iso:'Icelandic', native:'Íslenska'},
+        it:{iso:'Italian', native:'Italiano'},
+        iu:{iso:'Inuktitut', native:'ᐃᓄᒃᑎᑐᑦ'},
+        ja:{iso:'Japanese', native:'日本語 (にほんご)'},
+        jv:{iso:'Javanese', native:'ꦧꦱꦗꦮ, Basa Jawa'},
+        kl:{iso:'Kalaallisut, Greenlandic', native:'kalaallisut, kalaallit oqaasii'},
+        kn:{iso:'Kannada', native:'ಕನ್ನಡ'},
+        kr:{iso:'Kanuri', native:'Kanuri'},
+        ks:{iso:'Kashmiri', native:'कश्मीरी, كشميري‎'},
+        kk:{iso:'Kazakh', native:'қазақ тілі'},
+        km:{iso:'Central Khmer', native:'ខ្មែរ, ខេមរភាសា, ភាសាខ្មែរ'},
+        ki:{iso:'Kikuyu, Gikuyu', native:'Gĩkũyũ'},
+        rw:{iso:'Kinyarwanda', native:'Ikinyarwanda'},
+        ky:{iso:'Kirghiz, Kyrgyz', native:'Кыргызча, Кыргыз тили'},
+        kv:{iso:'Komi', native:'коми кыв'},
+        kg:{iso:'Kongo', native:'Kikongo'},
+        ko:{iso:'Korean', native:'한국어'},
+        ku:{iso:'Kurdish', native:'Kurdî, کوردی‎'},
+        kj:{iso:'Kuanyama, Kwanyama', native:'Kuanyama'},
+        la:{iso:'Latin', native:'latine, lingua latina'},
+        lb:{iso:'Luxembourgish, Letzeburgesch', native:'Lëtzebuergesch'},
+        lg:{iso:'Ganda', native:'Luganda'},
+        li:{iso:'Limburgan, Limburger, Limburgish', native:'Limburgs'},
+        ln:{iso:'Lingala', native:'Lingála'},
+        lo:{iso:'Lao', native:'ພາສາລາວ'},
+        lt:{iso:'Lithuanian', native:'lietuvių kalba'},
+        lu:{iso:'Luba-Katanga', native:'Kiluba'},
+        lv:{iso:'Latvian', native:'latviešu valoda'},
+        gv:{iso:'Manx', native:'Gaelg, Gailck'},
+        mk:{iso:'Macedonian', native:'македонски јазик'},
+        mg:{iso:'Malagasy', native:'fiteny malagasy'},
+        ms:{iso:'Malay', native:'Bahasa Melayu, بهاس ملايو‎'},
+        ml:{iso:'Malayalam', native:'മലയാളം'},
+        mt:{iso:'Maltese', native:'Malti'},
+        mi:{iso:'Maori', native:'te reo Māori'},
+        mr:{iso:'Marathi', native:'मराठी'},
+        mh:{iso:'Marshallese', native:'Kajin M̧ajeļ'},
+        mn:{iso:'Mongolian', native:'Монгол хэл'},
+        na:{iso:'Nauru', native:'Dorerin Naoero'},
+        nv:{iso:'Navajo, Navaho', native:'Diné bizaad'},
+        nd:{iso:'North Ndebele', native:'isiNdebele'},
+        ne:{iso:'Nepali', native:'नेपाली'},
+        ng:{iso:'Ndonga', native:'Owambo'},
+        nb:{iso:'Norwegian Bokmål', native:'Norsk Bokmål'},
+        nn:{iso:'Norwegian Nynorsk', native:'Norsk Nynorsk'},
+        no:{iso:'Norwegian', native:'Norsk'},
+        ii:{iso:'Sichuan Yi, Nuosu', native:'ꆈꌠ꒿ Nuosuhxop'},
+        nr:{iso:'South Ndebele', native:'isiNdebele'},
+        oc:{iso:'Occitan', native:'occitan, lenga d\'òc'},
+        oj:{iso:'Ojibwa', native:'ᐊᓂᔑᓈᐯᒧᐎᓐ'},
+        cu:{iso:'Church Slavic, Old Slavonic, Church Slavonic, Old Bulgarian, Old Church Slavonic', native:'ѩзыкъ словѣньскъ'},
+        om:{iso:'Oromo', native:'Afaan Oromoo'},
+        or:{iso:'Oriya', native:'ଓଡ଼ିଆ'},
+        os:{iso:'Ossetian, Ossetic', native:'ирон æвзаг'},
+        pa:{iso:'Punjabi, Panjabi', native:'ਪੰਜਾਬੀ, پنجابی‎'},
+        pi:{iso:'Pali', native:'पालि, पाळि'},
+        fa:{iso:'Persian', native:'فارسی'},
+        pl:{iso:'Polish', native:'język polski, polszczyzna'},
+        ps:{iso:'Pashto, Pushto', native:'پښتو'},
+        pt:{iso:'Portuguese', native:'Português'},
+        qu:{iso:'Quechua', native:'Runa Simi, Kichwa'},
+        rm:{iso:'Romansh', native:'Rumantsch Grischun'},
+        rn:{iso:'Rundi', native:'Ikirundi'},
+        ro:{iso:'Romanian, Moldavian, Moldovan', native:'Română'},
+        ru:{iso:'Russian', native:'русский'},
+        sa:{iso:'Sanskrit', native:'संस्कृतम्'},
+        sc:{iso:'Sardinian', native:'sardu'},
+        sd:{iso:'Sindhi', native:'सिन्धी, سنڌي، سندھی‎'},
+        se:{iso:'Northern Sami', native:'Davvisámegiella'},
+        sm:{iso:'Samoan', native:'gagana fa\'a Samoa'},
+        sg:{iso:'Sango', native:'yângâ tî sängö'},
+        sr:{iso:'Serbian', native:'српски језик'},
+        gd:{iso:'Gaelic, Scottish Gaelic', native:'Gàidhlig'},
+        sn:{iso:'Shona', native:'chiShona'},
+        si:{iso:'Sinhala, Sinhalese', native:'සිංහල'},
+        sk:{iso:'Slovak', native:'Slovenčina, Slovenský Jazyk'},
+        sl:{iso:'Slovenian', native:'Slovenski Jezik, Slovenščina'},
+        so:{iso:'Somali', native:'Soomaaliga, af Soomaali'},
+        st:{iso:'Southern Sotho', native:'Sesotho'},
+        es:{iso:'Spanish, Castilian', native:'Español'},
+        su:{iso:'Sundanese', native:'Basa Sunda'},
+        sw:{iso:'Swahili', native:'Kiswahili'},
+        ss:{iso:'Swati', native:'SiSwati'},
+        sv:{iso:'Swedish', native:'Svenska'},
+        ta:{iso:'Tamil', native:'தமிழ்'},
+        te:{iso:'Telugu', native:'తెలుగు'},
+        tg:{iso:'Tajik', native:'тоҷикӣ, toçikī, تاجیکی‎'},
+        th:{iso:'Thai', native:'ไทย'},
+        ti:{iso:'Tigrinya', native:'ትግርኛ'},
+        bo:{iso:'Tibetan', native:'བོད་ཡིག'},
+        tk:{iso:'Turkmen', native:'Türkmen, Түркмен'},
+        tl:{iso:'Tagalog', native:'Wikang Tagalog'},
+        tn:{iso:'Tswana', native:'Setswana'},
+        to:{iso:'Tonga (Tonga Islands)', native:'Faka Tonga'},
+        tr:{iso:'Turkish', native:'Türkçe'},
+        ts:{iso:'Tsonga', native:'Xitsonga'},
+        tt:{iso:'Tatar', native:'татар теле, tatar tele'},
+        tw:{iso:'Twi', native:'Twi'},
+        ty:{iso:'Tahitian', native:'Reo Tahiti'},
+        ug:{iso:'Uighur, Uyghur', native:'ئۇيغۇرچە‎, Uyghurche'},
+        uk:{iso:'Ukrainian', native:'Українська'},
+        ur:{iso:'Urdu', native:'اردو'},
+        uz:{iso:'Uzbek', native:'Oʻzbek, Ўзбек, أۇزبېك‎'},
+        ve:{iso:'Venda', native:'Tshivenḓa'},
+        vi:{iso:'Vietnamese', native:'Tiếng Việt'},
+        vo:{iso:'Volapük', native:'Volapük'},
+        wa:{iso:'Walloon', native:'Walon'},
+        cy:{iso:'Welsh', native:'Cymraeg'},
+        wo:{iso:'Wolof', native:'Wollof'},
+        fy:{iso:'Western Frisian', native:'Frysk'},
+        xh:{iso:'Xhosa', native:'isiXhosa'},
+        yi:{iso:'Yiddish', native:'ייִדיש'},
+        yo:{iso:'Yoruba', native:'Yorùbá'},
+        za:{iso:'Zhuang, Chuang', native:'Saɯ cueŋƅ, Saw cuengh'},
+        zu:{iso:'Zulu', native:'isiZulu'},
+      },
+    } },
+    extend: { value: function extend (parent, selector, context) {
+      if (!selector) {
+        selector = parent;
+        parent = this;
+      }
+      // console.log(111, parent, selector);
+      const objects = [];
+      if (context) {
+        Object.entries(context).forEach(entry => Object.defineProperty(parent, ...entry))
+      }
+      if (selector) {
+        (function recurse(parent, selector, context){
+          if (parent && selector && selector instanceof Object) {
+            for (let [key, value] of Object.entries(selector)) {
+              if (typeof parent[key] === 'function' && typeof value !== 'function') {
+                // console.log(key, value, parent[key]);
+                parent[key](value)
+              } else if (typeof value === 'function' && !parent.hasOwnProperty(key)) {
+                parent[key] = value;
+                // Object.defineProperty(parent, key, {
+                //   enumerable: false,
+                //   configurable: false,
+                //   writable: false,
+                //   value: value,
+                // });
+              }
+              if (typeof value !== 'object' || Array.isArray(value) || !(key in parent) || objects.includes(value)) {
+                parent[key] = value;
+              } else {
+                objects.push(value);
+                recurse(parent[key], selector[key]);
+              }
+            }
+          }
+        })(parent, selector, context);
+      }
+      return parent;
+    } },
+    handleData: { value: function handleData (data){
+      return Aim.promise( 'handle data', async resolve => {
+        // console.debug('handleData');
+        if (data.path){
+          Aim().url(data.path).setmethod(data.method).exec();
+        }
+        const body = data.body;
+        if (body){
+          const reindex = [];
+          function handleData(data) {
+            // console.debug('handleData', data);
+            if (data.method === 'patch'){
+              const body = data.body;
+              const itemId = body.ID || data.ID;
+              if (Aim.his.map.has(itemId)) {
+                const item = Aim.his.map.get(itemId);
+                if (body.Master) {
+                  const parentID = body.Master.LinkID;
+                  const index = body.Master.Data;
+                  const parent = Aim.his.map.get(parentID);
+                  if (item) {
+                    if (item.parent) {
+                      if (item.parent !== parent && item.elemTreeLi) {
+                        // DEBUG: MAX FOUT
+                        // item.parent.items.splice(item.parent.items.indexOf(item), 1);
+                        item.elemTreeLi.elem.remove();
+                        reindex.push(item.parent);
+                      }
+                      // if (item.elemTreeLi) {
+                      // }
+                    }
+                    // const master = [].concat(item.data.Master).shift();
+                    // master.LinkID = parentID;
+                    // master.Data = index;
+                    if (parent && parent.items) {
+                      if (!parent.items.includes(item)) {
+                        // parent.items.push(item);
+                      }
+                      reindex.push(parent);
+                    }
+                  }
+                }
+                Object.entries(body).forEach(entry=>item.attr(...entry));
+                item.refresh();
+              }
+            }
+          }
+          if (body.requests){
+            body.requests.forEach(handleData)
+          } else {
+            handleData(data);
+          }
+          reindex.unique().forEach(parent => parent ? parent.reindex() : null);
+        }
+        resolve();
+        //
+        //
+        //
+        // // console.debug('handleRequest', req);
+        // if (req.method && req.method.toLowerCase() === 'patch'){
+        //   const [tag] = req.path.match(/\w+\(\d+\)/);
+        //   const item = Item.get(tag);
+        //   if (item){
+        //     for (let [attributeName, value] of Object.entries(req.body)){
+        //       if (item.properties[attributeName].setValue){
+        //         item.properties[attributeName].setValue(value);
+        //       }
+        //       // console.debug(item, tag, attributeName, value, item.properties[attributeName]);
+        //     }
+        //   }
+        // } else {//if (isModule){
+        //   // isModule foorwaarde is opgenomen zodat bericht niet gaat rondzingen.
+        //   for (var name in req){
+        //     if (typeof Aim[name] === 'function'){
+        //       Aim[name].apply(this, req[name]);
+        //     }
+        //   }
+        //   try {
+        //     console.error('DO FORWARD', isModule, req);
+        //
+        //     if (req.body){
+        //       Aim.handleAimItems(req.body);
+        //     }
+        //
+        //
+        //
+        //
+        //     Aim.forward = req.forward;
+        //     // Aim().exec(req, res => {
+        //     // 	res.id = req.id;
+        //     // });
+        //   } catch (err){
+        //     console.error(err)
+        //   }
+        //   Aim.forward = null;
+        //   if (req.message_id && Aim.WebsocketClient.requests[req.message_id]){
+        //     Aim.WebsocketClient.requests[req.message_id](req);
+        //   }
+        // }
+        // Aim().emit('message', req);
+        // return;
+        //
+      });
+    } },
+    his: { value: new His() },
+    // importScript: { value: importScript, },
+    log: { value: function log () {
+      if (self.document && document.getElementById('console')) {
+        Aim('console').append(Aim('div').text(...arguments))
+      } else if (Aim().statusElem) {
+        Aim().statusElem.text(...arguments);
+      } else {
+        console.msg(...arguments)
+      }
+      return arguments;
+    },},
+    maps: { value: function maps () {
+      return Aim.promise( 'maps', resolve => {
+        if (self.google) resolve (self.google.maps);
+        else Aim('script').parent(document.head)
+        .attr('src', 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAKNir6jia2uSgmEoLFvrbcMztx-ao_Oys&libraries=places')
+        .on('load', e => resolve (self.google.maps))
+      });
+    },},
+    object: { value: {
+      isFile(ofile) {
+        return (ofile.type || '').indexOf('image') != -1 || Aim.string.isImgSrc(ofile.src)
+      },
+    },},
+    promise: { value: function promise(selector, context) {
+      const messageElem = Aim.his.elem.statusbar ? Aim('span').parent(Aim.his.elem.statusbar.main).text(selector) : null;
+      // Aim().progress(1, 1);
+      // const progressElem = Aim.his.elem.statusbar.progress;
+      // progressElem.elem.max += 1;
+      // progressElem.elem.value = (progressElem.elem.value || 0) + 1;
+      if (Aim.LOGPROMISE) {
+        console.debug(selector, 'start');
+      }
+      return new Promise( context ).then( result => {
+        // Aim().progress(-1, -1);
+        if (messageElem) {
+          messageElem.remove();
+        }
+        if (Aim.LOGPROMISE) {
+          console.debug(selector, 'end');
+        }
+        return result;
+      }).catch( err => {
+        // Aim().progress(-1, -1);
+        if (messageElem) {
+          messageElem.text(selector, err).css('color','red');
+        }
+        // console.error('aaaaa', err, arguments);
+        throw err;
+      })
+    },},
+  });
 
   if (this.document) {
     this.$ = Aim;

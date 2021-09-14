@@ -1,8 +1,13 @@
 <?php
 namespace Aliconnect\Server\Auth;
 
-class Api extends \Aliconnect\Server\Api {
-  // public function __construct() {
-  //   die('af');
-  // }
+// use Aliconnect\Aim;
+use function Aliconnect\sql_query;
+
+class Api {
+  public function __construct() {
+    // sql_query('a');
+    // sql_query('b');
+    die('af');
+  }
 }

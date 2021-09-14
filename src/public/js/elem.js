@@ -4278,7 +4278,7 @@ function linkify(inputText) {
       const elem = this.elem;
       (async function(){
         if (!window.QRCode) {
-          await importScript(scriptPath + 'js/qrcode.js');
+          await importScript(scriptPath + '/js/qrcode.js');
         }
         new QRCode(elem, selector);
         if (elem.tagName === 'IMG') {
@@ -6074,6 +6074,8 @@ function linkify(inputText) {
     },},
   });
 
+  const prompts = {};
+  const promptElems = {};
   Object.defineProperties(Aim, {
     Elem: { value: Elem },
     attr: { value: new Attr() },
@@ -6937,6 +6939,140 @@ function linkify(inputText) {
         // aimClient.api.setactivestate('offline');
       });
     } },
+    prompt: {value: function prompt(selector, context) {
+      console.log('PROMPT', selector, context)
+      if (selector instanceof Object) {
+        return Object.assign(prompts, selector);
+      } else if (context) {
+        return prompts[selector] = context;
+      }
+      const is = $.his.map.has('prompt')
+      ? $('prompt')
+      : $('section').parent(document.body).class('prompt').id('prompt').append(
+        $('button').class('abtn abs close').attr('open', '').on('click', e => $().prompt(''))
+      );
+      const currentSelector = is.attr('open');
+      const keys = Object.keys(prompts);
+      is.attr('open', selector ? selector : null);
+      if (prompts[selector]) {
+        const url = new URL(document.location);
+        url.searchParams.set('prompt', selector);
+        window.history.replaceState('page', '', url.href);
+        const prompt = prompts[selector];
+        context = prompts[selector];
+        const promptElem = promptElems[selector] = promptElems[selector] || $('div').parent(is).class('col', selector).on('open', typeof context === 'function' ? context : function () {
+          this.is.text('').append(
+            $('h1').ttext(selector),
+            $('form').class('col')
+            .properties(context.properties)
+            .btns(context.btns),
+          )
+        });
+        const index = keys.indexOf(selector);
+        Object.values(promptElems).forEach(elem => elem.attr('pos', ''));
+        var currentIndex = 0;
+        if (currentSelector) {
+          var currentIndex = keys.indexOf(currentSelector);
+          promptElems[currentSelector].attr('pos', currentIndex < index ? 'l' : 'r');
+        }
+        if (promptElem && promptElem.attr) {
+          promptElem.attr('pos', currentIndex > index ? 'l' : 'r');
+          clearTimeout(this.promptTimeout);
+          promptElem.emit('open');
+          this.promptTimeout = setTimeout(() => promptElem.attr('pos', 'm'),10);
+          return promptElem;
+        }
+      }
+      return this;
+    }}
+  });
+  Object.defineProperties(Aim.prototype, {
+    prompt: {value: function (selector, context) {
+      return Aim.prompt(selector, context);
+    },},
+    promptform: {value: function (url, prompt, title = '', options = {}){
+      options.description = options.description || Aim.his.translate.get('prompt-'+title+'-description') || '';
+      title = Aim.his.translate.get('prompt-'+title+'-title') || title;
+      console.log([title, options.description]);
+      options.properties = options.properties || {};
+      // Object.entries(Aim.sessionPost).forEach(([key,value])=>Object.assign(options.properties[key] = options.properties[key] || {type:'hidden'}, {value: value, checked: ''}));
+      Aim.sessionPost = Aim.sessionPost || {};
+      //console.log('Aim.sessionPost', Aim.sessionPost);
+      Object.entries(Aim.sessionPost).forEach(([selector,value])=>Object.assign(selector = (options.properties[selector] = options.properties[selector] || {type:'hidden'}), {value: selector.value || value, checked: ''}));
+      return prompt.form = Aim('form').parent(prompt.is.text('')).class('col aco').append(
+        Aim('h1').ttext(title),
+        prompt.div = Aim('div').md(options.description),
+      )
+      .properties(options.properties)
+      .append(options.append)
+      .btns(options.btns)
+      .on('submit', e => url.query(document.location.search).post(e).then(e => {
+        console.log(e.body);
+
+        self.sessionStorage.setItem('post', JSON.stringify(Aim.sessionPost = e.body));
+        // return;
+        // return console.log('Aim.sessionPost', Aim.sessionPost);
+        if (Aim.sessionPost.id_token) {
+          localStorage.setItem('id_token', Aim.sessionPost.id_token);
+          Aim().send({ to: { nonce: Aim.sessionPost.nonce }, id_token: Aim.sessionPost.id_token });
+        }
+        if (Aim.sessionPost.url) {
+          if (Aim.messageHandler) {
+            Aim.messageHandler.source.postMessage({
+              url: Aim.sessionPost.url,
+            }, Aim.messageHandler.origin);
+            self.close();
+            return;
+          }
+          document.location.href = Aim.sessionPost.url;
+        }
+
+
+        if (Aim.sessionPost.prompt) prompt = Aim().prompt(Aim.sessionPost.prompt);
+        if (Aim.sessionPost.msg && prompt && prompt.div) {
+          prompt.div.text('').html(Aim.sessionPost.msg);
+        }
+        if (Aim.sessionPost.socket_id) {
+          return Aim().send({to:{sid:Aim.sessionPost.socket_id}, body:Aim.sessionPost});
+        }
+        // return;
+        // // //console.log(e.target.responseText);
+        // if (!e.body) return;
+        // Aim.sessionPost = e.body;
+        // Aim.responseProperties = Object.fromEntries(Object.entries(Aim.sessionPost).map(([key,value])=>[key,{format:'hidden',value:value}]));
+        //
+        // // //console.log('Aim.sessionPost', Aim.sessionPost);
+        // [...document.getElementsByClassName('AccountName')].forEach((element)=>{
+        //   element.innerText = Aim.sessionPost.AccountName;
+        // });
+        // if (e.body.msg) {
+        //   e.target.formElement.messageElement.innerHTML = e.body.msg;
+        //   //console.log(e.target.formElement.messageElement);
+        // } else if (e.body.socket_id) {
+        //   //console.log('socket_id', e.body);
+        //   // return;
+        //   Aim.WebsocketClient.request({
+        //     to: { sid: e.body.socket_id },
+        //     body: e.body,
+        //   });
+        //   self.close();
+        // } else if (e.body.url) {
+        //   // return //console.error(e.body.url);
+        //   // if ()
+        //
+        //   document.location.href = e.body.url;
+        // } else {
+        //   //console.log(e.body);
+        //   // document.location.href = '/api/oauth' + document.location.search;
+        // }
+      }).catch(err => {
+        console.error(err, prompt, prompt.div);
+        if (err.error && prompt && prompt.div) {
+          prompt.div.text('').html(err.error.message);
+        }
+      }))
+    },},
+    
   });
 
 

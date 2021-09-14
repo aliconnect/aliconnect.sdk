@@ -7,6 +7,9 @@
     "psr-4": {
       "Aliconnect\\": "src/php/"
     },
+    "files": [
+      "src/php/aim.php"
+    ],
     "classmap": [
       "src/php/"
     ]

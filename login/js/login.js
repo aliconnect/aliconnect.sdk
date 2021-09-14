@@ -47,13 +47,6 @@ window.addEventListener("message", (event) => {
 		return properties;
 	}
   const searchParams=new URLSearchParams(document.location.search);
-  function qr() {
-    return $('img').attr('id', 'authcode').qr({
-      text: $().ws().socket_id ? 'https://aliconnect.nl?s=' + $().ws().socket_id : '',
-      width: 160,
-      height: 160,
-    })
-  }
   function newform(prompt, title = '', options = {}) {
     // return $().promptform($().url(origin + '/oauth'), ...arguments);
     return $().promptform($().url(AUTHORIZATION_URL), ...arguments);
@@ -63,6 +56,20 @@ window.addEventListener("message", (event) => {
 
 	$().on({
     async load() {
+      Aim.initEvents();
+      const websocketClient = new Aim.WebsocketClient({
+        url: 'wss://aliconnect.nl:444',
+      });
+      // websocketClient.on('connect', state => {
+      //   console.log('WEBSOCKET connect', state);
+      // })
+      // websocketClient.on('login', state => {
+      //   console.log('WEBSOCKET login', state);
+      // })
+      await websocketClient.connect().then(e => console.log('WSCONNECT', websocketClient.socket_id));
+      // await websocketClient.login();
+      console.log('WS IS LOGGGED IN', websocketClient.socket_id);
+      // websocketClient.connect();
       // console.log(3333, $.prompts.consent, $.prompts);
 
       $(document.documentElement).class('app');
@@ -78,6 +85,15 @@ window.addEventListener("message", (event) => {
         $('footer').statusbar().class('info')
         .prompts('terms_of_use','privacy_policy','cookie_policy')
 			);
+
+      function qr() {
+        return $('img').attr('id', 'authcode').qr({
+          text: websocketClient.socket_id ? 'https://aliconnect.nl?s=' + websocketClient.socket_id : '',
+          width: 160,
+          height: 160,
+        })
+      }
+
       $.prompt({
         consent() {
           console.log('CONSENT');

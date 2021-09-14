@@ -1,7 +1,7 @@
 # Aliconnect Software Development Kit
 
-- [https://aliconnect.github.io/aliconnect-sdk/](https://aliconnect.github.io/aliconnect-sdk/)
-- [GitHub](https://github.com/aliconnect/aliconnect-sdk)
+- [View as GitHub Page](https://aliconnect.github.io/aliconnect-sdk/)
+- [View on GitHub](https://github.com/aliconnect/aliconnect-sdk)
 - [Wiki](https://github.com/aliconnect/aliconnect-sdk/wiki)
 
 
