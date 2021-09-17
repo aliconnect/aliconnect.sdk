@@ -1,61 +1,67 @@
 <?php
 namespace Aliconnect\Server\Data;
 
-use function yaml_parse_file;
-use \Aliconnect;
-use function \Aliconnect\http_response;
-use function \Aliconnect\debug;
-use function \Aliconnect\json_parse_file;
-use function \Aliconnect\attr;
-use function \Aliconnect\aim_uid;
-use \Aliconnect\Jwt as Jwt;
+use function Aliconnect\aim;
+
+// use function yaml_parse_file;
+// use \Aliconnect;
+// use function \Aliconnect\http_response;
+// use function \Aliconnect\debug;
+// use function \Aliconnect\json_parse_file;
+// use function \Aliconnect\attr;
+// use function \Aliconnect\aim_uid;
+// use \Aliconnect\Jwt as Jwt;
 
 
-class Api extends \Aliconnect\Server\Api {
+class Api {
   public function __construct() {
-    // http_response(200, []);
-    $GLOBALS['aim'] = $this;
-    if (!$this->initialized) {
-      $this->initialized = true;
-      // http_response_code(500);
-      $this->mail_messages = [];
-      $this->root = explode('\\vendor\\',__DIR__)[0];
-      $this->secret = $this->secret ?: yaml_parse_file($this->root.'/config/secret.yaml');
-      if (is_file($fname = $this->root."/config/$this->client_id.secret.json")) {
-        $this->secret = array_replace_recursive($this->secret,json_parse_file($fname));
-      }
-      $this->request_url = parse_url($_SERVER['REQUEST_URI']);
-      $this->pathname = $this->request_url['path'];
-      $this->scopes = ['guest.read'];
-      $this->client_id = attr('client_id', $_REQUEST);
-      $this->account_id = attr('account_id', $_REQUEST);
-      $headers = array_change_key_case(getallheaders(), CASE_LOWER);
-      if ($authorization = attr('authorization', $headers)) {
-        $access_token = trim(strstr($authorization, ' '));
-        $jwt = new Jwt($access_token);
-        $this->client_id = aim_uid($jwt->payload['client_id']);
-        $scope = $this->request('scope', $jwt->payload);
-        $this->sub = $this->request('sub', $jwt->payload);
-        $this->scopes = explode(' ', $scope);
-        // debug($client_id, $jwt);
-      }
+    aim()->init();
 
-
-
-      $this->client_id = 'c52aba40-11fe-4400-90b9-cee5bda2c5aa';
-      $this->scopes = ['guest.read','admin.write'];
-      $this->sub = 265090;
-
-
-
-      $this->init_config($this->client_id);
-      $this->init_api($this->scopes);
-      // debug($this->api);
-      $this->handle_api_call($this->pathname, $this->scopes);
-    }
-    $this->init();
+    // die('a');
+    //
+    // // http_response(200, []);
+    // $GLOBALS['aim'] = $this;
+    // if (!$this->initialized) {
+    //   $this->initialized = true;
+    //   // http_response_code(500);
+    //   $this->mail_messages = [];
+    //   $this->root = explode('\\vendor\\',__DIR__)[0];
+    //   $this->secret = $this->secret ?: yaml_parse_file($this->root.'/config/secret.yaml');
+    //   if (is_file($fname = $this->root."/config/$this->client_id.secret.json")) {
+    //     $this->secret = array_replace_recursive($this->secret,json_parse_file($fname));
+    //   }
+    //   $this->request_url = parse_url($_SERVER['REQUEST_URI']);
+    //   $this->pathname = $this->request_url['path'];
+    //   $this->scopes = ['guest.read'];
+    //   $this->client_id = attr('client_id', $_REQUEST);
+    //   $this->account_id = attr('account_id', $_REQUEST);
+    //   $headers = array_change_key_case(getallheaders(), CASE_LOWER);
+    //   if ($authorization = attr('authorization', $headers)) {
+    //     $access_token = trim(strstr($authorization, ' '));
+    //     $jwt = new Jwt($access_token);
+    //     $this->client_id = aim_uid($jwt->payload['client_id']);
+    //     $scope = $this->request('scope', $jwt->payload);
+    //     $this->sub = $this->request('sub', $jwt->payload);
+    //     $this->scopes = explode(' ', $scope);
+    //     // debug($client_id, $jwt);
+    //   }
+    //
+    //
+    //
+    //   $this->client_id = 'c52aba40-11fe-4400-90b9-cee5bda2c5aa';
+    //   $this->scopes = ['guest.read','admin.write'];
+    //   $this->sub = 265090;
+    //
+    //
+    //
+    //   $this->init_config($this->client_id);
+    //   $this->init_api($this->scopes);
+    //   // debug($this->api);
+    //   $this->handle_api_call($this->pathname, $this->scopes);
+    // }
+    // $this->init();
   }
-  public function init() {
+  public function init1() {
     debug(1);
   //   http_response_code(500);
   //   // debug($this->root,$this->pathname);

@@ -1,17 +1,8 @@
 (function(){
   const aim = require('./server');
-  //
-  // aim.url('https://aliconnect.nl').input('a').get().then(e => {
-  //   console.log(e.body);
-  // });
-  // console.log('JA');
-
-  // return  module.exports = aim;
-
 
   const fs = require('fs');
   const atob = require('atob');
-  // const mssql = require('mssql');
   const events = require('events');
 
   function debug(s){
@@ -48,11 +39,13 @@
       attributes.emit('change', attribute);
     }
   }
-
   function attrSetValue(attribute, value, path = []) {
     function has(name) {
       return (name in attribute) && attribute[name] !== null;
     }
+
+    // if (attribute.name == 'BMC_ALG_STORING') console.log(attribute.name, value);
+
     // Valideer waarde
     if (!isNaN(value)) {
       value = Number(value || 0);
@@ -100,14 +93,16 @@
         value = value != attribute.Ne ? 1 : 0;
       }
 
+
       curValue = Number(attribute.value || 0);
       // Hysteresis
       const hyst = Number(attribute.Hysteresis || 0);
       if (value < curValue - hyst || value > curValue + hyst) {
+
         // if (attribute.systemId)
-        if (attribute.systemId) {
+        if (attribute.SystemId) {
           const name = path.concat(attribute.name).join('.');
-          console.log(attribute.systemId, attribute.parent, name, value);
+          console.log(attribute.SystemId, attribute.parent, name, value);
 
           attribute.modifiedDT = new Date().toISOString();
           attrSet(attribute, 'value', value);
@@ -148,7 +143,6 @@
       // }
     }
   }
-
   function bitTo (typename, s) {
     var s = s.match(/.{1,16}/g).reverse().join('');
     var type = types[typename], arr = s.replace(/ /g, '').split(''), sign = type.signed ? (Number(arr.shift()) ? -1 : 1) : 1;
@@ -164,11 +158,6 @@
     return params.join(',');
   };
   function initControlEquipment(items) {
-    // const devices = [];
-    // devices.connect = function () {
-    //   var device = devices.shift();
-    //   if (device) device.connect();
-    // }
     function initAttributes(item) {
       const attributes = [];
       let parent;
@@ -181,19 +170,19 @@
       })(item, []);
       return attributes;
     }
-    const modbusDevices = items.filter(item => item.device === 'modbus');
-    const snmpDevices = items.filter(item => item.device === 'snmp');
-
+    const modbusDevices = items.filter(item => item.Device === 'MODBUS' && item.IPAddress);
+    const snmpDevices = items.filter(item => item.Device === 'SNMP' && item.IPAddress);
+    // console.log(modbusDevices);
+    // console.log(snmpDevices);
     if (modbusDevices) {
       const net = require('net')
       const jsmodbus = require('jsmodbus');
-      modbusDevices
-      .filter(item => item.IPAddress)
-      .forEach((item, i) => {
+      modbusDevices.forEach((item, i) => {
         let readAddress = item.ReadAddress || 0;
         const devices = item.children;
         let readLength = devices.length;
         const attributes = initAttributes(item);
+        console.log('MODBUS', item.IPAddress);
         function setSate(state){
           return;
           attributes.forEach(attr => attrSet(attr, 'state', state));
@@ -206,10 +195,11 @@
         }
         socket.on('connect', e => {
           setSate('connected');
-          // console.log('connected', item.name, readAddress, readLength);
+          // console.log('MODBUS', item.IPAddress, 'CONNECTED');
           (function readData() {
             client.readInputRegisters(readAddress, readLength).then(resp => {
               var readArray = resp.response._body._valuesAsArray;
+              // console.log('MODBUS', item.IPAddress, 'READ', readArray);
               devices.forEach((device,i) => {
                 if (device && device.children) {
                   const readValue = readArray[i];
@@ -217,6 +207,7 @@
                   const bitArray = bitString.split('').reverse();
                   device.children.forEach((child,i) => {
                     if (child && child.type) {
+                      // console.log(child.type, i, bitArray[i], bitArray, readValue);
                       switch(child.type) {
                         case 'UInt': return attrSetValue(child, readValue);
                         case 'Bool': return attrSetValue(child, bitArray[i]);
@@ -227,7 +218,7 @@
               })
               setTimeout(readData, item.PollInterval);
             }).catch(err => {
-              console.log('read error', item.IPAddress, readAddress, readLength);
+              // console.log('read error', item.IPAddress, readAddress, readLength);
               attributes.forEach(attr => attrSet(attr, 'state', 'error'));
               setTimeout(connect, 2000);
             })
@@ -296,6 +287,7 @@
   function ControlApplication(config) {
     console.log('nodeApplication');
     aim.sql.connect(config.dbs).then(a => {
+      console.log('SQL COnnected');
       aim.sql.query(
         `IF OBJECT_ID('his.attr') IS NULL
         BEGIN

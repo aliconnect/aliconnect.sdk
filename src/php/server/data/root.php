@@ -1,13 +1,11 @@
 <?php
 namespace Aliconnect\Server\Data;
 
-use function \Aliconnect\http_response;
-use function \Aliconnect\debug;
+use function Aliconnect\aim;
 
-class Root extends \Aliconnect\Api {
+class Root {
   public function config($param) {
-    // debug(1);
-    $config = $this->init_config($this->request('client_id'), $param);
+    $config = aim()->init_config(aim()->request('client_id'), $param);
     if (isset($param['accept'])) {
       if ($param['accept'] === 'text/yaml') {
         header('Content-Type: text/yaml');
@@ -17,8 +15,7 @@ class Root extends \Aliconnect\Api {
         http_response(200, 'aimConfig='.json_encode($config));
       }
     }
-    http_response(200, $config);
-    // http_response(501, $this->config); // DEBUG:
+    aim()->http_response(200, $config);
   }
   public function get($param) {
     // $client_id = $this->request('client_id');

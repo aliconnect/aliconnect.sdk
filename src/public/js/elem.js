@@ -1,7 +1,7 @@
 // Version 0.0.6
 console.log('elem');
 eol = '\n';
-function url_string(s) {
+function url_string(s = '') {
   return s.replace(/%2F/g, '/');
 }
 function checkPath(e) {
@@ -28,7 +28,6 @@ function linkify(inputText) {
 
     return replacedText;
 }
-
 (function web (){
 
   function handleData(targetItem, e) {
@@ -7072,7 +7071,7 @@ function linkify(inputText) {
         }
       }))
     },},
-    
+
   });
 
 

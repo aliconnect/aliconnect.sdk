@@ -205,7 +205,7 @@ class Mailer extends PHPMailer {
 		// $this->AltBody = 'This is the body in plain text for non-HTML mail clients';
 
 
-		$html = file_get_contents(__DIR__.'/Mailer/mail.html');
+		$html = file_get_contents(__DIR__.'/../html/mail.html');
 		$this->isHTML(true);
 		$this->Body = str_replace([
 			'%body',

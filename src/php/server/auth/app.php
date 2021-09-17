@@ -1,7 +1,7 @@
 <?php
 namespace Aliconnect\Server\Auth;
 
-use function Aliconnect\http_response;
+use Aliconnect\Aim;
 
 class App {
   public function get() {
@@ -10,6 +10,6 @@ class App {
       die(header("Location: ?".http_build_query($_GET)));
     }
     readfile(getcwd().'\/index.html');
-    http_response(200);
+    Aim::http_response(200);
   }
 }

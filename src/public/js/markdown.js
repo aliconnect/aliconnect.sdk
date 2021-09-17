@@ -7,12 +7,12 @@
     const a = codeString.split(/(['"`])\1/);
     return a.map((s,i) => i%3===0 ? (callback ? callback(s) : s) : i%3===2 ? `${a[i-1]}${pre}${s}${post}${a[i-1]}` : '').join('');
   }
-  function MarkdownIt() {
-    if (!(this instanceof MarkdownIt)) {
-      return new MarkdownIt();
+  function Markdown() {
+    if (!(this instanceof Markdown)) {
+      return new Markdown();
     }
   }
-  Object.defineProperties(MarkdownIt.prototype, {
+  Object.defineProperties(Markdown.prototype, {
     isImg: { value: function (src) {
       return src.match(/jpg|png|bmp|jpeg|gif|bin/i)
     }},
@@ -171,6 +171,8 @@
         tag = p;
       }
 
+      // console.error('JAAAAA');
+
       for (var i=0;i<arr.length;i++) {
         s = arr[i];
         if (s || i === arr.length - 1 ) {
@@ -242,9 +244,15 @@
           // .replace(/`(.+?)`/g, (s, p1) => `<CODE>${$.string.code(p1)}</CODE>`)
           .trim();
           if (match) {
+            const tag = s.trim().match(/^(\*|-) /) ? 'ul' : 'ol';
             setTag();
-            if (!identOptions || identOptions.ident < lineIdent) {
-              identOptions = {ident: lineIdent, tag: s.trim().match(/^(\*|-) /) ? 'ul' : 'ol'};
+            if (identOptions && identOptions.tag !== tag && identOptions.ident == lineIdent) {
+              lines.push(`</li></${identOptions.tag}>`);
+              identList.shift();
+              identList.unshift({ident: lineIdent, tag: tag});
+              lines.push(`<${tag}>`);
+            } else if (!identOptions || identOptions.ident < lineIdent) {
+              identOptions = {ident: lineIdent, tag: tag};
               identList.unshift(identOptions);
               lines.push(`<${identOptions.tag}>`);
             }
@@ -293,7 +301,6 @@
       // console.log(s);
       return s;
     }},
-
   });
-  return MarkdownIt;
+  return Markdown;
 }));

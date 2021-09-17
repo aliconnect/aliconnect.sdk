@@ -438,13 +438,14 @@ window.addEventListener("message", (event) => {
         },
         accept() {
           if (!$.sessionPost) $.prompt('login');
-          console.log($.sessionPost);
+          console.log(1111, document.location.search, $.sessionPost);
           // const url = new URL(document.location);
           // // AUTHORIZATION_URL
           // url.pathname = '/oauth';
           $().url('/oauth' + document.location.search).post($.sessionPost).then(e => {
             const body = e.body;
             console.log(222, e.body);
+
             // const searchParams = new URLSearchParams(document.location.search);
             // // const redirect_uri = searchParams.get('redirect_uri');
             // // const url = new URL(redirect_uri);

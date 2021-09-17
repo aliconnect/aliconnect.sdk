@@ -1900,10 +1900,10 @@
         return;
       }
       this.setFocusElement(item.elemTreeLi.elem, e);
-      // console.error(item);
+      // console.error(item.data['@id']);
       $().execQuery({
         l: urlToId(item.data['@id']),
-        v: urlToId(item.data['@id']),
+        v: urlToId(item.data['@id']+'/children?$filter=FinishDateTime eq NULL&$select='+Aim.config.listAttributes),
       });
       return;
       $('view').show(item);
@@ -1959,15 +1959,11 @@
       return obj;
     }
   }
-  $()
-  .on('load', async function omLoad () {
-    const aimConfig = $.config;
-    aimConfig.scope = 'openid profile name email admin.write';
-
-    // console.error(1111, aimConfig.scope, aimConfig);
-
-    const aimRequest = {
-      scopes: aimConfig.scope ? aimConfig.scope.split(' ') : [],
+  $().on('load', async function () {
+    const client_id = $.config.client_id;
+    const aimConfig = {
+      client_id: client_id,
+      scope: 'openid profile name email admin.write',
     };
     aimClient = new Aim.UserAgentApplication(aimConfig);
 
@@ -1981,7 +1977,10 @@
       aimClient.setIdToken(aimConfig.id_token);
     }
 
-    const dmsOptions = aimConfig.client;
+    let dmsConfig = {
+      client_id: client_id,
+      servers: [{url: 'https://dms.aliconnect.nl'}],
+    };
     const authProvider = {
       getAccessToken: async () => {
         let account = aimClient.storage.getItem('aimAccount');
@@ -2011,8 +2010,10 @@
       }
     };
 
-    dmsClient = Aim.Client.initWithMiddleware({authProvider}, dmsOptions);
-    await dmsClient.loadConfig();
+    const dmsClient = Aim.Client.initWithMiddleware({authProvider}, dmsConfig);
+    dmsConfig = await dmsClient.loadConfig();
+    $().schemas(dmsConfig.components.schemas)
+    console.log(dmsConfig);
 
     // return;
     // dmsClient.api('/Contact(265090)').get().then(body => {
@@ -2123,7 +2124,6 @@
         $.his.elem.account = $('a').class('abtn account').caption('Account').href('#?prompt=account').draggable(),
       );
       // await dmsClient.api('/').get().then(body => $.extend(aimConfig, body));
-      $().schemas(aimConfig.components.schemas)
       if (aimConfig.menu) {
         $().tree(...childObject(aimConfig.menu).children);
       }
@@ -2158,12 +2158,12 @@
       // await $().url('https://dms.aliconnect.nl/me').get();
       // console.log('a');
 
-      $.his.items.sub = await dmsClient.api('/me').get();
-      console.log($.his.items.sub);
+      const user = $.his.items.sub = await dmsClient.api('/me').get();
+      console.log('USER', user);
       // $.his.items.aud = await dmsClient.api(`/Company(${aimClient.clientId})`).get();
       // return console.log('ME', $.his.items.sub, $.his.items.aud);
       //
-      $().tree($.his.items.sub);
+      $().tree(user);
 
 
       // return;

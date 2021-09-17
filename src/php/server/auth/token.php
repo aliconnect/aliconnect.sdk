@@ -1,11 +1,9 @@
 <?php
 namespace Aliconnect\Server\Auth;
 
-use \Aliconnect\Api;
-use \Aliconnect\Jwt as Jwt;
-use function \Aliconnect\http_response;
+use function Aliconnect\aim;
 
-class Token extends \Aliconnect\Api {
+class Token {
   // public function init() {
   //   // $res = aim_query('SELECT 1 AS A');
   //   // $row = sqlsrv_fetch_object($res);
@@ -14,22 +12,18 @@ class Token extends \Aliconnect\Api {
   //   // debug('ba', $row, $row1);
   // }
   public function get() {
-    $request_type = $this->request('response_type');
+    $request_type = aim()->request('response_type');
     switch ($request_type) {
       case 'id_token': {
         $headers = array_change_key_case(getallheaders(), CASE_LOWER);
-        $authorization = $this->request('authorization', $headers);
+        $authorization = aim()->request('authorization', $headers);
         $access_token = trim(strstr($authorization, ' '));
-        http_response(200, [
-          'id_token'=> $access_token,
-        ]);
+        aim()->http_response(200, ['id_token'=> $access_token]);
       }
       case 'token': {
         $jwt = new Jwt;
         $jwt->secret($this->secret['client_secret']);
-        http_response(200, [
-          'access_token' => $jwt->set($_GET)->get()
-        ]);
+        aim()->http_response(200, ['access_token' => $jwt->set($_GET)->get()]);
         // echo $this->jwt->valid();
       }
     }
@@ -69,7 +63,7 @@ class Token extends \Aliconnect\Api {
 	public function post () {
     switch ($this->grant_type) {
       case 'authorization_code': {
-        $this->request('client_id');
+        aim()->request('client_id');
         $account = new \Aim\Account([
           "hostName"=>$this->client_id,
         ]);
@@ -83,7 +77,7 @@ class Token extends \Aliconnect\Api {
     		if ($this->refresh_token) {
     			$this->code = $_POST['refresh_token'];
     		}
-        $this->request('code');
+        aim()->request('code');
         $jwt = new \Aim\Jwt($this->code, $account->client_secret);
         if (empty($jwt->not_expired)) http_response(408, 'Expired token');
         if (empty($jwt->valid)) http_response(401, 'Invalid token');

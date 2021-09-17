@@ -699,7 +699,7 @@ function idToUrl(id){
       s = n < 0 ? '-' : '',
       i = parseInt(n = Math.abs(+n || 0).toFixed(c)) + '',
       j = (j = i.length) > 3 ? j % 3 : 0;
-      return s + (j ? i.substr(0, j) + t : '') + i.substr(j).replace(/(\d{3})(?=\d)/g, 'Aim1' + t) + (c ? d + Math.abs(n - i).toFixed(c).slice(2) : '');
+      return s + (j ? i.substr(0, j) + t : '') + i.substr(j).replace(/(\d{3})(?=\d)/g, '$1' + t) + (c ? d + Math.abs(n - i).toFixed(c).slice(2) : '');
     }},
     pad: { value: function (size){
       var s = String(this);
@@ -744,15 +744,15 @@ function idToUrl(id){
       .replace(/,\n/gs, '\n')
       .replace(
         /\[(.*?)\]/gs, (s, p1) => p1
-        .replace(/^(.*?)"(.*?)": "(.*?)"Aim/gm, 'Aim1Aim2: Aim3')
-        .replace(/^(.*?)"(.*?)":/gm, 'Aim1Aim2:')
-        .replace(/(.*?)\{(.*?)(\w+)/gs, 'Aim1- Aim3')
-        .replace(/^(.*?)"(.*?)"Aim/gm, 'Aim1- "Aim2"')
+        .replace(/^(.*?)"(.*?)": "(.*?)"Aim/gm, '$1$2: $3')
+        .replace(/^(.*?)"(.*?)":/gm, '$1$2:')
+        .replace(/(.*?)\{(.*?)(\w+)/gs, '$1- $3')
+        .replace(/^(.*?)"(.*?)"$/gm, '$1- "$2"')
       )
-      .replace(/(\},|\}|\{|\])(?=\n|Aim)/gs, '')
-      .replace(/"(.*?)":/g, 'Aim1:')
-      .replace(/: "(.+?)"/g, ': Aim1')
-      .replace(/- "(.+?)"/g, '- Aim1')
+      .replace(/(\},|\}|\{|\])(?=\n|$)/gs, '')
+      .replace(/"(.*?)":/g, '$1:')
+      .replace(/: "(.+?)"/g, ': $1')
+      .replace(/- "(.+?)"/g, '- $1')
       .replace(/^\s*\n/gms, '')
     },
   };
@@ -870,7 +870,7 @@ function idToUrl(id){
           if (apiPath && apiPath.get){
             replaceLocation = true;
             Aim().list([], path);
-            if (this.url.searchParams.has('Aimsearch') && !this.url.searchParams.get('Aimsearch')){
+            if (this.url.searchParams.has('$search') && !this.url.searchParams.get('$search')){
               console.error('NO SEARCH');
               // return;
             }
@@ -940,7 +940,7 @@ function idToUrl(id){
       return this;
     },},
     filter: { value: function(){
-      return this.query('Aimfilter', ...arguments);
+      return this.query('$filter', ...arguments);
     },},
     get: { value: function(){
       this.method='get';
@@ -992,6 +992,7 @@ function idToUrl(id){
       }
       console.log(param.constructor.name);
       switch(param.constructor.name) {
+        case 'CustomEvent':
         case 'SubmitEvent': {
           param.preventDefault();
           this.input.data = new FormData(param.target);
@@ -1131,7 +1132,7 @@ function idToUrl(id){
       }
     },},
     order: { value: function(){
-      return this.query('Aimorder', ...arguments);
+      return this.query('$order', ...arguments);
     },},
     post: { value: function(param){
       this.method = 'post';
@@ -1168,13 +1169,13 @@ function idToUrl(id){
       }
     },},
     select: { value: function(){
-      return this.query('Aimselect', ...arguments);
+      return this.query('$select', ...arguments);
     },},
     toString: { value: function(){
       return this.url.toString();
     },},
     top: { value: function(){
-      return this.query('Aimtop', ...arguments);
+      return this.query('$top', ...arguments);
     },},
     // url(url, base){
     //   this.url = this.url || new URL(url || '', base || (self.document ? document.location.href : dmsOrigin));
@@ -1202,7 +1203,7 @@ function idToUrl(id){
           self.collist.setAttribute('wait', Number(self.collist.getAttribute('wait')) - 1);
         }
         e.body = xhr.response;
-        if (xhr.getResponseHeader('content-type').includes('application/json')) {
+        if (this.url.headers.accept === 'application/json' || xhr.getResponseHeader('content-type').includes('application/json')) {
           try {
             e.body = JSON.parse(e.body);
           } catch (err) {
@@ -1241,6 +1242,7 @@ function idToUrl(id){
           });
         }
       }
+      // console.log('this.url.headers', this.url.headers);
       Object.entries(this.url.headers).forEach(entry => xhr.setRequestHeader(...entry));
       xhr.startTime = new Date();
       xhr.send(this.input.data);
@@ -1252,7 +1254,7 @@ function idToUrl(id){
       // xhr.overrideMimeType('text/xml; charset=iso-8859-1');
     },},
   });
-  const clients = new Map();
+  // const clients = new Map();
 
   function Aim(selector, context){
     // console.error(1);
@@ -1734,7 +1736,8 @@ function idToUrl(id){
       return aimClient.api('/').query('extend', true).post({config: yaml});
     },},
     execQuery: {value: function (selector, context, replace){
-      Aim.url = Aim.url || new URL(document.location.origin);
+      console.error('execQuery', selector, context, replace);
+      const currentUrl = new URL(document.location.origin);
       var url = new URL(document.location);
       if (typeof selector === 'object') {
         Object.entries(selector).forEach(entry => url.searchParams.set(...entry));
@@ -1743,8 +1746,7 @@ function idToUrl(id){
       }
 
 
-      // console.error('execQuery', url_string(Aim.url.href), url_string(url.href));
-      if (url_string(Aim.url.href) !== url_string(url.href)) {
+      if (url_string(currentUrl.href) !== url_string(url.href)) {
         this.execUrl(url_string(url.href));
         // if (url.searchParams.get('l')) {
         //   url.searchParams.set('l', decodeURIComponent(url.searchParams.get('l')));
@@ -1765,8 +1767,11 @@ function idToUrl(id){
     },},
     execUrl: {value: function (url){
       console.warn('execUrl', url);
-      Aim.url = Aim.url || new URL(document.location.origin);
-      var url = new URL(url, document.location);
+      const documentUrl = new URL(document.location);
+      // const currentUrl = new URL(document.location);
+      // Aim.url = Aim.url || new URL(document.location.origin);
+      url = new URL(url, document.location);
+
       // console.log(url.hash, url.searchParams.get('l'), Aim.url.searchParams.get('l'));
       if (url.hash) {
         if (this.execUrl(url.hash.substr(1))) {
@@ -1780,38 +1785,55 @@ function idToUrl(id){
       }
       // console.log(url.searchParams.get('l'));
       if (url.searchParams.get('l')) {// && url.searchParams.get('l') !== Aim.url.searchParams.get('l')) {
+        documentUrl.searchParams.set('l', url.searchParams.get('l'));
 
-        var documentUrl = new URL(document.location);
-        // url.searchParams.forEach((value, key) => console.log(key, value));
-        url.searchParams.forEach((value, key) => documentUrl.searchParams.set(key, value));
-        documentUrl.hash = '';
-        // self.history.replaceState('page', '', documentUrl.href.replace(/%2F/g, '/'));
-
-
-
-        // self.history.replaceState('page', '', url.href.replace(/%2F/g, '/'));
-        Aim.url.searchParams.set('l', url.searchParams.get('l'));
-        var refurl = new URL(idToUrl(url.searchParams.get('l')), document.location);
-        // console.warn('refurl', refurl.pathname);
-
-        if (refurl.hostname.match(/^dms\./)) {
-          refurl.pathname += '/children';
-          dmsClient.api(refurl.href)
-          .filter('FinishDateTime eq NULL')
-          .select(Aim.config.listAttributes)
-          .get().then(async body => {
-            // console.error(body)
-            if (body){
-              const items = body.value || body.Children || await body.children;
-              Aim().list(items);
-            }
+        const listUrl = idToUrl(url.searchParams.get('l'));
+        const hostname = new URL(listUrl).hostname;
+        const client = Client.clients.get(hostname);
+        if (client) {
+          client.api(listUrl).get().then(async body => {
+            const items = body.value || body.Children || await body.children;
+            console.warn('BODY', body.value, body.Children, items);
+            Aim().list(items);
           });
         } else {
-          return Aim('list').load(refurl.href);
+          Aim('list').load(refurl.href);
         }
+        //
+        //
+        // url.get().then(e => console.log(e))
+        // return;
+        // var documentUrl = new URL(document.location);
+        // // url.searchParams.forEach((value, key) => console.log(key, value));
+        // url.searchParams.forEach((value, key) => documentUrl.searchParams.set(key, value));
+        // documentUrl.hash = '';
+        // // self.history.replaceState('page', '', documentUrl.href.replace(/%2F/g, '/'));
+        //
+        //
+        //
+        // // self.history.replaceState('page', '', url.href.replace(/%2F/g, '/'));
+        // currentUrl.searchParams.set('l', url.searchParams.get('l'));
+        // var refurl = new URL(idToUrl(url.searchParams.get('l')), document.location);
+        // // console.warn('refurl', refurl.pathname);
+        //
+        // if (refurl.hostname.match(/^dms\./)) {
+        //   refurl.pathname += '/children';
+        //   dmsClient.api(refurl.href)
+        //   .filter('FinishDateTime eq NULL')
+        //   .select(Aim.config.listAttributes)
+        //   .get().then(async body => {
+        //     console.error(body)
+        //     if (body){
+        //       const items = body.value || body.Children || await body.children;
+        //       Aim().list(items);
+        //     }
+        //   });
+        // } else {
+        //   return Aim('list').load(refurl.href);
+        // }
       }
-      if (url.searchParams.get('v') && url.searchParams.get('v') !== Aim.url.searchParams.get('v')) {
-        Aim.url.searchParams.set('v', url.searchParams.get('v'));
+      if (url.searchParams.get('v') && url.searchParams.get('v') !== documentUrl.searchParams.get('v')) {
+        documentUrl.searchParams.set('v', url.searchParams.get('v'));
         if (url.searchParams.get('v')) {
           var refurl = new URL(idToUrl(url.searchParams.get('v')), document.location);
           if (refurl.hostname.match(/^dms\./)) {
@@ -1827,7 +1849,9 @@ function idToUrl(id){
         if (typeof Aim[key] === 'function'){
           return Aim[key].apply(Aim, value ? value.split(', ') : []) || true;
         }
-      };
+      }
+      self.history.replaceState('page', '', documentUrl.href);
+
       // if (!Aim().url(document.location.hash ? document.location.hash.substr(1) : document.location.href).exec()) {
       //   if (url.searchParams.get('p')) {
       //     return Aim('list').load(url.searchParams.get('p'));
@@ -1843,7 +1867,7 @@ function idToUrl(id){
       // }
       // return;
       // console.log('POPSTATE2', document.location.pathname);
-    },},
+    }},
     forEach: {value: function (selector, context, fn){
       if (selector instanceof Object){
         Object.entries(selector).forEach(entry => fn.call(this, ...entry));
@@ -2455,38 +2479,38 @@ function idToUrl(id){
     // test() {
     //   console.log('TEST');
     // },
-    api(src) {
-      const url = new URL(src, document.location);
-      const srcPathname = url.pathname.replace(/\(.*?\)/, '()');
-      for (var client of this.clients) {
-        // console.error(src, srcPathname, client.apiConfig.paths);
-        for (let [pathname,path] of Object.entries(client.apiConfig.paths)) {
-          if (pathname.replace(/\(.*?\)/, '()') === srcPathname) {
-            return client.api(src);
-          }
-        }
-      }
-      return client.api(src);
-      // console.error(000, client);
-      //
-      // return new Promise((callback, fail) => {
-      //   fail('NOT FOUND');
-      // })
-      // console.log(11111, pathname,path);
-      //
-      // console.error(url.pathname);
-      // for (let client of this.clients) {
-      //
-      //   // console.log(client, client.config.servers);
-      //   // client.config.servers = Array.from(client.config.servers);
-      //   for (let [i,server] of Object.entries(client.config.servers)) {
-      //     // console.log(i,server);
-      //     if (src.match(server.url) || !src.match(/^http/)) {
-      //       return client.api(src);
-      //     }
-      //   }
-      // }
-    },
+    // api(src) {
+    //   const url = new URL(src, document.location);
+    //   const srcPathname = url.pathname.replace(/\(.*?\)/, '()');
+    //   for (var client of this.clients) {
+    //     console.error(src, client.hostname);
+    //     for (let [pathname,path] of Object.entries(client.config.paths)) {
+    //       if (pathname.replace(/\(.*?\)/, '()') === srcPathname) {
+    //         return client.api(src);
+    //       }
+    //     }
+    //   }
+    //   return client.api(src);
+    //   // console.error(000, client);
+    //   //
+    //   // return new Promise((callback, fail) => {
+    //   //   fail('NOT FOUND');
+    //   // })
+    //   // console.log(11111, pathname,path);
+    //   //
+    //   // console.error(url.pathname);
+    //   // for (let client of this.clients) {
+    //   //
+    //   //   // console.log(client, client.config.servers);
+    //   //   // client.config.servers = Array.from(client.config.servers);
+    //   //   for (let [i,server] of Object.entries(client.config.servers)) {
+    //   //     // console.log(i,server);
+    //   //     if (src.match(server.url) || !src.match(/^http/)) {
+    //   //       return client.api(src);
+    //   //     }
+    //   //   }
+    //   // }
+    // },
     clientAttr(options) {
       return Aim().url(dmsUrl).query({
         request_type: 'client_attr',
@@ -2629,23 +2653,27 @@ function idToUrl(id){
     //   return this.authProvider.login(...arguments);
     // },
     logout(options){
-      // console.log(sessionStorage('aim.id_token'));
-      if (this.storage.getItem('aim.id_token')) {
-        this.storage.removeItem('aim.id_token');
-        this.storage.removeItem('aim.refresh_token');
-        this.storage.removeItem('aim.access_token');
-        // Aim.clipboard.reload();
-        Aim.clipboard.reload(Aim().url(AUTHORIZATION_URL).query({
-          prompt: 'logout',
-          client_id: Aim().client_id || '',
-          redirect_uri: document.location.origin + document.location.pathname,
-        }).toString());
-      } else {
-        const searchParams = new URLSearchParams(document.location.href);
-        if (searchParams.get('redirect_uri')) {
-          document.location.href = searchParams.get('redirect_uri');
+      return new Promise((resolve, reject) => {
+        // console.log(sessionStorage('aim.id_token'));
+        if (this.storage.getItem('aim.id_token')) {
+          this.storage.removeItem('aim.id_token');
+          this.storage.removeItem('aim.refresh_token');
+          this.storage.removeItem('aim.access_token');
+          return resolve();
+          // Aim.clipboard.reload();
+          Aim.clipboard.reload(Aim().url(AUTHORIZATION_URL).query({
+            prompt: 'logout',
+            client_id: Aim().client_id || '',
+            redirect_uri: document.location.origin + document.location.pathname,
+          }).toString());
+        } else {
+          return resolve();
+          const searchParams = new URLSearchParams(document.location.href);
+          if (searchParams.get('redirect_uri')) {
+            document.location.href = searchParams.get('redirect_uri');
+          }
         }
-      }
+      })
     },
     refreshToken(){
       return console.error('refreshToken');
@@ -2861,110 +2889,112 @@ function idToUrl(id){
         return this;
       },
     },
-    loginPopup: {
-      value: function loginPopup (options) {
-        return Aim.promise('LoginPopup', async (resolve, fail) => {
+    loginPopup: {value: function loginPopup (options) {
+      return Aim.promise('LoginPopup', async (resolve, reject) => {
 
-          console.log('options', options);
+        console.log('options', options);
 
-          options = {
-            // scope: 'name+email+phone_number',
-            response_type: 'code',
-            response_type: 'token',
-            client_id: this.config.auth.client_id = this.config.auth.client_id || this.config.auth.clientId,
-            // redirect_uri: this.config.auth.redirect_uri = this.config.auth.redirect_uri || this.config.auth.redirectUri || this.config.redirect_uri || this.config.redirectUri,
-            // state: state,
-            prompt: 'consent',
-            scope: options.scope || options.scopes.join(' ') || '',
-            // socket_id: Aim.WebsocketClient.socket_id,
-          }
-          const url = Aim().url(AUTHORIZATION_URL).query(options).toString();
-          const height = 600;
-          const width = 400;
-          let rect = document.body.getBoundingClientRect();
-          let top = self.screenTop + (self.innerHeight - height) / 2;
-          let left = self.screenLeft + (self.innerWidth - width) / 2;
-          const popup = self.open(url, 'loginPopup', `top=${top},left=${left},width=${width},height=${height},toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes`);
+        options = {
+          // scope: 'name+email+phone_number',
+          response_type: 'code',
+          response_type: 'token',
+          client_id: this.config.auth.client_id = this.config.auth.client_id || this.config.auth.clientId,
+          // redirect_uri: this.config.auth.redirect_uri = this.config.auth.redirect_uri || this.config.auth.redirectUri || this.config.redirect_uri || this.config.redirectUri,
+          // state: state,
+          prompt: 'consent',
+          scope: options.scope || options.scopes.join(' ') || '',
+          // socket_id: Aim.WebsocketClient.socket_id,
+        }
+        const url = Aim().url(AUTHORIZATION_URL).query(options).toString();
+        const height = 600;
+        const width = 400;
+        let rect = document.body.getBoundingClientRect();
+        let top = self.screenTop + (self.innerHeight - height) / 2;
+        let left = self.screenLeft + (self.innerWidth - width) / 2;
+        const popup = self.open(url, 'loginPopup', `top=${top},left=${left},width=${width},height=${height},toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes`);
 
-          // popup.addEventListener('onload', e => {
-          //   console.log(e);
-          // })
+        // popup.addEventListener('onload', e => {
+        //   console.log(e);
+        // })
 
-          // This does nothing, assuming the self hasn't changed its location.
-          // setInterval(()=>{
-          //   console.log('msg');
-          //   popup.postMessage("hello there!", "https://login.aliconnect.nl");
-          // },1000);
-          // popup.postMessage("The user is 'bob' and the password is 'secret'",
-          //
-          const interval = setInterval(() => {
-            popup.postMessage({
-              msg: "loginPopup",
-            }, "https://login.aliconnect.nl");
-          },1000);
-          if (!Aim.loginPopupMessageListener) {
-            Aim.loginPopupMessageListener = 1;
-            self.addEventListener("message", (event) => {
-              console.log(event.origin, event);
-              if (event.data.msg === 'loginPopupAck') {
-                clearInterval(interval);
-              }
-              if (event.data.url) {
-                const url = new URL(event.data.url, document.location);
-                if (url.searchParams.has('token')) {
-                  const access_token = url.searchParams.get('token');
-                  this.store('access_token', access_token);
-                  const access = JSON.parse(atob((access_token).split('.')[1]));
-                  Aim().url('https://login.aliconnect.nl/token')
-                  .query('client_id', this.config.auth.client_id)
-                  .query('response_type', 'id_token')
-                  .headers('Authorization', 'Bearer ' + access_token)
-                  .get().then(e => {
-                    this.store('id_token', e.body.id_token);
-                    this.account = new Account(e.body.id_token);
-                    // console.error(e.body);
-                  })
-                  console.error(1212121, access);
-                } else if (url.searchParams.has('code')) {
-                  this.getAccessToken({
-                    code: url.searchParams.get('code')
-                  }).then(e => {
-                    resolve({
-                      accessToken: this.storage.getItem('aim.access_token'),
-                      account: this.account,
-                      accountState: "72fc40a8-a2d7-4998-afd0-3a74589015ac",
-                      expiresOn: null,
-                      fromCache: false,
-                      idToken: this.account.idToken,
-                      // idToken: {
-                      //   rawIdToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Im5Pbz…SUqywC4QuHklGPvrKVQiMc9jpdJfz2DMIfT6O--gxZD2ApJZg",
-                      //   claims: {…},
-                      //   issuer: "https://login.microsoftonline.com/09786696-f227-4199-91a0-45783f6c660b/v2.0",
-                      //   objectId: "f40f8462-da7f-457c-bd8c-d9e5639d2975", subject: "w6TIVTl01uuD9UHe12Fk6YLiilqhf1arasLwPwGnxV0", …}
-                      // idTokenClaims: {aud: "4573bb93-5012-4c50-9cc5-562ac8f9a626", iss: "https://login.microsoftonline.com/09786696-f227-4199-91a0-45783f6c660b/v2.0", iat: 1625751439, nbf: 1625751439, exp: 1625755339, …}
-                      scopes: [],
-                      tenantId: "09786696-f227-4199-91a0-45783f6c660b",
-                      tokenType: "id_token",
-                      uniqueId: "f40f8462-da7f-457c-bd8c-d9e5639d2975",
-                    });
+        // This does nothing, assuming the self hasn't changed its location.
+        // setInterval(()=>{
+        //   console.log('msg');
+        //   popup.postMessage("hello there!", "https://login.aliconnect.nl");
+        // },1000);
+        // popup.postMessage("The user is 'bob' and the password is 'secret'",
+        //
+        const interval = setInterval(() => {
+          popup.postMessage({
+            msg: "loginPopup",
+          }, "https://login.aliconnect.nl");
+        },1000);
+        if (!Aim.loginPopupMessageListener) {
+          Aim.loginPopupMessageListener = 1;
+          self.addEventListener("message", (event) => {
+            console.log(event.origin, event);
+            if (event.data.msg === 'loginPopupAck') {
+              clearInterval(interval);
+            }
+            if (event.data.url) {
+              const url = new URL(event.data.url, document.location);
+              if (url.searchParams.has('token')) {
+                const access_token = url.searchParams.get('token');
+                this.store('access_token', access_token);
+                const access = JSON.parse(atob((access_token).split('.')[1]));
+                Aim().url('https://login.aliconnect.nl/token')
+                .query('client_id', this.config.auth.client_id)
+                .query('response_type', 'id_token')
+                .headers('Authorization', 'Bearer ' + access_token)
+                .get().then(e => {
+                  console.error(e.body);
+                  this.store('id_token', e.body.id_token);
+                  this.account = new Account(e.body.id_token);
+                  resolve({
+                    account: this.account,
                   });
-                }
+                })
+                // console.error(1212121, access);
+              } else if (url.searchParams.has('code')) {
+                this.getAccessToken({
+                  code: url.searchParams.get('code')
+                }).then(e => {
+                  console.log(3333);
+                  resolve({
+                    accessToken: this.storage.getItem('aim.access_token'),
+                    account: this.account,
+                    accountState: "72fc40a8-a2d7-4998-afd0-3a74589015ac",
+                    expiresOn: null,
+                    fromCache: false,
+                    idToken: this.account.idToken,
+                    // idToken: {
+                    //   rawIdToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Im5Pbz…SUqywC4QuHklGPvrKVQiMc9jpdJfz2DMIfT6O--gxZD2ApJZg",
+                    //   claims: {…},
+                    //   issuer: "https://login.microsoftonline.com/09786696-f227-4199-91a0-45783f6c660b/v2.0",
+                    //   objectId: "f40f8462-da7f-457c-bd8c-d9e5639d2975", subject: "w6TIVTl01uuD9UHe12Fk6YLiilqhf1arasLwPwGnxV0", …}
+                    // idTokenClaims: {aud: "4573bb93-5012-4c50-9cc5-562ac8f9a626", iss: "https://login.microsoftonline.com/09786696-f227-4199-91a0-45783f6c660b/v2.0", iat: 1625751439, nbf: 1625751439, exp: 1625755339, …}
+                    scopes: [],
+                    tenantId: "09786696-f227-4199-91a0-45783f6c660b",
+                    tokenType: "id_token",
+                    uniqueId: "f40f8462-da7f-457c-bd8c-d9e5639d2975",
+                  });
+                });
               }
+            }
 
-              // Do we trust the sender of this message?  (might be
-              // different from what we originally opened, for example).
-              // if (event.origin !== "http://example.com")
-              //   return;
+            // Do we trust the sender of this message?  (might be
+            // different from what we originally opened, for example).
+            // if (event.origin !== "http://example.com")
+            //   return;
 
-              // event.source is popup
-              // event.data is "hi there yourself!  the secret response is: rheeeeet!"
-            }, false);
-          }
-          // win.onbeforeunload = e => resolve();
-        });
-        // this.authProvider.login(this.config.auth);
-      },
-    },
+            // event.source is popup
+            // event.data is "hi there yourself!  the secret response is: rheeeeet!"
+          }, false);
+        }
+        // win.onbeforeunload = e => resolve();
+      });
+      // this.authProvider.login(this.config.auth);
+    }},
     // getAccount: {
     //   value: function () {
     //     return JSON.parse(this.storage.getItem('aimAccount'));
@@ -2972,38 +3002,43 @@ function idToUrl(id){
     // }
   });
 
-  function Client (config) {
+  function Client (options, config) {
 
-    // console.log('Aim', Aim.aimClient);
+    // console.log('Aim', config);
 
     this.config = config;
-    aimClient.clients.push(this);
+    this.options = options;
+    // this.client_id = config.client_id;
+    // Client.clients.push(this);
     config.servers = config.servers || [{url: Aim.config.url}];
     // console.warn(config.servers, Aim.config.url);
     Array.from(config.servers).forEach(server => aimClient.servers.set(server.url, this));
     this.url = config.servers[0].url;
-    // this.hostname = this.url.match(/\/\/(.*?)\//)[1];
-    this.headers = {};
+    this.hostname = new URL(this.url).hostname;
+    Client.clients.set(this.hostname, this);
 
-    return this;
+
+    // this.hostname = this.url.match(/\/\/(.*?)\//)[1];
+    // this.headers = {};
+
+    // return this;
+    // this.hostname = new (this.url).hostname;//.match(/\/\/(.*?)\//)[1];
+    // clients.set(this.hostname, this);
     // client(options){
     //   this.get(Client, options ? Object.assign(options,{authProvider: options.authProvider || this.authProvider()}) : null);
     //   return this;
     // },
     // console.error(...arguments);
     // [...arguments].forEach(Aim(this).extend)
-    this.config = {
-      id: {},
-      server: [
-        {
-          url: self.document ? document.location.origin+'/api' : 'https://aliconnect.nl/api',
-        }
-      ]
-    };
-    [...arguments].forEach(options => Aim(this.config).extend(options));
-    this.url = this.config.servers[0].url;
-    this.hostname = this.url.match(/\/\/(.*?)\//)[1];
-    clients.set(this.hostname, this);
+    // this.config = {
+    //   id: {},
+    //   server: [
+    //     {
+    //       url: self.document ? document.location.origin+'/api' : 'https://aliconnect.nl/api',
+    //     }
+    //   ]
+    // };
+    // [...arguments].forEach(options => Aim(this.config).extend(options));
 
 
 
@@ -3034,16 +3069,20 @@ function idToUrl(id){
   }
 
   Object.defineProperties(Client, {
-    initWithMiddleware: { value: function () {
-      // const options = Object.assign()
-      return new this(Object.assign({}, ...arguments));
+    clients: {value: new Map},
+    initWithMiddleware: { value: function (options, config) {
+      return new Client(options, config);
     }, },
   });
   Object.defineProperties(Client.prototype, {
+    headers: { value: {} },
     loadConfig: { value: function loadConfig () {
-      return Aim().url(dmsUrl + '/config')
-      .query('client_id', Aim.config.client_id)
-      .get().then(e => Aim.extend(Aim.config, this.apiConfig = e.body))
+      return new Promise((success, fail) => {
+        Aim().url(this.url + '/config')
+        .query('client_id', this.config.client_id)
+        .get()
+        .then(e => success(this.config = e.body))
+      });
     }},
     loginUrl: { value: function loginUrl() {
       console.error(this.config.client_id);
@@ -3077,14 +3116,11 @@ function idToUrl(id){
     //   });
     // },
     api: { value: function (src){
-      // console.error(5555, this);
-      return Aim().url(new URL(src.replace(
-        /^\//,
-        ''
-      ), this.config.servers[0].url + '/').href)
+      console.error(5555, this.options, this.config);
+      return Aim().url(new URL(src, this.url).href)
       .headers('accept', 'application/json')
       .headers(this.headers)
-      .authProvider(this.config.authProvider)
+      .authProvider(this.options.authProvider)
       .body()
     }},
     // getApi(){
@@ -3488,6 +3524,9 @@ function idToUrl(id){
     }
   })
 
+
+
+
   Item = function () {};
   Object.defineProperties(Item, {
     get: { value: function itemGet (selector, schemaName){
@@ -3668,13 +3707,13 @@ function idToUrl(id){
     } },
   });
   Object.defineProperties(Item.prototype, {
-    api: {
-      value: function (selector = '') {
-        // console.log(aimClient.api(`/${this.tag}` + selector))
-        // console.log(1, aimClient)
-        return aimClient.api(`/${this.tag}` + selector);
-      },
-    },
+    api: {value: function (selector = '') {
+      const url = this.data['@id'];
+      console.log(6666, url + selector);
+      const hostname = new URL(url).hostname;
+      const client = Client.clients.get(hostname);
+      return client.api(url + selector)
+    }},
     attr: {
       value: function (attributeName, value, postdata){
         return Aim.promise( 'Attribute', async resolve => {
@@ -4027,24 +4066,22 @@ function idToUrl(id){
         return this.data.ccRecipients || 0;
       },
     },
-    children: {
-      get() {
-        return Aim.promise( 'Children', resolve => {
-          if (this.items) return resolve(this.items);
-          const api = this.api(`/children`).filter('FinishDateTime eq NULL')
-          .select(Aim.config.listAttributes).get().then(body => {
-            // const children = Array.isArray(this.data.Children) ? this.data.Children : this.data.children;
-            // console.log('children_then', this.header0, this.data.Children, this.data.children, this.data, JSON.parse(e.target.responseText));
-            const children = body.Children || body.children;
-            this.items = [].concat(children).filter(Boolean).map(Aim).unique();
-            // console.warn('BODY', this.items);
-            this.items.url = body['@context'];
-            this.HasChildren = this.items.length>0;
-            resolve (this.items);
-          })
-        });
-      },
-    },
+    children: {get() {
+      return Aim.promise( 'Children', (resolve, reject) => {
+        if (this.items) return resolve(this.items);
+        const api = this.api(`/children`).filter('FinishDateTime eq NULL')
+        .select(Aim.config.listAttributes).get().then(body => {
+          // const children = Array.isArray(this.data.Children) ? this.data.Children : this.data.children;
+          console.log('children_then', body);
+          const children = body.Children || body.children;
+          this.items = [].concat(children).filter(Boolean).map(Aim).unique();
+          // console.warn('BODY', this.items);
+          this.items.url = body['@context'];
+          this.HasChildren = this.items.length>0;
+          resolve(this.items);
+        })
+      });
+    }},
     class: {
       get() {
         console.debug(this,this.schemaName,this.schema,this.classID);
@@ -5323,9 +5360,6 @@ function idToUrl(id){
     },
   });
 
-
-
-
   function Server(config) {
     // console.log('a');
 
@@ -5696,7 +5730,7 @@ function idToUrl(id){
     Object.defineProperties(this.clients, {
       send: { value: function(msg) {
         msg = JSON.stringify(msg);
-        clients.filter(wsa => wsa.readyState === wsa.OPEN).forEach(wsa => wsa.send(msg))
+        Array.from(clients).filter(wsa => wsa.readyState === wsa.OPEN).forEach(wsa => wsa.send(msg))
       }}
     });
   }
@@ -6077,7 +6111,7 @@ function idToUrl(id){
         $.WebsocketClient.send(message);
       }
     }},
-    onmessage: {value: onmessage},
+    // onmessage: {value: onmessage},
     reply: {value: function reply(message){
       console.debug('repl', message);
       return this.sendto(this.data.from_id, {body: message});

@@ -1,0 +1,107 @@
+<html>
+<head>
+  <title>Faktuur</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8; " />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <style>
+  @page { margin: 30px 50px 100px 50px;}
+  /* #header { position: fixed; left: 0px; top: 0px; right: 0px; } */
+  #footer { position: fixed; left: 0px; bottom: -180px; right: 0px; height: 150px; text-align:right;}
+  #footer .page:after { content: counter(page); }
+  .herinner {background:#DF554A;width:400px;padding:10px;position:fixed;top:-100px;right:-230px;transform:rotate(40deg);color:white;text-align:center;font-size:38px;font-weight:bold;border:solid 5px #AB312B}
+  .herinner:after {content:"NIET BETAALD";}
+  body {
+    padding-top:400px;
+    padding-bottom:30px;
+    font-family: 'Segoe UI', 'Segoe', 'SegoeUI-Regular-final', Tahoma, Helvetica, Arial, sans-serif;
+    font-size: 10pt;
+    padding-top:2cm;
+  }
+  body > div > table, body > table { width: 700px; }
+  td { vertical-align: top; }
+  .border { border: solid 1px #ccc;}
+  .th { background:#DDD;height:10px;}
+  .th td { font-size: 8pt;}
+  .adres p {margin:0;}
+  pre { font-family: 'Segoe UI', 'Segoe', 'SegoeUI-Regular-final', Tahoma, Helvetica, Arial, sans-serif;font-size: 9pt; margin:0; }
+  .regels tr > :nth-child(n+3) {text-align: right; }
+  .r { text-align: right;}
+  .header, .footer, .total { position: fixed;}
+  .header { top: -480px;}
+  .small { font-size: 8pt;}
+  .footer, .total { bottom: 50px; }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <div style="margin:0;padding:0;"><img src="/aliconnect/webroot/sites/airo/app/v1/img/logo/briefkop#accountName#.png" style="height:70px;" /></div>
+    #accountName#
+    <table style="height:230px;">
+      <tr>
+        <td><div class="adres" style="margin-top:50px;">
+          <p>#CompanyName#</p>
+          <p>#InvoiceAddress1#</p>
+          <p>#InvoiceAddress2#</p>
+          <p>#InvoiceAddress3#</p>
+        </div></td>
+        <td class="small" width="200"><pre>#BriefhoofdGegevens#</pre></td>
+      </tr>
+    </table>
+    <p style="height:20px;"><b>REKENING</b></p>
+    <table class="regels" style="border-collapse:collapse;">
+      <thead>
+        <tr><td colspan=4>
+          <table class="regels" style="border-collapse:collapse;width:100%;">
+            <tr class="th">
+              <td>Faktuurnr</td>
+              <td>Datum</td>
+              <td>Te betalen</td>
+              <td>Debiteur nr</td>
+              <td>Betalingskenmerk</td>
+            </tr>
+            <tr>
+              <td><b>#InvoiceNr#</b></td>
+              <td><b>#InvoiceDate#</b></td>
+              <td><b>&euro; #TotIncl#</b></td>
+              <td>#DebNr#</td>
+              <td>#Betalingskenmerk#</td>
+            </tr>
+          </table>
+        </td></tr>
+        <tr class="th">
+          <td>Artikel, Omschrijving, Eenheid</td>
+          <td style="text-align:right;width:1.5cm;">Prijs</td>
+          <td style="text-align:right;width:1.5cm;">Aantal</td>
+          <td style="text-align:right;width:2cm;">Bedrag</td>
+        </tr>
+      </thead>
+      <tbody>
+        #regels#
+      </tbody>
+      <tfoot>
+        <tr><td colspan=4>
+          <table class="regels" style="border-collapse:collapse;width:700px;table-layout:fixed;">
+            <tfoot>
+              <tr class="th">
+                <td class="r" width="60">Totaal artikelen</td>
+                <td class="r" width="60">Korting contant</td>
+                <td class="r" width="60">Totaal excl.</td>
+                <td class="r" width="60">#Btw#% BTW</td>
+                <td class="r" width="60">Te betalen</td>
+              </tr>
+              <tr>
+                <td class="r">&euro; #TotExcl#</td>
+                <td class="r">#KortingContant# %</td>
+                <td class="r">&euro; #TotExcl#</td>
+                <td class="r">&euro; #TotBtw#</td>
+                <td class="r"><b>&euro; #TotIncl#</b></td>
+              </tr>
+            </tfoot>
+          </table>
+        </td></tr>
+      </tfoot>
+    </table>
+  </div>
+  <div id="footer"><p class="page">Pagina <?php $PAGE_NUM ?></p></div>
+</body>
+</html>

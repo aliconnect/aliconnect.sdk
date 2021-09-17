@@ -2,24 +2,17 @@
 namespace Aliconnect\Server;
 
 // use Aliconnect\Aim;
-use function Aliconnect\sql_query;
-use function Aliconnect\sql_exec_string;
+use Aliconnect\Jwt;
+use function Aliconnect\aim;
+// use function Aliconnect\sql_query;
+// use function Aliconnect\sql_exec_string;
+// use function Aliconnect\http_response;
 
 class Account {
   public function __construct($options) {
     $this->init($options);
   }
   public function init($options = null) {
-
-
-
-    sql_query('a');
-    sql_query('b');
-    // global $conn;
-    // echo CONN;
-    die();
-
-
     $options = array_intersect_key((array)$options, array_flip([
       'client_id',
       'accountname',
@@ -30,8 +23,8 @@ class Account {
       'redirect_uri',
       'nonce',
     ]));
-    $this->data = sqlsrv_fetch_object($this->sql_query(sql_exec_string("account.get", $options)));
-    return $this->data;
+    // aim()->http_response(200, $options);
+    return $this->data = sqlsrv_fetch_object(aim()->sql_query(aim()->sql_exec_string("account.get", $options)));
   }
   public function __get($property) {
     if (isset($this->data->$property)) {
@@ -46,8 +39,22 @@ class Account {
       $this->$property = $value;
     }
   }
+
+  public function token ($expires_in, $options) {
+    return (new Jwt)->get(array_merge([
+      // 'iss'=> 'https://login.aliconnect.nl',
+      'iss'=> $_SERVER['HTTP_HOST'],
+      'client_id' => $this->client_id,
+      'exp' => time() + $expires_in,
+      'iat' => time(),
+    ], $options), $this->client_secret);
+  }
+
+
+
+
   public function get_id_token() {
-    return (new \Aim\Jwt)->get([
+    return (new Jwt)->get([
 			'iss' => $_SERVER['SERVER_NAME'],//'login.aliconnect.nl',//aim::$access[iss],//'https://aliconnect.nl', //  Issuer, 'https://aliconnect.nl'
 			'sub' => $this->account_id, // Subject, id of user or device
 			// 'scrt'=> aim()->secret['config']['aim']['client_secret'],
