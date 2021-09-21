@@ -1,6 +1,6 @@
 {
   "name": "@aliconnect/sdk",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Aliconnect AIM",
   "homepage": "https://aliconnect.nl",
   "author": "Max van Kampen",
@@ -25,11 +25,11 @@
   "dependencies": {
     "atob": "^2.1.2",
     "http": "0.0.1-security",
-    "tedious": "^12.2.0",
     "ws": "^8.2.2"
   },
   "devDependencies": {},
   "optionalDependencies": {
+    "tedious": "^12.2.0",
     "jsmodbus": "^4.0.6",
     "snmp-native": "^1.2.0"
   }

@@ -43,9 +43,6 @@
     function has(name) {
       return (name in attribute) && attribute[name] !== null;
     }
-
-    // if (attribute.name == 'BMC_ALG_STORING') console.log(attribute.name, value);
-
     // Valideer waarde
     if (!isNaN(value)) {
       value = Number(value || 0);

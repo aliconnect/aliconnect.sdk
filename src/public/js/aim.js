@@ -32,6 +32,8 @@ function idToUrl(id){
   typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self,
   global.Aim = factory());
 }(this, function (exports) {
+  const libUrl = 'https://aliconnect.nl/npm/@aliconnect/lib@0.0.0/dist';
+
   const self = this;
   const dmsOrigin = 'https://aliconnect.nl';
   const dmsUrl = 'https://dms.aliconnect.nl';
@@ -3524,9 +3526,6 @@ function idToUrl(id){
     }
   })
 
-
-
-
   Item = function () {};
   Object.defineProperties(Item, {
     get: { value: function itemGet (selector, schemaName){
@@ -6660,5 +6659,8 @@ function idToUrl(id){
   // if (!self.document) {
   //   return module.exports = Aim;
   // }
+
+
+
   return Aim;
 }));

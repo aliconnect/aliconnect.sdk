@@ -6939,7 +6939,7 @@ function linkify(inputText) {
       });
     } },
     prompt: {value: function prompt(selector, context) {
-      console.log('PROMPT', selector, context)
+      console.warn('PROMPT', selector, context)
       if (selector instanceof Object) {
         return Object.assign(prompts, selector);
       } else if (context) {
@@ -7071,7 +7071,6 @@ function linkify(inputText) {
         }
       }))
     },},
-
   });
 
 
@@ -7337,7 +7336,7 @@ function linkify(inputText) {
   $(document.documentElement).attr('lang', navigator.language);
   $().on('ready', async e => {
     // console.log('web ready', $.prompts);
-    if ($.prompt) {
+    if ($.prompts) {
       $.prompt($.prompts);
     }
     return;
@@ -7375,9 +7374,6 @@ function linkify(inputText) {
     //console.log('web ready done')
   });
   // this.sw();
-
-
-
 
   const currentScript = document.currentScript;
   const scriptPath = currentScript.src.replace(/\/js\/.*/, '');

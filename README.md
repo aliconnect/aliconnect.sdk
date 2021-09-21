@@ -4,6 +4,8 @@
 - [View on GitHub](https://github.com/aliconnect/aliconnect-sdk)
 - [Wiki](https://github.com/aliconnect/aliconnect-sdk/wiki)
 
+- [PHP client](docs/setup-php-client.md)
+
 
 1. Aliconnect Icons
     ```html
@@ -44,7 +46,7 @@
         ```
     1. [Install aliconnect-sdk for NodeJS with npm](https://www.npmjs.com/package/@aliconnect/sdk)
         ```command
-        npm i @aliconnect/sdk
+        npm install @aliconnect/sdk --no-optional
         ```
     1. [Install aliconnect-sdk for PHP with composer from packagist](https://packagist.org/packages/aliconnect/sdk)
         ```command
