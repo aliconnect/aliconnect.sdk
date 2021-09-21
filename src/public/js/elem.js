@@ -1409,7 +1409,7 @@ function linkify(inputText) {
             + (cmt ? `<span class=hl-cmt>${cmt}</span>` : '')
           });
         }
-      }
+      };
       this.elem.innerHTML = replace.yaml(this.elem.innerText);
       this.elem.markup = true;
       return this;
@@ -1482,10 +1482,10 @@ function linkify(inputText) {
           if (el.level > 0) el.setAttribute('hide', '');
         });
         // this.createRows();
-      }
+      };
       this.src = url => {
 
-      }
+      };
       function caret (el) {
         const range = window.getSelection().getRangeAt(0);
         const prefix = range.cloneRange();
@@ -1988,7 +1988,7 @@ function linkify(inputText) {
         }
         content = format && $.string[format] ? $.string[format](content) : content;
         this.elem.innerHTML += content;
-      })
+      });
 			return this;
 		}},
     write: { value: function (content) {
@@ -2563,9 +2563,9 @@ function linkify(inputText) {
           await $().url(rawSrc(wikiPath+'_Sidebar.md')).accept('text/markdown').get().catch(console.error)
           .then(e => {
             this.doc.leftElem.md(e.target.responseText);
-            [...this.doc.leftElem.elem.getElementsByTagName('A')].forEach(elem => $(elem).href(hrefSrc(elem.getAttribute('href'), e.target.responseURL)));
+            Array.from(this.doc.leftElem.elem.getElementsByTagName('A')).forEach(elem => $(elem).href(hrefSrc(elem.getAttribute('href'), e.target.responseURL)));
           });
-          [...this.doc.leftElem.elem.getElementsByTagName('LI')].forEach(li => {
+          Array.from(this.doc.leftElem.elem.getElementsByTagName('LI')).forEach(li => {
             if (li.childNodes.length) {
               if (li.childNodes[0].nodeValue) {
                 li.replaceChild($('span').text(li.childNodes[0].nodeValue.trim()).elem, li.childNodes[0]);
@@ -2579,11 +2579,11 @@ function linkify(inputText) {
               }
             }
             // console.log(li.childNodes);
-          })
-          this.links = [...this.doc.leftElem.elem.getElementsByTagName('A')];
+          });
+          this.links = Array.from(this.doc.leftElem.elem.getElementsByTagName('A'));
         }
         // console.log('loadMenu2', src, wikiPath, this.links);
-      }
+      };
       if (!this.doc) {
         this.doc = $().document(
           $('div'),
@@ -2836,7 +2836,7 @@ function linkify(inputText) {
         }
         // this.elem.innerHTML += $.string.mdHtml(s);
         this.elem.append(...mdElem.elem.childNodes);
-      })
+      });
 			return this;
 		}},
     mdc: { value: function (s) {
@@ -4284,7 +4284,7 @@ function linkify(inputText) {
           elem.src = elem.firstChild.toDataURL("image/png");
           elem.firstChild.remove();
         }
-      })()
+      })();
       return this;
 		},},
     remove: { value: function (selector) {
@@ -4564,7 +4564,7 @@ function linkify(inputText) {
         //   // $.his.replaceUrl(document.location.origin+document.location.pathname.replace(/\/id\/.*/,'')+'/id/'+item.data.Id+document.location.search)
         // }
         function logVisit() {
-          return console.debug('logVisit'); // DEBUG:
+          console.debug('logVisit');return; // DEBUG:
           if (item.data.ID) {
             clearTimeout($.his.viewTimeout);
             $.his.viewTimeout = setTimeout(() => {
@@ -6939,7 +6939,7 @@ function linkify(inputText) {
       });
     } },
     prompt: {value: function prompt(selector, context) {
-      console.warn('PROMPT', selector, context)
+      console.warn('PROMPT', selector, context);
       if (selector instanceof Object) {
         return Object.assign(prompts, selector);
       } else if (context) {

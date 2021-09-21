@@ -1,6 +1,6 @@
 {
   "name": "@aliconnect/sdk",
-  "version": "0.0.5",
+  "version": "1.0.1",
   "description": "Aliconnect AIM",
   "homepage": "https://aliconnect.nl",
   "author": "Max van Kampen",
@@ -20,22 +20,19 @@
   "license": "MIT",
   "main": "dist/public/js/aim.js",
   "files": [
+    "index.js",
     "dist/"
   ],
   "dependencies": {
-    "@aliconnect/lib": "latest",
-    "@aliconnect/font": "latest",
-    "atob": "^2.1.2",
     "http": "0.0.1-security",
-    "ws": "^8.2.2"
-  },
-  "devDependencies": {},
-  "optionalDependencies": {
-    "tedious": "^12.2.0",
-    "jsmodbus": "^4.0.6",
+    "ws": "^7.5.4",
+    "atob": "^2.1.2",
     "check-disk-space": "^2.1.0",
+    "jsmodbus": "^4.0.6",
+    "tedious": "^11.0.9",
     "node-cmd": "^4.0.0",
     "os-utils": "0.0.14",
     "snmp-native": "^1.2.0"
-  }
+  },
+  "devDependencies": {}
 }

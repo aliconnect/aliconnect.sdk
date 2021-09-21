@@ -131,7 +131,7 @@
               ) + (cmt ? `<span class=hl-cmt>${cmt}</span>` : '')
             })
           },
-        }
+        };
         s = s || '';
         const ident = (s.match(/^ +/)||[''])[0].length;
         // console.log(s);
@@ -140,7 +140,7 @@
         .replace(/>/g, '&gt;')
         .replace(/=/g, '&equals;')
         .replace(/\t/g, '  ')
-        .replace(/\^\^(.*?)\^\^/g, '<MARK>$1</MARK>')
+        .replace(/\^\^(.*?)\^\^/g, '<MARK>$1</MARK>');
         // .replace(/"/g, '&quot;')
         // .replace(/'/g, '&apos;')
         if (highlight[type]) {
@@ -191,7 +191,7 @@
                 lines.push('</li>');
               }
             }
-          })()
+          })();
 
           if (s.match(/```/)) {
             setTag();

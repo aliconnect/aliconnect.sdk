@@ -1,11 +1,6 @@
 <?php
 ini_set('display_errors', 1);
 error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING & ~E_STRICT & ~E_DEPRECATED);
-
-
-
-
-
 function compress_code ($content) {
   global  $no_space_chars;
   $content = implode(' ', array_filter( array_map( function($content){
@@ -17,6 +12,8 @@ function compress_code ($content) {
   // $content = implode(' ', array_filter(explode(' ',$content), function($val){return trim($val)==='' ? false : true;}));
   $content = preg_replace("/ ($no_space_chars)/", "$1", $content);
   $content = preg_replace("/($no_space_chars) /", "$1", $content);
+  $content = preg_replace("/,\}/", "}", $content);
+  $content = preg_replace("/,\]/", "]", $content);
   return $content;
 }
 function compress_js($content) {
@@ -24,7 +21,7 @@ function compress_js($content) {
   $code = $s = '';
   for ($x = 0; $x <= count($chars); $x++) {
     if ($chars[$x] === '/') {
-      if ($chars[$x+1] === '/') {
+      if ($chars[$x+1] === '/' && $chars[$x-1] !== '\\') {
         for ($x; $x <= count($chars); $x++) {
           if ($chars[$x+1] === "\n") {
             break;
@@ -41,10 +38,12 @@ function compress_js($content) {
         continue;
       }
       if ($chars[$x-1] === '(') {
+        $s .= compress_code(trim($code));
+        $code = '';
         // $code .= '<<<';
-        $code .= $chars[$x];
+        $s .= $chars[$x];
         for ($x++; $x <= count($chars); $x++) {
-          $code .= $chars[$x];
+          $s .= $chars[$x];
           if ($chars[$x] === '/' && ( $chars[$x-1] !== '\\' || ( $chars[$x-1] === '\\' && $chars[$x-2] === '\\' ))) {
             // $code .= '>>>';
             break;
@@ -61,7 +60,7 @@ function compress_js($content) {
       $b = $chars[$x];
       for ($x++; $x <= count($chars); $x++) {
         $s .= $chars[$x];
-        if ($chars[$x] === $b && $chars[$x-1] !== '\\' ) {
+        if ($chars[$x] === $b && ($chars[$x-1] !== '\\' || $chars[$x-2] === '\\') ) {
           // $s .= '>>>';
           break;
         }
@@ -71,13 +70,21 @@ function compress_js($content) {
     $code .= $chars[$x];
   }
   $s .= compress_code($code);
+  // $s = preg_replace("/console.debug\(.*?\);/", "", $s);
+  // $s = preg_replace("/console.log\(.*?\);/", "", $s);
+  $s = preg_replace("/;\}/", "}", $s);
+  $s = preg_replace("/,\)/", ")", $s);
+  $s = preg_replace("/,\)/", ")", $s);
+  $s = preg_replace("/ \./", ".", $s);
+  // die($s);
   return $s;
 }
 function compress_css($content) {
   $content = preg_replace('/  /', ' ', $content);
   $content = compress_js($content, ':|;|\{|\}');
-  $content = preg_replace('/\{ /', '{', $content);
+  $content = str_replace("{ ", "{", $content);
   $content = preg_replace('/; /', ';', $content);
+  // $content = str_replace("}","}\r\n", $content);
   return $content;
 }
 
@@ -85,13 +92,18 @@ function compress_css($content) {
 $di = new RecursiveDirectoryIterator('src');
 foreach (new RecursiveIteratorIterator($di) as $filename => $file) {
   $destname = preg_replace('/^src/','dist', $filename);
+  if (preg_match('/__/', $filename)) {
+    continue;
+  }
   if (preg_match('/\.js$/', $filename)) {
+    $no_space_chars = ';|>|<|\*|\?|\+|\-|\&|:|,|!|=|\)|\(|\{|\}|\|';
     $content = file_get_contents($filename);
     $MTime = date('Y-m-d H:i:s', $file->getMTime());
     file_put_contents($destname, "/**\n  Last modified $MTime \n*/\n" . compress_js($content));
     echo "$filename $destname" . ' - ' . $file->getSize() . ' bytes' . date('Y-m-d H:i:s', $file->getMTime()) . PHP_EOL;
   }
   if (preg_match('/\.css$/', $filename)) {
+    $no_space_chars = '\{|\}';
     $content = file_get_contents($filename);
     file_put_contents($destname, compress_css($content));
     echo "$filename $destname" . ' - ' . $file->getSize() . ' bytes <br/>' . PHP_EOL;

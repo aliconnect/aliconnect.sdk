@@ -251,12 +251,12 @@
                   entries.forEach(([color,size], i) => {
                     s+=`${color} ${start += size}%, `;
                     s+=entries[i+1] ? `${entries[i+1][0]} ${start}%, ` : `var(--trans3) ${start}%, var(--trans3) 100%);`;
-                  })
+                  });
                   return s;
                 }
                 function meter(data) {
                   const decimals = 0;
-                  const max=data.max_count
+                  const max=data.max_count;
                   const value = data.dir_size + data.item_count + data.request_count;
                   const tot = (data.dir_size + data.item_count + data.attribute_count + data.request_count).toFixed(decimals);
                   return $('div').append(
@@ -691,7 +691,7 @@
       this.aimClient.login({});
       return;
       document.location.href = $().loginUrl().toString();
-      console.log('PROMPT LOGIN', $())
+      console.log('PROMPT LOGIN', $());
       aimClient.login({
         scope: $.config.scope || "",//'name email phone_number',
         redirect_uri: document.location.origin+document.location.pathname,

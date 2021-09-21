@@ -34,8 +34,9 @@
   var setItems = [];
 
   function attrSet(attribute, name, value) {
-    if (attribute[name] != value) {
+    if (attribute[name] !== value) {
       attribute[name] = value;
+      // console.log(name,value);
       attributes.emit('change', attribute);
     }
   }
@@ -96,10 +97,11 @@
       const hyst = Number(attribute.Hysteresis || 0);
       if (value < curValue - hyst || value > curValue + hyst) {
 
+        // console.log(1, attribute.name, attribute.SystemId);
         // if (attribute.systemId)
         if (attribute.SystemId) {
           const name = path.concat(attribute.name).join('.');
-          console.log(attribute.SystemId, attribute.parent, name, value);
+          // console.log(attribute.SystemId, attribute.parent, name, value);
 
           attribute.modifiedDT = new Date().toISOString();
           attrSet(attribute, 'value', value);
@@ -172,7 +174,7 @@
     // console.log(modbusDevices);
     // console.log(snmpDevices);
     if (modbusDevices) {
-      const net = require('net')
+      const net = require('net');
       const jsmodbus = require('jsmodbus');
       modbusDevices.forEach((item, i) => {
         let readAddress = item.ReadAddress || 0;
@@ -181,7 +183,7 @@
         const attributes = initAttributes(item);
         console.log('MODBUS', item.IPAddress);
         function setSate(state){
-          return;
+          // return;
           attributes.forEach(attr => attrSet(attr, 'state', state));
         }
         const socket = new net.Socket();
@@ -212,7 +214,7 @@
                     }
                   })
                 }
-              })
+              });
               setTimeout(readData, item.PollInterval);
             }).catch(err => {
               // console.log('read error', item.IPAddress, readAddress, readLength);
@@ -222,9 +224,9 @@
           })();
         }).on('disconnect', e => {
           setSate('disconnect');
-          console.log('disconnect');
+          console.error('disconnect');
         }).on('error', e => {
-          console.log('error', item.parent, item.name, item.id );
+          console.error('error', item.parent, item.name, item.id );
           setSate('error');
           setTimeout(connect, 5000);
         });
@@ -249,42 +251,25 @@
           session.getAll({ oids: oids }, (err, varbinds) => {
             if (err) {
               console.error(err);
-              children.forEach(child => attrSet(child, 'state', 'error'))
+              children.forEach(child => attrSet(child, 'state', 'error'));
               setTimeout(() => {
-                children.forEach(child => attrSet(child, 'state', 'connecting'))
+                children.forEach(child => attrSet(child, 'state', 'connecting'));
                 read();
               }, 5000);
               return;
             }
-            children.forEach((child,i) => attrSetValue(child, varbinds[i] && varbinds[i].value))
+            children.forEach((child,i) => attrSetValue(child, varbinds[i] && varbinds[i].value));
             setTimeout(read, item.PollInterval);
           })
         })();
       });
     }
   }
-  function initSystemAttributes(systemId) {
-    const osUtils = require('os-utils');
-    const checkDiskSpace = require('check-disk-space')
-    const nodeCmd = require('node-cmd');
-    let acsmCount = 0;
-    (function getSystemAttributes() {
-      attr(systemId, 'MEMORY_USED_SPACE', Math.round(100 - osUtils.freememPercentage() * 100));
-      checkDiskSpace('C:/').then((diskSpace) => { attr(systemId, 'HDD_USED_SPACE', Math.round((diskSpace.size - diskSpace.free) / diskSpace.size * 100)); });
-      nodeCmd.get('w32tm /query /status', (err, data, stderr) => {
-        console.log(data);
-        var value = Number(data.split(/\n/).shift().split(':').pop().split('(').shift().trim());
-        attr(systemId, 'TIME_SYNC', value);
-      });
-      attr(systemId, 'WATCHDOG_ACSM', acsmCount = acsmCount >= 100 ? 1 : acsmCount+1);
-      setTimeout(getSystemAttributes, 5000);
-    })();
-  }
 
   function ControlApplication(config) {
     console.log('nodeApplication');
     aim.sql.connect(config.dbs).then(a => {
-      console.log('SQL COnnected');
+      console.log('SQL ONN');
       aim.sql.query(
         `IF OBJECT_ID('his.attr') IS NULL
         BEGIN
@@ -308,7 +293,81 @@
       //   }
       //   // items[item.id = item.id || item.SystemId || items.length]=item;
       // });
-      items.push(...config.items);
+      // items.push(...config.items);
+      const systemTimeoutMs = 2000;
+      systemAttributes = {
+        MEMORY_USED_SPACE(item) {
+          const osUtils = require('os-utils');
+          (function memoryUsedSpace() {
+            attrSetValue(item, Math.round(100 - osUtils.freememPercentage() * 100));
+            setTimeout(memoryUsedSpace, systemTimeoutMs);
+          })();
+        },
+        HDD_USED_SPACE(item) {
+          const checkDiskSpace = require('check-disk-space');
+          (function hddUsedSpace() {
+            checkDiskSpace('C:/').then(diskSpace => attrSetValue(item, Math.round((diskSpace.size - diskSpace.free) / diskSpace.size * 100)));
+            setTimeout(hddUsedSpace, systemTimeoutMs);
+          })();
+        },
+        TIME_SYNC(item) {
+          const nodeCmd = require('node-cmd');
+          (function timeSync() {
+            nodeCmd.get('w32tm /query /status', (err, data, stderr) => {
+              if (!err) {
+                attrSet(item, 'state', 'connected');
+                const [s,value] = data.match(/Leap Indicator: (\d)/) || [];
+                return attrSetValue(item, value === '0' ? 0 : 1);
+              } else {
+                attrSet(item, 'state', 'disconnected');
+                console.error(err);
+              }
+              attrSetValue(item, 1);
+            });
+            setTimeout(timeSync, systemTimeoutMs);
+          })();
+        },
+        WATCHDOG_ACSM(item) {
+          let acsmCount = 0;
+          (function watchdogAcsm() {
+            attrSetValue(item, acsmCount = acsmCount >= 100 ? 1 : acsmCount+1);
+            setTimeout(watchdogAcsm, systemTimeoutMs);
+          })();
+        },
+      }
+
+      // items.forEach(item => {
+      //   console.log(1, item.name);
+      // })
+      // const osUtils = require('os-utils');
+      // const checkDiskSpace = require('check-disk-space');
+      // const nodeCmd = require('node-cmd');
+      // let acsmCount = 0;
+      // (function getSystemAttributes() {
+      //   attr(systemId, 'MEMORY_USED_SPACE', Math.round(100 - osUtils.freememPercentage() * 100));
+      //   checkDiskSpace('C:/').then((diskSpace) => { attr(systemId, 'HDD_USED_SPACE', Math.round((diskSpace.size - diskSpace.free) / diskSpace.size * 100)); });
+      //   nodeCmd.get('w32tm /query /status', (err, data, stderr) => {
+      //     console.log(data);
+      //     var value = Number(data.split(/\n/).shift().split(':').pop().split('(').shift().trim());
+      //     attr(systemId, 'TIME_SYNC', value);
+      //   });
+      //   attr(systemId, 'WATCHDOG_ACSM', acsmCount = acsmCount >= 100 ? 1 : acsmCount+1);
+      //   setTimeout(getSystemAttributes, 5000);
+      // })();
+
+      Array.from(config.items).forEach(function addChildren(item) {
+        if (item) {
+          if (systemAttributes[item.name]) {
+            // console.log(111, item);
+            systemAttributes[item.name](item);
+          }
+          if (item.Enumeration) {
+            item.enum = item.Enumeration.replace(/, /g,',').split(',');
+          }
+          items.push(item);
+          (item.children||[]).forEach(child => addChildren(child));
+        }
+      });
 
       // items.forEach((item,i) => item.id = i);
       // return console.log(config.items, items);
@@ -331,6 +390,13 @@
 
       initControlEquipment(items);
       const server = new aim.Server(config);
+
+
+
+
+
+
+
       attributes.on('change', attr => server.clients.send({attr:attr}));
     }).catch(console.error);
   }

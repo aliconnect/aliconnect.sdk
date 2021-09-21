@@ -97,10 +97,10 @@ html.app.site .listview {
 html, body {
   font-family: "Segoe UI", "Segoe WP", sans-serif, Tahoma, Arial;
 }
-a {
+.om a {
   color: var(--link);
 }
-a:not(:hover) {
+.om a:not(:hover) {
   text-decoration: none;
 }
 h1,h2,h3 {
@@ -466,6 +466,24 @@ input.check {
   flex-flow: row;
   -webkit-flex-flow: row;
 }
+.col {
+  display: flex;
+  display: -webkit-flex;
+  flex-flow: column;
+  -webkit-flex-flow: column;
+}
+.col > * {
+  flex: 0 0 auto;
+  -webkit-flex: 0 0 auto;
+  -ms-flex: 0 0 auto;
+}
+.aco {
+  flex: 1 1 auto;
+  -webkit-flex: 1 1 auto;
+  -ms-flex: 1 1 auto;
+}
+
+
 .row.top.bar {
   background: var(--basebg);
   color: var(--basefg);
@@ -715,17 +733,6 @@ body>.row.top>.abtn::before {
 .row.check {
   padding-right: 10px;
 }
-.col {
-  display: flex;
-  display: -webkit-flex;
-  flex-flow: column;
-  -webkit-flex-flow: column;
-}
-.col > * {
-  flex: 0 0 auto;
-  -webkit-flex: 0 0 auto;
-  -ms-flex: 0 0 auto;
-}
 .col.abs {
   position: absolute;
   margin:auto;
@@ -770,11 +777,6 @@ body>.row.top>.abtn::before {
 .header.preview {
   color: var(--lighGray);
   font-size: 0.8em;
-}
-.aco {
-  flex: 1 1 auto;
-  -webkit-flex: 1 1 auto;
-  -ms-flex: 1 1 auto;
 }
 .contents {
   display: contents;

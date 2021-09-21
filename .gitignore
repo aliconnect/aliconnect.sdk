@@ -4,7 +4,6 @@ package-lock.json
 **kopie**
 config.json**
 **node_modules**
-**test**
 **.mp4
 **.log
 **ideal**
@@ -27,5 +26,3 @@ config.json**
 /shared
 __*
 _**
-
-**[a-zA-Z][0-9].*

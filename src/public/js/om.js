@@ -225,7 +225,7 @@
     }},
   });
 
-  Listview = function (selector) {
+  function Listview (selector) {
     selector.class('row aco listview');
     this.construct(...arguments);
     const elem = this.elem;
@@ -257,10 +257,9 @@
         },
       },
     });
-    console.log('Listview',this)
-  }
-  Listview.prototype = new TreeListview;
-  Object.defineProperties(Listview.prototype, {
+    console.log('Listview',this);
+  };
+  Object.defineProperties(Listview.prototype = new TreeListview, {
     activeFilterAttributes:{ value: {}},
     calendar:{ value: function calendar() {
       $('div').class('aco').parent(this.div.text(''))
@@ -1260,7 +1259,7 @@
     }},
   });
 
-  Treeview = function (selector) {
+  function Treeview(selector) {
     this.construct(...arguments);
     selector.class('col aco atv noselect np')
     .contextmenu(this.menu)
@@ -1586,10 +1585,9 @@
         },
       }
     });
-    console.log('Treeview',this)
+    console.log('Treeview',this);
   }
-  Treeview.prototype = new TreeListview;
-  Object.defineProperties(Treeview.prototype, {
+  Object.defineProperties(Treeview.prototype = new TreeListview, {
     childnode:{ value: function childnode(child) {
       return (child.elemTreeLi = $('details'))
       .open($.his.openItems.includes(child.tag))
@@ -2012,7 +2010,7 @@
 
     const dmsClient = Aim.Client.initWithMiddleware({authProvider}, dmsConfig);
     dmsConfig = await dmsClient.loadConfig();
-    $().schemas(dmsConfig.components.schemas)
+    $().schemas(dmsConfig.components.schemas);
     console.log(dmsConfig);
 
     // return;
@@ -2129,7 +2127,7 @@
       }
 
       async function treeItem(url) {
-        const item = await $(url).details()
+        const item = await $(url).details();
         $().tree(item);
         return item;
       }

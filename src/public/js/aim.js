@@ -1,6 +1,6 @@
 eol = '\n';
 // console.warn('RUNING BETA');
-console.log('sdk 1.0.1')
+//console.log('sdk 1.0.1');
 // version 0.0.1 beta1
 function extend(selector, context) {
   for (let [key, value] of Object.entries(context)) {
@@ -502,10 +502,10 @@ function idToUrl(id){
             break;
           }
           properties[cell.v] = properties[cell.v] || { type: types[cell.t] || 'string' }
-          // //console.log(cellstr, cell);
+          // ////console.log(cellstr, cell);
         }
         // var irows = Number(Aim.his.match(/\d+/g));
-        // //console.log(sheetname, wbsheet, ref, irows);
+        // ////console.log(sheetname, wbsheet, ref, irows);
       }
       for (let sheetname in workbook.Sheets) {
         importSheet(sheetname);
@@ -514,13 +514,13 @@ function idToUrl(id){
           href: '#/' + sheetname,
         }
       }
-      //console.log(config);
+      ////console.log(config);
       // Aim().url(Aim.config.Aim).post('/').input(config).res(e => {
-      // 	//console.log(e.target.responseText);
+      // 	////console.log(e.target.responseText);
       // 	// Aim.SampleWindow('/om/?prompt=config_edit');
       // }).send();
       new Aim.HttpRequest(Aim.config.Aim, 'post', '/').query({append: true}).input(config).send().onload = e => {
-        //console.log(e.target.responseText);
+        ////console.log(e.target.responseText);
       };
     }
   }
@@ -764,7 +764,7 @@ function idToUrl(id){
     // console.debug(arguments, translate);
     // return '';
     return [].concat(...arguments).map(text => {
-      // console.log([text, translate[text]]);
+      // //console.log([text, translate[text]]);
       if (translate.has(text)) return translate.get(text);
       text = String(text||'').replace(/^\w/,v => v.toUpperCase()).replace(/([a-z])([A-Z])/g, (v,p1,p2) => p1+' '+p2.toLowerCase()).replace(/_/g, ' ');
       return text && translate.has(text) ? translate.get(text) : (text || '');
@@ -829,7 +829,7 @@ function idToUrl(id){
     },},
     exec: { value: function(){
       for ([key, value] of this.url.searchParams) {
-        // console.log(key, value);
+        // //console.log(key, value);
         if (typeof Aim[key] === 'function'){
           // Aim.his.replaceUrl(new Aim().url().query(req.query).toString());
           // console.error('EXEC', key, value);
@@ -845,7 +845,7 @@ function idToUrl(id){
       var basePath, path, sep, id, newPath = [basePath, path, sep, id] = getPathname(this.url.pathname);
       if (path && path !== '/') {
         var [root, tag, propertyName, attr] = path.match(/.*?\/(\w+\(\d+\))\/([\w_]+?)\((\.*?)\)/)||[];
-        // console.log(tag, Aim.his.map.has(tag));
+        // //console.log(tag, Aim.his.map.has(tag));
         const item = Aim.his.map.get(tag)||{};
         if (item[propertyName]) {
           return item[propertyName].apply(item, attr.split(','));
@@ -970,7 +970,7 @@ function idToUrl(id){
       return Aim.promise('http', async (resolve,reject) => {
         if (this.getAccessToken) {
           const access_token = await this.getAccessToken();
-          // console.log('access_token', access_token);
+          // //console.log('access_token', access_token);
           this.headers('Authorization', 'Bearer ' + access_token);
         }
         return typeof XMLHttpRequest !== 'undefined' ? this.web(resolve,reject) : this.node(resolve,reject)
@@ -992,7 +992,7 @@ function idToUrl(id){
       if (!param) {
         return this.input.data;
       }
-      console.log(param.constructor.name);
+      //console.log(param.constructor.name);
       switch(param.constructor.name) {
         case 'CustomEvent':
         case 'SubmitEvent': {
@@ -1185,7 +1185,7 @@ function idToUrl(id){
     //   this.input.data = null;
     // },
     web: { value: function(resolve,reject){
-      // console.log('AAAAA',resolve,reject,this);
+      // //console.log('AAAAA',resolve,reject,this);
       // this.resolve = resolve;
       const xhr = new XMLHttpRequest();
       xhr.request = this;
@@ -1214,7 +1214,7 @@ function idToUrl(id){
         }
         if (xhr.status >= 400) {
           // console.error(`${xhr.method} ${xhr.src} ${xhr.status} (${xhr.statusText})`, e.body); // responseText is the server
-          // console.log(xhr);
+          // //console.log(xhr);
           const elem = Aim(document.body).append(
             Aim('pre').class('message error')
             .text(`${xhr.status} (${xhr.statusText})\n${e.body && e.body.error ? e.body.error.message : ''}\n${this.method.toUpperCase()} ${decodeURI(xhr.request.url.href)}`)
@@ -1244,7 +1244,7 @@ function idToUrl(id){
           });
         }
       }
-      // console.log('this.url.headers', this.url.headers);
+      // //console.log('this.url.headers', this.url.headers);
       Object.entries(this.url.headers).forEach(entry => xhr.setRequestHeader(...entry));
       xhr.startTime = new Date();
       xhr.send(this.input.data);
@@ -1303,7 +1303,7 @@ function idToUrl(id){
     } else if (typeof Window !== 'undefined' && selector instanceof Window) {
       return this;
     } else if (selector.ID || selector.LinkID || selector.tag) {
-      // console.log(selector, selector.ID, selector.LinkID, selector.tag);
+      // //console.log(selector, selector.ID, selector.LinkID, selector.tag);
       return Item.get(selector);
     }
     this.extend(context)
@@ -1328,7 +1328,7 @@ function idToUrl(id){
       const tabControl = Aim('div').parent(panel).class('row top btnbar');
       const pageControl = Aim('div').parent(panel).class('row aco').style('height:100%;');
       function upload() {
-        // console.log('UPLOAD', page);
+        // //console.log('UPLOAD', page);
         configInput.elem.value = configText.elem.innerText;
         aimClient.api('/').post(panel).then(body => {
           console.debug("API", body);
@@ -1533,7 +1533,7 @@ function idToUrl(id){
       });
     },},
     cookies: {value: function () {
-      console.log('COOKIES');
+      //console.log('COOKIES');
       Aim().on({
         async load() {
           if (!localStorage.getItem('cookieSettings')) {
@@ -1734,7 +1734,7 @@ function idToUrl(id){
       return this;
     },},
     extendConfig: {value: function (yaml){
-      // console.log(yaml);
+      // //console.log(yaml);
       return aimClient.api('/').query('extend', true).post({config: yaml});
     },},
     execQuery: {value: function (selector, context, replace){
@@ -1752,11 +1752,11 @@ function idToUrl(id){
         this.execUrl(url_string(url.href));
         // if (url.searchParams.get('l')) {
         //   url.searchParams.set('l', decodeURIComponent(url.searchParams.get('l')));
-        //   console.log(url.searchParams.get('l'));
+        //   //console.log(url.searchParams.get('l'));
         //
         // }
         // var href = url.href;
-        // console.log(href);
+        // //console.log(href);
         if (replace) {
           // console.error('REPLACE');
           self.history.replaceState('page', '', url_string(url.href));
@@ -1774,7 +1774,7 @@ function idToUrl(id){
       // Aim.url = Aim.url || new URL(document.location.origin);
       url = new URL(url, document.location);
 
-      // console.log(url.hash, url.searchParams.get('l'), Aim.url.searchParams.get('l'));
+      // //console.log(url.hash, url.searchParams.get('l'), Aim.url.searchParams.get('l'));
       if (url.hash) {
         if (this.execUrl(url.hash.substr(1))) {
           Aim.his.mergeState(url.hash.substr(1));
@@ -1785,7 +1785,7 @@ function idToUrl(id){
         // }
         // this.execUrl(url.hash.substr(1));
       }
-      // console.log(url.searchParams.get('l'));
+      // //console.log(url.searchParams.get('l'));
       if (url.searchParams.get('l')) {// && url.searchParams.get('l') !== Aim.url.searchParams.get('l')) {
         documentUrl.searchParams.set('l', url.searchParams.get('l'));
 
@@ -1803,10 +1803,10 @@ function idToUrl(id){
         }
         //
         //
-        // url.get().then(e => console.log(e))
+        // url.get().then(e => //console.log(e))
         // return;
         // var documentUrl = new URL(document.location);
-        // // url.searchParams.forEach((value, key) => console.log(key, value));
+        // // url.searchParams.forEach((value, key) => //console.log(key, value));
         // url.searchParams.forEach((value, key) => documentUrl.searchParams.set(key, value));
         // documentUrl.hash = '';
         // // self.history.replaceState('page', '', documentUrl.href.replace(/%2F/g, '/'));
@@ -1868,7 +1868,7 @@ function idToUrl(id){
       //   }
       // }
       // return;
-      // console.log('POPSTATE2', document.location.pathname);
+      // //console.log('POPSTATE2', document.location.pathname);
     }},
     forEach: {value: function (selector, context, fn){
       if (selector instanceof Object){
@@ -1890,7 +1890,7 @@ function idToUrl(id){
       const name = selector.name || selector;
       if (!this.props.has(name)){
         options = typeof options === 'string' ? Aim(options) : options;
-        // console.log(selector);
+        // //console.log(selector);
         // this.props.set(name, typeof selector === 'function' && selector.prototype ? new selector(options) : options);
       }
       return this.props.get(name)
@@ -2069,7 +2069,7 @@ function idToUrl(id){
           };
           var notification = new Notification(title, options);
           notification.onclick = function (e) {
-            console.log('CLICKED', options);
+            //console.log('CLICKED', options);
             // self.open("http://www.stackoverflow.com");
             // self.location.href = 'https://aliconnect.nl';
           }
@@ -2139,7 +2139,7 @@ function idToUrl(id){
           // pagesProgress.max = pdf.numPages;
           Aim().progress(0, pdf.numPages);
           (function getPage(pageNumber) {
-            // console.log(pageNumber);
+            // //console.log(pageNumber);
             pdf.getPage(pageNumber).then(function (page) {
               page.getTextContent({
                 normalizeWhitespace: true,
@@ -2157,7 +2157,7 @@ function idToUrl(id){
           })(1);
         }
         if (selector instanceof File) {
-          console.log('is file', selector);
+          //console.log('is file', selector);
           var fileReader = new FileReader();
           fileReader.onload = function (e){
             const array = new Uint8Array(e.target.result);
@@ -2225,16 +2225,16 @@ function idToUrl(id){
           context.allOf = context.allOf || ['Item'];
           const allOf = context.allOf || [];
           var allContext = {};
-          // console.log(selector, context);
+          // //console.log(selector, context);
           allOf.forEach(name => {
             if (schemas.has(name)) {
               allContext = extend(allContext, schemas.get(name));
-              // console.log(selector, name,schemas.get(name),allContext);
+              // //console.log(selector, name,schemas.get(name),allContext);
             }
           });
           context = extend(allContext, context);
           this.schemas[selector] = context = extend(allContext, context);
-          // console.log(selector, context);
+          // //console.log(selector, context);
           schemas.set(selector, context);
           if (selector !== 'Item') {
             // constructor.prototype = Object.create(Object.getPrototypeOf(Item.prototype), Object.getOwnPropertyDescriptors(Item.prototype));
@@ -2439,7 +2439,7 @@ function idToUrl(id){
       return Aim.auth && Aim.auth.id ? Aim.auth.id.name : ''
     },},
     ws: {value: function (options){
-      // console.log('MAXXXX');
+      // //console.log('MAXXXX');
       return this.get(WebSocket, options ? Object.assign(options,{authProvider: options.authProvider || Aim.client.authProvider}) : null);
     },},
   });
@@ -2458,28 +2458,28 @@ function idToUrl(id){
       console.error(err);
     }
   };
-  Account.prototype = {
-    // getSecret() {
-    //   console.log(111111, this.id_token);
-    //   return Aim().url('https://aliconnect.nl/api/').query('request_type', 'account_secret').headers('Authorization', 'Bearer ' + this.id_token).get();
-    // },
-  }
+  // Account.prototype = {
+  //   // getSecret() {
+  //   //   //console.log(111111, this.id_token);
+  //   //   return Aim().url('https://aliconnect.nl/api/').query('request_type', 'account_secret').headers('Authorization', 'Bearer ' + this.id_token).get();
+  //   // },
+  // };
 
   function Application () {}
-  Application.prototype = {
+  Object.defineProperties(Application.prototype, {
     // getClient(src) {
     //   src = new URL(src, this.config.url ? this.config.url : document.location).href;
-    //   // console.log(src, this.config.url, this.servers.length);
+    //   // //console.log(src, this.config.url, this.servers.length);
     //   for (let [url, client] of this.servers.entries()) {
     //     if (src.match(url)) return client;
     //   }
     //   return this.clients[0];
     // },
     // constructor() {
-    //   console.log('constructor WEB');
+    //   //console.log('constructor WEB');
     // },
     // test() {
-    //   console.log('TEST');
+    //   //console.log('TEST');
     // },
     // api(src) {
     //   const url = new URL(src, document.location);
@@ -2498,31 +2498,31 @@ function idToUrl(id){
     //   // return new Promise((callback, fail) => {
     //   //   fail('NOT FOUND');
     //   // })
-    //   // console.log(11111, pathname,path);
+    //   // //console.log(11111, pathname,path);
     //   //
     //   // console.error(url.pathname);
     //   // for (let client of this.clients) {
     //   //
-    //   //   // console.log(client, client.config.servers);
+    //   //   // //console.log(client, client.config.servers);
     //   //   // client.config.servers = Array.from(client.config.servers);
     //   //   for (let [i,server] of Object.entries(client.config.servers)) {
-    //   //     // console.log(i,server);
+    //   //     // //console.log(i,server);
     //   //     if (src.match(server.url) || !src.match(/^http/)) {
     //   //       return client.api(src);
     //   //     }
     //   //   }
     //   // }
     // },
-    clientAttr(options) {
+    clientAttr:{value:function(options) {
       return Aim().url(dmsUrl).query({
         request_type: 'client_attr',
         client_id: this.clientId,
         client_secret: this.clientSecret,
       }).post(options).then(e => {
-        console.log(e.target.responseText)
+        //console.log(e.target.responseText);
       })
-    },
-    getAccount() {
+    }},
+    getAccount:{value:function() {
       return Object.fromEntries(
         [
           'accountname',
@@ -2539,8 +2539,8 @@ function idToUrl(id){
         .filter(name => this.account.idToken[name])
         .map(name => [name,this.account.idToken[name]])
       );
-    },
-    store(name, value) {
+    }},
+    store:{value:function(name, value) {
       if (value) {
         this.storage.setItem(`aim.${name}`, value);
         this.storage.setItem(`aim.${this.clientId}.${name}`, value);
@@ -2548,15 +2548,15 @@ function idToUrl(id){
         this.storage.removeItem(`aim.${name}`);
         this.storage.removeItem(`aim.${this.clientId}.${name}`);
       }
-    },
-    setIdToken(id_token) {
+    }},
+    setIdToken:{value:function(id_token) {
       this.store('id_token', id_token);
       this.account = new Account(id_token);
-    },
-    setAccessToken(id_token) {
+    }},
+    setAccessToken:{value:function(id_token) {
       this.store('access_token', id_token);
-    },
-    getAccessToken(options){
+    }},
+    getAccessToken:{value:function(options){
       return Aim.promise('getAccessToken', resolve => {
         if (options){
           Aim().url(AUTHORIZATION_TOKEN_URL).post(Object.assign({
@@ -2576,15 +2576,15 @@ function idToUrl(id){
           resolve(this.access_token);
         }
       });
-    },
-    login(options){
+    }},
+    login:{value:function(options){
       return Aim.promise('Login', async (resolve, fail) => {
-        // console.log('LOGIN', options);
+        // //console.log('LOGIN', options);
         // return;
 
         if (options !== undefined){
           let state = Math.ceil(Math.random() * 99999);
-          console.log(99999, options);
+          //console.log(99999, options);
           options = {
             // scope: 'name+email+phone_number',
             response_type: 'code',
@@ -2594,9 +2594,9 @@ function idToUrl(id){
             prompt: 'consent',
             scope: options.scope || options.scopes.join(' ') || '',
             // socket_id: Aim.WebsocketClient.socket_id,
-          }
+          };
           const url = Aim().url(this.config.auth.url).query(options).toString();
-          console.log(url, this.config);
+          //console.log(url, this.config);
           if (document.location.protocol === 'file:'){
             options.socket_id = this.ws.socket_id;
             this.loginWindow = self.open(
@@ -2612,7 +2612,7 @@ function idToUrl(id){
 
         self.addEventListener('focus', e => {
           if (this.access_token) {
-            // console.log('JE BENT INGELOGT, DUS CONTROLEREN OF TOKEN NOG OK IS ALS HET EEN INLOG TOKEN IS');
+            // //console.log('JE BENT INGELOGT, DUS CONTROLEREN OF TOKEN NOG OK IS ALS HET EEN INLOG TOKEN IS');
             const access = this.access;
             // als een nonce aanwezig is dan is het een inlog token.
             // controleer of token nog actief is, c.q. gebruiker is ingelogt
@@ -2626,11 +2626,11 @@ function idToUrl(id){
                 }
               });
             }
-            // console.log(aimClient);
+            // //console.log(aimClient);
           }
         });
 
-        // console.log(this);
+        // //console.log(this);
         if (this.account) {
           resolve(this.account);
         } else {
@@ -2644,19 +2644,19 @@ function idToUrl(id){
         // 	Aim().emit('login');
         // }
       });
-    },
-    config(config){
+    }},
+    config:{value:function(config){
       Aim.extend(this.config, config);
       if (this.config.components && this.config.components.schemas) {
         Aim().schemas(this.config.components.schemas);
       }
-    },
+    }},
     // login() {
     //   return this.authProvider.login(...arguments);
     // },
-    logout(options){
+    logout:{value:function(options){
       return new Promise((resolve, reject) => {
-        // console.log(sessionStorage('aim.id_token'));
+        // //console.log(sessionStorage('aim.id_token'));
         if (this.storage.getItem('aim.id_token')) {
           this.storage.removeItem('aim.id_token');
           this.storage.removeItem('aim.refresh_token');
@@ -2676,11 +2676,11 @@ function idToUrl(id){
           }
         }
       })
-    },
-    refreshToken(){
+    }},
+    refreshToken:{value:function(){
       return console.error('refreshToken');
       if (this.refreshTokenHandle) return;
-      console.log(Aim.Client);
+      //console.log(Aim.Client);
       this.refreshTokenHandle = new Aim.Client('https://login.aliconnect.nl/token/').post({
         grant_type: 'refresh_token',
         refresh_token: Aim.his.cookie.refresh_token,
@@ -2712,8 +2712,8 @@ function idToUrl(id){
         // Aim.auth.refreshToken = () => {console.debug('NOOOO');};
         // updateAccessToken();
       });
-    },
-    token(token, clientSecret){
+    }},
+    token:{value:function(token, clientSecret){
       if (token){
         const time = new Date().getTime() / 1000;
         const access = JSON.parse(atob(token.split('.')[1]));
@@ -2725,8 +2725,8 @@ function idToUrl(id){
           isValid: access.exp > time || true,
         }
       }
-    },
-    trackLocalSession(){
+    }},
+    trackLocalSession:{value:function(){
       return;
       clearTimeout(arguments.callee.timeout);
       const cookie = Aim.his.cookie;
@@ -2737,8 +2737,8 @@ function idToUrl(id){
         // return client.login();
       }
       arguments.callee.timeout = setTimeout(arguments.callee, Aim.config.trackLocalSessionTime);
-    },
-    trackSession(){
+    }},
+    trackSession:{value:function(){
       return;
       // console.error (`trackSession`, Aim.auth.id.iss, arguments.callee.timeout);
       if (arguments.callee.httpRequest) return;
@@ -2761,32 +2761,32 @@ function idToUrl(id){
           // return Aim.auth.logout();
         }
       });
-    },
-    getAccountByUsername(name) {
-      // console.log(name);
+    }},
+    getAccountByUsername:{value:function(name) {
+      // //console.log(name);
       return this.account;
-    },
-    acquireTokenSilent(silentRequest) {
+    }},
+    acquireTokenSilent:{value:function(silentRequest) {
       /**
       silentRequest.scopes
       silentRequest.account (aimClient.getAccountByUsername(account))
       */
       return Aim.promise('acquireTokenSilent', async (resolve, fail) => {
         // check token exppired, if yes get new token.
-        // console.log(this);
+        // //console.log(this);
         resolve({
           accessToken: this.storage.getItem(`aim.${this.clientId}.access_token`),
         });
       })
-    },
-    acquireTokenPopup(aimRequest) {
+    }},
+    acquireTokenPopup:{value:function(aimRequest) {
       return this.loginPopup(aimRequest);
-    },
-  }
+    }},
+  });
 
   function UserAgentApplication(config = {}) {
     // if (!config.client_id) throw 'Missing client_id';
-    // console.log('WEB CONSTRUCTOR');
+    // //console.log('WEB CONSTRUCTOR');
     aimClient = this;
     Aim.extend(Aim.config, config);
     config = this.config = Aim.config;
@@ -2804,10 +2804,10 @@ function idToUrl(id){
 
     if (this.storage.getItem('aim.id_token')) {
       this.account = new Account(this.storage.getItem('aim.id_token'));
-      // console.log(111, this.account);
+      // //console.log(111, this.account);
     }
     if (this.storage.getItem('aim.access_token')) {
-      // console.log(this.storage.getItem('access_token'));
+      // //console.log(this.storage.getItem('access_token'));
     }
     const url = new URL(document.location);
 
@@ -2830,7 +2830,7 @@ function idToUrl(id){
           if (typeof value === 'object') {
             loadpar(value, `${path}${key}-`);
           } else {
-            // console.log(`%${path}${key}%`,value);
+            // //console.log(`%${path}${key}%`,value);
             Aim.his.api_parameters[`%${path}${key}%`] = value;
           }
         }
@@ -2844,7 +2844,7 @@ function idToUrl(id){
   Object.defineProperties(UserAgentApplication.prototype = new Application, {
     init: {
       value: async function init () {
-        // console.log('INIT');
+        // //console.log('INIT');
         const url = new URL(document.location);
         if (url.searchParams.has('code')){
           // return console.error(url.searchParams.get('code'));
@@ -2864,7 +2864,7 @@ function idToUrl(id){
         // self.sessionStorage.clear();
         // localStorage.clear();
         const access_token = auth.api_key || auth.access_token || auth.id_token;
-        // console.log([access_token, auth.api_key, auth.access_token, auth.id_token]);
+        // //console.log([access_token, auth.api_key, auth.access_token, auth.id_token]);
         if (access_token){
           try {
             // console.error(access_token);
@@ -2894,7 +2894,7 @@ function idToUrl(id){
     loginPopup: {value: function loginPopup (options) {
       return Aim.promise('LoginPopup', async (resolve, reject) => {
 
-        console.log('options', options);
+        //console.log('options', options);
 
         options = {
           // scope: 'name+email+phone_number',
@@ -2906,7 +2906,7 @@ function idToUrl(id){
           prompt: 'consent',
           scope: options.scope || options.scopes.join(' ') || '',
           // socket_id: Aim.WebsocketClient.socket_id,
-        }
+        };
         const url = Aim().url(AUTHORIZATION_URL).query(options).toString();
         const height = 600;
         const width = 400;
@@ -2916,12 +2916,12 @@ function idToUrl(id){
         const popup = self.open(url, 'loginPopup', `top=${top},left=${left},width=${width},height=${height},toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes`);
 
         // popup.addEventListener('onload', e => {
-        //   console.log(e);
+        //   //console.log(e);
         // })
 
         // This does nothing, assuming the self hasn't changed its location.
         // setInterval(()=>{
-        //   console.log('msg');
+        //   //console.log('msg');
         //   popup.postMessage("hello there!", "https://login.aliconnect.nl");
         // },1000);
         // popup.postMessage("The user is 'bob' and the password is 'secret'",
@@ -2934,7 +2934,7 @@ function idToUrl(id){
         if (!Aim.loginPopupMessageListener) {
           Aim.loginPopupMessageListener = 1;
           self.addEventListener("message", (event) => {
-            console.log(event.origin, event);
+            //console.log(event.origin, event);
             if (event.data.msg === 'loginPopupAck') {
               clearInterval(interval);
             }
@@ -2961,7 +2961,7 @@ function idToUrl(id){
                 this.getAccessToken({
                   code: url.searchParams.get('code')
                 }).then(e => {
-                  console.log(3333);
+                  //console.log(3333);
                   resolve({
                     accessToken: this.storage.getItem('aim.access_token'),
                     account: this.account,
@@ -3006,7 +3006,7 @@ function idToUrl(id){
 
   function Client (options, config) {
 
-    // console.log('Aim', config);
+    // //console.log('Aim', config);
 
     this.config = config;
     this.options = options;
@@ -3519,12 +3519,12 @@ function idToUrl(id){
   });
 
 
-  Attribute = function (){};
-  Object.defineProperties(Attribute.prototype, {
-    ja: {
-      value: function () {},
-    }
-  })
+  // Attribute = function (){};
+  // Object.defineProperties(Attribute.prototype, {
+  //   ja: {
+  //     value: function () {},
+  //   }
+  // })
 
   Item = function () {};
   Object.defineProperties(Item, {
@@ -3552,16 +3552,16 @@ function idToUrl(id){
         };
       }
       let match = (selector['@id'] || selector['@odata.id'] || selector.tag || '').match(/(\w+)\((\d+)\)/);
-      // console.log(selector.schema);
+      // //console.log(selector.schema);
       if (match && !selector.schema && !selector.schemaName) {
         selector.schema = match[1];
         selector.ID = match[2];
       }
       const ID = selector.ID = selector.ID ? selector.ID.Value || selector.ID : String('item'+(selector.nr = Item.nr = Item.nr ? ++Item.nr : 1));
-      // console.log(selector.ID);
+      // //console.log(selector.ID);
       // if (selector.schemaPath) console.debug(selector.schemaPath)
       // if (!selector.schema) console.error(selector.schemaPath, selector)
-      // console.log(selector.schema);
+      // //console.log(selector.schema);
       schemaName = validSchemaName(selector.schema = selector.schema || selector.schemaName || schemaName || 'Item');
 
       const tag = `${schemaName}(${ID})`;
@@ -3576,11 +3576,11 @@ function idToUrl(id){
         // console.debug(schemaName, self[schemaName]);
         // if (!self[schemaName]) return console.warn(schemaName, 'not exists');
 
-        // console.log('NEW ITEM', schemaName, self[schemaName].prototype);
+        // //console.log('NEW ITEM', schemaName, self[schemaName].prototype);
 
         var item = self[schemaName] ? new self[schemaName]() : new Item();
         // console.debug(selector, item.schema, self[schemaName].prototype);
-        // console.log(selector.properties);
+        // //console.log(selector.properties);
         item.properties = Object.fromEntries(
           Object.entries(selector.properties || item.schema.properties)
           .map(([propertyName, property]) => [
@@ -3616,7 +3616,7 @@ function idToUrl(id){
       }
       return item;
       Object.entries(item.data).forEach(([propertyName,property]) => {
-        // console.log(propertyName,property, item.hasOwnProperty(propertyName));
+        // //console.log(propertyName,property, item.hasOwnProperty(propertyName));
         if (!item.hasOwnProperty(propertyName)) {
           Object.defineProperty(item, propertyName, {
             get(){
@@ -3708,7 +3708,7 @@ function idToUrl(id){
   Object.defineProperties(Item.prototype, {
     api: {value: function (selector = '') {
       const url = this.data['@id'];
-      console.log(6666, url + selector);
+      //console.log(6666, url + selector);
       const hostname = new URL(url).hostname;
       const client = Client.clients.get(hostname);
       return client.api(url + selector)
@@ -3745,7 +3745,7 @@ function idToUrl(id){
               if (Aim.his.map.has(selector)) return Aim.his.map.get(selector);
             }
             if (value.target) {
-              console.log(value.target);
+              //console.log(value.target);
               value.LinkID = getItem(value.target).ID;
             }
             if (value.current) {
@@ -3814,7 +3814,7 @@ function idToUrl(id){
             } else if (currentJson === newJson){
               return resolve(item);
             } else {
-              // console.log(attributeName,currentJson,newJson,value,data);
+              // //console.log(attributeName,currentJson,newJson,value,data);
             }
             // console.debug(attributeName, value);
             if (Aim.threeObjects && Aim.threeObjects[item.tag] && Aim.threeObjects[item.tag].obj.onchange){
@@ -3907,7 +3907,7 @@ function idToUrl(id){
                 // 	// console.debug('DONE', item.tag, e.request );
                 // }
               };
-              // console.log(itemModified);
+              // //console.log(itemModified);
               const updateProperty = itemModified.body[attributeName] = itemModified.body[attributeName] || {};
               Object.assign(updateProperty, (({ AttributeID, Value, HostID, UserID, LinkID, Data }) => ({ AttributeID, Value, HostID, UserID, LinkID, Data }))(data));
               if ('max' in property && !('max' in value)) {
@@ -4024,7 +4024,7 @@ function idToUrl(id){
           this.children.then(children => {
             children.splice(index = Math.max(index,0), 0, item);
             item.attr('Master', { LinkID: this.data.ID }, true);
-            console.debug('MASTER',this.data.ID,item.data.Master.LinkID)
+            console.debug('MASTER',this.data.ID,item.data.Master.LinkID);
             children.forEach((item,i) => item.index !== i ? item.index = i : i);
             setTimeout(() => resolve(item));
           });
@@ -4048,7 +4048,7 @@ function idToUrl(id){
         newItem.selectall = true;
         const index = previousItem ? previousItem.index + 1 : this.children.length;
         // TODO: index meenemen in aanroep => een api call, => na aanroep wel sorteren.
-        //console.log(index, previousItem);
+        ////console.log(index, previousItem);
         await newItem.movetoidx(this, index);
         return newItem;
         // await this.open();
@@ -4056,7 +4056,7 @@ function idToUrl(id){
     },
     bccRecipients: {
       get(){
-        console.log(this);
+        //console.log(this);
         return this.data.bccRecipients || 0;
       },
     },
@@ -4071,7 +4071,7 @@ function idToUrl(id){
         const api = this.api(`/children`).filter('FinishDateTime eq NULL')
         .select(Aim.config.listAttributes).get().then(body => {
           // const children = Array.isArray(this.data.Children) ? this.data.Children : this.data.children;
-          console.log('children_then', body);
+          //console.log('children_then', body);
           const children = body.Children || body.children;
           this.items = [].concat(children).filter(Boolean).map(Aim).unique();
           // console.warn('BODY', this.items);
@@ -4134,7 +4134,7 @@ function idToUrl(id){
           let catElement = Aim.createElement('DIV', 'cat');
           var cats = categories.split(',');
           cats.forEach((cat)=>{
-            // //console.log(cat, this.Categories.options[cat].color);
+            // ////console.log(cat, this.Categories.options[cat].color);
             catElement.createElement('SPAN').style.backgroundColor = this.Categories.options[cat].color;
           });
           return catElement;
@@ -4168,9 +4168,9 @@ function idToUrl(id){
         })
         : null;
         // writeprice: function (el, index) {
-        // //console.log('CatalogPrice', this.CatalogPrice);
-        // //console.log('SalesDiscount', this.SalesDiscount);
-        // //console.log('AccountDiscount', this.AccountDiscount);
+        // ////console.log('CatalogPrice', this.CatalogPrice);
+        // ////console.log('SalesDiscount', this.SalesDiscount);
+        // ////console.log('AccountDiscount', this.AccountDiscount);
         if (accountDiscount) {
           parentElement.createElement('DIV', 'tagAccountDiscount', __('Account discount'));
         }
@@ -4184,13 +4184,13 @@ function idToUrl(id){
           ]],
           ['DIV', 'shopbag', [
             ['INPUT', 'addbag', {type:'number', value:this.amount = product ? product.Data : '', onchange: (e)=>{
-              return // //console.log(this.tag, e.target.value);
+              return // ////console.log(this.tag, e.target.value);
               Aim.shop.add(this.row, e.target.value);
             }}],
             ['BUTTON', 'abtn icn bagAdd', {type:'button', tabindex: -1, onclick: (e)=>{
               e.stopPropagation();
               e.preventDefault();
-              return // //console.log(this.tag);
+              return // ////console.log(this.tag);
               Aim.shop.add(
                 this.id,
                 Aim.shop.data && Aim.shop.data[this.id]
@@ -4470,7 +4470,7 @@ function idToUrl(id){
           data.find(value => typeof value === 'object' && value.SrcID == this.data.ID && 'Value' in value) ||
           data.find(value => typeof value === 'object' && 'Value' in value) ||
           data.shift();
-          // console.log(value);
+          // //console.log(value);
           // // console.debug(name, this.data[name]);
           // value = value
           // .filter(value => value.Value)
@@ -4546,7 +4546,7 @@ function idToUrl(id){
     header0: {
       get() {
         // return this.getValue('header0') || this.getValue('Title') || this.getValue('Name') || this.title || this.name || this.tag || '';
-        // console.log(this.data);
+        // //console.log(this.data);
         // return this.data.header0.value;
         var value = this.headerValue(0,'header0') || this.getValue('header0') || this.getValue('Title') || this.getValue('Name') || this.title || this.name || this.tag || '';
         return (typeof value === 'object' ? value.value || value.Value : value);
@@ -4797,9 +4797,9 @@ function idToUrl(id){
               }
             }
           })])
-        )
-        // console.log(this);
-        return this.schema.properties;
+        );
+        // //console.log(this);
+        // return this.schema.properties;
       },
     },
     post: {
@@ -4816,10 +4816,10 @@ function idToUrl(id){
           return item.popoutWindow.focus();
         }
         const win = item.popoutWindow = self.open(url, item.tag, `top=${top},left=${left},width=${width},height=${height}`);
-        // //console.log(self.innerHeight,self.outerHeight,self.outerHeight-self.innerHeight,self.screen,this.elem.getBoundingClientRect());
+        // ////console.log(self.innerHeight,self.outerHeight,self.outerHeight-self.innerHeight,self.screen,this.elem.getBoundingClientRect());
         self.addEventListener('beforeunload', e => win.close());
         const doc = win.document;
-        //console.log(pageHtml);
+        ////console.log(pageHtml);
         doc.open();
         doc.write(pageHtml);
         doc.close();
@@ -4831,7 +4831,7 @@ function idToUrl(id){
               Aim('section').class('col aco apv printcol').id('view'),
             ),
           );
-          console.log(item);
+          //console.log(item);
           Aim('view').show(item);
           win.addEventListener('beforeunload', e => item.popoutWindow = null);
         }
@@ -5185,7 +5185,7 @@ function idToUrl(id){
             // item: this,
             contextmenu: this.properties.state.options,
             onselect: e => {
-              //console.log(e);
+              ////console.log(e);
               let el = [...e.path].find(el => el.value);
               this.state = el.value;
             },
@@ -5295,7 +5295,7 @@ function idToUrl(id){
             query: { reindex: 1 },
           }).send();
         }, 10, item);
-        // //console.log(this);
+        // ////console.log(this);
         // this.remove();
       },
     },
@@ -5360,18 +5360,20 @@ function idToUrl(id){
   });
 
   function Server(config) {
-    // console.log('a');
+    // //console.log('a');
 
     const fs = require('fs');
     const atob = require('atob');
-    let paths = [];
+    let paths = process.mainModule.paths.map(path => path.replace(/node_modules$/,'public'));
     (function addpath(module) {
       if (module.parent) addpath(module.parent);
-      paths.push(...module.paths.map(path => path.replace(/node_modules$/,'public')));
+      //console.log(module.paths);
+      // paths.push(...module.paths.map(path => path.replace(/node_modules$/,'public')));
+      paths.push(...module.paths);
     })(module);
     paths = paths.unique().filter(path => fs.existsSync(path));
 
-    // console.log(paths);
+    //console.log(paths);
 
     function processRequest (req, res) {
       function end(statusCode, header, body) {
@@ -5384,7 +5386,7 @@ function idToUrl(id){
       res.setHeader('Access-Control-Request-Method', '*');
 
       var url = new URL(req.url, 'http://localhost');
-      console.log(url.pathname, fname);
+      //console.log(url.pathname, fname);
 
       if (url.pathname === '/config.js') {
         return end(200, { 'Content-Type': 'application/json' }, 'config='+JSON.stringify(config));
@@ -5393,7 +5395,7 @@ function idToUrl(id){
         const sql = `SELECT TOP 1000 * FROM his.attr WHERE ${url.searchParams.get('filter')}`;
         debug(sql);
         return new mssql.Request().query(sql, (err, res) => {
-          if (err) console.log(err);
+          if (err) //console.log(err);
           end(200, { 'Content-Type': 'application/json' }, JSON.stringify(res.recordsets));
         })
       }
@@ -5425,16 +5427,20 @@ function idToUrl(id){
                 },
               };
               if (fname.match(/\.html/)) {
-                data = String(data).replace(/=".*?public\//g, '="');
+                data = String(data)
+                // .replace(/=".*?public\//g, '="')
+                .replace(/\@\d+\.\d+\.\d+/g, '')
+                .replace(/="\/\/.*?npm\//g, '="')
+                .replace(/="\/\/.*?\.github\.io\/(.*?)\./g, '="@$1/')
               }
-              // console.log('JA');
+              // //console.log('JA');
               end(200, headers[ext], data);
             })
           }
         }
       }
       return end(404, { 'Content-Type': 'text/html' }, `404 Not Found 1 ${req.url}`);
-      // console.log(url.pathname, fname);
+      // //console.log(url.pathname, fname);
       //
       //
       //
@@ -5445,7 +5451,7 @@ function idToUrl(id){
       //
     };
     function onconnection (wsc, req) {
-      console.log('connect');
+      //console.log('connect');
       wsc.remoteAddress = req.connection.remoteAddress.split(':').pop();
       wsc.sid = Crypto.btoaToJson(req.headers['sec-websocket-key']);
       wsc.access = {sid: wsc.sid};
@@ -5473,7 +5479,7 @@ function idToUrl(id){
           console.error('json_error', data.substr(0,1000));
         }
         if (data && typeof data === 'object') {
-          console.log(wsc.sid);
+          //console.log(wsc.sid);
           /** check user state
             *
             */
@@ -5499,7 +5505,7 @@ function idToUrl(id){
               // var sub = wsc.access.sub;
               const newState = Math.max(...subclients.map(ws => ws.userstate || 0));
               if (currentState !== newState) {
-                console.log('state set', data.userstate, currentState, newState, subclients.map(ws => ws.userstate));
+                //console.log('state set', data.userstate, currentState, newState, subclients.map(ws => ws.userstate));
                 data.userstate = states[newState];
                 const msg = JSON.stringify(data);
                 clients.forEach(ws => ws.send(msg));
@@ -5507,28 +5513,28 @@ function idToUrl(id){
 
 
               // if (subclients.every(ws => ws.userstate < userstate)) {
-              // 	console.log('newstate', userstate, data.userstate);
+              // 	//console.log('newstate', userstate, data.userstate);
               // 	var clients = wsServer.clients.filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud);
               // 	clients.forEach(ws => ws.send(event.data));
               // }
 
 
               // if (!subclients.some(ws => ws.userstate > userstate)) {
-              // 	console.log('newstate', userstate, data.userstate);
+              // 	//console.log('newstate', userstate, data.userstate);
               // 	var clients = wsServer.clients.filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud);
               // 	clients.forEach(ws => ws.send(event.data));
               // }
               // if (!subclients.some(ws => ws.userstate < userstate)) {
-              // 	console.log('newstate some');
+              // 	//console.log('newstate some');
               // 	var clients = wsServer.clients.filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud && ws.userstate);
               // 	clients.forEach(ws => ws.send(event.data));
               // }
 
               // var a = subclients.map(ws => ws.userstate);
               // console.debug(data.userstate);
-              // console.log(subclients.filter(ws => ws.userstate === data.userstate).map(ws => ws.userstate));
-              // console.log(data.userstate, a, a.every(userstate => userstate == data.userstate));
-              // console.log(['ja','ja','ja','ja'].every(ws => ws === 'ja'));
+              // //console.log(subclients.filter(ws => ws.userstate === data.userstate).map(ws => ws.userstate));
+              // //console.log(data.userstate, a, a.every(userstate => userstate == data.userstate));
+              // //console.log(['ja','ja','ja','ja'].every(ws => ws === 'ja'));
 
               // if (data.userstate === 'available' && !subclients.some(ws => ws.userstate === data.userstate)) {
               // 	clients.forEach(ws => ws.send(event.data));
@@ -5562,7 +5568,7 @@ function idToUrl(id){
             attr(...data.attr);
           }
           if (data.itemsModified) {
-            // console.log('response.itemsModified FROM CLIENT');
+            // //console.log('response.itemsModified FROM CLIENT');
             if (data.body && data.body.requests) {
               Aim.saveRequests(data.body.requests);
             }
@@ -5615,7 +5621,7 @@ function idToUrl(id){
 
           if (data.headers) {
             const headers = Object.fromEntries(Object.entries(data.headers).map(([key, value]) => [key.toLowerCase(), value]));
-            console.log('headers', headers)
+            //console.log('headers', headers);
             // this.hostname = this.response.hostname;
             let apiKey = Object.keys(headers).find(key => ['api_key','api-key','x-api-key'].includes(key.toLowerCase()));
             let accessToken;
@@ -5629,7 +5635,7 @@ function idToUrl(id){
             }
 
             if (accessToken) {
-              console.log('accessToken', accessToken);
+              //console.log('accessToken', accessToken);
               let accessTokenArray = accessToken.split('.');
               try {
                 var data = wsc.response = JSON.parse(data);
@@ -5694,7 +5700,7 @@ function idToUrl(id){
       cert: fs.readFileSync(process.cwd() + config.http.cert),
       ca: config.http.ca ? fs.readFileSync(process.cwd() + config.http.ca) : null,
     } : null;
-    // console.log(protocol, config.http.port, options);
+    // //console.log(protocol, config.http.port, options);
     const http = require(protocol);
     const httpServer = http.createServer(options, processRequest).listen(config.http.port);
     const ws = require('ws');
@@ -5794,7 +5800,7 @@ function idToUrl(id){
   Object.defineProperties(EventManager.prototype, {
     _events: {value: {}},
     on: {value: function on(selector, context) {
-      // console.log('ON', selector, context)
+      // //console.log('ON', selector, context)
       // const events = this._events = this._events || {};
       (this._events[selector] = this._events[selector] || []).push(context);
     }},
@@ -5833,11 +5839,11 @@ function idToUrl(id){
 
     connect: {value: function () {
       return new Promise((resolve, fail) => {
-        console.log('WS CONNECT', this.options.url);
+        //console.log('WS CONNECT', this.options.url);
         const ws = this.ws = new window.WebSocket(this.options.url);
         ws.addEventListener('open', e => {
           aimClient.getAccessToken().then(accessToken => {
-            // console.log('accessToken', accessToken);
+            // //console.log('accessToken', accessToken);
             const msg = {
               hostname: this.hostname || 'aliconnect',
               // nonce: this.nonce,
@@ -5849,7 +5855,7 @@ function idToUrl(id){
             this.send(msg);
           })
         });
-        ws.addEventListener('error', e => console.log('ERROR',e));
+        ws.addEventListener('error', console.error);
         ws.addEventListener('close', e => setTimeout(connect, 5000));
         ws.addEventListener('message', e => {
           console.debug('ws.onmessage', e.data);
@@ -5861,7 +5867,7 @@ function idToUrl(id){
                 const system = systems[data.attr.systemId];
                 if (system) {
                   const attr = system.data[data.attr.name];
-                  // console.log(attr);
+                  // //console.log(attr);
                   const oldValue = attr.value;
                   if (attr.state != data.attr.state) {
                     setItemTypeValue(attr.item, data.attr.state, -1);
@@ -5891,14 +5897,14 @@ function idToUrl(id){
 
             if (data.body) {
               if (data.body.notify) {
-                console.log('NOTIFY', window.document.hasFocus());
+                //console.log('NOTIFY', window.document.hasFocus());
                 if (!window.document.hasFocus()) {
                   if ("Notification" in window) {
                     if (Notification.permission === "granted") {
                       // var notification = new Notification(...Object.values(data.body.notify));
                       // notification.onclick = function(e) {
                       //   window.focus();
-                      //   console.log('CLICKED', data.body.notify);
+                      //   //console.log('CLICKED', data.body.notify);
                       // }
                       new $().sw.showNotification(...Object.values(data.body.notify));
                       // `test modified SW`, {
@@ -5937,11 +5943,11 @@ function idToUrl(id){
               }
               if (data.body.accept) {
                 $().prompt('accept').accept_scope(data.body.accept.scopes, data.from_id);
-                // console.log($().prompt('accept_scope'), $.his.map.get('accept_scope'));
+                // //console.log($().prompt('accept_scope'), $.his.map.get('accept_scope'));
               }
             }
             if (data.state === 'disconnect') {
-              console.log('disconnect', $().aliconnector_id, data.from_id);
+              //console.log('disconnect', $().aliconnector_id, data.from_id);
               // return;
               if ($().aliconnector_id === data.from_id) {
                 $().status('aliconnector', 'offline');
@@ -5951,7 +5957,7 @@ function idToUrl(id){
             console.error(data);
             if (data.id_token) {
               const id = JSON.parse(atob(data.id_token.split('.')[1]));
-              console.log(id, getId(id.sub), getUid(id.sub), aimClient.sub);
+              //console.log(id, getId(id.sub), getUid(id.sub), aimClient.sub);
               if (getId(id.sub) !== getId(aimClient.sub)) {
                 return $().logout();
               }
@@ -5960,7 +5966,7 @@ function idToUrl(id){
 
 
             // if (this.clients.has(data.from_id)){
-            //   console.log('REPLY FROM', data.from_id);
+            //   //console.log('REPLY FROM', data.from_id);
             //   this.clients.get(data.from_id)(data.body);
             //   this.clients.delete(data.from_id);
             //   return
@@ -5970,10 +5976,10 @@ function idToUrl(id){
             if (data.from_id === $().aliconnector_id) {
               if (data.param) {
                 if (data.param.filedownload) {
-                  console.log('filedownload', data.param.filedownload);
+                  //console.log('filedownload', data.param.filedownload);
                 }
                 if (data.param.fileupload) {
-                  console.log('fileupload', data.param.fileupload);
+                  //console.log('fileupload', data.param.fileupload);
                 }
               }
             }
@@ -6021,7 +6027,7 @@ function idToUrl(id){
             }
             return;
             if (data.aliconnector) {
-              console.log(data);
+              //console.log(data);
               if (data.aliconnector === 'online') {
                 $().status('aliconnector', 'online');
                 this.sendto($().aliconnector_id = data.from_id, { path: 'sign_in' });
@@ -6060,8 +6066,8 @@ function idToUrl(id){
     login: {value: function login(access_token){
       return new Promise((resolve, fail) => {
         this.connect().then(e => {
-          console.log('CONNN', e);
-        })
+          //console.log('CONNN', e);
+        });
         return;
         console.debug('WS LOGIN');
         // this.resolve = resolve;
@@ -6453,7 +6459,7 @@ function idToUrl(id){
         selector = parent;
         parent = this;
       }
-      // console.log(111, parent, selector);
+      // //console.log(111, parent, selector);
       const objects = [];
       if (context) {
         Object.entries(context).forEach(entry => Object.defineProperty(parent, ...entry))
@@ -6463,7 +6469,7 @@ function idToUrl(id){
           if (parent && selector && selector instanceof Object) {
             for (let [key, value] of Object.entries(selector)) {
               if (typeof parent[key] === 'function' && typeof value !== 'function') {
-                // console.log(key, value, parent[key]);
+                // //console.log(key, value, parent[key]);
                 parent[key](value)
               } else if (typeof value === 'function' && !parent.hasOwnProperty(key)) {
                 parent[key] = value;
@@ -6654,7 +6660,7 @@ function idToUrl(id){
     (new URLSearchParams(document.location.search)).forEach((value,key)=>Aim.extend({config: minimist([key,value])}));
   }
 
-  // console.log(this.document);
+  // //console.log(this.document);
 
   // if (!self.document) {
   //   return module.exports = Aim;
