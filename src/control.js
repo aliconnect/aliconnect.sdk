@@ -334,7 +334,7 @@
             setTimeout(watchdogAcsm, systemTimeoutMs);
           })();
         },
-      }
+      };
 
       // items.forEach(item => {
       //   console.log(1, item.name);
