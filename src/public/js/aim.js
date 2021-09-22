@@ -5751,21 +5751,19 @@ function idToUrl(id){
         const options = {
           port: config.port || 1433,
           server: config.server,
-          options: {
-            database: config.database,
-            encrypt: true,
-            validateBulkLoadParameters: true,
-            trustServerCertificate: true,
-            cryptoCredentialsDetails: {
-              minVersion: 'TLSv1'
-            }
-          },
           authentication: {
             type: 'default',
             options: {
               userName: config.user,
               password: config.password,
             }
+          },
+          options: {
+            encrypt: true,
+            validateBulkLoadParameters: true,
+            trustServerCertificate: true,
+            cryptoCredentialsDetails: { minVersion: 'TLSv1' },
+            database: config.database,
           },
         };
         this.tedious = require('tedious');
