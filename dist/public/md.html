@@ -38,6 +38,7 @@
   <footer>FOOTER</footer>
   <script>
   function load(href) {
+    href = href.replace(/\/blob\/main|\.md$/g,'')
     $().url(href+'.md').get().then(e => {
       const headers = e.target.getAllResponseHeaders();
       document.title = e.target.responseURL.split('/').pop().replace(/\.md$/,'').replace(/-/g,' ');
