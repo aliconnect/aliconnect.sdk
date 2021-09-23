@@ -1113,7 +1113,7 @@ function idToUrl(id){
         this.statusElem.remove();
       }
       if (Aim.config.debug && e.target.status < 400 || isModule){
-        console.debug (
+        console.warn (
           // e.target.sender,
           this.method.toUpperCase(),
           this.url.toString(),

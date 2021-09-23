@@ -11,6 +11,15 @@ function checkPath(e) {
     e.item = e.itemElement.item;
   }
 }
+function hrefSrc (href, src = '/') {
+  if (href[0]==='#') return href;
+  // console.log(href, src, new URL(src, document.location).href);
+  if (href.match(/^http/)) return href;
+  href = new URL(href, new URL(src, document.location)).href.replace(/^.*?\//,'/');
+    // console.log(href);
+  return href;
+  // return href.toLowerCase();
+}
 function linkify(inputText) {
     var replacedText, replacePattern1, replacePattern2, replacePattern3;
 
@@ -205,7 +214,7 @@ function linkify(inputText) {
   function importScript(src) {
     // console.log('importScript', src);
     // src = new URL(src, document.location).href;
-    return $.promise('script', callback => {
+    return $.promise('script', (resolve, reject) => {
       // console.log(2, 'SCRIPT', src);
       function loaded(e) {
         e.target.loading = false;
@@ -214,7 +223,7 @@ function linkify(inputText) {
             Elem.prototype[key] = value;
           }
         }
-        callback();
+        resolve();
       }
       for (let script of [...document.getElementsByTagName('SCRIPT')]) {
         if (script.getAttribute('src') === src) {
@@ -224,7 +233,7 @@ function linkify(inputText) {
             return $(script).on('load', loaded);
           }
           // console.log(4, 'SCRIPT', src);
-          return callback();
+          return resolve();
         }
       }
       var el = $('script').src(src).parent(document.head).on('load', loaded);
@@ -857,7 +866,7 @@ function linkify(inputText) {
       // console.log(arguments, args);
       Array.from(arguments).forEach(arg => {
         if (typeof arg === 'string') {
-          this.elem.append(document.createTextNode(arg));
+          this.elem.insertAdjacentHTML('beforeend', arg);
         } else if (Array.isArray(arg)) {
           arg.forEach(arg => this.append(arg));
         } else if (arg instanceof Elem) {
@@ -2311,9 +2320,12 @@ function linkify(inputText) {
 			return this;
 		}},
     index: { value: function (docelem){
-			const all = [...docelem.elem.querySelectorAll("h1, h2, h3")];
+      docelem = $(docelem);
+      // const all = [...docelem.elem.querySelectorAll("h1, h2, h3")];
+      const all = Array.from(docelem.elem.getElementsByClassName("anchor")).filter(el => el.nextElementSibling);
+      console.log(all,docelem);
       // console.log(1111, all);
-      const topItem = docelem.topItem = all[0];
+      const topItem = docelem.topItem = all[0].parentElement;
       const elemTop = docelem.elemTop = docelem.elem.getBoundingClientRect().top;
       const findAll = docelem.findAll = all.slice().reverse();
 			const allmenu = docelem.allmenu = [];
@@ -2322,19 +2334,21 @@ function linkify(inputText) {
       var path = [];
 			function addChapters (ul, level) {
 				for (let elem = all[i]; elem; elem = all[i]) {
-					const tagLevel = Number(elem.tagName[1]);
+          // console.log(elem);
+					const tagLevel = Number(elem.nextElementSibling.tagName[1]);
           path.slice(0, tagLevel-1);
           // console.log(path);
-					const title = elem.innerText;
+					const title = elem.getAttribute('title');
           path[tagLevel-1] = title.toLowerCase().replace(/ /g,'_');
-          const name = path.join('-');
+          const name = elem.getAttribute('name');//path.join('-');
+          // console.log(i,title,name,tagLevel,level);
 					if (tagLevel === level) {
-						$(elem).append(
-              // $('a').attr('name', 'chapter' + i)
-              $('a').attr('name', name)
-						);
+						// $(elem).append(
+            //   // $('a').attr('name', 'chapter' + i)
+            //   $('a').attr('name', name)
+						// );
 						li = $('li').parent(ul).append(
-							elem.a = $('a').text(elem.innerText).attr('href', '#' + name).attr('open', '0').attr('target', '_self')
+							elem.a = $('a').text(title).href('#' + name).attr('open', '0').attr('target', '_self')
 						);
 						i++;
 						allmenu.push(elem.a);
@@ -2350,43 +2364,54 @@ function linkify(inputText) {
 				return ul;
 			}
 			let to;
+      // all.reverse();
       var lastScrollTop = 0;
 			addChapters(this.text(''), 1);
-      // console.error($('navDoc'));
-      // (docelem.onscroll = e => {
-      //   if (!to) {
-      //     // const div = Math.abs(lastScrollTop - docelem.elem.scrollTop);
-      //     // clearTimeout(to);
-      //     to = setTimeout(() => {
-      //       // console.log('re');
-      //       to = null;
-      //       // if (div > 50) {
-      //       lastScrollTop = document.body.scrollTop;
-      //       let elem = findAll.find(elem => elem.getBoundingClientRect().top < elemTop) || topItem;
-      //       console.log(findAll, elem);
-      //       // let elem = all.find(elem => elem.offsetParent );
-      //       // console.log(elem.innerText, elemTop, elem.getBoundingClientRect().top, elem.getBoundingClientRect().height, all.indexOf(elem));
-      //       // return;
-      //       // elem = all[all.indexOf(elem)-1];
-      //       allmenu.forEach(a => a.attr('open', '0').attr('select', null));
-      //       const path = [];
-      //       for (var p = elem.a.elem; p.tagName === 'A' && p.parentElement && p.parentElement.parentElement; p=p.parentElement.parentElement.parentElement.firstChild) {
-      //         p.setAttribute('select', '');
-      //         p.setAttribute('open', '1');
-      //         path.push(p);
-      //       }
-      //       $(elem.a.elem).scrollIntoView();
-      //       if ($('navDoc')) {
-      //         $('navDoc').text('').append(...path.reverse().map(elem => ['/', $('a').text(elem.innerText)]))
-      //       }
-      //       // elem.li.select();
-      //       // $()
-      //       // let elem = all.forEach(elem => //console.log(elem.getBoundingClientRect().top));
-      //       // //console.log(elem, elem.li);
-      //       // }
-      //     }, 500);
-      //   }
-      // })();
+      console.error(docelem.elem);
+
+      (document.body.onscroll = e => {
+        clearTimeout(to);
+        // console.log(e);
+        // if (!to) {
+          // const div = Math.abs(lastScrollTop - docelem.elem.scrollTop);
+          // clearTimeout(to);
+          to = setTimeout(() => {
+            // to = null;
+            console.log(elemTop);
+            // all.reverse().forEach(el => console.log(el.getBoundingClientRect().top));
+            const elem = findAll.find(el => el.getBoundingClientRect().top < elemTop) || topItem;
+            if (elem && elem.a) {
+              //
+              // return console.log('re', el);
+              // // if (div > 50) {
+              // lastScrollTop = document.body.scrollTop;
+              // let elem = findAll.find(elem => elem.getBoundingClientRect().top < elemTop) || topItem;
+              // console.log(findAll, elem);
+              // let elem = all.find(elem => elem.offsetParent );
+              // console.log(elem.innerText, elemTop, elem.getBoundingClientRect().top, elem.getBoundingClientRect().height, all.indexOf(elem));
+              // return;
+              // elem = all[all.indexOf(elem)-1];
+              allmenu.forEach(a => a.attr('open', '0').attr('select', null));
+              const path = [];
+              for (var p = elem.a.elem; p.tagName === 'A' && p.parentElement && p.parentElement.parentElement; p=p.parentElement.parentElement.parentElement.firstChild) {
+                p.setAttribute('select', '');
+                p.setAttribute('open', '1');
+                path.push(p);
+              }
+              $(elem.a.elem).scrollIntoView();
+              // if ($('navDoc')) {
+              //   $('navDoc').text('').append(...path.reverse().map(elem => ['/', $('a').text(elem.innerText)]))
+              // }
+              // elem.li.select();
+              // $()
+              // let elem = all.forEach(elem => //console.log(elem.getBoundingClientRect().top));
+              // //console.log(elem, elem.li);
+              // }
+
+            }
+          }, 500);
+        // }
+      })();
       // document.body.removeEventListener('scroll', docelem.onscroll);
       // document.body.addEventListener('scroll', docelem.onscroll);
       return this;
@@ -2506,15 +2531,6 @@ function linkify(inputText) {
       }
       if (src.match(/wiki\/$/)) {
         src += 'Home';
-      }
-      function hrefSrc (href, src = '/') {
-        if (href[0]==='#') return href;
-        // console.log(href, src, new URL(src, document.location).href);
-        if (href.match(/^http/)) return href;
-        href = new URL(href, new URL(src, document.location)).href.replace(/^.*?\//,'/');
-          // console.log(href);
-        return href;
-        // return href.toLowerCase();
       }
       function rawSrc(src) {
         console.log(777, src, document.location.hostname);
@@ -2645,25 +2661,27 @@ function linkify(inputText) {
         )
         .md(content)
         .mdAddCodeButtons();
-        [...this.doc.docElem.elem.getElementsByTagName('code')].forEach(elem => {
-          if (elem.hasAttribute('source')) {
-            $().url(hrefSrc(elem.getAttribute('source'), responseURL)).get()
-            .then(e => {
-              var content = e.target.responseText.replace(/\r/g, '');
-              if (elem.hasAttribute('id')) {
-                var id = elem.getAttribute('id');
-                var content = content.replace(new RegExp(`.*?<${id}>.*?\n(.*?)\n(\/\/|<\!--) <\/${id}.*`, 's'), '$1').trim();
-              }
-              if (elem.hasAttribute('function')) {
-                var id = elem.getAttribute('function');
-                var content = content.replace(/\r/g, '').replace(new RegExp(`.*?((async |)function ${id}.*?\n\})\n.*`, 's'), '$1').trim();
-              }
-              elem.innerHTML = elem.hasAttribute('language') ? $.string[elem.getAttribute('language')](content) : content;
-              // console.log(content);
-              // $(elem).html(content, elem.getAttribute('language'));
-            });
-          }
-        });
+        this.doc.docElem.renderCode();
+
+        // [...this.doc.docElem.elem.getElementsByTagName('code')].forEach(elem => {
+        //   if (elem.hasAttribute('source')) {
+        //     $().url(hrefSrc(elem.getAttribute('source'), responseURL)).get()
+        //     .then(e => {
+        //       var content = e.target.responseText.replace(/\r/g, '');
+        //       if (elem.hasAttribute('id')) {
+        //         var id = elem.getAttribute('id');
+        //         var content = content.replace(new RegExp(`.*?<${id}>.*?\n(.*?)\n(\/\/|<\!--) <\/${id}.*`, 's'), '$1').trim();
+        //       }
+        //       if (elem.hasAttribute('function')) {
+        //         var id = elem.getAttribute('function');
+        //         var content = content.replace(/\r/g, '').replace(new RegExp(`.*?((async |)function ${id}.*?\n\})\n.*`, 's'), '$1').trim();
+        //       }
+        //       elem.innerHTML = elem.hasAttribute('language') ? $.string[elem.getAttribute('language')](content) : content;
+        //       // console.log(content);
+        //       // $(elem).html(content, elem.getAttribute('language'));
+        //     });
+        //   }
+        // });
         [...this.doc.docElem.elem.getElementsByTagName('A')].forEach(elem => $(elem).href(hrefSrc(elem.getAttribute('href'), responseURL)));
         [...this.doc.docElem.elem.getElementsByTagName('IMG')].forEach(elem => {
           // let imgsrc = elem.getAttribute('src')||'';
@@ -2783,14 +2801,36 @@ function linkify(inputText) {
 			});
 			// new $.his.maps(el, par.maps);
 		}},
+    renderCode: { value: function (responseURL) {
+      Array.from(this.elem.getElementsByTagName('code')).forEach(elem => {
+        if (elem.hasAttribute('source')) {
+          $().url(hrefSrc(elem.getAttribute('source'), responseURL)).get().then(e => {
+            var content = e.target.responseText.replace(/\r/g, '');
+            if (elem.hasAttribute('id')) {
+              var id = elem.getAttribute('id');
+              var content = content.replace(new RegExp(`.*?<${id}>.*?\n(.*?)\n(\/\/|<\!--) <\/${id}.*`, 's'), '$1').trim();
+            }
+            if (elem.hasAttribute('function')) {
+              var id = elem.getAttribute('function');
+              var content = content.replace(/\r/g, '').replace(new RegExp(`.*?((async |)function ${id}.*?\n\})\n.*`, 's'), '$1').trim();
+            }
+            content = window.markdown().render(content, elem.getAttribute('language'));
+            // console.log(content);
+            // console.log(content);
+            $(elem).class('block').append($('pre').html(content.trim()));
+            // console.log(content);
+            // $(elem).html(content, elem.getAttribute('language'));
+          });
+        }
+      });
+      return this;
+    }},
     md: { value: function (content) {
-      importScript(currentScript.src.replace(/elem/g, 'markdown')).then(e => {
-        // console.log($.his.api_parameters);
+      if (window.markdown) {
         for (let [key,value] of Object.entries($.his.api_parameters)) {
           content = content.replace(key,value);
         }
-        const mdElem = $('div').html(window.markdownit().render(content));
-
+        const mdElem = $('div').html(window.markdown().render(content));
         for (let divElement of mdElem.elem.getElementsByTagName('DIV')) {
           if (divElement.hasAttribute('source')) {
             var loadingTask = pdfjsLib.getDocument(divElement.getAttribute('source'));
@@ -2836,7 +2876,15 @@ function linkify(inputText) {
         }
         // this.elem.innerHTML += $.string.mdHtml(s);
         this.elem.append(...mdElem.elem.childNodes);
-      });
+      }
+      // const src = currentScript.src.replace(/elem/g, 'markdown');
+      // const md = Array.from(document.getElementsByTagName('SCRIPT')).find(e => e.src === src);
+      // console.log(window.markdown);
+      // console.log('md1');
+      // importScript(currentScript.src.replace(/elem/g, 'markdown')).then(e => {
+      //   console.log('md');
+      //   // console.log($.his.api_parameters);
+      // });
 			return this;
 		}},
     mdc: { value: function (s) {
@@ -6127,7 +6175,7 @@ function linkify(inputText) {
         $.his.stateTimeout = setTimeout(() => $().state('inactive'), 500);
       })
       .on('click', e => {
-        return; // DEBUG:
+        // return; // DEBUG:
         checkPath(e);
         $.his.clickEvent = e;
         const sectionElement = e.path.find(elem => elem.tagName === 'SECTION' && elem.id);
@@ -6136,7 +6184,7 @@ function linkify(inputText) {
         }
       }, true)
       .on('click', e => {
-        return; // DEBUG:
+        // return; // DEBUG:
         $.clickEvent = e;
         // return;
         $.his.clickElement = e.target;
@@ -6811,8 +6859,8 @@ function linkify(inputText) {
       })
       .on('paste', e => handleData($.clipboard.itemFocussed, e))
       .on('popstate', e => {
+        console.log('POPSTATE', document.location.href);
         e.preventDefault();
-        // console.log('POPSTATE', document.location.href);
         $().execUrl(document.location.href, true);
       })
       .on('resize', e => {
@@ -6983,7 +7031,69 @@ function linkify(inputText) {
         }
       }
       return this;
-    }}
+    }},
+    producties: {value: function(elem){
+      const producties = {};
+      // console.log(111, elem, elem.getElementsByTagName('A'));
+      const links = Array.from(elem.getElementsByTagName('A')).filter(a => a.href);
+      let ip = 1;
+      links.forEach((a,i) => {
+        if (a.href.match(/pdf$/)) {
+          if (producties[a.href]) return a.text = producties[a.href].toLowerCase();
+          const title = producties[a.href] = 'Productie ' + ip++ + ', ' + a.text;
+          $(elem).append($('h1').class('productie').text(title));
+          a.text = title.toLowerCase();
+
+          const divElem = $('div').parent(elem);
+          var loadingTask = pdfjsLib.getDocument(a.href);
+          loadingTask.promise.then(async pdf => {
+            // console.log('PDF loaded');
+            var numPages = pdf.numPages;
+            // console.log(pdf);
+            for (var pageNumber=1, numPages = pdf.numPages;pageNumber<=numPages;pageNumber++) {
+              await pdf.getPage(pageNumber).then(function(page) {
+                // console.log('Page loaded');
+
+                var scale = 1;
+                var viewport = page.getViewport({scale: scale});
+
+                // Prepare canvas using PDF page dimensions
+                // var a = $('a').parent(divElement).href(divElement.getAttribute('source'));
+                var canvas = $('canvas').parent(divElem).elem;
+                // document.body.appendChild(canvas);
+                // var canvas = document.getElementById('the-canvas');
+                var context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                // Render PDF page into canvas context
+                var renderContext = {
+                  canvasContext: context,
+                  viewport: viewport
+                };
+                var renderTask = page.render(renderContext);
+                renderTask.promise.then(function () {
+                  // console.log('Page rendered');
+                });
+              });
+            }
+
+            // Fetch the first page
+          }, function (reason) {
+            // PDF loading error
+            console.error(reason);
+          });
+          // console.log(source);
+        }
+        if (a.href.match(/jpg$/)) {
+          if (producties[a.href]) return a.text = producties[a.href].toLowerCase();
+          const title = producties[a.href] = 'Productie ' + (i+1) + ', ' + a.text;
+          $(elem).append($('h1').class('productie').text(title));
+          a.text = title.toLowerCase();
+          $('img').parent(elem).src(a.href);
+        }
+      })
+    }},
   });
   Object.defineProperties(Aim.prototype, {
     prompt: {value: function (selector, context) {

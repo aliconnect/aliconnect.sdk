@@ -1,6 +1,6 @@
 (function(global, factory) {
   typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self,
-  global.markdownit = factory());
+  global.markdown = factory());
 })(this, (function() {
   function replaceOutsideQuotes(codeString, callback, pre = '<span class=hl-string>', post = '</span>') {
     // const a = codeString.split(/((?<![\\])['"`])((?:.(?!(?<![\\])\1))*.?)\1/);
@@ -20,7 +20,7 @@
       if (src) for (var i = 0, ext; ext = ['.jpg', '.png', '.bmp', '.jpeg', '.gif', '.bin'][i]; i++) if (src.toLowerCase().indexOf(ext) != -1) return true;
       return false;
     }},
-    render: { value: function render(s) {
+    render: { value: function render(s, type) {
       function code(s, type) {
         const highlight = {
           html(s) {
@@ -148,6 +148,10 @@
         }
         return s;
       }
+      if (type) {
+        return code(s, type);
+      }
+
 
       let identList = [];
       let identOptions = null;
@@ -200,11 +204,17 @@
               if (arr[i].match(/```/)) {
                 let type = '';
                 // codeLines = code(codeLines.join('\n'));
+                // lines.push(
+                //   s.replace(/```/, '<pre><code>')
+                //   .replace(/<pre><code>(\w+)/, (s,p1) => `<div class="code-header row" language="${type = p1.toLowerCase()}"><span class="aco">${p1}</span></div><pre><code language="${p1.toLowerCase()}">`)
+                //   + code(codeLines.join('\n'), type)
+                //   + '</code></pre>'
+                // );
                 lines.push(
-                  s.replace(/```/, '<pre><code>')
-                  .replace(/<pre><code>(\w+)/, (s,p1) => `<div class="code-header row" language="${type = p1.toLowerCase()}"><span class="aco">${p1}</span></div><pre><code language="${p1.toLowerCase()}">`)
+                  s.replace(/```/, '<code class="block"><pre>')
+                  .replace(/<code class="block"><pre>(\w+)/, (s,p1) => `<code class="block" language="${type = p1.toLowerCase()}"><pre>`)
                   + code(codeLines.join('\n'), type)
-                  + '</code></pre>'
+                  + '</pre></code>'
                 );
                 break;
               }
@@ -260,9 +270,9 @@
           } else if (s.match(/^#/)) {
             setTag();
             s = s
-            .replace(/^# (.*?)$/gm, (s,p1) => `<H1 class="${s = p1.toLowerCase().replace(/ \./g,'_')}"><A name="${s}"></A>${p1}</H1>`)
-            .replace(/^## (.*?)$/gm, '<H2>$1</H2>')
-            .replace(/^### (.*?)$/gm, '<H3>$1</H3>')
+            .replace(/^# (.*?)$/gm, (s,p1) => `<A class='anchor' title="${p1}" name="${s = p1.toLowerCase().replace(/_| |\./g,'-')}"></A><H1 class="${s}"><a class="anchorref" href="#${s}"></a> ${p1}</H1>`)
+            .replace(/^## (.*?)$/gm, (s,p1) => `<A class='anchor' title="${p1}" name="${s = p1.toLowerCase().replace(/_| |\./g,'-')}" href="#${s}"></A><H2 class="${s}"><a class="anchorref" href="#${s}"></a>${p1}</H2>`)
+            .replace(/^### (.*?)$/gm, (s,p1) => `<A class='anchor' title="${p1}" name="${s = p1.toLowerCase().replace(/_| |\./g,'-')}" href="#${s}"></A><H3 class="${s}"><a class="anchorref" href="#${s}"></a>${p1}</H3>`)
             .replace(/^#### (.*?)$/gm, '<H4>$1</H4>')
             .replace(/^##### (.*?)$/gm, '<H5>$1</H5>')
             .replace(/^###### (.*?)$/gm, '<H6>$1</H6>')
