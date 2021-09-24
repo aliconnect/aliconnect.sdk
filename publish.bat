@@ -2,6 +2,8 @@
 :start
 cls
 php publish.php
+pause
+goto start
 
 call npm publish --dry-run
 pause

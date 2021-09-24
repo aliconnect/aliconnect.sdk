@@ -1296,7 +1296,11 @@ function idToUrl(id){
       if (selector.match(/\w+\(\d+\)/)){
         return Item.get(selector);
       } else {
-        this.id(selector)
+        this.id(selector);
+        if (context) {
+          this.set(context);
+          return context;
+        }
       }
     // } else if (self.Item && selector instanceof Item) {
     //   return selector;
@@ -1971,9 +1975,6 @@ function idToUrl(id){
       }
       return this;
     },},
-    list: {value: function (selector) {
-      return this.getObject(arguments.callee.name, Listview, [...arguments]);
-    },},
     message: {
       get() {
         const [basePath, folder, sep, id] = this.getPath();
@@ -2428,9 +2429,6 @@ function idToUrl(id){
       return this.url(dmsUrl + '/translate').query('lang', lang)
       .get().then(e => Aim.his.translate = new Map(Object.entries(e.body)));
     },},
-    tree: {value: function tree(selector) {
-      return this.getObject(arguments.callee.name, Treeview, [...arguments]);
-    },},
     url: {value: Request },
     // url: {value: function (url, base){
     //   return new Request(url, base);
@@ -2645,7 +2643,7 @@ function idToUrl(id){
         // }
       });
     }},
-    config:{value:function(config){
+    setConfig:{value:function(config){
       Aim.extend(this.config, config);
       if (this.config.components && this.config.components.schemas) {
         Aim().schemas(this.config.components.schemas);
@@ -2894,7 +2892,7 @@ function idToUrl(id){
     loginPopup: {value: function loginPopup (options) {
       return Aim.promise('LoginPopup', async (resolve, reject) => {
 
-        //console.log('options', options);
+        console.log('options', options, this.config);
 
         options = {
           // scope: 'name+email+phone_number',
@@ -5360,8 +5358,6 @@ function idToUrl(id){
   });
 
   function Server(config) {
-    // //console.log('a');
-
     const fs = require('fs');
     const atob = require('atob');
     let paths = process.mainModule.paths.map(path => path.replace(/node_modules$/,'public'));
@@ -5372,8 +5368,6 @@ function idToUrl(id){
       paths.push(...module.paths);
     })(module);
     paths = paths.unique().filter(path => fs.existsSync(path));
-
-    //console.log(paths);
 
     function processRequest (req, res) {
       function end(statusCode, header, body) {
@@ -5429,8 +5423,9 @@ function idToUrl(id){
               if (fname.match(/\.html/)) {
                 data = String(data)
                 // .replace(/=".*?public\//g, '="')
+
                 .replace(/\@\d+\.\d+\.\d+/g, '')
-                .replace(/="\/\/.*?npm\//g, '="')
+                .replace(/=".*aliconnect.sdk/g, '="@aliconnect/sdk')
                 .replace(/="\/\/.*?\.github\.io\/(.*?)\./g, '="@$1/')
               }
               // //console.log('JA');
@@ -6206,10 +6201,32 @@ function idToUrl(id){
     }},
   });
 
+  const now = new Date();
+  Object.defineProperties(this, {
+    defineClasses: { value: function (classes) {
+      defineClasses.classes[document.currentScript.src] = classes;
+      for ([selector,context] of Object.entries(classes)) {
+        context.lastModifiedDateTime = now;
+        const fn = new Function(`return function ${selector}(){${context.construct?'this.construct(...arguments)':''}}`)();
+        for ([name,property] of Object.entries(context)) {
+          property.lastModifiedDateTime = now;
+          Object.defineProperty(fn.prototype, name, property);
+        }
+        Object.defineProperty(this, selector, { value: fn });
+        // console.log(document.currentScript, context);
+      }
+    }},
+  })
+  defineClasses.classes = {
+    lastModifiedDateTime: now,
+  };
+
   Object.defineProperties(Aim, {
     Client: { value: Client },
     Server: { value: Server },
     sql: { value: new Sql },
+
+
 
     WebsocketClient: { value: WebsocketClient },
 
@@ -6656,6 +6673,11 @@ function idToUrl(id){
     const scriptPath = currentScript.src.replace(/\/js\/.*/, '');
     [...currentScript.attributes].forEach(attribute => Aim.extend({config: minimist(['--'+attribute.name.replace(/^--/, ''), attribute.value])}));
     (new URLSearchParams(document.location.search)).forEach((value,key)=>Aim.extend({config: minimist([key,value])}));
+
+    $().on('load', e => {
+      // $().url('/api/docs.php').post(JSON.stringify(defineClasses.classes, (k,v) => typeof v === 'function' ? String(v).replace(/\r/g,'') : v, 2)).then(console.error);
+    })
+
   }
 
   // //console.log(this.document);

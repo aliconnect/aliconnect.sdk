@@ -755,3 +755,37 @@ body>dialog['open'] {
 
   }
 }
+
+
+.section_main>.col.abs>.row.doc.aco {
+  margin:auto;
+}
+.section_main>.col.abs>.row.doc.aco .doc-content {
+  max-width:17cm;
+  width:100%;
+}
+
+.listview:empty {
+  display: none;
+}
+
+#om-main {
+  background-color: inherit;
+  flex-wrap: nowrap;
+  min-height: calc(100vh - var(--topbar-height) - var(--footer-height));
+  padding-top: var(--topbar-height);
+  display: flex;
+  flex-direction: row;
+}
+#om-nav-top {
+  display: flex;
+  flex-direction: row;
+  position: fixed;
+  margin: auto;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: var(--topbar-height);
+  /* background: blue; */
+  z-index: 3;
+}

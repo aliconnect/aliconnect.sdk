@@ -157,6 +157,10 @@
     return params.join(',');
   };
   function initControlEquipment(items) {
+    function itemSetState(item, state){
+      attrSet(item, 'state', state);
+      (item.children||[]).filter(Boolean).forEach(child => itemSetState(child, state));
+    }
     function initAttributes(item) {
       const attributes = [];
       let parent;
@@ -183,7 +187,6 @@
         const attributes = initAttributes(item);
         console.log('MODBUS', item.IPAddress);
         function setSate(state){
-          // return;
           attributes.forEach(attr => attrSet(attr, 'state', state));
         }
         const socket = new net.Socket();
@@ -250,16 +253,20 @@
         (function read() {
           session.getAll({ oids: oids }, (err, varbinds) => {
             if (err) {
+              itemSetState(item, 'error');
               console.error(err);
-              children.forEach(child => attrSet(child, 'state', 'error'));
+              // children.forEach(child => attrSet(child, 'state', 'error'));
               setTimeout(() => {
-                children.forEach(child => attrSet(child, 'state', 'connecting'));
+                itemSetState(item, 'connecting');
+                // children.forEach(child => attrSet(child, 'state', 'connecting'));
                 read();
               }, 5000);
-              return;
+              // return;
+            } else {
+              itemSetState(item, 'connected');
+              children.forEach((child,i) => attrSetValue(child, varbinds[i] && varbinds[i].value));
+              setTimeout(read, item.PollInterval);
             }
-            children.forEach((child,i) => attrSetValue(child, varbinds[i] && varbinds[i].value));
-            setTimeout(read, item.PollInterval);
           })
         })();
       });

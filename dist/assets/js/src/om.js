@@ -257,15 +257,15 @@
         },
       },
     });
-    console.log('Listview',this);
+    // console.log('Listview',this);
   };
   Object.defineProperties(Listview.prototype = new TreeListview, {
     activeFilterAttributes:{ value: {}},
-    calendar:{ value: function calendar() {
+    calendar:{ value: function () {
       $('div').class('aco').parent(this.div.text(''))
       .calendar(this.itemsVisible)
     }},
-    chart:{ value: function chart() {
+    chart:{ value: function () {
       $('div').class('aco').parent(this.div.text('')).chart(this.itemsVisible)
       // var data = [];
       // for (var i=0, item; item = this.items[i]; i++) {
@@ -277,7 +277,7 @@
       // // return;
       // return $.Charts.show(data, listItemElement);
     }},
-    clickfilter:{ value: function clickfilter(e) {
+    clickfilter:{ value: function (e) {
       const target = e.target;
       const activeFilterAttributes = this.activeFilterAttributes;
       activeFilterAttributes[target.name] = activeFilterAttributes[target.name] || [];
@@ -305,7 +305,7 @@
         this.show(data);
       },
     },
-    elementSelect:{ value: function elementSelect(el) {
+    elementSelect:{ value: function (el) {
       //// //console.log("select");
       if (this.elSelect) this.elSelect.removeAttribute('selected');
       if (!el) return;
@@ -316,7 +316,7 @@
     filtersOpen:{ value:{}, writable: true },
     filterAttributes:{ value:{}, writable: true },
 
-    fill:{ value: function fill() {
+    fill:{ value: function () {
       this.itemsVisible.forEach(row => {
         if (row.elemListLi && row.elemListLi.elem) {
           const h = document.documentElement.clientHeight;
@@ -330,15 +330,15 @@
         }
       });
     }},
-    ganth:{ value: function ganth() {
+    ganth:{ value: function () {
       $('div').class('aco').parent(this.div.text('')).ganth(this.itemsVisible)
     }},
-    go:{ value: function go() {
+    go:{ value: function () {
       return $.Go.create({ el: listItemElement, data: this.items });
     }},
 
     get:{ value:{}},
-    getProperties:{ value: function getProperties() {
+    getProperties:{ value: function () {
       const schemaNames = this.itemsVisible.map(item => item.schemaName).unique();
       const schemas = [...Object($().schemas()).entries()].filter(([schemaName, schema]) => schemaNames.includes(schemaName));
       const schemaKeys = schemas.map(([schemaName, schema]) => schemaName);
@@ -357,7 +357,7 @@
       properties = properties.filter(name => this.itemsVisible.some(item => item.data[name]));
       return properties;
     }},
-    listnode:{ value: function listnode(item) {
+    listnode:{ value: function (item) {
       const li = item.elemListLi;
       const [stateOption, stateOptions] = item.options('State');
       const [catOption, catOptions] = item.options('Categories');
@@ -477,7 +477,7 @@
     // itemsVisible:{ value:[]},
     // items:{ value:[]},
 
-    maps:{ value: async function maps() {
+    maps:{ value: async function () {
       // this.setAttribute('view', 'maps');
       // //console.debug('MAPSSSSSS');
       //this.rewrite();
@@ -590,7 +590,7 @@
       }
       // }
     }},
-    refilter:{ value: function refilter() {
+    refilter:{ value: function () {
       for (let [attributeName, attribute] of Object.entries(this.filterAttributes)) {
         attribute.cnt = 0;
         attribute.checked = false;
@@ -845,7 +845,7 @@
         });
       }
     }},
-    rewrite:{ value: function rewrite(viewType) {
+    rewrite:{ value: function (viewType) {
       localStorage.setItem('viewType', viewType = this.viewType = viewType || localStorage.getItem('viewType'));
       const itemsVisible = this.itemsVisible;
       itemsVisible.forEach(row => {
@@ -913,7 +913,7 @@
       ));
       this.fill();
     }},
-    select:{ value: function select(item, e) {
+    select:{ value: function (item, e) {
       // //console.log(2);
       // $.clipboard.setItem([item], 'checked', '');
       // this.focus(item);
@@ -924,7 +924,7 @@
       //
       // $('view').show(item);
     }},
-    set:{ value: function set(set) {
+    set:{ value: function (set) {
       //// //console.debug('LIST SET', this.get.filter, set);
       //// //console.debug('LIST SET', set);
       //if (!set.q) this.get = {};
@@ -972,7 +972,7 @@
       //'folder, q, filter, search'.split(', ').forEach(function (name) { if (par[name]) get[name] = par[name]; });
       //$.url.set(get);
     }},
-    show:{ value: async function show(items, path) {
+    show:{ value: async function (items, path) {
       if (Array.isArray(this.items = (await items) || [])) {
         this.viewMap = new Map();
         this.title = path || '';
@@ -1123,7 +1123,7 @@
       }
       return this;
     }},
-    sortby:{ value: function sortby(sortname) {
+    sortby:{ value: function (sortname) {
       this.sortdir = this.sortname == sortname ? -this.sortdir : 1;
       this.sortname = sortname;
       console.debug(sortname);
@@ -1134,7 +1134,7 @@
       refilter();
       //this.show();
     }},
-    sortlist:{ value: function sortlist(a, b) {
+    sortlist:{ value: function (a, b) {
       //// //console.debug('SORT', a, b);
       if (a.masterID && b.masterID && a.masterID == b.masterID) {
         if (a.index < b.index) return -1;
@@ -1211,7 +1211,7 @@
       }
       return 0;
     }},
-    table:{ value: function table() {
+    table:{ value: function () {
       const properties = this.getProperties();
       const tableElem = $('table').parent(this.div.text('')).class('list').append(
         $('thead').append(
@@ -1309,8 +1309,9 @@
         }),
         // $('button', 'abtn icn close'),
       ),
-      this.listElem = $('div').class('col aco oa list')
+      om.navleft = this.listElem = $('div').id('om-navleft').class('col aco oa list'),
     );
+    console.log(om.navleft);
     const elem = this.elem;
     const self = this;
     Object.assign(Item.prototype, {
@@ -1585,7 +1586,7 @@
         },
       }
     });
-    console.log('Treeview',this);
+    // console.log('Treeview',this);
   }
   Object.defineProperties(Treeview.prototype = new TreeListview, {
     childnode:{ value: function childnode(child) {
@@ -1940,6 +1941,318 @@
     }},
   });
 
+
+  Object.defineProperties(Aim.prototype, {
+    tree: {value: function tree(selector) {
+      return this.getObject(arguments.callee.name, Treeview, [...arguments]);
+    }},
+    list: {value: function (selector) {
+      return this.getObject(arguments.callee.name, Listview, [...arguments]);
+    }},
+  });
+
+  Object.defineProperties(Aim.Elem.prototype, {
+    om: {value: function om() {
+      this.append(
+        $.his.elem.navtop = $('header').id('om-nav-top').class('row top bar noselect np')
+        .append(
+          $.his.elem.menu = $('a').class('abtn icn menu').on('click', e => {
+            if ($.his.elem.menuList && $.his.elem.menuList.style()) {
+              $.his.elem.menuList.style('');
+            } else {
+              if ($.his.elem.menuList) $.his.elem.menuList.style('display:none;');
+              $(document.body).attr('tv', document.body.hasAttribute('tv') ? $(document.body).attr('tv')^1 : 0)
+            }
+          }),
+          $('a').class('title').id('toptitle').on('click', e => $.start() ),
+          $('form').class('search row aco')
+          .on('submit', e => {
+            const value = $.searchValue = e.target.search.value;
+            var result = value
+            ? [...$.props.values()]
+            .filter(item => item instanceof Item)
+            .unique()
+            .filter(item => item.header0 && value.split(' ').every(value => [item.header0,item.name].join(' ').match(new RegExp(`\\b${value}\\b`, 'i'))))
+            : [];
+            $().list(result);
+            return false;
+          })
+          .append(
+            $('input').name('search').autocomplete('off').placeholder('zoeken'),
+            $('button').class('abtn icn search fr').title('Zoeken'),
+          ),
+          $('a').class('abtn icn dark').dark(),
+        ),
+        $('section').id('om-main').append(
+          $('section').tree().id('tree').css('max-width', $().storage('tree.width') || '200px'),
+          $('div').seperator(),
+          $('section').id('list').list(),
+          $('section').class('row aco doc').id('doc'),
+          $('div').seperator('right'),
+          $('section').id('view').class('col aco apv printcol').css('max-width', $().storage('view.width') || '600px'),
+          $('section').id('preview'),
+          $('section').class('prompt').id('prompt').tabindex(-1).append(
+            $('button').class('abtn abs close').attr('open', '').tabindex(-1).on('click', e => $().prompt(''))
+          ),
+        ),
+        $('footer').statusbar(),
+      ).messagesPanel();
+    }},
+  })
+
+  function ObjectManager() {
+    $().on('load', e => this.create());
+  }
+  Object.defineProperties(ObjectManager.prototype, {
+    create: {value: function () {
+      console.log('a', this);
+      $(document.body).append(
+        this.navtop = $.his.elem.navtop = $('header').id('om-nav-top').class('row top bar noselect np')
+        .append(
+          $.his.elem.menu = $('a').class('abtn icn menu').on('click', e => {
+            if ($.his.elem.menuList && $.his.elem.menuList.style()) {
+              $.his.elem.menuList.style('');
+            } else {
+              if ($.his.elem.menuList) $.his.elem.menuList.style('display:none;');
+              $(document.body).attr('tv', document.body.hasAttribute('tv') ? $(document.body).attr('tv')^1 : 0)
+            }
+          }),
+          $('a').class('title').id('toptitle').on('click', e => $.start() ),
+          $('form').class('search row aco')
+          .on('submit', e => {
+            const value = $.searchValue = e.target.search.value;
+            var result = value
+            ? [...$.props.values()]
+            .filter(item => item instanceof Item)
+            .unique()
+            .filter(item => item.header0 && value.split(' ').every(value => [item.header0,item.name].join(' ').match(new RegExp(`\\b${value}\\b`, 'i'))))
+            : [];
+            $().list(result);
+            return false;
+          })
+          .append(
+            $('input').name('search').autocomplete('off').placeholder('zoeken'),
+            $('button').class('abtn icn search fr').title('Zoeken'),
+          ),
+          $('a').class('abtn icn dark').dark(),
+        ),
+        $('section').id('om-main').append(
+          this.tree = $('section').tree().id('tree').css('max-width', $().storage('tree.width') || '200px'),
+          $('div').seperator(),
+          this.list = $('section').id('list').list(),
+          this.doc = $('section').class('row aco doc').id('doc'),
+          $('div').seperator('right'),
+          this.page = $('section').id('view').class('col aco apv printcol').css('max-width', $().storage('view.width') || '600px'),
+          $('section').id('preview'),
+          this.prompt = $('section').class('prompt').id('prompt').tabindex(-1).append(
+            $('button').class('abtn abs close').attr('open', '').tabindex(-1).on('click', e => $().prompt(''))
+          ),
+        ),
+        $('footer').statusbar(),
+      ).messagesPanel();
+    }},
+    init: {value: async function () {
+      const client_id = $.config.client_id;
+      const aimConfig = {
+        client_id: client_id,
+        scope: 'openid profile name email admin.write',
+      };
+      aimClient = new Aim.UserAgentApplication(aimConfig);
+      const aimRequest = {
+        scopes: aimConfig.scope.split(' '),
+      };
+
+      console.log('aimConfig', aimConfig);
+
+      // aimClient.storage.clear();
+      if (aimConfig.access_token) {
+        aimClient.setAccessToken(aimConfig.access_token);
+      }
+      if (aimConfig.id_token) {
+        aimClient.setIdToken(aimConfig.id_token);
+      }
+
+      let dmsConfig = {
+        client_id: client_id,
+        servers: [{url: 'https://dms.aliconnect.nl'}],
+      };
+      const authProvider = {
+        getAccessToken: async () => {
+          let account = aimClient.storage.getItem('aimAccount');
+          if (!account){
+            throw new Error(
+              'User account missing from session. Please sign out and sign in again.'
+            );
+          }
+          try {
+            // First, attempt to get the token silently
+            const silentRequest = {
+              scopes: aimRequest.scopes,
+              account: aimClient.getAccountByUsername(account)
+            };
+            const silentResult = await aimClient.acquireTokenSilent(silentRequest);
+            return silentResult.accessToken;
+          } catch (silentError) {
+            // If silent requests fails with InteractionRequiredAuthError,
+            // attempt to get the token interactively
+            if (silentError instanceof Aim.InteractionRequiredAuthError) {
+              const interactiveResult = await aimClient.acquireTokenPopup(aimRequest);
+              return interactiveResult.accessToken;
+            } else {
+              throw silentError;
+            }
+          }
+        }
+      };
+
+      const dmsClient = Aim.Client.initWithMiddleware({authProvider}, dmsConfig);
+      dmsConfig = await dmsClient.loadConfig();
+      $().schemas(dmsConfig.components.schemas);
+      console.log(dmsConfig);
+
+      // return;
+      // dmsClient.api('/Contact(265090)').get().then(body => {
+      //   console.log(body);
+      // }).catch(err => {
+      //   console.error(err);
+      // })
+      // return;
+
+      await $().translate();
+
+      async function signIn() {
+        //  Login
+        try {
+          // Use AIM to login
+          console.log('OPTIONS', aimRequest);
+
+          const authResult = await aimClient.loginPopup(aimRequest);
+          console.log('id_token acquired at: ' + new Date().toString());
+          // Save the account username, needed for token acquisition
+          aimClient.storage.setItem('aimAccount', authResult.account.username);
+          document.location.reload();
+        } catch (error) {
+          console.log(error);
+        }
+      }
+
+      // const aimAccount = aimClient.storage.getItem('aimAccount');
+
+      // $(document.documentElement).class('app');
+      $(document.body).om();
+      // await $().translate();
+
+
+      // console.log(aimClient.account, sessionStorage);
+
+
+      if (aimConfig.info) {
+        $('toptitle').text(document.title = aimConfig.info.title).title([aimConfig.info.description,aimConfig.info.version,aimConfig.info.lastModifiedDateTime].join(' '));
+      }
+
+      // console.warn(2222, aimConfig);
+
+      // aimConfig.ref.home = 'https://github.com/schiphol-nl/schiphol-nl.github.io/wiki';
+      // aimConfig.ref.home = 'https://github.com/aliconnect/sdk/wiki';
+      // aimConfig.ref.home = aimConfig.ref && aimConfig.ref.home ? aimConfig.ref.home : 'https://aliconnect.nl/sdk/wiki';
+      if (!document.location.search && aimConfig.ref && aimConfig.ref.home) {
+        if (document.location.hostname.match(/localhost$/)) {
+          // console.error(document.location.hostname, document.location.hostname.match(/localhost$/));
+          aimConfig.ref.home = aimConfig.ref.home.replace(/https:\/\/github.com/, 'http://github.localhost');
+        }
+
+        window.history.replaceState('page', '', '?l=' + urlToId(aimConfig.ref.home));
+      }
+
+      var aimAccount = JSON.parse(aimClient.storage.getItem('aimAccount'));
+      // var aimAccount = null;
+
+      if (aimAccount) {
+        $.his.elem.navtop.prompts(...$.const.prompt.menu.prompts).append(
+          $.his.elem.account = $('a').class('abtn account').caption('Account').href('#?prompt=account').draggable(),
+        );
+        // await dmsClient.api('/').get().then(body => $.extend(aimConfig, body));
+        if (aimConfig.menu) {
+          $().tree(...childObject(aimConfig.menu).children);
+        }
+
+        async function treeItem(url) {
+          const item = await $(url).details();
+          $().tree(item);
+          return item;
+        }
+
+
+        // await dmsClient.api('/').get().then(e => console.log(999, e.body));
+        // return;
+
+        // console.log(1, $().schemas());
+
+        const sub = aimAccount.sub;
+        dmsClient.headers = {
+          'OData-Version': '3.0',
+          'Aim-Version': '1.0',
+        };
+
+        // console.log('Aangemeld', dmsClient.headers, aimAccount, sub);
+
+        // dmsClient.api('/me').select('CompanyName,Surname').get().then(body => {
+        //   console.log('MEEEE', body);
+        // }).catch(err => console.error);
+
+        // $.his.items.sub = await $(`https://dms.aliconnect.nl/Contact(${aimAccount.sub})`).details();
+
+        // console.log('a');
+        // await $().url('https://dms.aliconnect.nl/me').get();
+        // console.log('a');
+
+        const user = $.his.items.sub = await dmsClient.api('/me').get();
+        console.log('USER', user);
+        // $.his.items.aud = await dmsClient.api(`/Company(${aimClient.clientId})`).get();
+        // return console.log('ME', $.his.items.sub, $.his.items.aud);
+        //
+        $().tree(user);
+
+
+        // return;
+        // await aimClient.api(`/`).query('request_type','visit').get().then(body => $.his.items = body);
+        // $.his.elem.account.item($.user, 'accountElem');
+        // $.user.emit('change');
+        // if (aimConfig.aud) {
+        //   $().tree($.his.items.aud = await $(`/Company(${aimConfig.aud})`).details());
+        //   $.his.elem.menu.showMenuTop($({tag: `Company(${aimConfig.aud})`}));
+        // }
+        if ('Notification' in window) {
+          var permission = Notification.permission;
+          if (Notification.permission === 'default') {
+            $.his.elem.navtop.append(
+              $('a').class('abtn').text('Notifications').on('click', e => Notification.requestPermission())
+            )
+          }
+        }
+      } else {
+        $.his.elem.navtop.append(
+          // $('div').id('g_id_onload')
+          // .attr('data-client_id', '916030731619-t989crc0f9ilh9kvoivapg7216gijtcb.apps.googleusercontent.com')
+          // .attr('data-login_uri', 'https://login.aliconnect.nl/maxvankampen/login/callback.php')
+          // .attr('data-auto_prompt', 'false'),
+          // $('div').class('g_id_signin')
+          // .attr('data-type', 'standard')
+          // .attr('data-size', 'large')
+          // .attr('data-theme', 'outline')
+          // .attr('data-text', 'sign_in_with')
+          // .attr('data-shape', 'rectangular')
+          // .attr('data-logo_alignment', 'left'),
+          //
+          $('button').class('abtn login').text('Aanmelden').on('click', e => signIn()),
+        );
+        // <script src="https://accounts.google.com/gsi/client" async defer></script>
+      }
+    }},
+  })
+
+
+
   // importScript(currentScript.attributes.src.value.replace('aim', 'om'));
 
   function childObject(object, schemaname) {
@@ -1957,248 +2270,14 @@
       return obj;
     }
   }
-  $().on('load', async function () {
-    const client_id = $.config.client_id;
-    const aimConfig = {
-      client_id: client_id,
-      scope: 'openid profile name email admin.write',
-    };
-    aimClient = new Aim.UserAgentApplication(aimConfig);
 
-    console.log('aimConfig', aimConfig);
-
-    // aimClient.storage.clear();
-    if (aimConfig.access_token) {
-      aimClient.setAccessToken(aimConfig.access_token);
-    }
-    if (aimConfig.id_token) {
-      aimClient.setIdToken(aimConfig.id_token);
-    }
-
-    let dmsConfig = {
-      client_id: client_id,
-      servers: [{url: 'https://dms.aliconnect.nl'}],
-    };
-    const authProvider = {
-      getAccessToken: async () => {
-        let account = aimClient.storage.getItem('aimAccount');
-        if (!account){
-          throw new Error(
-            'User account missing from session. Please sign out and sign in again.'
-          );
-        }
-        try {
-          // First, attempt to get the token silently
-          const silentRequest = {
-            scopes: aimRequest.scopes,
-            account: aimClient.getAccountByUsername(account)
-          };
-          const silentResult = await aimClient.acquireTokenSilent(silentRequest);
-          return silentResult.accessToken;
-        } catch (silentError) {
-          // If silent requests fails with InteractionRequiredAuthError,
-          // attempt to get the token interactively
-          if (silentError instanceof Aim.InteractionRequiredAuthError) {
-            const interactiveResult = await aimClient.acquireTokenPopup(aimRequest);
-            return interactiveResult.accessToken;
-          } else {
-            throw silentError;
-          }
-        }
-      }
-    };
-
-    const dmsClient = Aim.Client.initWithMiddleware({authProvider}, dmsConfig);
-    dmsConfig = await dmsClient.loadConfig();
-    $().schemas(dmsConfig.components.schemas);
-    console.log(dmsConfig);
-
-    // return;
-    // dmsClient.api('/Contact(265090)').get().then(body => {
-    //   console.log(body);
-    // }).catch(err => {
-    //   console.error(err);
-    // })
-    // return;
-
-    await $().translate();
-
-    async function signIn() {
-      //  Login
-      try {
-        // Use AIM to login
-        console.log('OPTIONS', aimRequest);
-
-        const authResult = await aimClient.loginPopup(aimRequest);
-        console.log('id_token acquired at: ' + new Date().toString());
-        // Save the account username, needed for token acquisition
-        aimClient.storage.setItem('aimAccount', authResult.account.username);
-        document.location.reload();
-      } catch (error) {
-        console.log(error);
-      }
-    }
-
-    // const aimAccount = aimClient.storage.getItem('aimAccount');
-
-    // $(document.documentElement).class('app');
-    $(document.body).append(
-      $.his.elem.navtop = $('header')
-      .id('navtop')
-      .class('row top bar noselect np')
-      .append(
-        $.his.elem.menu = $('a').class('abtn icn menu').on('click', e => {
-          if ($.his.elem.menuList && $.his.elem.menuList.style()) {
-            $.his.elem.menuList.style('');
-          } else {
-            if ($.his.elem.menuList) $.his.elem.menuList.style('display:none;');
-            $(document.body).attr('tv', document.body.hasAttribute('tv') ? $(document.body).attr('tv')^1 : 0)
-          }
-        }),
-        $('a').class('title').id('toptitle').on('click', e => $.start() ),
-        $('form').class('search row aco')
-        .on('submit', e => {
-          const value = $.searchValue = e.target.search.value;
-          var result = value
-          ? [...$.props.values()]
-          .filter(item => item instanceof Item)
-          .unique()
-          .filter(item => item.header0 && value.split(' ').every(value => [item.header0,item.name].join(' ').match(new RegExp(`\\b${value}\\b`, 'i'))))
-          : [];
-          $().list(result);
-          return false;
-        })
-        .append(
-          $('input').name('search').autocomplete('off').placeholder('zoeken'),
-          $('button').class('abtn icn search fr').title('Zoeken'),
-        ),
-        $('a').class('abtn icn dark').dark(),
-      ),
-      $('section')//.class('row aco main section_main')
-      .id('section_main').append(
-        $('section').tree().id('tree').css('max-width', $().storage('tree.width') || '200px'),
-        $('div').seperator(),
-        $('section').id('list').list(),
-        $('section').class('row aco doc').id('doc'),
-        $('div').seperator('right'),
-        $('section').id('view').class('col aco apv printcol').css('max-width', $().storage('view.width') || '600px'),
-        $('section')//.class('col aco apv info')
-        .id('preview'),
-        $('section').class('prompt').id('prompt').tabindex(-1).append(
-          $('button').class('abtn abs close').attr('open', '').tabindex(-1).on('click', e => $().prompt(''))
-        ),
-      ),
-      $('footer').statusbar(),
-    ).messagesPanel();
-    // await $().translate();
-
-
-    // console.log(aimClient.account, sessionStorage);
-
-
-    if (aimConfig.info) {
-      $('toptitle').text(document.title = aimConfig.info.title).title([aimConfig.info.description,aimConfig.info.version,aimConfig.info.lastModifiedDateTime].join(' '));
-    }
-
-    // console.warn(2222, aimConfig);
-
-    // aimConfig.ref.home = 'https://github.com/schiphol-nl/schiphol-nl.github.io/wiki';
-    // aimConfig.ref.home = 'https://github.com/aliconnect/sdk/wiki';
-    // aimConfig.ref.home = aimConfig.ref && aimConfig.ref.home ? aimConfig.ref.home : 'https://aliconnect.nl/sdk/wiki';
-    if (!document.location.search && aimConfig.ref && aimConfig.ref.home) {
-      if (document.location.hostname.match(/localhost$/)) {
-        // console.error(document.location.hostname, document.location.hostname.match(/localhost$/));
-        aimConfig.ref.home = aimConfig.ref.home.replace(/https:\/\/github.com/, 'http://github.localhost');
-      }
-
-      window.history.replaceState('page', '', '?l=' + urlToId(aimConfig.ref.home));
-    }
-
-    var aimAccount = JSON.parse(aimClient.storage.getItem('aimAccount'));
-    // var aimAccount = null;
-
-    if (aimAccount) {
-      $.his.elem.navtop.prompts(...$.const.prompt.menu.prompts).append(
-        $.his.elem.account = $('a').class('abtn account').caption('Account').href('#?prompt=account').draggable(),
-      );
-      // await dmsClient.api('/').get().then(body => $.extend(aimConfig, body));
-      if (aimConfig.menu) {
-        $().tree(...childObject(aimConfig.menu).children);
-      }
-
-      async function treeItem(url) {
-        const item = await $(url).details();
-        $().tree(item);
-        return item;
-      }
-
-
-      // await dmsClient.api('/').get().then(e => console.log(999, e.body));
-      // return;
-
-      // console.log(1, $().schemas());
-
-      const sub = aimAccount.sub;
-      dmsClient.headers = {
-        'OData-Version': '3.0',
-        'Aim-Version': '1.0',
-      };
-
-      // console.log('Aangemeld', dmsClient.headers, aimAccount, sub);
-
-      // dmsClient.api('/me').select('CompanyName,Surname').get().then(body => {
-      //   console.log('MEEEE', body);
-      // }).catch(err => console.error);
-
-      // $.his.items.sub = await $(`https://dms.aliconnect.nl/Contact(${aimAccount.sub})`).details();
-
-      // console.log('a');
-      // await $().url('https://dms.aliconnect.nl/me').get();
-      // console.log('a');
-
-      const user = $.his.items.sub = await dmsClient.api('/me').get();
-      console.log('USER', user);
-      // $.his.items.aud = await dmsClient.api(`/Company(${aimClient.clientId})`).get();
-      // return console.log('ME', $.his.items.sub, $.his.items.aud);
-      //
-      $().tree(user);
-
-
-      // return;
-      // await aimClient.api(`/`).query('request_type','visit').get().then(body => $.his.items = body);
-      // $.his.elem.account.item($.user, 'accountElem');
-      // $.user.emit('change');
-      // if (aimConfig.aud) {
-      //   $().tree($.his.items.aud = await $(`/Company(${aimConfig.aud})`).details());
-      //   $.his.elem.menu.showMenuTop($({tag: `Company(${aimConfig.aud})`}));
-      // }
-      if ('Notification' in window) {
-        var permission = Notification.permission;
-        if (Notification.permission === 'default') {
-          $.his.elem.navtop.append(
-            $('a').class('abtn').text('Notifications').on('click', e => Notification.requestPermission())
-          )
-        }
-      }
-    } else {
-      $.his.elem.navtop.append(
-        // $('div').id('g_id_onload')
-        // .attr('data-client_id', '916030731619-t989crc0f9ilh9kvoivapg7216gijtcb.apps.googleusercontent.com')
-        // .attr('data-login_uri', 'https://login.aliconnect.nl/maxvankampen/login/callback.php')
-        // .attr('data-auto_prompt', 'false'),
-        // $('div').class('g_id_signin')
-        // .attr('data-type', 'standard')
-        // .attr('data-size', 'large')
-        // .attr('data-theme', 'outline')
-        // .attr('data-text', 'sign_in_with')
-        // .attr('data-shape', 'rectangular')
-        // .attr('data-logo_alignment', 'left'),
-        //
-        $('button').class('abtn login').text('Aanmelden').on('click', e => signIn()),
-      );
-      // <script src="https://accounts.google.com/gsi/client" async defer></script>
-    }
-  })
+  // console.log(1, document.currentScript.hasAttribute('init'));
+  console.log();
+  const name = document.currentScript.getAttribute('name') || 'om';
+  const om = this[name] = $(name, new ObjectManager);
+  // if (document.currentScript.hasAttribute('id')) {
+  //   $().on('load', Aim[document.currentScript.getAttribute('load')]);
+  // }
 
 
   // console.log(

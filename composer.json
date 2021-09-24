@@ -1,0 +1,27 @@
+{
+  "name": "aliconnect/sdk",
+  "description": "Aliconnect Software Development Kit",
+  "type": "library",
+  "license": "proprietary",
+  "autoload": {
+    "psr-4": {
+      "Aliconnect\\": "src/"
+    },
+    "classmap": [
+      "src/"
+    ]
+  },
+  "authors": [
+    {
+      "name": "Max van Kampen",
+      "email": "max.van.kampen@alicon.nl"
+    }
+  ],
+  "minimum-stability": "dev",
+  "require": {
+    "google/apiclient": "^2.10",
+    "phpmailer/phpmailer": "dev-master",
+    "dompdf/dompdf": "dev-master",
+    "messagebird/php-rest-api": "dev-master"
+  }
+}

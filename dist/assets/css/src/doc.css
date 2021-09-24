@@ -3,7 +3,7 @@ body{
 }
 body>nav {
   height:48px;
-  background:blue;
+  background:var(--basebg);
   position:fixed;
   margin: auto;
   top:0;

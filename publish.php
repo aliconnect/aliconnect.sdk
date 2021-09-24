@@ -88,25 +88,41 @@ function compress_css($content) {
   return $content;
 }
 
-
-$di = new RecursiveDirectoryIterator('src');
+$package = json_decode(file_get_contents('package.json'));
+$di = new RecursiveDirectoryIterator('dist');
 foreach (new RecursiveIteratorIterator($di) as $filename => $file) {
-  $destname = preg_replace('/^src/','dist', $filename);
-  if (preg_match('/__/', $filename)) {
-    continue;
-  }
-  if (preg_match('/\.js$/', $filename)) {
-    $no_space_chars = ';|>|<|\*|\?|\+|\-|\&|:|,|!|=|\)|\(|\{|\}|\|';
+  // echo $filename;
+  if (preg_match('/\\\\src\\\\/', $filename)) {
+  // $destname = preg_replace('/^src/','dist', $filename);
+    if (preg_match('/__/', $filename)) {
+      continue;
+    }
     $content = file_get_contents($filename);
-    $MTime = date('Y-m-d H:i:s', $file->getMTime());
-    file_put_contents($destname, "/**\n  Last modified $MTime \n*/\n" . compress_js($content));
-    echo "$filename $destname" . ' - ' . $file->getSize() . ' bytes' . date('Y-m-d H:i:s', $file->getMTime()) . PHP_EOL;
-  }
-  if (preg_match('/\.css$/', $filename)) {
-    $no_space_chars = '\{|\}';
-    $content = file_get_contents($filename);
-    file_put_contents($destname, compress_css($content));
-    echo "$filename $destname" . ' - ' . $file->getSize() . ' bytes <br/>' . PHP_EOL;
+    if (preg_match('/\.js$/', $filename)) {
+      $no_space_chars = ';|>|<|\*|\?|\+|\-|\&|:|,|!|=|\)|\(|\{|\}|\|';
+      $content_min = compress_js($content);
+    }
+    if (preg_match('/\.css$/', $filename)) {
+      $no_space_chars = '\{|\}';
+      $content_min = compress_css($content);
+    }
+    $destname = $filename;
+    $destname = "../aliconnect.sdk@$package->version/$destname";
+    $dirname = realpath(dirname($destname));
+    echo $dirname . PHP_EOL;
+    mkdir(dirname($destname), 0777, true);
+    echo realpath($destname) . PHP_EOL;
+    file_put_contents($destname, $content);
+
+    $destname = str_replace("\\src\\", "\\min\\", $destname);
+    echo realpath($destname) . PHP_EOL;
+    mkdir(dirname($destname), 0777, true);
+    file_put_contents($destname, $content_min);
+    $destname = str_replace("\\src\\", "\\min\\", $filename);
+    echo __DIR__.'/'.$destname . PHP_EOL;
+    // echo "$destname" . PHP_EOL;
+    mkdir(dirname($destname), 0777, true);
+    file_put_contents($destname, $content_min);
   }
 }
 die();

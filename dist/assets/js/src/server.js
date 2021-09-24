@@ -1,5 +1,5 @@
 (function(){
-  const aim = require('./public/js/aim');
+  const aim = require('./aim');
   const fs = require('fs');
 
   let paths = [];

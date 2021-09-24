@@ -793,6 +793,8 @@ function linkify(inputText) {
       'html',
       'i',
       'iframe',
+      'frameset',
+      'frame',
       'img',
       'input',
       'ins',

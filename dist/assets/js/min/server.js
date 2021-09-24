@@ -1,0 +1,1 @@
+(function(){const aim=require('./aim');const fs=require('fs');let paths=[];(function addpath(module){if(module.parent)addpath(module.parent);paths.push(...module.paths.map(path=>path.replace(/node_modules$/,'public')))})(module);paths=paths.unique().filter(path=>fs.existsSync(path));module.exports=aim})()
