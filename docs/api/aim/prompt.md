@@ -1,5 +1,5 @@
 **Table of contents**
 - [aim](#aim)
-- [aim()](#aim-selector--context-)
+- [aim()](#aimselector-context)
  aim
  aim(selector, context)

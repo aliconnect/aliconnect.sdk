@@ -1,10 +1,10 @@
 **Table of contents**
 - [aim](#aim)
-    - [Class: aim.ObjectManager()](#aim-objectmanager--)
-        - [objectManager.init()](#objectmanager-init--)
-    - [Class: aim.Listview()](#aim-listview-selector-)
-    - [Class: aim.Treeview()](#aim-treeview-selector-)
-- [aim()](#aim-selector--context-)
+    - [Class: aim.ObjectManager()](#aimobjectmanager)
+        - [objectManager.init()](#objectmanagerinit)
+    - [Class: aim.Listview()](#aimlistviewselector)
+    - [Class: aim.Treeview()](#aimtreeviewselector)
+- [aim()](#aimselector-context)
  aim
 # aim.ObjectManager()
 type: constructor

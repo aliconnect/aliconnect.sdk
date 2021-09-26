@@ -13,7 +13,7 @@
     return content.replace(/\n/g, '')
   }
   function toLink(s){
-    return s.replace(/\(|\)|\[|\]|,/g,'-').replace(/ |\./g,'-').toLowerCase();
+    return s.replace(/\(|\)|\[|\]|,|\./g,'').replace(/ /g,'-').toLowerCase();
   }
   const all = [];
   function doc(objectname, topobj) {
