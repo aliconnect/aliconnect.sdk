@@ -25,6 +25,9 @@
   "dependencies": {
     "@aliconnect/lib": "latest",
     "@aliconnect/font": "latest",
+    "@aliconnect/aim": "latest",
+    "@aliconnect/elem": "latest",
+    "@aliconnect/markdown": "latest",
     "atob": "^2.1.2",
     "http": "0.0.1-security",
     "ws": "^8.2.2"
