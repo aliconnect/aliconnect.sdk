@@ -12,6 +12,9 @@
       return new Markdown();
     }
   }
+  function toLink(s){
+    return s.replace(/\(|\)|\[|\]|,|\.|\=|\{|\}/g,'').replace(/ /g,'-').toLowerCase();
+  }
   Markdown.prototype.render = function (s, type) {
       function code(s, type) {
         const highlight = {
@@ -262,9 +265,9 @@
           } else if (s.match(/^#/)) {
             setTag();
             s = s
-            .replace(/^# (.*?)$/gm, (s,p1) => `<A class='anchor' title="${p1}" name="${s = p1.toLowerCase().replace(/_| |\./g,'-')}"></A><H1 class="${s}"><a class="anchorref" href="#${s}"></a> ${p1}</H1>`)
-            .replace(/^## (.*?)$/gm, (s,p1) => `<A class='anchor' title="${p1}" name="${s = p1.toLowerCase().replace(/_| |\./g,'-')}" href="#${s}"></A><H2 class="${s}"><a class="anchorref" href="#${s}"></a>${p1}</H2>`)
-            .replace(/^### (.*?)$/gm, (s,p1) => `<A class='anchor' title="${p1}" name="${s = p1.toLowerCase().replace(/_| |\./g,'-')}" href="#${s}"></A><H3 class="${s}"><a class="anchorref" href="#${s}"></a>${p1}</H3>`)
+            .replace(/^# (.*?)$/gm, (s,p1) => `<A class='anchor' title="${p1}" name="${s = toLink(p1)}"></A><H1 class="${s}"><a class="anchorref" href="#${s}"></a> ${p1}</H1>`)
+            .replace(/^## (.*?)$/gm, (s,p1) => `<A class='anchor' title="${p1}" name="${s = toLink(p1)}" href="#${s}"></A><H2 class="${s}"><a class="anchorref" href="#${s}"></a>${p1}</H2>`)
+            .replace(/^### (.*?)$/gm, (s,p1) => `<A class='anchor' title="${p1}" name="${s = toLink(p1)}" href="#${s}"></A><H3 class="${s}"><a class="anchorref" href="#${s}"></a>${p1}</H3>`)
             .replace(/^#### (.*?)$/gm, '<H4>$1</H4>')
             .replace(/^##### (.*?)$/gm, '<H5>$1</H5>')
             .replace(/^###### (.*?)$/gm, '<H6>$1</H6>')
