@@ -1283,13 +1283,13 @@ function idToUrl(id){
       }
     }
     // console.warn(5, selector, self.Element, selector instanceof self.Element);
+    // console.log(selector, selector instanceof self.Element, aim.Elem);
     if (self.Element && selector instanceof self.Element) {
       if (aim.his.map.has(selector.id)) {
         return aim.his.map.get(selector.id);
       }
       if (aim.Elem) {
-        console.log(1, selector);
-        return aim.Elem(selector);
+        return new aim.Elem(selector);
       }
     }
     if (aim.Elem && selector instanceof aim.Elem) {

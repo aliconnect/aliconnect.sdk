@@ -485,7 +485,7 @@ eol = '\n';
   function Elem (selector) {
     const args = Array.from(arguments);
     // selector = element ? element : (aim.Elem && aim.Elem.tagnames.includes(selector) ? document.createElement(selector) : selector);
-    const elem = document.getElementById(selector) || (tagnames.includes(selector) ? document.createElement(selector) : null);
+    const elem = selector instanceof Element ? selector : (document.getElementById(selector) || (tagnames.includes(selector) ? document.createElement(selector) : null));
     if (!elem) return selector;
     if (!(this instanceof Elem)) return new Elem(...arguments);
     selector = args.shift();
@@ -8181,156 +8181,6 @@ eol = '\n';
   //   $.extend({config:config});
   // })()
 
-  function start() {
-    $.his.openItems = localStorage.getItem('openItems');
-    let localAttr = localStorage.getItem('attr');
-    $.localAttr = localAttr = localAttr ? JSON.parse(localAttr) : {};
-
-    const apiorigin = $.httpHost === 'localhost' && $().storage === 'api' ? 'http://localhost' : $.origin;
-    aim = $.aim = $('aim');
-    require = function () {};
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-      // Prevent the mini-infobar from appearing on mobile
-      e.preventDefault();
-      // Stash the e so it can be triggered later.
-      // deferredPrompt = e;
-      // Update UI notify the user they can install the PWA
-      // showInstallPromotion();
-      // Optionally, send analytics e that PWA install promo was shown.
-      // console.error(`LETOP 'beforeinstallprompt' e was fired.`);
-      // alert('install');
-    });
-    // console.log(1, document.currentScript.attributes.libraries.value);
-
-
-    // console.log('WEB');
-    // const el = document.createElement('link');
-    // el.rel = 'stylesheet';
-    // el.href = 'https://aliconnect.nl/v1/api/css/web.css';
-    // document.head.appendChild(el);
-    // function require(){};
-    $.his.openItems = $.his.openItems ? $.his.openItems.split(',') : [];
-    window.console = window.console || { log: function() { } };
-    window.Object = window.Object || {
-      assign: function(dest) {
-        for (var i = 1, source; source = arguments[i]; i++) for (var name in source) dest[name] = source[name];
-        return dest;
-      },
-      values: function(obj) {
-        var arr = [];
-        for (var name in obj) arr.push(obj[name]);
-        return arr;
-      }
-    };
-    (function(arr) {
-      arr.forEach(function(item) {
-        if (item.hasOwnProperty('append')) {
-          return;
-        }
-        Object.defineProperty(item, 'append', {
-          configurable: true,
-          enumerable: true,
-          writable: true,
-          value: function append() {
-            const argArr = Array.prototype.slice.call(arguments);
-            const docFrag = document.createDocumentFragment();
-            argArr.forEach(function(argItem) {
-              const isNode = argItem instanceof Node;
-              docFrag.appendChild(isNode ? argItem : document.createTextNode(String(argItem)));
-            });
-            this.appendChild(docFrag);
-          }
-        });
-      });
-    })([Element.prototype, Document.prototype, DocumentFragment.prototype]);
-    let match = document.location.pathname.match(/(.*)(api|docs|omd|om)(?=\/)/);
-    if (match) {
-      $.basePath = match[0];
-    }
-    localAttr.set = function(id, selector, context) {
-      localAttr[id] = localAttr[id] || {};
-      if (context === null) {
-        delete localAttr[id][selector];
-      } else {
-        localAttr[id][selector] = context;
-      }
-      localStorage.setItem('attr', JSON.stringify(localAttr));
-    };
-    $(document.documentElement).attr('lang', navigator.language);
-    $().on('ready', async e => {
-      // console.log('web ready', $.prompts);
-      if ($.prompts) {
-        $.prompt($.prompts);
-      }
-      return;
-      // await $().emit('ready');
-      // //console.log('web ready2',$(), $().ws());
-      // $.prompt('TEST', e => {
-      // 	alert(1);
-      // });
-      // $.prompt('TEST');
-      // return;
-      // initConfigCss();
-      loadStoredCss();
-      // loadStoredAttr();
-      // initAllSeperators()
-      if (document.getElementById('colpage')) {
-        Object.assign(document.getElementById('colpage'), {
-          cancel(e) {
-            //console.log('PAGE CANCEL', this);
-          },
-          keydown: {
-            F2(e) {
-              if (this.item) {
-                this.item.PageEditElement()
-              }
-            }
-          },
-        });
-      }
-      // //console.log('AFTER READY', document.location.hostname);
-      // setTimeout(() => {
-      //   //console.log('web after ready')
-      //   $(window).emit('popstate');
-      //   $(window).emit('focus');
-      // })
-      //console.log('web ready done')
-    });
-    // this.sw();
-
-    const currentScript = document.currentScript;
-    const scriptPath = currentScript.src.replace(/\/js\/.*/, '');
-    [...currentScript.attributes].forEach(attribute => $.extend({config: minimist(['--'+attribute.name.replace(/^--/, ''), attribute.value])}));
-    (new URLSearchParams(document.location.search)).forEach((value,key)=>$.extend({config: minimist([key,value])}));
-
-    if (currentScript.attributes.libraries) {
-      currentScript.attributes.libraries.value.split(',')
-      .forEach(selector => importScript(
-        currentScript.attributes.src.value.replace(/web/g, selector)
-      ));
-    }
-
-    window.addEventListener('load', async function webLoad(e) {
-      // console.log('LOAD');
-      // if (currentScript.attributes.url) {
-      //   await $().url('config.json', currentScript.attributes.url.value).get().catch(console.error).then(e => $.extend({config: e.body}));
-      // }
-      // (new URL(document.currentScript.src)).searchParams.forEach((value, key)=>$.extend(config, minimist([key,value])));
-      // [...currentScript.attributes].forEach(attribute => $.extend({config: minimist(['--'+attribute.name.replace(/^--/, ''), attribute.value])}));
-      // (new URLSearchParams(document.location.search)).forEach((value,key)=>$.extend({config: minimist([key,value])}));
-
-      $().emit('load').then(function emitLoad(e) {
-        $().emit('ready').then(function emitReady(e) {
-          $(window).emit('popstate');
-          $(window).emit('focus');
-        });
-      })
-    })
-
-
-  }
-
   Object.assign(aim, {
     Clipboard,
     ObjectManager,
@@ -9635,5 +9485,158 @@ eol = '\n';
       }))
     },},
   });
+
+
+  if (this.document) {
+    $.his.openItems = localStorage.getItem('openItems');
+    let localAttr = localStorage.getItem('attr');
+    $.localAttr = localAttr = localAttr ? JSON.parse(localAttr) : {};
+
+    const apiorigin = $.httpHost === 'localhost' && $().storage === 'api' ? 'http://localhost' : $.origin;
+    aim = $.aim = $('aim');
+    require = function () {};
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the e so it can be triggered later.
+      // deferredPrompt = e;
+      // Update UI notify the user they can install the PWA
+      // showInstallPromotion();
+      // Optionally, send analytics e that PWA install promo was shown.
+      // console.error(`LETOP 'beforeinstallprompt' e was fired.`);
+      // alert('install');
+    });
+    // console.log(1, document.currentScript.attributes.libraries.value);
+
+
+    // console.log('WEB');
+    // const el = document.createElement('link');
+    // el.rel = 'stylesheet';
+    // el.href = 'https://aliconnect.nl/v1/api/css/web.css';
+    // document.head.appendChild(el);
+    // function require(){};
+    $.his.openItems = $.his.openItems ? $.his.openItems.split(',') : [];
+    window.console = window.console || { log: function() { } };
+    window.Object = window.Object || {
+      assign: function(dest) {
+        for (var i = 1, source; source = arguments[i]; i++) for (var name in source) dest[name] = source[name];
+        return dest;
+      },
+      values: function(obj) {
+        var arr = [];
+        for (var name in obj) arr.push(obj[name]);
+        return arr;
+      }
+    };
+    (function(arr) {
+      arr.forEach(function(item) {
+        if (item.hasOwnProperty('append')) {
+          return;
+        }
+        Object.defineProperty(item, 'append', {
+          configurable: true,
+          enumerable: true,
+          writable: true,
+          value: function append() {
+            const argArr = Array.prototype.slice.call(arguments);
+            const docFrag = document.createDocumentFragment();
+            argArr.forEach(function(argItem) {
+              const isNode = argItem instanceof Node;
+              docFrag.appendChild(isNode ? argItem : document.createTextNode(String(argItem)));
+            });
+            this.appendChild(docFrag);
+          }
+        });
+      });
+    })([Element.prototype, Document.prototype, DocumentFragment.prototype]);
+    let match = document.location.pathname.match(/(.*)(api|docs|omd|om)(?=\/)/);
+    if (match) {
+      $.basePath = match[0];
+    }
+    localAttr.set = function(id, selector, context) {
+      localAttr[id] = localAttr[id] || {};
+      if (context === null) {
+        delete localAttr[id][selector];
+      } else {
+        localAttr[id][selector] = context;
+      }
+      localStorage.setItem('attr', JSON.stringify(localAttr));
+    };
+    $(document.documentElement).attr('lang', navigator.language);
+    $().on('ready', async e => {
+      // console.log('web ready', $.prompts);
+      if ($.prompts) {
+        $.prompt($.prompts);
+      }
+      return;
+      // await $().emit('ready');
+      // //console.log('web ready2',$(), $().ws());
+      // $.prompt('TEST', e => {
+      // 	alert(1);
+      // });
+      // $.prompt('TEST');
+      // return;
+      // initConfigCss();
+      loadStoredCss();
+      // loadStoredAttr();
+      // initAllSeperators()
+      if (document.getElementById('colpage')) {
+        Object.assign(document.getElementById('colpage'), {
+          cancel(e) {
+            //console.log('PAGE CANCEL', this);
+          },
+          keydown: {
+            F2(e) {
+              if (this.item) {
+                this.item.PageEditElement()
+              }
+            }
+          },
+        });
+      }
+      // //console.log('AFTER READY', document.location.hostname);
+      // setTimeout(() => {
+      //   //console.log('web after ready')
+      //   $(window).emit('popstate');
+      //   $(window).emit('focus');
+      // })
+      //console.log('web ready done')
+    });
+    // this.sw();
+
+    const currentScript = document.currentScript;
+    const scriptPath = currentScript.src.replace(/\/js\/.*/, '');
+    [...currentScript.attributes].forEach(attribute => $.extend({config: minimist(['--'+attribute.name.replace(/^--/, ''), attribute.value])}));
+    (new URLSearchParams(document.location.search)).forEach((value,key)=>$.extend({config: minimist([key,value])}));
+
+    if (currentScript.attributes.libraries) {
+      currentScript.attributes.libraries.value.split(',')
+      .forEach(selector => importScript(
+        currentScript.attributes.src.value.replace(/web/g, selector)
+      ));
+    }
+
+    window.addEventListener('load', async function webLoad(e) {
+      // console.log('LOAD');
+      // if (currentScript.attributes.url) {
+      //   await $().url('config.json', currentScript.attributes.url.value).get().catch(console.error).then(e => $.extend({config: e.body}));
+      // }
+      // (new URL(document.currentScript.src)).searchParams.forEach((value, key)=>$.extend(config, minimist([key,value])));
+      // [...currentScript.attributes].forEach(attribute => $.extend({config: minimist(['--'+attribute.name.replace(/^--/, ''), attribute.value])}));
+      // (new URLSearchParams(document.location.search)).forEach((value,key)=>$.extend({config: minimist([key,value])}));
+
+      $().emit('load').then(function emitLoad(e) {
+        $().emit('ready').then(function emitReady(e) {
+          $(window).emit('popstate');
+          $(window).emit('focus');
+        });
+      })
+    })
+
+
+  }
+
+
 
 })();
