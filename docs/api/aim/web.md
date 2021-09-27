@@ -3,6 +3,12 @@
     - [aim.key](#aimkey)
     - [aim.props](#aimprops)
     - [Class: aim.Clipboard()](#aimclipboard)
+    - [Class: aim.ObjectManager()](#aimobjectmanager)
+        - [objectManager.init()](#objectmanagerinit)
+    - [Class: aim.Popup()](#aimpopupe)
+        - [popup.handlers](#popuphandlers)
+        - [popup.enter()](#popupentere)
+    - [Class: aim.ScriptLoader()](#aimscriptloader)
     - [Class: aim.Elem()](#aimelemselector)
         - [elem.append()](#elemappend)
         - [elem.acceptScope()](#elemacceptscopescope-socket_id)
@@ -134,10 +140,6 @@
         - [elem.wrap()](#elemwrap)
         - [elem.click()](#elemclick)
         - [elem.submit()](#elemsubmit)
-    - [Class: aim.Popup()](#aimpopupe)
-        - [popup.handlers](#popuphandlers)
-        - [popup.enter()](#popupentere)
-    - [Class: aim.ScriptLoader()](#aimscriptloader)
     - [aim.checkPath()](#aimcheckpathe)
     - [aim.checkkey()](#aimcheckkeye)
     - [aim.eventKeyState()](#aimeventkeystatee)
@@ -157,6 +159,15 @@ type: string
 value: Aim
 # aim.props
 # aim.Clipboard()
+type: constructor
+# aim.ObjectManager()
+type: constructor
+## objectManager.init()
+# aim.Popup(e)
+type: constructor
+## popup.handlers
+## popup.enter(e)
+# aim.ScriptLoader()
 type: constructor
 # aim.Elem(selector)
 type: constructor
@@ -292,12 +303,6 @@ type: constructor
 ## elem.wrap()
 ## elem.click()
 ## elem.submit()
-# aim.Popup(e)
-type: constructor
-## popup.handlers
-## popup.enter(e)
-# aim.ScriptLoader()
-type: constructor
 # aim.checkPath(e)
 # aim.checkkey(e)
 # aim.eventKeyState(e)
