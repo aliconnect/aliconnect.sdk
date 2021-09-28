@@ -6840,6 +6840,8 @@ eol = '\n';
           value = value == attribute.Eq ? 1 : 0;
         }
         if (has('Ne')) {
+          // Binnenkomende waarde bewaren voor enum text
+          attribute.TextualValue = value;
           value = value != attribute.Ne ? 1 : 0;
         }
 
@@ -6989,21 +6991,18 @@ eol = '\n';
           const session = new snmpNative.Session({ host: item.IPAddress, community: item.Community || 'public' });
           const children = item.children.filter(Boolean);
           const oids = children.map(child => strToOid(child.oid));
+          itemSetState(item, 'connecting');
           (function read() {
             session.getAll({ oids: oids }, (err, varbinds) => {
-              if (err) {
+              if (!varbinds.length) {
                 itemSetState(item, 'error');
-                console.error(err);
-                // children.forEach(child => attrSet(child, 'state', 'error'));
                 setTimeout(() => {
                   itemSetState(item, 'connecting');
-                  // children.forEach(child => attrSet(child, 'state', 'connecting'));
                   read();
                 }, 5000);
-                // return;
               } else {
                 itemSetState(item, 'connected');
-                children.forEach((child,i) => server.attrSetValue(child, varbinds[i] && varbinds[i].value));
+                children.forEach((child,i) => attrSetValue(child, varbinds[i] && varbinds[i].value));
                 setTimeout(read, item.PollInterval);
               }
             })
