@@ -789,3 +789,11 @@ body>dialog['open'] {
   /* background: blue; */
   z-index: 3;
 }
+
+
+section#list {
+  overflow: auto;
+}
+#prompt {
+  display: none;
+}

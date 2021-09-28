@@ -15,7 +15,7 @@ body>nav {
   body>main {
     margin:auto;
     width:-webkit-fill-available;
-    max-width:1000px;
+    max-width:1200px;
     margin-top:48px;
   }
   main,main * {

@@ -1,31 +1,57 @@
 eol = '\n';
-function extend(selector, context) {
-  for (let [key, value] of Object.entries(context)) {
-    if (Array.isArray(value)) {
-      selector[key] = value;
-    } else if (typeof value === 'object') {
-      selector[key] = extend(selector[key] || {}, value);
-    } else {
-      selector[key] = value;
-    }
-  }
-  return selector;
-};
-function validSchemaName(schemaName){
-  if (!schemaName) throw 'invalid schemaname';
-    return String(schemaName)
-  .replace(/^\d|\.|\s|-|\(|\)|,/g,'')
-  .replace(/\bLocation\b/,'Loc')
-}
-function urlToId(href){
-  return btoa(href).replace(/[=]+aim/g,'');
-}
-function idToUrl(id){
-  return atob(id);
-}
 (function(global, factory) { typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, global.aim = factory()); }(this, function (exports) {
-  const libUrl = 'https:  const self = this;
-  const dmsOrigin = 'https:  const dmsUrl = 'https:  const AUTHORIZATION_URL = 'https:  const AUTHORIZATION_TOKEN_URL = 'https:  let aimClient;
+  const self = this;
+  function aim(selector, context){
+        if (aim.Elem && selector instanceof aim.Elem) return selector;
+    if (!(this instanceof aim)) return new aim(...arguments);
+        if (selector){
+      if (self.Item && selector instanceof self.Item){
+        return selector;
+      }
+      this.selector = selector;
+    }
+    selector = selector || 'aim';
+    if (['string','number'].includes(typeof selector)){
+      if (aim.his.map.has(selector)){
+        selector = aim.his.map.get(selector);
+        if (context) aim(selector).extend(context);
+        return selector;
+      } else if (self.document) {
+                                        selector = aim.Elem ? new aim.Elem(...arguments) : selector;
+              }
+    }
+            if (self.Element && selector instanceof self.Element) {
+      if (aim.his.map.has(selector.id)) {
+        return aim.his.map.get(selector.id);
+      }
+      if (aim.Elem) {
+        return new aim.Elem(selector);
+      }
+    }
+    if (aim.Elem && selector instanceof aim.Elem) {
+      if (selector.elem.id) {
+        aim.his.map.set(selector.elem.id, selector);
+      }
+      return selector;
+    }
+        if (typeof selector === 'string'){
+      if (selector.match(/\w+\(\d+\)/)){
+        return Item.get(selector);
+      } else {
+        this.id(selector);
+        if (context) {
+          this.set(context);
+          return context;
+        }
+      }
+            } else if (typeof Window !== 'undefined' && selector instanceof Window) {
+      return this;
+    } else if (selector.ID || selector.LinkID || selector.tag) {
+            return Item.get(selector);
+    }
+    this.extend(context)
+  };
+  const libUrl = 'https:    const dmsOrigin = 'https:  const dmsUrl = 'https:  const AUTHORIZATION_URL = 'https:  const AUTHORIZATION_TOKEN_URL = 'https:  let aimClient;
               console.msg = console.msg || console.info;
   today = new Date();
   dstart = 0;
@@ -354,6 +380,30 @@ function idToUrl(id){
     }
     return argv;
   };
+  function extend(selector, context) {
+    for (let [key, value] of Object.entries(context)) {
+      if (Array.isArray(value)) {
+        selector[key] = value;
+      } else if (typeof value === 'object') {
+        selector[key] = extend(selector[key] || {}, value);
+      } else {
+        selector[key] = value;
+      }
+    }
+    return selector;
+  };
+  function validSchemaName(schemaName){
+    if (!schemaName) throw 'invalid schemaname';
+        return String(schemaName)
+    .replace(/^\d|\.|\s|-|\(|\)|,/g,'')
+    .replace(/\bLocation\b/,'Loc')
+  }
+  function urlToId(href){
+    return btoa(href).replace(/[=]+aim/g,'');
+  }
+  function idToUrl(id){
+    return atob(id);
+  }
   function createParam (param, splitter){
     var result = {};
     if (param) param.split(splitter || '&').forEach(function (val){
@@ -1100,53 +1150,6 @@ function idToUrl(id){
       xhr.send(this.input.data);
                                   },},
   });
-  function aim(selector, context){
-        if (aim.Elem && selector instanceof aim.Elem) return selector;
-    if (!(this instanceof aim)) return new aim(...arguments);
-        if (selector){
-      if (self.Item && selector instanceof self.Item){
-        return selector;
-      }
-      this.selector = selector;
-    }
-    selector = selector || 'aim';
-    if (['string','number'].includes(typeof selector)){
-      if (aim.his.map.has(selector)){
-        selector = aim.his.map.get(selector);
-        if (context) aim(selector).extend(context);
-        return selector;
-      } else if (self.document) {
-                                        selector = aim.Elem ? aim.Elem(...arguments) : selector;
-              }
-    }
-        if (self.Element && selector instanceof self.Element) {
-      if (aim.his.map.has(selector.id)) {
-        return aim.his.map.get(selector.id);
-      }
-    }
-    if (aim.Elem && selector instanceof aim.Elem) {
-      if (selector.elem.id) {
-        aim.his.map.set(selector.elem.id, selector);
-      }
-      return selector;
-    }
-        if (typeof selector === 'string'){
-      if (selector.match(/\w+\(\d+\)/)){
-        return Item.get(selector);
-      } else {
-        this.id(selector);
-        if (context) {
-          this.set(context);
-          return context;
-        }
-      }
-            } else if (typeof Window !== 'undefined' && selector instanceof Window) {
-      return this;
-    } else if (selector.ID || selector.LinkID || selector.tag) {
-            return Item.get(selector);
-    }
-    this.extend(context)
-  };
   function replaceOutsideQuotes(codeString, callback, pre = '<span class=hl-string>', post = '</span>') {
         const a = codeString.split(/(['"`])\1/);
     return a.map((s,i) => i%3===0 ? (callback ? callback(s) : s) : i%3===2 ? `${a[i-1]}${pre}${s}${post}${a[i-1]}` : '').join('');
@@ -1159,7 +1162,8 @@ function idToUrl(id){
   function toLink(s){
     return s.replace(/\(|\)|\[|\]|,|\.|\=|\{|\}/g,'').replace(/ /g,'-').toLowerCase();
   }
-  Markdown.prototype.render = function (s, type) {
+  Markdown.prototype = {
+    render(s, type) {
       function code(s, type) {
         const highlight = {
           html(s) {
@@ -1317,118 +1321,120 @@ function idToUrl(id){
   function toLink(s){
     return s.replace(/\(|\)|\[|\]|,|\.|\=|\{|\}/g,'').replace(/ /g,'-').toLowerCase();
   }
-  const all = [];
-  function distDoc(objectname, topobj) {
-    return new Promise((success, fail) => {
-                  let filename = `docs/api/${objectname}.md`;
-      console.log('doc', objectname);
-      fs.readFile(filename, (err, data) => {
-        if (err) throw err;
-        const content = String(data);
-        const index = ['**Table of contents**'];
-        function addIndex(level, title, link){
-          index.push(s = '                        '.slice(0,(level-1)*4) + `- [${title}](#${toLink(`${link}`)})`)
-          console.log(s);
-        }
-        const doc = [];
-        var chapters = Object.fromEntries(content.split(/[#]+ /).map(c => [c.split(/\r|\n/)[0], c]));
-                (function docObj(name, obj, level) {
-                    if (obj !== topobj && all.includes(obj)) return;
-          all.push(obj);
-          const h = '#########'.slice(0,level-1 );
-          function chap(title) {
-            doc.push(h + ` ${title}`);
-            return chapters[title] ? chapters[title].split('<!-- body -->')[1] : '';
-          }
-          function getProperties(obj, name){
-            const pd = Object.getOwnPropertyDescriptors(obj);
-            const entries = Object.entries(pd).filter(([key,value]) => value.enumerable);
-            if (entries.length) {
-              entries.forEach(([propertyName, descriptor]) => {
-                if (descriptor.get || descriptor.set) {
-                  chap((name ? name + '.' : '') + propertyName);
-                }
-                if ('value' in descriptor) {
-                  docObj((name ? name + '.' : '') + propertyName, descriptor.value, level + 1);
-                }
-              });
+  function Dist() {
+    this.all = [];
+  }
+  Dist.prototype = {
+    doc(objectname, topobj) {
+      return new Promise((success, fail) => {
+                        const all = this.all;
+        let filename = `docs/api/${objectname}.md`;
+        console.log('doc', objectname);
+        fs.readFile(filename, (err, data) => {
+          if (err) throw err;
+          const content = String(data);
+          const index = ['**Table of contents**'];
+          function addIndex(level, title, link){
+            index.push(s = '                        '.slice(0,(level-1)*4) + `- [${title}](#${toLink(`${link}`)})`)
+                      }
+          const doc = [];
+          var chapters = Object.fromEntries(content.split(/[#]+ /).map(c => [c.split(/\r|\n/)[0], c]));
+                    (function docObj(name, obj, level) {
+                        if (obj !== topobj && all.includes(obj)) return;
+            all.push(obj);
+            const h = '#########'.slice(0,level-1 );
+            function chap(title) {
+              doc.push(h + ` ${title}`);
+              return chapters[title] ? chapters[title].split('<!-- body -->')[1] : '';
             }
-          }
-          if (typeof obj === 'function') {
-                        var content = String(obj).replace(
-              /\            ).replace(
-              /\/\/.*?(?=\n|$)/gs,''
-            ).replace(/\r/,'').split(/\n/).filter(l => l.trim());
-                        var header = content.shift();
-                        var params = header.match(/\((.*)\)/)[1] || '';
-            content.pop();
-            var ident = content[0] && content[0][0] === ' ' ? content[0].match(/^ +/)[0].length : 0;
-            content = content.map(s => s.slice(ident)).join('\n')
-            var title = name.replace(/(.*?)\.prototype/, '$1()');
-            if (Object.keys(obj).length) {
+            function getProperties(obj, name){
+              const pd = Object.getOwnPropertyDescriptors(obj);
+              const entries = Object.entries(pd).filter(([key,value]) => value.enumerable);
+              if (entries.length) {
+                entries.forEach(([propertyName, descriptor]) => {
+                  if (descriptor.get || descriptor.set) {
+                    chap((name ? name + '.' : '') + propertyName);
+                  }
+                  if ('value' in descriptor) {
+                    docObj((name ? name + '.' : '') + propertyName, descriptor.value, level + 1);
+                  }
+                });
+              }
+            }
+            if (typeof obj === 'function') {
+                            var content = String(obj).replace(
+                /\              ).replace(
+                /\/\/.*?(?=\n|$)/gs,''
+              ).replace(/\r/,'').split(/\n/).filter(l => l.trim());
+                            var header = content.shift();
+                            var params = header.match(/\((.*)\)/)[1] || '';
+              content.pop();
+              var ident = content[0] && content[0][0] === ' ' ? content[0].match(/^ +/)[0].length : 0;
+              content = content.map(s => s.slice(ident)).join('\n')
+              var title = name.replace(/(.*?)\.prototype/, '$1()');
+              if (Object.keys(obj).length) {
+                addIndex(level, `${name}`, `${name}`);
+                var body = chap(`${name}`);
+                getProperties(obj, name);
+              }
+              if (obj.name.match(/^[A-Z]/)) {
+                var body = chap(`${title}(${params})`);
+                addIndex(level, `Class: ${title}()`, `${title}(${params})`);
+                doc.push('type: constructor');
+              } else {
+                var body = chap(`${title}(${params})`);
+                addIndex(level, `${title}()`, `${title}(${params})`);
+                              }
+              if (body) {
+                doc.push('<!-- body -->', body.trim());
+              }
+              if (obj.prototype) {
+                getProperties(obj.prototype, obj.name.replace(/\w/, s => s.toLowerCase()));
+              }
+                                                      } else if (Array.isArray(obj)) {
+              addIndex(level, `Array: ${name}`, `${name}`);
+              doc.push(h + ` ${name}`);
+            } else if (typeof obj === 'object') {
               addIndex(level, `${name}`, `${name}`);
               var body = chap(`${name}`);
               getProperties(obj, name);
-            }
-            if (obj.name.match(/^[A-Z]/)) {
-              var body = chap(`${title}(${params})`);
-              addIndex(level, `Class: ${title}()`, `${title}(${params})`);
-              doc.push('type: constructor');
             } else {
-              var body = chap(`${title}(${params})`);
-              addIndex(level, `${title}()`, `${title}(${params})`);
-                          }
-            if (body) {
-              doc.push('<!-- body -->', body.trim());
+              addIndex(level, `${name}`, `${name}`);
+              doc.push(h + ` ${name}`);
+              doc.push('type: ' + typeof obj);
+              doc.push('value: ' + obj);
             }
-            if (obj.prototype) {
-              getProperties(obj.prototype, obj.name.replace(/\w/, s => s.toLowerCase()));
-            }
-                                              } else if (Array.isArray(obj)) {
-            addIndex(level, `Array: ${name}`, `${name}`);
-            doc.push(h + ` ${name}`);
-          } else if (typeof obj === 'object') {
-            addIndex(level, `${name}`, `${name}`);
-            var body = chap(`${name}`);
-            getProperties(obj, name);
-          } else {
-            addIndex(level, `${name}`, `${name}`);
-            doc.push(h + ` ${name}`);
-            doc.push('type: ' + typeof obj);
-            doc.push('value: ' + obj);
-          }
-        })(topobj.name, topobj, 1);
-        fs.writeFile(filename, index.concat(doc).join('\n'), (err) => {
-          fail(err);
-          success();
+          })(topobj.name, topobj, 1);
+          fs.writeFile(filename, index.concat(doc).join('\n'), (err) => {
+            fail(err);
+            success();
+          });
+        });
+      })
+    },
+    src(source) {
+      const dest = source.replace(/src/, 'dist')
+      fs.readFile(source, (err, data) => {
+        console.log(source);
+        if (err) throw err;
+                fs.writeFile(dest, data = clean_code(String(data)), (err) => {
+          if (err) throw err;
+          fs.writeFile(dest.replace(/(\.\w+)$/,'.min$1'), minimize_code(data), (err) => {
+            if (err) throw err;
+            console.log(`saved ${dest}`);
+                      });
         });
       });
-    })
-  }
-  function distSrc(source) {
-    const dest = source.replace(/src/, 'dist')
-    fs.readFile(source, (err, data) => {
-      if (err) throw err;
-            fs.writeFile(dest, data = clean_code(String(data)), (err) => {
-        if (err) throw err;
-        fs.writeFile(dest.replace(/(\.\w+)$/,'.min$1'), minimize_code(data), (err) => {
-          if (err) throw err;
-          console.log(`saved ${dest}`);
-                  });
-      });
-    });
+    },
   }
   Object.assign(aim, {
     Client,
-    Server,
-    WebsocketClient,
-    UserAgentApplication,
-    Markdown,
+    Dist,
     Request,
-    dist: {
-      doc: distDoc,
-      src: distSrc,
-    },
+    Server,
+    UserAgentApplication,
+    WebsocketClient,
+    markdown: Markdown,
     paths: {
       '/dist': {
         get: {
@@ -1772,5 +1778,5 @@ function idToUrl(id){
     fs = require('fs');
     atob = require('atob');
   }
-  return aim;
+    return aim;
 }));

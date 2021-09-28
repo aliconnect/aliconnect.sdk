@@ -423,18 +423,19 @@ input.check {
   /* position: absolute;
   display: none; */
 }
-::-webkit-scrollbar {
+
+.scrollbar-small::-webkit-scrollbar {
   /* height: 10px; */
   /* width: 10px; */
-  height: 6px;
-  width: 6px;
+  /* height: 6px;
+  width: 6px; */
   /* cursor: pointer; */
 }
-::-webkit-scrollbar-corner {
+.scrollbar-small::-webkit-scrollbar-corner {
   /* background-color: var(--trans1); */
   background: transparent;
 }
-::-webkit-scrollbar-thumb {
+.scrollbar-small::-webkit-scrollbar-thumb {
   border-radius: 9px;
   /* background-color: var(--trans4); */
   /* border: solid 3px rgba(140,140,140,0.0); */
@@ -444,19 +445,21 @@ input.check {
   background-clip: content-box;
   border: solid 2px transparent;
 }
-::-webkit-scrollbar-thumb:hover {
+.scrollbar-small::-webkit-scrollbar-thumb:hover {
   border: none;
   background-color: var(--trans2);
   cursor: pointer;
   /* background: red; */
 }
-::-webkit-scrollbar-track {
+.scrollbar-small::-webkit-scrollbar-track {
   background: transparent;
   /* background-color: var(--trans4); */
 }
+
 ::placeholder {
   color: inherit; font:inherit; opacity: 0.5;
 }
+
 .row {
   display: -webkit-box;
   display: -moz-box;

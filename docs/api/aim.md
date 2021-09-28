@@ -3,15 +3,9 @@
     - [Class: aim.Client()](#aimclientoptions-config)
         - [client.headers](#clientheaders)
         - [client.loadConfig()](#clientloadconfig)
-    - [Class: aim.Server()](#aimserverconfig)
-        - [server.query()](#serverquerysql)
-        - [server.attrSet()](#serverattrsetattribute-name-value)
-        - [server.attrSetValue()](#serverattrsetvalueattribute-value-path--)
-        - [server.initControlEquipment()](#serverinitcontrolequipmentitems)
-    - [Class: aim.WebsocketClient()](#aimwebsocketclientoptions--)
-    - [Class: aim.UserAgentApplication()](#aimuseragentapplicationconfig--)
-    - [Class: aim.Markdown()](#aimmarkdown)
-        - [markdown.render()](#markdownrenders-type)
+    - [Class: aim.Dist()](#aimdist)
+        - [dist.doc()](#distdocobjectname-topobj)
+        - [dist.src()](#distsrcsource)
     - [Class: aim.Request()](#aimrequesturl-base)
         - [request.get()](#requestget)
         - [request.input()](#requestinputparam-formdata--false)
@@ -22,9 +16,17 @@
         - [request.select()](#requestselect)
         - [request.query()](#requestqueryselector-context)
         - [request.delete()](#requestdelete)
-    - [aim.dist](#aimdist)
-        - [aim.dist.doc()](#aimdistdocobjectname-topobj)
-        - [aim.dist.src()](#aimdistsrcsource)
+    - [Class: aim.Server()](#aimserverconfig)
+        - [server.query()](#serverquerysql)
+        - [server.attrSet()](#serverattrsetattribute-name-value)
+        - [server.attrSetValue()](#serverattrsetvalueattribute-value-path--)
+        - [server.initControlEquipment()](#serverinitcontrolequipmentitems)
+    - [Class: aim.UserAgentApplication()](#aimuseragentapplicationconfig--)
+    - [Class: aim.WebsocketClient()](#aimwebsocketclientoptions--)
+    - [Class: aim.markdown()](#aimmarkdown)
+        - [markdown.render()](#markdownrenders-type)
+        - [markdown.isImg1()](#markdownisimg1src)
+        - [markdown.isImgSrc()](#markdownisimgsrcsrc)
     - [aim.paths](#aimpaths)
         - [aim.paths./dist](#aimpaths/dist)
             - [aim.paths./dist.get](#aimpaths/distget)
@@ -57,19 +59,10 @@
 type: constructor
 ## client.headers
 ## client.loadConfig()
-# aim.Server(config)
+# aim.Dist()
 type: constructor
-## server.query(sql)
-## server.attrSet(attribute, name, value)
-## server.attrSetValue(attribute, value, path = [])
-## server.initControlEquipment(items)
-# aim.WebsocketClient(options = {})
-type: constructor
-# aim.UserAgentApplication(config = {})
-type: constructor
-# aim.Markdown()
-type: constructor
-## markdown.render(s, type)
+## dist.doc(objectname, topobj)
+## dist.src(source)
 # aim.Request(url, base)
 type: constructor
 ## request.get()
@@ -81,9 +74,21 @@ type: constructor
 ## request.select()
 ## request.query(selector, context)
 ## request.delete()
-# aim.dist
-## aim.dist.doc(objectname, topobj)
-## aim.dist.src(source)
+# aim.Server(config)
+type: constructor
+## server.query(sql)
+## server.attrSet(attribute, name, value)
+## server.attrSetValue(attribute, value, path = [])
+## server.initControlEquipment(items)
+# aim.UserAgentApplication(config = {})
+type: constructor
+# aim.WebsocketClient(options = {})
+type: constructor
+# aim.markdown()
+type: constructor
+## markdown.render(s, type)
+## markdown.isImg1(src)
+## markdown.isImgSrc(src)
 # aim.paths
 ## aim.paths./dist
 ### aim.paths./dist.get

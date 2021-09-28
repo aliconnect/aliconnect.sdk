@@ -1,38 +1,76 @@
 eol = '\n';
-// console.warn('RUNING BETA');
+// console.warn('RUNING BETA 222');
 //console.log('sdk 1.0.1');
 // version 0.0.1 beta1
-function extend(selector, context) {
-  for (let [key, value] of Object.entries(context)) {
-    if (Array.isArray(value)) {
-      selector[key] = value;
-    } else if (typeof value === 'object') {
-      selector[key] = extend(selector[key] || {}, value);
-    } else {
-      selector[key] = value;
-    }
-  }
-  return selector;
-};
-function validSchemaName(schemaName){
-  if (!schemaName) throw 'invalid schemaname';
-  // TODO: Location illegal schema name
-  return String(schemaName)
-  .replace(/^\d|\.|\s|-|\(|\)|,/g,'')
-  .replace(/\bLocation\b/,'Loc')
-}
-function urlToId(href){
-  return btoa(href).replace(/[=]+aim/g,'');
-}
-function idToUrl(id){
-  return atob(id);
-}
 // Version 0.0.6
 (function(global, factory) { typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, global.aim = factory()); }(this, function (exports) {
-  const libUrl = 'https://aliconnect.nl/npm/@aliconnect/lib@0.0.0/dist';
   const self = this;
-  // const Elem = self.elem ? self.elem.Elem : null;
+  function aim(selector, context){
+    // console.error(1);
+    if (aim.Elem && selector instanceof aim.Elem) return selector;
+    if (!(this instanceof aim)) return new aim(...arguments);
+    // if (!selector) return new aim('aim');
+    if (selector){
+      if (self.Item && selector instanceof self.Item){
+        return selector;
+      }
+      this.selector = selector;
+    }
+    selector = selector || 'aim';
+    if (['string','number'].includes(typeof selector)){
+      if (aim.his.map.has(selector)){
+        selector = aim.his.map.get(selector);
+        if (context) aim(selector).extend(context);
+        return selector;
+      } else if (self.document) {
+        // selector = TAGNAMES.includes(selector) ? document.createElement(selector) : (document.getElementById(selector) || selector)
+        // const element = document.getElementById(selector);
+        // selector = element ? element : (aim.Elem && aim.Elem.tagnames.includes(selector) ? document.createElement(selector) : selector);
+        // console.log(7, selector);
+        selector = aim.Elem ? new aim.Elem(...arguments) : selector;
+        // console.log(6, selector);
+      }
+    }
+    // console.warn(5, selector, self.Element, selector instanceof self.Element);
+    // console.log(selector, selector instanceof self.Element, aim.Elem);
+    if (self.Element && selector instanceof self.Element) {
+      if (aim.his.map.has(selector.id)) {
+        return aim.his.map.get(selector.id);
+      }
+      if (aim.Elem) {
+        return new aim.Elem(selector);
+      }
+    }
+    if (aim.Elem && selector instanceof aim.Elem) {
+      if (selector.elem.id) {
+        aim.his.map.set(selector.elem.id, selector);
+      }
+      return selector;
+    }
+    // if(!(this instanceof aim)) return new aim(...arguments);
+    if (typeof selector === 'string'){
+      if (selector.match(/\w+\(\d+\)/)){
+        return Item.get(selector);
+      } else {
+        this.id(selector);
+        if (context) {
+          this.set(context);
+          return context;
+        }
+      }
+    // } else if (self.Item && selector instanceof Item) {
+    //   return selector;
+    } else if (typeof Window !== 'undefined' && selector instanceof Window) {
+      return this;
+    } else if (selector.ID || selector.LinkID || selector.tag) {
+      // //console.log(selector, selector.ID, selector.LinkID, selector.tag);
+      return Item.get(selector);
+    }
+    this.extend(context)
+  };
 
+  const libUrl = 'https://aliconnect.nl/npm/@aliconnect/lib@0.0.0/dist';
+  // const Elem = self.elem ? self.elem.Elem : null;
   const dmsOrigin = 'https://aliconnect.nl';
   const dmsUrl = 'https://dms.aliconnect.nl';
   const AUTHORIZATION_URL = 'https://login.aliconnect.nl/oauth';
@@ -382,6 +420,31 @@ function idToUrl(id){
     }
     return argv;
   };
+  function extend(selector, context) {
+    for (let [key, value] of Object.entries(context)) {
+      if (Array.isArray(value)) {
+        selector[key] = value;
+      } else if (typeof value === 'object') {
+        selector[key] = extend(selector[key] || {}, value);
+      } else {
+        selector[key] = value;
+      }
+    }
+    return selector;
+  };
+  function validSchemaName(schemaName){
+    if (!schemaName) throw 'invalid schemaname';
+    // TODO: Location illegal schema name
+    return String(schemaName)
+    .replace(/^\d|\.|\s|-|\(|\)|,/g,'')
+    .replace(/\bLocation\b/,'Loc')
+  }
+  function urlToId(href){
+    return btoa(href).replace(/[=]+aim/g,'');
+  }
+  function idToUrl(id){
+    return atob(id);
+  }
   function createParam (param, splitter){
     var result = {};
     if (param) param.split(splitter || '&').forEach(function (val){
@@ -1256,69 +1319,6 @@ function idToUrl(id){
   });
   // const clients = new Map();
 
-  function aim(selector, context){
-    // console.error(1);
-    if (aim.Elem && selector instanceof aim.Elem) return selector;
-    if (!(this instanceof aim)) return new aim(...arguments);
-    // if (!selector) return new aim('aim');
-    if (selector){
-      if (self.Item && selector instanceof self.Item){
-        return selector;
-      }
-      this.selector = selector;
-    }
-    selector = selector || 'aim';
-    if (['string','number'].includes(typeof selector)){
-      if (aim.his.map.has(selector)){
-        selector = aim.his.map.get(selector);
-        if (context) aim(selector).extend(context);
-        return selector;
-      } else if (self.document) {
-        // selector = TAGNAMES.includes(selector) ? document.createElement(selector) : (document.getElementById(selector) || selector)
-        // const element = document.getElementById(selector);
-        // selector = element ? element : (aim.Elem && aim.Elem.tagnames.includes(selector) ? document.createElement(selector) : selector);
-        // console.log(7, selector);
-        selector = aim.Elem ? aim.Elem(...arguments) : selector;
-        // console.log(6, selector);
-      }
-    }
-    // console.warn(5, selector, self.Element, selector instanceof self.Element);
-    // console.log(selector, selector instanceof self.Element, aim.Elem);
-    if (self.Element && selector instanceof self.Element) {
-      if (aim.his.map.has(selector.id)) {
-        return aim.his.map.get(selector.id);
-      }
-      if (aim.Elem) {
-        return new aim.Elem(selector);
-      }
-    }
-    if (aim.Elem && selector instanceof aim.Elem) {
-      if (selector.elem.id) {
-        aim.his.map.set(selector.elem.id, selector);
-      }
-      return selector;
-    }
-    // if(!(this instanceof aim)) return new aim(...arguments);
-    if (typeof selector === 'string'){
-      if (selector.match(/\w+\(\d+\)/)){
-        return Item.get(selector);
-      } else {
-        this.id(selector);
-        if (context) {
-          this.set(context);
-          return context;
-        }
-      }
-    // } else if (self.Item && selector instanceof Item) {
-    //   return selector;
-    } else if (typeof Window !== 'undefined' && selector instanceof Window) {
-      return this;
-    } else if (selector.ID || selector.LinkID || selector.tag) {
-      // //console.log(selector, selector.ID, selector.LinkID, selector.tag);
-      return Item.get(selector);
-    }
-    this.extend(context)
-  };
 
   // const aim = aim;
   // self.aim = self.aim || aim;
@@ -1340,7 +1340,8 @@ function idToUrl(id){
   function toLink(s){
     return s.replace(/\(|\)|\[|\]|,|\.|\=|\{|\}/g,'').replace(/ /g,'-').toLowerCase();
   }
-  Markdown.prototype.render = function (s, type) {
+  Markdown.prototype = {
+    render(s, type) {
       function code(s, type) {
         const highlight = {
           html(s) {
@@ -1630,17 +1631,15 @@ function idToUrl(id){
       //.split(/\n\n/).map(s => s.trim()).map(s => s ? `<p>${s}</p>` : s).join('\n');
       // console.log(s);
       return s;
-    };
-  Object.defineProperties(Markdown.prototype, {
-    isImg: { value: function (src) {
+    },
+    isImg1(src) {
       return src.match(/jpg|png|bmp|jpeg|gif|bin/i)
-    }},
-    isImgSrc: { value: function (src) {
+    },
+    isImgSrc(src) {
       if (src) for (var i = 0, ext; ext = ['.jpg', '.png', '.bmp', '.jpeg', '.gif', '.bin'][i]; i++) if (src.toLowerCase().indexOf(ext) != -1) return true;
       return false;
-    }},
-  });
-
+    },
+  };
 
   aim.prototype = {
     accessToken(){
@@ -3331,7 +3330,7 @@ function idToUrl(id){
   });
 
   function Client (options, config) {
-
+    Client.clients = Client.clients || new Map();
     // //console.log('aim', config);
 
     this.config = config;
@@ -3448,8 +3447,8 @@ function idToUrl(id){
     //   });
     // },
     api: { value: function (src){
-      console.error(5555, this.options, this.config);
-      return aim().url(new URL(src, this.url).href)
+      console.error(5555, this.options, this.config, this.url);
+      return aim().url(this.url + src)//new URL(src, this.url).href)
       .headers('accept', 'application/json')
       .headers(this.headers)
       .authProvider(this.options.authProvider)
@@ -6171,14 +6170,15 @@ function idToUrl(id){
     const server = this;
     server.config = config;
     const events = require('events');
-    const paths = server.paths = process.mainModule.paths.map(path => path.replace(/node_modules$/,'public'));
+    const paths = [process.mainModule.path+'/public', process.mainModule.path];
     (function addpath(module) {
       if (module.parent) addpath(module.parent);
       //console.log(module.paths);
       // paths.push(...module.paths.map(path => path.replace(/node_modules$/,'public')));
-      server.paths.push(...module.paths);
+      paths.push(...module.paths);
     })(module);
-    server.paths = server.paths.unique().filter(path => fs.existsSync(path));
+    server.paths = paths.unique().filter(path => fs.existsSync(path));
+    // console.log(server.paths);
 
     function onconnection (wsc, req) {
       //console.log('connect');
@@ -6434,10 +6434,12 @@ function idToUrl(id){
     console.log('host active', protocol, host.port, options);
     const http = require(protocol);
     function processRequest (req, res) {
-      function end(statusCode, header, body) {
+      function end(statusCode, body, header) {
+        // console.log(statusCode, body, header);
         res.writeHead(res.statusCode = statusCode, header);
         res.end(body);
       }
+      if (req.url.match(/secret/)) return end(401, `401 No authorize ${req.url}`, { 'Content-Type': 'text/html' } );
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Headers', '*');
       res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
@@ -6450,13 +6452,16 @@ function idToUrl(id){
           if (config.paths[url.pathname].get) {
             if (config.paths[url.pathname].get.operationId) {
               const operationId = config.paths[url.pathname].get.operationId;
-              console.log(operationId, server[operationId]);
+              // console.log(operationId, server[operationId]);
               if (server[operationId]) {
                 (async function () {
                   const res = await server[operationId]();
-                  const body = JSON.stringify(res);
-                  end(200, { 'Content-Type': 'application/json' }, body);
+                  // const body = JSON.stringify(res);
+                  // console.log(res);
+                  // return end(200, 'AOK', {});
+                  return end(res.code, res.body, res.headers);
                 })()
+                return;
               }
             }
           }
@@ -6464,14 +6469,14 @@ function idToUrl(id){
       }
 
       if (url.pathname === '/config.js') {
-        return end(200, { 'Content-Type': 'application/json' }, 'config='+JSON.stringify(config));
+        return end(200, 'config='+JSON.stringify(config), { 'Content-Type': 'application/json' });
       }
       if (url.pathname === '/sql.json') {
         const sql = `SELECT TOP 1000 * FROM his.attr WHERE ${url.searchParams.get('filter')}`;
         debug(sql);
         return new mssql.Request().query(sql, (err, res) => {
           if (err) //console.log(err);
-          end(200, { 'Content-Type': 'application/json' }, JSON.stringify(res.recordsets));
+          end(200, JSON.stringify(res.recordsets), { 'Content-Type': 'application/json' });
         })
       }
       const headers = {
@@ -6510,14 +6515,14 @@ function idToUrl(id){
           .replace(/\@\d+\.\d+\.\d+/g, '')
           .replace(/=".*aliconnect.sdk/g, '="/@aliconnect/sdk')
           .replace(/="\/\/.*?\.github\.io\/(.*?)\./g, '="/@$1/')
-          end(200, headers.html, data);
+          end(200, data, headers.html);
         });
         // fname = paths.map(path => '/@aliconnect/sdk/public/md.html').find(fs.existsSync);
       }
       if (fname) {
         return fs.readFile(fname, (err, data) => {
           if (err) {
-            return end(404, { 'Content-Type': 'text/html' }, `404 Not Found 1 ${req.url}`);
+            return end(404, `404 Not Found 1 ${req.url}`, { 'Content-Type': 'text/html' });
           }
           var ext = fname.split('.').pop();
           if (fname.match(/\.html/)) {
@@ -6527,10 +6532,10 @@ function idToUrl(id){
             .replace(/="\/\/.*?\.github\.io\/(.*?)\./g, '="/@$1/')
           }
           // //console.log('JA');
-          end(200, headers[ext], data);
+          end(200, data, headers[ext]);
         })
       }
-      return end(404, { 'Content-Type': 'text/html' }, `404 Not Found 1 ${req.url}`);
+      return end(404, `404 Not Found 1 ${req.url}`, { 'Content-Type': 'text/html' });
       // //console.log(url.pathname, fname);
       //
       //
@@ -7022,136 +7027,139 @@ function idToUrl(id){
   function toLink(s){
     return s.replace(/\(|\)|\[|\]|,|\.|\=|\{|\}/g,'').replace(/ /g,'-').toLowerCase();
   }
-  const all = [];
 
-  function distDoc(objectname, topobj) {
-    return new Promise((success, fail) => {
-      // this[objectname] = require(`../${objectname}/src/${objectname}.js`);
-      // console.log(aim.om)
-      let filename = `docs/api/${objectname}.md`;
-      console.log('doc', objectname);
-      fs.readFile(filename, (err, data) => {
-        if (err) throw err;
-        const content = String(data);
-        const index = ['**Table of contents**'];
-        function addIndex(level, title, link){
-          index.push(s = '                        '.slice(0,(level-1)*4) + `- [${title}](#${toLink(`${link}`)})`)
-          console.log(s);
-        }
-        const doc = [];
-        var chapters = Object.fromEntries(content.split(/[#]+ /).map(c => [c.split(/\r|\n/)[0], c]));
-        // console.log(chapters);
-        (function docObj(name, obj, level) {
-          // console.log(1, name, all.includes(obj));
-          if (obj !== topobj && all.includes(obj)) return;
-          all.push(obj);
-          const h = '#########'.slice(0,level-1 );
-          function chap(title) {
-            doc.push(h + ` ${title}`);
-            return chapters[title] ? chapters[title].split('<!-- body -->')[1] : '';
+  function Dist() {
+    this.all = [];
+  }
+  Dist.prototype = {
+    doc(objectname, topobj) {
+      return new Promise((success, fail) => {
+        // this[objectname] = require(`../${objectname}/src/${objectname}.js`);
+        // console.log(aim.om)
+        const all = this.all;
+        let filename = `docs/api/${objectname}.md`;
+        console.log('doc', objectname);
+        fs.readFile(filename, (err, data) => {
+          if (err) throw err;
+          const content = String(data);
+          const index = ['**Table of contents**'];
+          function addIndex(level, title, link){
+            index.push(s = '                        '.slice(0,(level-1)*4) + `- [${title}](#${toLink(`${link}`)})`)
+            // console.log(s);
           }
-          function getProperties(obj, name){
-            const pd = Object.getOwnPropertyDescriptors(obj);
-            const entries = Object.entries(pd).filter(([key,value]) => value.enumerable);
-            if (entries.length) {
-              entries.forEach(([propertyName, descriptor]) => {
-                if (descriptor.get || descriptor.set) {
-                  chap((name ? name + '.' : '') + propertyName);
-                }
-                if ('value' in descriptor) {
-                  docObj((name ? name + '.' : '') + propertyName, descriptor.value, level + 1);
-                }
-              });
+          const doc = [];
+          var chapters = Object.fromEntries(content.split(/[#]+ /).map(c => [c.split(/\r|\n/)[0], c]));
+          // console.log(chapters);
+          (function docObj(name, obj, level) {
+            // console.log(1, name, all.includes(obj));
+            if (obj !== topobj && all.includes(obj)) return;
+            all.push(obj);
+            const h = '#########'.slice(0,level-1 );
+            function chap(title) {
+              doc.push(h + ` ${title}`);
+              return chapters[title] ? chapters[title].split('<!-- body -->')[1] : '';
             }
-          }
-          if (typeof obj === 'function') {
-            // getProperties(obj, name);
-            var content = String(obj).replace(
-              /\/\*.*?\*\//gs,''
-            ).replace(
-              /\/\/.*?(?=\n|$)/gs,''
-            ).replace(/\r/,'').split(/\n/).filter(l => l.trim());
-            // console.log(content);
-            var header = content.shift();
-            // console.log(header);
-            var params = header.match(/\((.*)\)/)[1] || '';
-            content.pop();
-            var ident = content[0] && content[0][0] === ' ' ? content[0].match(/^ +/)[0].length : 0;
-            content = content.map(s => s.slice(ident)).join('\n')
-            var title = name.replace(/(.*?)\.prototype/, '$1()');
-            if (Object.keys(obj).length) {
+            function getProperties(obj, name){
+              const pd = Object.getOwnPropertyDescriptors(obj);
+              const entries = Object.entries(pd).filter(([key,value]) => value.enumerable);
+              if (entries.length) {
+                entries.forEach(([propertyName, descriptor]) => {
+                  if (descriptor.get || descriptor.set) {
+                    chap((name ? name + '.' : '') + propertyName);
+                  }
+                  if ('value' in descriptor) {
+                    docObj((name ? name + '.' : '') + propertyName, descriptor.value, level + 1);
+                  }
+                });
+              }
+            }
+            if (typeof obj === 'function') {
+              // getProperties(obj, name);
+              var content = String(obj).replace(
+                /\/\*.*?\*\//gs,''
+              ).replace(
+                /\/\/.*?(?=\n|$)/gs,''
+              ).replace(/\r/,'').split(/\n/).filter(l => l.trim());
+              // console.log(content);
+              var header = content.shift();
+              // console.log(header);
+              var params = header.match(/\((.*)\)/)[1] || '';
+              content.pop();
+              var ident = content[0] && content[0][0] === ' ' ? content[0].match(/^ +/)[0].length : 0;
+              content = content.map(s => s.slice(ident)).join('\n')
+              var title = name.replace(/(.*?)\.prototype/, '$1()');
+              if (Object.keys(obj).length) {
+                addIndex(level, `${name}`, `${name}`);
+                var body = chap(`${name}`);
+                getProperties(obj, name);
+              }
+
+              if (obj.name.match(/^[A-Z]/)) {
+                var body = chap(`${title}(${params})`);
+                addIndex(level, `Class: ${title}()`, `${title}(${params})`);
+                doc.push('type: constructor');
+              } else {
+                var body = chap(`${title}(${params})`);
+                addIndex(level, `${title}()`, `${title}(${params})`);
+                // doc.push('type: function');
+              }
+              if (body) {
+                doc.push('<!-- body -->', body.trim());
+              }
+              if (obj.prototype) {
+                getProperties(obj.prototype, obj.name.replace(/\w/, s => s.toLowerCase()));
+              }
+              // Object.getOwnPropertyDescriptors(obj).forEach(console.log);
+              // Object.entries(Object.getOwnPropertyDescriptors(obj)).forEach(entry => docObj(name+'.'+entry[0], entry[1], level+1));
+              // doc.push("```\n"+content+"\n```");
+            } else if (Array.isArray(obj)) {
+              addIndex(level, `Array: ${name}`, `${name}`);
+              doc.push(h + ` ${name}`);
+            } else if (typeof obj === 'object') {
               addIndex(level, `${name}`, `${name}`);
               var body = chap(`${name}`);
               getProperties(obj, name);
-            }
-
-            if (obj.name.match(/^[A-Z]/)) {
-              var body = chap(`${title}(${params})`);
-              addIndex(level, `Class: ${title}()`, `${title}(${params})`);
-              doc.push('type: constructor');
             } else {
-              var body = chap(`${title}(${params})`);
-              addIndex(level, `${title}()`, `${title}(${params})`);
-              // doc.push('type: function');
+              addIndex(level, `${name}`, `${name}`);
+              doc.push(h + ` ${name}`);
+              doc.push('type: ' + typeof obj);
+              doc.push('value: ' + obj);
             }
-            if (body) {
-              doc.push('<!-- body -->', body.trim());
-            }
-            if (obj.prototype) {
-              getProperties(obj.prototype, obj.name.replace(/\w/, s => s.toLowerCase()));
-            }
-            // Object.getOwnPropertyDescriptors(obj).forEach(console.log);
-            // Object.entries(Object.getOwnPropertyDescriptors(obj)).forEach(entry => docObj(name+'.'+entry[0], entry[1], level+1));
-            // doc.push("```\n"+content+"\n```");
-          } else if (Array.isArray(obj)) {
-            addIndex(level, `Array: ${name}`, `${name}`);
-            doc.push(h + ` ${name}`);
-          } else if (typeof obj === 'object') {
-            addIndex(level, `${name}`, `${name}`);
-            var body = chap(`${name}`);
-            getProperties(obj, name);
-          } else {
-            addIndex(level, `${name}`, `${name}`);
-            doc.push(h + ` ${name}`);
-            doc.push('type: ' + typeof obj);
-            doc.push('value: ' + obj);
-          }
-        })(topobj.name, topobj, 1);
-        fs.writeFile(filename, index.concat(doc).join('\n'), (err) => {
-          fail(err);
-          success();
+          })(topobj.name, topobj, 1);
+          fs.writeFile(filename, index.concat(doc).join('\n'), (err) => {
+            fail(err);
+            success();
+          });
         });
-      });
 
-    })
-  }
-  function distSrc(source) {
-    const dest = source.replace(/src/, 'dist')
-    fs.readFile(source, (err, data) => {
-      if (err) throw err;
-      // data = clean_code(String(data));
-      fs.writeFile(dest, data = clean_code(String(data)), (err) => {
+      })
+    },
+    src(source) {
+      const dest = source.replace(/src/, 'dist')
+      fs.readFile(source, (err, data) => {
+        console.log(source);
         if (err) throw err;
-        fs.writeFile(dest.replace(/(\.\w+)$/,'.min$1'), minimize_code(data), (err) => {
+        // data = clean_code(String(data));
+        fs.writeFile(dest, data = clean_code(String(data)), (err) => {
           if (err) throw err;
-          console.log(`saved ${dest}`);
-          // doc(objectname);
+          fs.writeFile(dest.replace(/(\.\w+)$/,'.min$1'), minimize_code(data), (err) => {
+            if (err) throw err;
+            console.log(`saved ${dest}`);
+            // doc(objectname);
+          });
         });
       });
-    });
+    },
   }
 
   Object.assign(aim, {
     Client,
-    Server,
-    WebsocketClient,
-    UserAgentApplication,
-    markdown: Markdown,
+    Dist,
     Request,
-    dist: {
-      doc: distDoc,
-      src: distSrc,
-    },
+    Server,
+    UserAgentApplication,
+    WebsocketClient,
+    markdown: Markdown,
     paths: {
       '/dist': {
         get: {
@@ -7164,6 +7172,8 @@ function idToUrl(id){
     url: (url) => {
       return new Request(url);
     },
+    urlToId,
+    idToUrl,
     extend,
     his: new His,
     log: () => {
@@ -7588,8 +7598,6 @@ function idToUrl(id){
   //   return module.exports = aim;
   // }
 
-  // console.log(this);
-
-
+  // console.log(aim);
   return aim;
 }));

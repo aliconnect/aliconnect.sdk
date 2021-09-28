@@ -1,0 +1,24 @@
+{
+  "name": "aliconnect/sdk",
+  "description": "Aliconnect Software Development Kit",
+  "type": "library",
+  "license": "proprietary",
+  "autoload": {
+    "psr-4": {
+      "Aliconnect\\": "src/php/"
+    },
+    "files": [
+      "src/php/aim.php"
+    ],
+    "classmap": [
+      "src/php/"
+    ]
+  },
+  "authors": [
+    {
+      "name": "Max van Kampen",
+      "email": "max.van.kampen@alicon.nl"
+    }
+  ],
+  "minimum-stability": "dev"
+}
