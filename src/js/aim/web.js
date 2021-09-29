@@ -7344,8 +7344,8 @@ eol = '\n';
       function cell(col, row) {
         const data = row[col.name];
         const elem = $('td');
-        if (!data) return elem;
         if (col.cell) return elem.append(col.cell(row));
+        if (!data) return elem;
         if (typeof data === 'object') {
           if ('value' in data) return elem.text(data.value);
         }

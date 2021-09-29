@@ -1,5 +1,5 @@
 <?php
-namespace Aliconnect;
+// namespace Aliconnect;
 
 // die(__FILE__);
 
@@ -42,13 +42,38 @@ use Aliconnect\Jwt;
 //   return $_SERVER['HTTP_CLIENT_IP'] = $ip?$ip:$default;
 // }
 
+function str_contains($haystack, $needle) {
+  return strpos($haystack, $needle) !== false;
+}
+
+
+class Oas {
+  public function get() {
+    // header('Access-Control-Allow-Origin: *');
+    $config = aim()->config;
+    $headers = getallheaders();
+    $accept = request('Accept', $headers);
+    // debug($accept, $headers);
+    if (str_contains($accept, 'javascript')) {
+      header('Content-Type: text/javascript');
+      http_response(200, 'aimConfig='.json_encode(aim()->config));
+    }
+    if (str_contains($accept, 'yaml')) {
+      header('Content-Type: text/yaml');
+      http_response(200, yaml_emit(aim()->config));
+    }
+    if (str_contains($accept, 'json')) {
+      http_response(200, $config);
+    }
+    // http_response(200, $config);
+    readfile('index.html');
+    die();
+  }
+}
 
 class Aim {
-  public static $args = [];
   // public static $options;
   // public static $root;
-
-
   public function method_get() {
   }
   public function method_post() {
@@ -73,8 +98,8 @@ class Aim {
     return $this;
   }
   public function shutdown() {
-    if ($this->mail_messages) {
-      foreach ($this->mail_messages as $to => $mail) {
+    if ($mail_messages = request('mail_messages', $this)) {
+      foreach ($mail_messages as $to => $mail) {
         $this->mail($mail);
       }
     }
@@ -105,19 +130,19 @@ class Aim {
   public function access() {
     header("Access-Control-Allow-Headers: Authorization");
     $headers = getallheaders();
-    if ($authorization = self::request('Authorization', $headers)) {
+    if ($authorization = request('Authorization', $headers)) {
       $access_token = explode(' ', $authorization);
-      $access_token = self::request(1, $access_token, true);
-    } else if ($access_token = self::request('access_token', $_GET)) {
+      $access_token = request(1, $access_token, true);
+    } else if ($access_token = request('access_token', $_GET)) {
     } else {
       return [
-        'client_id'=>self::request('client_id', $_REQUEST),
+        'client_id'=>request('client_id', $_REQUEST),
         'scope'=>'guest.read',
       ];
     }
     $jwt = new jwt();
     $jwt->decode($access_token);
-    $payload = $this->request('payload', $jwt);
+    $payload = request('payload', $jwt);
     $client_id = $payload['client_id'];
     $secret = $this->secret($client_id);
     $jwt->validate($secret['client_secret']);
@@ -126,7 +151,7 @@ class Aim {
     return $payload;
   }
   public function init_config($client_id = null) {
-    $httphost = self::request('HTTP_HOST', $_SERVER);
+    $httphost = request('HTTP_HOST', $_SERVER);
     $this->config = yaml_parse_file($this->root."/config/basic.yaml");
     $fnames = [
       $this->root."/config/$httphost.yaml",
@@ -140,12 +165,12 @@ class Aim {
     // debug($this->config);
     return $this->config;
   }
-  public function init_api($config, $scopes = ['guest.read']) {
+  public function oas_($config, $scopes = ['guest.read']) {
     $item_classname = '\Aliconnect\Server\Data\Item';
     $scopes = is_array($scopes) ? $scopes : explode(' ', $scopes);
     // $scopes = $scopes ?: $this->get_scopes();
     // $scopes = $scopes ?: $this->scopes;
-    // $config = $this->config ?: $this->init_config(Aim::request('client_id', $this));
+    // $config = $this->config ?: $this->init_config(request('client_id', $this));
 
     foreach($config['components']['schemas'] as $schema_name => $schema) {
       $all_schema = [];
@@ -187,7 +212,7 @@ class Aim {
         ]
       ]
     ];
-    $implict_scopes = [];
+    $implicit_scopes = [];
     $par_select = [
       'in'=> 'query',
       'name'=> '$select',
@@ -232,7 +257,7 @@ class Aim {
           //     $api['components']['securitySchemes'][$auth_name]["flows"]["implicit"]["scopes"][$scope] = $scope;
           //   }
           // }
-          $implict_scopes = array_merge($implict_scopes, $security_read);
+          $implicit_scopes = array_merge($implicit_scopes, $security_read);
           $par_id = ['in'=> 'path', 'name'=> 'id', 'description'=> "ID of $schemaName",'required'=> true,'schema'=> ['type'=> 'integer','format'=> 'int64']];
           $api['paths']["/$schemaName"]["get"] = [
             'tags'=> [ $schemaName ],
@@ -261,7 +286,7 @@ class Aim {
             'responses'=> $response,
             'security'=> [[$auth_name=>$security_read]],
           ];
-          if (Aim::request('Children', $schema['properties'])) {
+          if (request('Children', $schema['properties'])) {
             // debug(1);
             $api['paths']["/$schemaName({id})/children"]['get'] = [
               'tags' => [ $schemaName ],
@@ -278,7 +303,7 @@ class Aim {
             ];
           }
           if ($security_write) {
-            $implict_scopes = array_merge($implict_scopes, $security_write);
+            $implicit_scopes = array_merge($implicit_scopes, $security_write);
             $api['paths']["/$schemaName"]["post"] = [
               'tags'=> [ $schemaName ],
               'summary'=> 'Add a new '.$schemaName,
@@ -349,10 +374,352 @@ class Aim {
         }
       }
     }
-    foreach ($implict_scopes as $scope) {
+    foreach ($implicit_scopes as $scope) {
       $api['components']['securitySchemes'][$auth_name]["flows"]["implicit"]["scopes"][$scope] = "$scope";
     }
-    return $this->api = $api;
+    return $this->oas = $api;
+  }
+  public function oas($config) {
+    $item_classname = '\Aliconnect\Server\Data\Item';
+    foreach($config['components']['schemas'] as $schema_name => $schema) {
+      $all_schema = [];
+      if (isset($schema['allOf'])) {
+        foreach($schema['allOf'] as $allOf_schema_name) {
+          $all_schema = array_replace_recursive($all_schema, $config['components']['schemas'][$allOf_schema_name]);
+        }
+      }
+      $all_schema = array_replace_recursive($all_schema, $schema);
+      $config['components']['schemas'][$schema_name] = $all_schema;
+    }
+    $auth_name = 'aliconnect_auth';
+    $api = [
+      'openapi'=>'3.0.1',
+      'info'=> array_intersect_key($config['info'], array_flip(['title','description','termsOfService','contact','license','version'])),
+      // 'externalDocs'=> $config['externalDocs'],
+      'servers'=> $config['servers'],
+      'tags'=> isset($config['tags']) ? $config['tags'] : null,
+      'paths'=> $config['paths'],
+      'components'=> [
+        'schemas'=> null,
+      ],
+    ];
+    $api['components']['securitySchemes'][$auth_name] = [
+      "type"=> "oauth2",
+      "flows"=> [
+        "implicit"=> [
+          "authorizationUrl"=> "https://login.aliconnect.nl/oauth/",
+        ]
+      ]
+    ];
+    $implicit_scopes = [];
+    $par_select = [
+      'in'=> 'query',
+      'name'=> '$select',
+      'description'=> 'List of fieldnames',
+      // 'required'=> true,
+      'schema'=> ['type' => 'string']
+    ];
+    foreach ($config['components']['schemas'] as $schemaName => $schema) {
+      $schema_name = strToLower($schemaName);
+      $security_write = ["$schema_name.write"];
+      $security_read = ["$schema_name.read","$schema_name.write"];
+      foreach ($schema['security'] as $name) {
+        $security_read[] = "$name.read";
+        $security_read[] = "$name.write";
+        $security_write[] = "$name.write";
+      }
+      $security_read = array_values($security_read);
+      $security_write = array_values($security_write);
+        if (isset($schema['properties'])) {
+          $openapi_properties = $this->openapi_properties($schema['properties']);
+          $response = [
+            '200'=> [
+              'description'=> 'Successful operation',
+              // 'content'=> (object)[]
+            ],
+            '400'=> [
+              'description'=> 'Invalid ID supplied',
+              // 'content'=> (object)[]
+            ],
+            '404'=> [
+              'description'=> 'Attribute not found',
+              // 'content'=> (object)[]
+            ],
+            '405'=> [
+              'description'=> 'Invalid input',
+              // 'content'=> (object)[]
+            ],
+          ];
+          // foreach ($schema['security'] as $rights => $scopes) {
+          //   foreach ($scopes as $scope) {
+          //     $api['components']['securitySchemes'][$auth_name]["flows"]["implicit"]["scopes"][$scope] = $scope;
+          //   }
+          // }
+          $implicit_scopes = array_merge($implicit_scopes, $security_read);
+          $par_id = ['in'=> 'path', 'name'=> 'id', 'description'=> "ID of $schemaName",'required'=> true,'schema'=> ['type'=> 'integer','format'=> 'int64']];
+          $api['paths']["/$schemaName"]["get"] = [
+            'tags'=> [ $schemaName ],
+            'summary'=> 'Get list of '.$schemaName,
+            'operationId'=> "$item_classname($schemaName).search",
+            'parameters'=> [
+              $par_select,
+              ['in'=> 'query', 'name'=> '$filter', 'description'=> 'Filter', 'schema'=> ['type'=> 'string']],
+              ['in'=> 'query', 'name'=> '$search', 'description'=> 'Search words seperated with spaces', 'schema'=> ['type'=> 'string']],
+              ['in'=> 'query', 'name'=> '$order', 'description'=> 'Sort order fieldnames sperated with a comma', 'schema'=> ['type'=> 'string']],
+              ['in'=> 'query', 'name'=> '$top', 'description'=> 'Maximum number of records', 'schema'=> ['type'=> 'integer', 'format'=> 'int64']],
+            ],
+            'responses'=> $response,
+            'security'=> [[$auth_name=>$security_read]],
+          ];
+          $api['paths']["/$schemaName({id})"]['get'] = [
+            'tags' => [ $schemaName ],
+            'summary'=> 'Find '.$schemaName.' by ID',
+            'description'=> "Returns a single $schemaName object",
+            // 'operationId'=> "(new item('$schemaName',{id}))->get();",
+            'operationId'=> "$item_classname($schemaName).get",
+            'parameters'=> [
+              $par_id,
+              $par_select,
+            ],
+            'responses'=> $response,
+            'security'=> [[$auth_name=>$security_read]],
+          ];
+          if (request('Children', $schema['properties'])) {
+            // debug(1);
+            $api['paths']["/$schemaName({id})/children"]['get'] = [
+              'tags' => [ $schemaName ],
+              'summary'=> 'Find '.$schemaName.' by ID',
+              'description'=> "Returns a single $schemaName object",
+              // 'operationId'=> "(new item('$schemaName',{id}))->get();",
+              'operationId'=> "$item_classname($schemaName).children",
+              'parameters'=> [
+                $par_id,
+                $par_select,
+              ],
+              'responses'=> $response,
+              'security'=> [[$auth_name=>$security_read]],
+            ];
+          }
+            $implicit_scopes = array_merge($implicit_scopes, $security_write);
+            $api['paths']["/$schemaName"]["post"] = [
+              'tags'=> [ $schemaName ],
+              'summary'=> 'Add a new '.$schemaName,
+              'operationId'=> "$item_classname($schemaName).add",
+              'requestBody'=> [
+                'description'=> "$schemaName object that needs to be added",
+                'content'=> [
+                  'application/json'=> [
+                    'schema'=> [
+                      '$ref'=> '#/components/schemas/'.$schemaName
+                    ]
+                  ]
+                ],
+                'required'=> true
+              ],
+              'responses'=> $response,
+              'security'=> [[$auth_name=>$security_write]],
+            ];
+            $api['paths']["/$schemaName({id})"]['post'] = [
+              'tags' => [ $schemaName ],
+              'summary'=> 'Updates a '.$schemaName.' with form data',
+              'operationId'=> "$item_classname($schemaName).post",
+              'parameters'=> [
+                $par_id,
+              ],
+              'requestBody'=> [
+                'content'=> [
+                  'application/x-www-form-urlencoded'=> [
+                    'schema'=> [
+                      'properties' => $openapi_properties
+                    ]
+                  ]
+                ]
+              ],
+              'responses'=> $response,
+              'security'=> [[$auth_name=>$security_write]],
+            ];
+            $api['paths']["/$schemaName({id})"]['patch'] = [
+              'tags' => [ $schemaName ],
+              'summary'=> 'Updates a '.$schemaName,
+              'operationId'=> "$item_classname($schemaName).patch",
+              'parameters'=> [
+                $par_id,
+              ],
+              'requestBody'=> [
+                'description'=> $schemaName.' object that needs to be updated',
+                'content'=> [ 'application/json'=> [ 'schema'=> [ '$ref'=> '#/components/schemas/'.$schemaName ]]],
+                'required'=> true
+              ],
+              'responses'=> $response,
+              'security'=> [[$auth_name=>$security_write]],
+            ];
+            $api['paths']["/$schemaName({id})"]['delete'] = [
+              'tags' => [ $schemaName ],
+              'summary'=> 'Deletes a '.$schemaName,
+              'operationId'=> "$item_classname($schemaName).delete",
+              'parameters'=> [
+                $par_id,
+              ],
+              'responses'=> $response,
+              'security'=> [[$auth_name=>$security_write]],
+            ];
+          $api['tags'][] = array_intersect_key(array_replace([
+            'name'=> $schemaName,
+          ], $schema), array_flip(['name','description','externalDocs']));
+          $api['components']['schemas'][$schemaName] = array_intersect_key($schema, array_flip(['properties']));
+        }
+    }
+    foreach ($implicit_scopes as $scope) {
+      $api['components']['securitySchemes'][$auth_name]["flows"]["implicit"]["scopes"][$scope] = "$scope";
+    }
+    return $this->oas = $api;
+  }
+  public function __construct() {
+    debug(getcwd());
+    $GLOBALS['aim'] = $this;
+    $this->config = [];
+    $this->secret = [];
+    $this->config = array_replace_recursive($this->config, is_file($fname = getcwd()."/config.yaml") ? yaml_parse_file($fname) : []);
+    $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/secret.yaml") ? yaml_parse_file($fname) : []);
+    $this->config = array_replace_recursive($this->config, is_file($fname = getcwd()."/".$_SERVER['HTTP_HOST'].".config.yaml") ? yaml_parse_file($fname) : []);
+    // $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$_SERVER['HTTP_HOST'].".secret.yaml") ? yaml_parse_file($fname) : []);
+    $this->client_id = request('client_id', $_REQUEST) ?: request('client_id', $this->config);
+    header("Access-Control-Allow-Headers: Authorization");
+    $headers = getallheaders();
+    $this->access = [
+      'client_id'=> $this->client_id,
+      'scope'=> 'guest.read',
+    ];
+    $this->access_token = request('access_token', $_GET);
+    if ($authorization = request('Authorization', $headers)) {
+      $this->access_token = explode(' ', $authorization);
+      $this->access_token = request(1, $this->access_token, true);
+      // debug($this->access_token);
+    }
+    if ($this->access_token) {
+      $jwt = new jwt();
+      $jwt->decode($this->access_token);
+      $payload = request('payload', $jwt);
+      $this->client_id = $payload['client_id'];
+      $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$this->client_id.".secret.yaml") ? yaml_parse_file($fname) : []);
+      $jwt->validate($this->secret['client_secret']);
+      if (!$jwt->valid) http_response(401);
+    }
+    // debug($this->client_id);
+    $this->config = array_replace_recursive($this->config, is_file($fname = getcwd()."/".$this->client_id.".config.yaml") ? yaml_parse_file($fname) : []);
+    $fname = str_replace('.config.','.oas.',$fname);
+    if (isset($this->config['client_secret'])) {
+      unset($this->config['client_secret']);
+      yaml_emit_file($fname, $this->config);
+      yaml_emit_file($fname, $this->oas  = $this->oas($this->config));
+    } else if (!is_file($fname)) {
+      yaml_emit_file($fname, $this->oas  = $this->oas($this->config));
+    } else {
+      $this->oas = yaml_parse_file($fname);
+    }
+    // debug($this->oas);
+    // debug(1);
+
+    // debug($this->config);
+
+    $this->origin = $_SERVER['HTTP_ORIGIN'];
+    $this->context = $this->origin.$_SERVER['REQUEST_URI'];
+    $this->request_url = parse_url($_SERVER['REQUEST_URI']);
+    $this->request_path = $this->request_url['path'];
+
+    $this->base_path = dirname(parse_url($_SERVER['SCRIPT_NAME'])['path']);
+    $method = $this->method = strToLower($_SERVER['REQUEST_METHOD']);
+    $scopes = explode(' ', $this->access['scope']);
+    if ($oas = $this->oas) {
+      if ($paths = $oas['paths']) {
+        $path_to_search = preg_replace('/\(.*?\)/', '()', $this->request_path);
+        $path_to_search = str_replace($this->base_path, '', $path_to_search);
+        $path_to_search = strtolower($path_to_search);
+        foreach ($paths as $path_name => $path) {
+          if (strtolower(preg_replace('/\(.*?\)/', '()', $path_name)) === $path_to_search) {
+            if (!$path_method = request($method, $path)) {
+              http_response(400, 'Method not found');
+            }
+
+            // $path = (array)$path;
+            // http_response(200, isset($path[$request_method]));
+            // $path_method = request($method, $path);
+            // http_response(400);
+            // $path_method_security = request('security', $path_method);
+
+            // http_response(200, 'JA');
+            $operationId = request('operationId', $path_method) ?: str_replace("/","\\",$path_name);
+            // debug($operationId);
+            http_response(200, (new $operationId)->$method());
+            // debug($operationId, class_exists($path_name));
+            // // : $path_method['operationId'];
+            //
+            //
+            //
+            // // $this->debug($operationId, class_exists($operationId), function_exists($operationId));
+            //
+            // foreach ($path_method_security as $security) {
+            //   $aliconnect_auth = request('aliconnect_auth', $security);
+            //   // $this->debug($aliconnect_auth, $this->scopes);
+            //   // check_argument(array_intersect($aliconnect_auth, $scopes), 406, 'Not correct scope');
+            //
+            //   debug();
+            //
+            //   // $this->debug("$operationId\\$request_method", function_exists("$operationId\\$request_method"));
+            //
+            //   // debug($operationId);
+            //   if (function_exists($operationId)) {
+            //     $res = $operationId($_REQUEST);
+            //   }
+            //   else if (function_exists("$operationId\\$request_method")) {
+            //     $operationId = "$operationId\\$request_method";
+            //     $res = $operationId($_REQUEST);
+            //   }
+            //   else if (method_exists($operationId, $request_method)) {
+            //     $res = (new $operationId())->$request_method($_REQUEST);
+            //   }
+            //   else {
+            //     $path_matcher = $path_name;
+            //     $path_matcher = preg_replace([
+            //       '/\//',
+            //       '/\(/',
+            //       '/\)/',
+            //       '/\{.*?\}/'
+            //     ], [
+            //       '\/',
+            //       '\(',
+            //       '\)',
+            //       '(.*?)'
+            //     ], $path_matcher);
+            //
+            //     preg_match("/$path_matcher/", $this->pathname, $match);
+            //     array_shift($match);
+            //     $parameters = [];
+            //     if (isset($path_method['parameters'])) {
+            //       foreach ($path_method['parameters'] as $i => $parameter) {
+            //         $name = $parameter['name'];
+            //         if ($parameter['in'] === 'query') {
+            //           if (isset($_GET[$name])) {
+            //             $parameters[$name] = $_GET[$name];
+            //           } else if (!empty($parameter['required'])) {
+            //             self::http_response(400, "parameter $name required");
+            //           }
+            //         } else if ($parameter['in'] === 'path') {
+            //           $parameters[$name] = $match[$i];
+            //         }
+            //       }
+            //     }
+            //     $res = eval_operation($operationId, $parameters);
+            //   }
+            //   // debug(1, $res);
+            //   self::http_response(200, $res);
+            // }
+            // self::http_response(403, 'No aliconnect_auth scope');
+          }
+        }
+      }
+      // debug($path_to_search, $this->oas['paths']);
+    }
   }
   // public function __construct1() {
   //
@@ -371,8 +738,8 @@ class Aim {
   //     $this->request_url = parse_url($_SERVER['REQUEST_URI']);
   //     $this->pathname = $this->request_url['path'];
   //     $this->scopes = ['guest.read'];
-  //     $this->client_id = self::request('client_id', $_REQUEST);
-  //     $this->account_id = self::request('account_id', $_REQUEST);
+  //     $this->client_id = request('client_id', $_REQUEST);
+  //     $this->account_id = request('account_id', $_REQUEST);
   //
   //
   //     $this->client_id = 'c52aba40-11fe-4400-90b9-cee5bda2c5aa';
@@ -388,10 +755,9 @@ class Aim {
   // }
   public function init() {
     $this->mail_messages = [];
-
     $this->root = explode('\\vendor\\',__DIR__)[0];
-    $this->secret = $this->secret ?: yaml_parse_file($this->root.'/config/secret.yaml');
-    if (is_file($fname = $this->root."/config/$this->client_id.secret.json")) {
+    $this->secret = $this->secret ?: yaml_parse_file($_SERVER['DOCUMENT_ROOT']."/../config/secret.yaml");
+    if (is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/$this->client_id.secret.json")) {
       $this->secret = array_replace_recursive($this->secret,json_parse_file($fname));
     }
 
@@ -399,19 +765,16 @@ class Aim {
     $this->pathname = $this->request_url['path'];
 
     $access = $this->access();
-    $this->client_id = self::request('client_id', $access) ?: self::request('client_id', $_GET) ?: 'c9b05c80-4d2b-46c1-abfb-0464854dbd9a';
+    $this->client_id = request('client_id', $access) ?: request('client_id', $_GET) ?: 'c9b05c80-4d2b-46c1-abfb-0464854dbd9a';
 
-    $this->account_id = self::request('account_id', $access);
-    $this->scope = self::request('scope', $access, true);
+    $this->account_id = request('account_id', $access);
+    $this->scope = request('scope', $access, true);
     $this->scopes = explode(' ', $this->scope);
 
     $this->config = $this->init_config($this->client_id);
     $this->api = $this->init_api($this->config, $this->scopes);
     // $this->http_response(200, $this->api);
     // aim()->http_response(200, $this->api['paths']);
-
-
-
     $this->handle_api_call($this->pathname, $this->scopes);
   }
   private function openapi_properties($properties) {
@@ -450,23 +813,24 @@ class Aim {
     }
     return $properties ?: (object)[];
   }
-  public function __get($property) {
-    if (isset(self::$args[$property])) {
-      return self::$args[$property];
-    }
-    if (isset($_REQUEST[$property])) {
-      return $_REQUEST[$property];
-    }
-    if (isset($_COOKIE[$property])) {
-      return $_COOKIE[$property];
-    }
-    if (isset($_SERVER[$property])) {
-      return $_SERVER[$property];
-    }
-  }
-  public function __set($property, $value) {
-    self::$args[$property] = $value;
-  }
+  // public function __get($property) {
+  //   return isset($this->$property)
+  //   if (isset(self::$args[$property])) {
+  //     return self::$args[$property];
+  //   }
+  //   if (isset($_REQUEST[$property])) {
+  //     return $_REQUEST[$property];
+  //   }
+  //   if (isset($_COOKIE[$property])) {
+  //     return $_COOKIE[$property];
+  //   }
+  //   if (isset($_SERVER[$property])) {
+  //     return $_SERVER[$property];
+  //   }
+  // }
+  // public function __set($property, $value) {
+  //   self::$args[$property] = $value;
+  // }
   // public static function get($selector) {
   //   return self::$args[$selector];
   // }
@@ -477,9 +841,9 @@ class Aim {
   //   return self::$args[$selector] = $context;
   // }
   public function get_scopes() {
-    $client_id = Aim::request('client_id', $this);
+    $client_id = request('client_id', $this);
     if (isset($_REQUEST['account_id'])) {
-      $account_id = Aim::request('account_id', $this);
+      $account_id = request('account_id', $this);
       return $this->get_granted_scopes($client_id, $account_id);
     }
     return [];
@@ -496,15 +860,15 @@ class Aim {
     }
     return array_values(array_unique($scopes));
   }
-  public function init_path(){
-    $this->base_path = str_replace([$_SERVER['DOCUMENT_ROOT'],'\\'],['','/'],getcwd());
-    $this->set(parse_url($_SERVER['REQUEST_URI']));
-    $this->pathname = str_replace($this->base_path,'',$this->path);
-    $this->set(pathinfo($this->pathname));
-    $this->dirname = str_replace('\\','/',$this->dirname);
-    $this->root = realpath($_SERVER['DOCUMENT_ROOT']."/..");
-    // $this->debug($this->root);
-  }
+  // public function init_path(){
+  //   $this->base_path = str_replace([$_SERVER['DOCUMENT_ROOT'],'\\'],['','/'],getcwd());
+  //   $this->set(parse_url($_SERVER['REQUEST_URI']));
+  //   $this->pathname = str_replace($this->base_path,'',$this->path);
+  //   $this->set(pathinfo($this->pathname));
+  //   $this->dirname = str_replace('\\','/',$this->dirname);
+  //   $this->root = realpath($_SERVER['DOCUMENT_ROOT']."/..");
+  //   // $this->debug($this->root);
+  // }
   public function context(){
     return ($_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://').$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
   }
@@ -523,10 +887,10 @@ class Aim {
 
     $path_to_search = preg_replace('/\(.*?\)/', '()', $this->pathname);
     $path_to_search = str_replace($base_path, '', $path_to_search);
+    $request_method = strToLower(request('REQUEST_METHOD', $_SERVER));
     // self::http_response(200, str_replace("/","\/","^$base_path"));
     // $path_to_search = preg_replace("/^".str_replace("/","\/",$base_path)."/", '', $path_to_search);
 
-    $request_method = strToLower(Aim::request('REQUEST_METHOD', $_SERVER));
 
     // debug($path_to_search, array_keys($this->api['paths']));
     if (isset($this->api['paths'])) {
@@ -534,9 +898,9 @@ class Aim {
         if (preg_replace('/\(.*?\)/', '()', $path_name) === $path_to_search) {
           // $path = (array)$path;
           // http_response(200, isset($path[$request_method]));
-          $path_method = Aim::request($request_method, $path);
+          $path_method = request($request_method, $path);
           // http_response(400);
-          $path_method_security = Aim::request('security', $path_method);
+          $path_method_security = request('security', $path_method);
 
           // http_response(200, 'JA');
 
@@ -547,7 +911,7 @@ class Aim {
           // $this->debug($operationId, class_exists($operationId), function_exists($operationId));
 
           foreach ($path_method_security as $security) {
-            $aliconnect_auth = Aim::request('aliconnect_auth', $security);
+            $aliconnect_auth = request('aliconnect_auth', $security);
             // $this->debug($aliconnect_auth, $this->scopes);
             check_argument(array_intersect($aliconnect_auth, $scopes), 406, 'Not correct scope');
 
@@ -744,35 +1108,6 @@ class Aim {
     return $message;
   	// return $args ? vsprintf($message, $args) : $message;
   }
-  private static $conn;
-  public static function get_real_user_ip($default = NULL, $filter_options = 12582912) {
-    $HTTP_X_FORWARDED_FOR = isset($_SERVER) && isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : getenv('HTTP_X_FORWARDED_FOR');
-    $HTTP_CLIENT_IP = isset($_SERVER) && isset($_SERVER['HTTP_CLIENT_IP']) ? $_SERVER['HTTP_CLIENT_IP'] : getenv('HTTP_CLIENT_IP');
-    $HTTP_CF_CONNECTING_IP = isset($_SERVER) && isset($_SERVER['HTTP_CF_CONNECTING_IP']) ? $_SERVER['HTTP_CF_CONNECTING_IP'] : getenv('HTTP_CF_CONNECTING_IP');
-    $REMOTE_ADDR = isset($_SERVER)?$_SERVER['REMOTE_ADDR']:getenv('REMOTE_ADDR');
-
-    $all_ips = explode(",", "$HTTP_X_FORWARDED_FOR,$HTTP_CLIENT_IP,$HTTP_CF_CONNECTING_IP,$REMOTE_ADDR");
-    foreach ($all_ips as $ip) {
-      if ($ip = filter_var($ip, FILTER_VALIDATE_IP, $filter_options))
-      break;
-    }
-    return $_SERVER['HTTP_CLIENT_IP'] = $ip?$ip:$default;
-  }
-  public static function jwt() {
-    return new Jwt;
-  }
-  public static function request($selector, $context = null, $required = false) {
-    $context = $context ? (array)$context : $_REQUEST;
-    if (isset($context[$selector])) {
-      return $context[$selector];
-    }
-    if ($required) {
-      self::http_response(400, "Missing requested parameter `$selector`");
-    }
-  }
-  public static function http_response_post($arr) {
-    self::http_response(200, array_replace($_POST, $arr));
-  }
   public static function sql_value_string($val){
     if (is_null($val)) return 'NULL';
     // if (is_numeric($val)) return $val;
@@ -786,6 +1121,13 @@ class Aim {
     // echo $sql;
     return $sql;
   }
+  public function sql_exec($name, $args) {
+    return $this->sql_query($this->sql_exec_string($name, $args));
+  }
+  public function account($options){
+    return new Account($options);
+  }
+
   public function sql_query($query, $args = []) {
     if ($args) {
       if (!is_array($args)) {
@@ -796,7 +1138,7 @@ class Aim {
       $query = vsprintf($query, $args);
     }
     try {
-      if (!$this->conn) {
+      if (!isset($this->conn)) {
         $dbs = $this->secret['config']['dbs'];
         $this->conn = sqlsrv_connect($dbs['server'],[
           'Database' => $dbs['database'],
@@ -809,345 +1151,391 @@ class Aim {
       // echo $query.PHP_EOL; // DEBUG:
       $query = (isset($nopre) ? '' : 'SET TEXTSIZE -1;SET NOCOUNT ON;').$query;
       // http_response(501, $query); // DEBUG:
-
-
-
-      $res = sqlsrv_query ( $this->conn, $query , null, ['Scrollable' => 'buffered']);
-
-      // debug($res);
-
-      return $res;
+      return sqlsrv_query ( $this->conn, $query , null, ['Scrollable' => 'buffered']);
     }
     catch (Exception $e) {
       echo 'Caught exception: ',  $e->getMessage(), "\n";
       die();
     }
   }
-  public function sql_exec($name, $args) {
-    return $this->sql_query($this->sql_exec_string($name, $args));
+
+
+
+}
+
+function get_real_user_ip($default = NULL, $filter_options = 12582912) {
+    $HTTP_X_FORWARDED_FOR = isset($_SERVER) && isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : getenv('HTTP_X_FORWARDED_FOR');
+    $HTTP_CLIENT_IP = isset($_SERVER) && isset($_SERVER['HTTP_CLIENT_IP']) ? $_SERVER['HTTP_CLIENT_IP'] : getenv('HTTP_CLIENT_IP');
+    $HTTP_CF_CONNECTING_IP = isset($_SERVER) && isset($_SERVER['HTTP_CF_CONNECTING_IP']) ? $_SERVER['HTTP_CF_CONNECTING_IP'] : getenv('HTTP_CF_CONNECTING_IP');
+    $REMOTE_ADDR = isset($_SERVER)?$_SERVER['REMOTE_ADDR']:getenv('REMOTE_ADDR');
+
+    $all_ips = explode(",", "$HTTP_X_FORWARDED_FOR,$HTTP_CLIENT_IP,$HTTP_CF_CONNECTING_IP,$REMOTE_ADDR");
+    foreach ($all_ips as $ip) {
+      if ($ip = filter_var($ip, FILTER_VALIDATE_IP, $filter_options))
+      break;
+    }
+    return $_SERVER['HTTP_CLIENT_IP'] = $ip?$ip:$default;
   }
 
-  public static function http_response($code = 200, $body = null, $errors = null) {
-    // if (!class_exists('\Aliconnect')) return;
-    if ($code >= 400) {
-      $error_codes = [
-        100 => [
-          'status' => 'Continue'
-        ],
-        101 => [
-          'status' => 'Switching Protocols'
-        ],
-        102 => [
-          'status' => 'Processing'
-        ],
-        200 => [
-          'status' => 'OK'
-        ],
-        201 => [
-          'status' => 'Created'
-        ],
-        202 => [
-          'status' => 'Accepted'
-        ],
-        203 => [
-          'status' => 'Non-Authoritative Information'
-        ],
-        204 => [
-          'status' => 'No Content'
-        ],
-        205 => [
-          'status' => 'Reset Content'
-        ],
-        206 => [
-          'status' => 'Partial Content'
-        ],
-        207 => [
-          'status' => 'Multi-Status'
-        ],
-        300 => [
-          'status' => 'Multiple Choices'
-        ],
-        301 => [
-          'status' => 'Moved Permanently'
-        ],
-        302 => [
-          'status' => 'Found'
-        ],
-        303 => [
-          'status' => 'See Other'
-        ],
-        304 => [
-          'status' => 'Not Modified'
-        ],
-        305 => [
-          'status' => 'Use Proxy'
-        ],
-        306 => [
-          'status' => '(Unused)'
-        ],
-        307 => [
-          'status' => 'Temporary Redirect'
-        ],
-        308 => [
-          'status' => 'Permanent Redirect'
-        ],
-        400 => [
-          'status' => 'Bad Request',
-          'description' => 'De url is niet correct opgebouwd '
-        ],// Invalid ID
-        401 => [
-          'status' => 'Unauthorized',
-          'description' => 'U heeft geen voldoende rechten',
-          'description' => 'Er is een probleem met uw rechten op dit domein. Uw account is niet aanwezig of uw bevoegdheden zijn niet voldoende voor uw aanroep.'
-        ],
-        402 => [
-          'status' => 'Payment Required'
-        ],
-        403 => [
-          'status' => 'Forbidden'
-        ],
-        404 => [
-          'status' => 'Not Found',
-          'description' => 'Deze pagina op '.$_SERVER['SERVER_NAME'].' kan niet worden gevonden',
-          'description' => 'Er is geen webpagina gevonden voor het webadres: '.$_SERVER['REQUEST_URI'],
-        ],
-        405 => [
-          'status' => 'Method Not Allowed'
-        ], // Invalid input, validation error
-        406 => [
-          'status' => 'Not Acceptable'
-        ],
-        407 => [
-          'status' => 'Proxy Authentication Required'
-        ],
-        408 => [
-          'status' => 'Request Timeout'
-        ],
-        409 => [
-          'status' => 'Conflict'
-        ],
-        410 => [
-          'status' => 'Gone'
-        ],
-        411 => [
-          'status' => 'Length Required'
-        ],
-        412 => [
-          'status' => 'Precondition Failed'
-        ],
-        413 => [
-          'status' => 'Request Entity Too Large'
-        ],
-        414 => [
-          'status' => 'Request-URI Too Long'
-        ],
-        415 => [
-          'status' => 'Unsupported Media Type'
-        ],
-        416 => [
-          'status' => 'Requested Range Not Satisfiable'
-        ],
-        417 => [
-          'status' => 'Expectation Failed'
-        ],
-        418 => [
-          'status' => "I\'m a teapot"
-        ],
-        419 => [
-          'status' => 'Authentication Timeout'
-        ],
-        420 => [
-          'status' => 'Enhance Your Calm'
-        ],
-        422 => [
-          'status' => 'Unprocessable Entity'
-        ],
-        423 => [
-          'status' => 'Locked'
-        ],
-        424 => [
-          'status' => 'Failed Dependency'
-        ],
-        // Unknown in chrome
-        424 => [
-          'status' => 'Method Failure'
-        ],
-        425 => [
-          'status' => 'Unordered Collection'
-        ],
-        426 => [
-          'status' => 'Upgrade Required'
-        ],
-        428 => [
-          'status' => 'Precondition Required'
-        ],
-        429 => [
-          'status' => 'Too Many Requests'
-        ],
-        431 => [
-          'status' => 'Request Header Fields Too Large'
-        ],
-        444 => [
-          'status' => 'No Response'
-        ],
-        449 => [
-          'status' => 'Retry With'
-        ],
-        450 => [
-          'status' => 'Blocked by Windows Parental Controls'
-        ],
-        451 => [
-          'status' => 'Unavailable For Legal Reasons'
-        ],
-        494 => [
-          'status' => 'Request Header Too Large'
-        ],
-        495 => [
-          'status' => 'Cert Error'
-        ],
-        496 => [
-          'status' => 'No Cert'
-        ],
-        497 => [
-          'status' => 'HTTP to HTTPS'
-        ],
-        499 => [
-          'status' => 'Client Closed Request'
-        ],
-        500 => [
-          'status' => 'Internal Server Error'
-        ],
-        501 => [
-          'status' => 'Not Implemented'
-        ],
-        502 => [
-          'status' => 'Bad Gateway'
-        ],
-        503 => [
-          'status' => 'Service Unavailable'
-        ],
-        504 => [
-          'status' => 'Gateway Timeout'
-        ],
-        505 => [
-          'status' => 'HTTP Version Not Supported'
-        ],
-        506 => [
-          'status' => 'Variant Also Negotiates'
-        ],
-        507 => [
-          'status' => 'Insufficient Storage'
-        ],
-        508 => [
-          'status' => 'Loop Detected'
-        ],
-        509 => [
-          'status' => 'Bandwidth Limit Exceeded'
-        ],
-        510 => [
-          'status' => 'Not Extended'
-        ],
-        511 => [
-          'status' => 'Network Authentication Required'
-        ],
-        598 => [
-          'status' => 'Network read timeout error'
-        ],
-        599 => [
-          'status' => 'Network connect timeout error'
+function aim() { return $GLOBALS['aim']; }
+function request($selector, $context = null, $required = false) {
+  $context = $context ? (array)$context : $_REQUEST;
+  if (isset($context[$selector])) {
+    return $context[$selector];
+  }
+  if ($required) {
+    http_response(400, "Missing requested parameter `$selector`");
+  }
+}
+
+function http_response_post($arr) {
+  http_response(200, array_replace($_POST, $arr));
+}
+function http_response($code = 200, $body = null, $errors = null) {
+  // if (!class_exists('\Aliconnect')) return;
+  $ms = time()-$_SERVER['REQUEST_TIME'];
+  if ($code >= 400) {
+    $error_codes = [
+      100 => [
+        'status' => 'Continue'
+      ],
+      101 => [
+        'status' => 'Switching Protocols'
+      ],
+      102 => [
+        'status' => 'Processing'
+      ],
+      200 => [
+        'status' => 'OK'
+      ],
+      201 => [
+        'status' => 'Created'
+      ],
+      202 => [
+        'status' => 'Accepted'
+      ],
+      203 => [
+        'status' => 'Non-Authoritative Information'
+      ],
+      204 => [
+        'status' => 'No Content'
+      ],
+      205 => [
+        'status' => 'Reset Content'
+      ],
+      206 => [
+        'status' => 'Partial Content'
+      ],
+      207 => [
+        'status' => 'Multi-Status'
+      ],
+      300 => [
+        'status' => 'Multiple Choices'
+      ],
+      301 => [
+        'status' => 'Moved Permanently'
+      ],
+      302 => [
+        'status' => 'Found'
+      ],
+      303 => [
+        'status' => 'See Other'
+      ],
+      304 => [
+        'status' => 'Not Modified'
+      ],
+      305 => [
+        'status' => 'Use Proxy'
+      ],
+      306 => [
+        'status' => '(Unused)'
+      ],
+      307 => [
+        'status' => 'Temporary Redirect'
+      ],
+      308 => [
+        'status' => 'Permanent Redirect'
+      ],
+      400 => [
+        'status' => 'Bad Request',
+        'description' => 'De url is niet correct opgebouwd '
+      ],// Invalid ID
+      401 => [
+        'status' => 'Unauthorized',
+        'description' => 'U heeft geen voldoende rechten',
+        'description' => 'Er is een probleem met uw rechten op dit domein. Uw account is niet aanwezig of uw bevoegdheden zijn niet voldoende voor uw aanroep.'
+      ],
+      402 => [
+        'status' => 'Payment Required'
+      ],
+      403 => [
+        'status' => 'Forbidden'
+      ],
+      404 => [
+        'status' => 'Not Found',
+        'description' => 'Deze pagina op '.$_SERVER['SERVER_NAME'].' kan niet worden gevonden',
+        'description' => 'Er is geen webpagina gevonden voor het webadres: '.$_SERVER['REQUEST_URI'],
+      ],
+      405 => [
+        'status' => 'Method Not Allowed'
+      ], // Invalid input, validation error
+      406 => [
+        'status' => 'Not Acceptable'
+      ],
+      407 => [
+        'status' => 'Proxy Authentication Required'
+      ],
+      408 => [
+        'status' => 'Request Timeout'
+      ],
+      409 => [
+        'status' => 'Conflict'
+      ],
+      410 => [
+        'status' => 'Gone'
+      ],
+      411 => [
+        'status' => 'Length Required'
+      ],
+      412 => [
+        'status' => 'Precondition Failed'
+      ],
+      413 => [
+        'status' => 'Request Entity Too Large'
+      ],
+      414 => [
+        'status' => 'Request-URI Too Long'
+      ],
+      415 => [
+        'status' => 'Unsupported Media Type'
+      ],
+      416 => [
+        'status' => 'Requested Range Not Satisfiable'
+      ],
+      417 => [
+        'status' => 'Expectation Failed'
+      ],
+      418 => [
+        'status' => "I\'m a teapot"
+      ],
+      419 => [
+        'status' => 'Authentication Timeout'
+      ],
+      420 => [
+        'status' => 'Enhance Your Calm'
+      ],
+      422 => [
+        'status' => 'Unprocessable Entity'
+      ],
+      423 => [
+        'status' => 'Locked'
+      ],
+      424 => [
+        'status' => 'Failed Dependency'
+      ],
+      // Unknown in chrome
+      424 => [
+        'status' => 'Method Failure'
+      ],
+      425 => [
+        'status' => 'Unordered Collection'
+      ],
+      426 => [
+        'status' => 'Upgrade Required'
+      ],
+      428 => [
+        'status' => 'Precondition Required'
+      ],
+      429 => [
+        'status' => 'Too Many Requests'
+      ],
+      431 => [
+        'status' => 'Request Header Fields Too Large'
+      ],
+      444 => [
+        'status' => 'No Response'
+      ],
+      449 => [
+        'status' => 'Retry With'
+      ],
+      450 => [
+        'status' => 'Blocked by Windows Parental Controls'
+      ],
+      451 => [
+        'status' => 'Unavailable For Legal Reasons'
+      ],
+      494 => [
+        'status' => 'Request Header Too Large'
+      ],
+      495 => [
+        'status' => 'Cert Error'
+      ],
+      496 => [
+        'status' => 'No Cert'
+      ],
+      497 => [
+        'status' => 'HTTP to HTTPS'
+      ],
+      499 => [
+        'status' => 'Client Closed Request'
+      ],
+      500 => [
+        'status' => 'Internal Server Error'
+      ],
+      501 => [
+        'status' => 'Not Implemented'
+      ],
+      502 => [
+        'status' => 'Bad Gateway'
+      ],
+      503 => [
+        'status' => 'Service Unavailable'
+      ],
+      504 => [
+        'status' => 'Gateway Timeout'
+      ],
+      505 => [
+        'status' => 'HTTP Version Not Supported'
+      ],
+      506 => [
+        'status' => 'Variant Also Negotiates'
+      ],
+      507 => [
+        'status' => 'Insufficient Storage'
+      ],
+      508 => [
+        'status' => 'Loop Detected'
+      ],
+      509 => [
+        'status' => 'Bandwidth Limit Exceeded'
+      ],
+      510 => [
+        'status' => 'Not Extended'
+      ],
+      511 => [
+        'status' => 'Network Authentication Required'
+      ],
+      598 => [
+        'status' => 'Network read timeout error'
+      ],
+      599 => [
+        'status' => 'Network connect timeout error'
+      ],
+    ];
+    $keys = array_change_key_case(getallheaders(), CASE_LOWER);
+    if ($error = $error_codes[$code]) {
+      $status = $error['status'];
+      $body = $body ?: (isset($error['description']) ? $error['description'] : $status);
+    }
+    // debug($keys, strstr($keys['accept'], 'text/html'));
+    $status = strToUpper($status);
+    // $description = $description ?: (isset($error['description']) ? $error['description'] : $status);
+    $request = $_SERVER['REQUEST_METHOD'].' '.$_SERVER['REQUEST_URI'];
+    if (!strstr($keys['accept'], 'text/html')) {
+      $t = round(microtime(true)*1000-__startTime);
+      $bt = debug_backtrace();
+      // array_shift($bt);
+      $body = [
+        "error"=> [
+          "code"=> $code,
+          "status"=> $status,
+          "message"=> $body,
+          // "errors"=> $body ?: [
+          //   [
+          //     "message"=> $description,
+          //     // "domain"=> "usageLimits",
+          //     // "reason"=> "accessNotConfigured",
+          //     // "extendedHelp"=> "https://console.developers.google.com"
+          //   ]
+          // ],
+          "trace"=> array_map(function ($row){
+            // $line = explode('\\src\\',$row['file'])[1];
+            $line = $row['file'];
+            $line .= "($row[line]): ";
+            if (isset($row['class'])) $line .= $row['class'].'->';
+            if (isset($row['function'])) $line .= $row['function'];
+            return $line;
+            // return parse_url(str_replace('\\', '/', $row['file']));
+          }, $bt),
+          "duration"=> "$t ms",
         ],
       ];
-      $keys = array_change_key_case(getallheaders(), CASE_LOWER);
-      if ($error = $error_codes[$code]) {
-        $status = $error['status'];
-        $body = $body ?: (isset($error['description']) ? $error['description'] : $status);
-      }
-      // debug($keys, strstr($keys['accept'], 'text/html'));
-      $status = strToUpper($status);
-      // $description = $description ?: (isset($error['description']) ? $error['description'] : $status);
-      $request = $_SERVER['REQUEST_METHOD'].' '.$_SERVER['REQUEST_URI'];
-      if (!strstr($keys['accept'], 'text/html')) {
-        $t = round(microtime(true)*1000-__startTime);
-        $bt = debug_backtrace();
-        // array_shift($bt);
-        $body = [
-          "error"=> [
-            "code"=> $code,
-            "status"=> $status,
-            "message"=> $body,
-            // "errors"=> $body ?: [
-            //   [
-            //     "message"=> $description,
-            //     // "domain"=> "usageLimits",
-            //     // "reason"=> "accessNotConfigured",
-            //     // "extendedHelp"=> "https://console.developers.google.com"
-            //   ]
-            // ],
-            "trace"=> array_map(function ($row){
-              // $line = explode('\\src\\',$row['file'])[1];
-              $line = $row['file'];
-              $line .= "($row[line]): ";
-              if (isset($row['class'])) $line .= $row['class'].'->';
-              if (isset($row['function'])) $line .= $row['function'];
-              return $line;
-              // return parse_url(str_replace('\\', '/', $row['file']));
-            }, $bt),
-            "duration"=> "$t ms",
-          ],
-        ];
-        // $body = is_string($body) ? 'ja' : 'nee';
-        header("Content-Type: application/json");
-        $body = json_encode($body, JSON_PRETTY_PRINT);
-        // header("Content-Type: application/json");
-      } else {
-        $body = json_encode($body, JSON_PRETTY_PRINT);
-        $body = file_get_contents(__DIR__.'/error_page.html').
-        "<h1>$status</h1><pre>$body</pre><p>$request</p><p class='error-code'>HTTP ERROR $code $status</p>";
-      }
-    }
-    if (!is_null($body) && !is_string($body)) {
+      // $body = is_string($body) ? 'ja' : 'nee';
       header("Content-Type: application/json");
-      $body = json_encode($body);
+      $body = json_encode($body, JSON_PRETTY_PRINT);
+      // header("Content-Type: application/json");
+    } else {
+      $body = json_encode($body, JSON_PRETTY_PRINT);
+      $body = "<html><head>
+        <meta name='viewport' content='width=device-width, initial-scale=1, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no' />
+        <style>
+          * { box-sizing: border-box; }
+          .message.error {
+            font-family:'Segoe UI', Tahoma, sans-serif;
+            position: fixed; margin: auto; top: 0; bottom: 0; left: 0; right: 0;
+            background-color: rgba(0,0,0,0.1);
+            z-index:500;
+            word-break: break-all;
+          }
+          .message.error>div{
+            display: flex;
+            flex-flow: column;
+            position: absolute; margin: auto; top: 50px; bottom: 50px; left: 0; right: 0;
+            max-width: 1000px;
+            cursor: pointer;
+            margin: auto;
+            padding: 50px;
+            background: white;
+          }
+          .message.error pre {
+            padding: 10px;
+            display: block;
+            white-space: pre-wrap;
+          }
+          .message.error pre.err{
+            overflow: auto;
+            background-color: rgb(255,240,240);
+            flex: 1 1 auto;
+          }
+        </style>
+      </head>
+      <body><div class='message error'><div>
+        <h1>$code $status</h1>
+        <pre>$request</pre>
+        <pre class='err'>$body</pre>
+      </div></div></body></html>";
     }
-    // onderstaande check is nodig omdat een request dubbel wordt uitgeveord en een cors probleem ontstaat
-    if (method_exists('\Aliconnect\Aim', 'method_'.$_SERVER['REQUEST_METHOD'])) {
-      http_response_code($code);
-    }
-    die($body);
   }
-  public function account($options){
-    return new Account($options);
+  if (!is_null($body) && !is_string($body)) {
+    header("Content-Type: application/json");
+    $body = json_encode($body);
   }
-  function debug() {
-    // throw new Exception('a');
-    // $t = round(microtime(true)*1000-__startTime);
-    // $arg_list = func_get_args();
-    // $bt = debug_backtrace();
-    // // die(json_encode([
-    // //   'time'=>$t,
-    // //   'args'=>func_get_args(),
-    // //   'trace'=>$bt,
-    // // ]));
-    // extract($bt[0]);
-    //
-    // extract(array_merge($bt[0],parse_url($bt[0]['file']),pathinfo($bt[0]['file'])));
-    // $line = "$basename:$line ";
-    // if (isset($bt[1]['class'])) $line .= "(".$bt[1]['class'].'->';
-    // if (isset($bt[1]['function'])) $line .= $bt[1]['function'].") ";
-    // array_unshift($arg_list, $line . "$t ms");
-    // die('sss');
-    $this->http_response(501, func_get_args());
+  // onderstaande check is nodig omdat een request dubbel wordt uitgeveord en een cors probleem ontstaat
+  if (method_exists('Aim', 'method_'.$_SERVER['REQUEST_METHOD'])) {
+    http_response_code($code);
   }
-
+  die($body);
 }
-
-// Aim::set('root', explode('\\vendor\\',__DIR__)[0]);
-function aim() {
-  global $aim;
-  return $aim = $aim ?: new Aim();
-  // $GLOBALS['aim'];
+function debug() {
+  // throw new Exception('a');
+  // $t = round(microtime(true)*1000-__startTime);
+  // $arg_list = func_get_args();
+  // $bt = debug_backtrace();
+  // // die(json_encode([
+  // //   'time'=>$t,
+  // //   'args'=>func_get_args(),
+  // //   'trace'=>$bt,
+  // // ]));
+  // extract($bt[0]);
+  //
+  // extract(array_merge($bt[0],parse_url($bt[0]['file']),pathinfo($bt[0]['file'])));
+  // $line = "$basename:$line ";
+  // if (isset($bt[1]['class'])) $line .= "(".$bt[1]['class'].'->';
+  // if (isset($bt[1]['function'])) $line .= $bt[1]['function'].") ";
+  // array_unshift($arg_list, $line . "$t ms");
+  // die('sss');
+  http_response(501, func_get_args());
 }
-
 
 function __($message, $args = null) {
   return aim()->translate($message, $args);
@@ -1232,3 +1620,6 @@ function aim_uid($id){
   $id = array_slice($id, -5, 5, true);
   return implode('-', $id);
 }
+
+new Aim();
+http_response(404);

@@ -68,7 +68,7 @@ eol = '\n';
     }
     this.extend(context)
   };
-
+  const $ = aim;
   const libUrl = 'https://aliconnect.nl/npm/@aliconnect/lib@0.0.0/dist';
   // const Elem = self.elem ? self.elem.Elem : null;
   const dmsOrigin = 'https://aliconnect.nl';
@@ -228,6 +228,24 @@ eol = '\n';
 	};
 
   const pageHtml = `<!DOCTYPE HTML><html><head><link href="${dmsUrl}/css/web_debug.css" rel="stylesheet"/><script src="${dmsUrl}/js/aim_debug.js" libraries="web"></script></head><body></body></html>`;
+
+  function messagePopup(msg){
+    // self.messageElem = self.messageElem || $('div').class('message error');
+    const elem = $('div')
+    .parent(self.messageElem = self.messageElem || $('div').parent(document.body).class('message error'))
+    .append(
+      $('h1').text(`${msg.code||''} ${msg.status||''} ${msg.statusText||''}`),
+      $('div').text(msg.message||''),
+      $('code').text(msg.url||''),
+      $('pre').html(msg.body||'').append(
+        $('ol').append(
+          (msg.trace||[]).map(l => $('li').text(l)),
+        )
+      ),
+      $('div').append($('button').text('Gezien').on('click', e => elem.remove())),
+    )
+  }
+
 
   minimist = function (args, opts){
     if (!opts) opts = {};
@@ -1266,25 +1284,47 @@ eol = '\n';
           self.collist.setAttribute('wait', Number(self.collist.getAttribute('wait')) - 1);
         }
         e.body = xhr.response;
-        if (this.url.headers.accept === 'application/json' || xhr.getResponseHeader('content-type').includes('application/json')) {
-          try {
-            e.body = JSON.parse(e.body);
-          } catch (err) {
-            console.error('JSON error', xhr, xhr.response.substr(0,5000));
-          }
-        }
         if (xhr.status >= 400) {
           // console.error(`${xhr.method} ${xhr.src} ${xhr.status} (${xhr.statusText})`, e.body); // responseText is the server
           // //console.log(xhr);
-          const elem = aim(document.body).append(
-            aim('pre').class('message error')
-            .text(`${xhr.status} (${xhr.statusText})\n${e.body && e.body.error ? e.body.error.message : ''}\n${this.method.toUpperCase()} ${decodeURI(xhr.request.url.href)}`)
-            .on('click', e => e.target.remove())
-          );
+          try {
+            const arr = e.body.match(/(.*?)([\[|\{].*)/s
+            );
+            const data = JSON.parse(arr[2]);
+            const error = data.error || data;
+            messagePopup({
+              code: error.code,
+              status: error.status,
+              message: error.message,
+              duration: error.duration,
+              trace: error.trace,
+              body: arr[1],
+              url: this.method.toUpperCase() + ' ' + decodeURIComponent(xhr.request.url.href),
+            });
+          } catch (err) {
+            console.error(555, err);
+            messagePopup({
+              status: xhr.status, statusText: xhr.statusText,
+              url: this.method.toUpperCase() + ' ' + decodeURIComponent(xhr.request.url.href),
+              body: e.body && e.body.error ? e.body.error.message : '',
+            })
+          }
           // console.error(xhr.getResponseHeader('content-type'), e.body, e);
           return reject(e);
           // throw 'FOUTJE';
           // reject('STATUS', xhr.status);
+        } else if (this.url.headers.accept === 'application/json' || xhr.getResponseHeader('content-type').includes('application/json')) {
+          try {
+            // console.log(e.body.replace(/.*?(?=\[|\{)/s, ''));
+            e.body = JSON.parse(e.body.replace(/.*?(?=\[|\{)/s, ''));
+          } catch (err) {
+            messagePopup({
+              status: xhr.status, statusText: xhr.statusText,
+              url: this.method.toUpperCase() + ' ' + decodeURIComponent(xhr.request.url.href),
+              body: xhr.response.substr(0,5000),
+            })
+            console.error('JSON error', xhr, xhr.response.substr(0,5000));
+          }
         }
         this.onload(e);
         resolve(this.returnBody ? e.body : e);
@@ -3407,7 +3447,7 @@ eol = '\n';
     headers: {},
     loadConfig() {
       return new Promise((success, fail) => {
-        aim().url(this.url + '/config')
+        aim().url(this.url + '/aliconnect/config')
         .query('client_id', this.config.client_id)
         .get()
         .then(e => success(this.config = e.body))

@@ -793,6 +793,7 @@ body>dialog['open'] {
 
 section#list {
   overflow: auto;
+  flex-grow: 1;
 }
 #prompt {
   display: none;
