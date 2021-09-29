@@ -1,5 +1,5 @@
 <?php
-namespace Aliconnect;
+namespace Aim;
 
 function json_base64_encode ($obj){
 	return str_replace(['+', '/','='], ['-','_',''], base64_encode($obj));

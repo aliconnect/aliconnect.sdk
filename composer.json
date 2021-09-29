@@ -5,13 +5,13 @@
   "license": "proprietary",
   "autoload": {
     "psr-4": {
-      "Aliconnect\\": "src/aim/"
+      "Aim\\": "src/php/"
     },
     "files": [
-      "src/aim.php"
+      "src/php/aim.php"
     ],
     "classmap": [
-      "src/aim/"
+      "src/php/"
     ]
   },
   "authors": [

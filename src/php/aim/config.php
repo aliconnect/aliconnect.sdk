@@ -1,7 +1,5 @@
 <?php
-namespace Aliconnect;
-
-class Config {
+class Config1 {
   public function get() {
     header('Access-Control-Allow-Origin: *');
     $config = aim()->config;
