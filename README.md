@@ -1,5 +1,14 @@
 # Aliconnect Software Development Kit
 
+![GitHub](https://img.shields.io/github/license/aliconnect/aliconnect.sdk)
+[![npm](https://img.shields.io/npm/v/@aliconnect/sdk)](https://www.npmjs.com/package/@aliconnect/sdk)
+![GitHub file size in bytes](https://img.shields.io/github/size/aliconnect/aliconnect.sdk/src/js/aim.js)
+<!-- ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/aliconnect/sdk/Node.js%20CI) -->
+<!-- [![codecov](https://codecov.io/gh/aliconnect/sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/aliconnect/sdk) -->
+
+
+
+
 - [View as GitHub Page](https://aliconnect.github.io/aliconnect-sdk/)
 - [View on GitHub](https://github.com/aliconnect/aliconnect-sdk)
 - [Wiki](https://github.com/aliconnect/aliconnect-sdk/wiki)
