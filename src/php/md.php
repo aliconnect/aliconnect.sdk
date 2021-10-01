@@ -42,16 +42,7 @@
   </style>
 </head>
 <body class="col">
-  <data doc='<?php
-  $parse_url = parse_url($_SERVER['REQUEST_URI']);
-  $data = [
-    // 'md'=>str_replace("'","\'",file_get_contents($_SERVER['DOCUMENT_ROOT'].$parse_url['path'].'.md')),
-    'md'=>file_get_contents($_SERVER['DOCUMENT_ROOT'].$parse_url['path'].'.md'),
-  ];
-  $data = base64_encode(json_encode($data));
-  echo $data;
-  // echo str_replace("'","\'",$data);
-  ?>'></data>
+  <data doc='<?php $parse_url = parse_url($_SERVER['REQUEST_URI']);$data = ['md'=>file_get_contents($_SERVER['DOCUMENT_ROOT'].$parse_url['path'].'.md'),];$data = base64_encode(json_encode($data));echo $data; ?>'></data>
   <nav></nav>
   <main class="row">
     <aside class="right"><ul id="doc-list"></ul></aside>
@@ -66,57 +57,45 @@
   <script>
   const data = JSON.parse(atob(document.querySelector('data').getAttribute('doc')));
   let body = data.md;
+  const lastModified = '';
+  $("doc-nav").text('').append(
+    $('a').text('Home').href('/aliconnect/aliconnect.sdk/wiki/Home')
+  );
+  $("doc-header").text('').append(
+    $('h1').text(document.title),
+    // $('time').text('Laatst gewijzigd', lastModified.toLocaleDateString(), lastModified.toLocaleTimeString()),
+  );
 
-  // console.log(JSON.parse(data));
+  $("doc-index").index("doc-content");
 
-  // function load(href) {
-  //   href = href.replace(/\/blob\/main|\.md$/g,'');
-  //   $().url(href+'.md').get().then(e => {
-  //     const headers = e.target.getAllResponseHeaders();
-  //     document.title = e.target.responseURL.split('/').pop().replace(/\.md$/,'').replace(/-/g,' ');
-      const lastModified = '';//new Date(e.target.getResponseHeader('last-modified'));
-      // console.log(document.title, headers);
-      $("doc-nav").text('').append(
-        $('a').text('Home').href('/aliconnect/aliconnect.sdk/wiki/Home')
-      );
-      $("doc-header").text('').append(
-        $('h1').text(document.title),
-        // $('time').text('Laatst gewijzigd', lastModified.toLocaleDateString(), lastModified.toLocaleTimeString()),
-      );
+  $("doc-content").text('').append(aim.markdown().render(body));//.renderCode(e.target.responseURL);
 
-      $("doc-index").index("doc-content");
-      if (document.location.hash) {
-        const hash = document.location.hash.substr(1);
-        const anchor = (document.getElementsByName(hash)||[])[0];
-        anchor.scrollIntoView({ block: "nearest", inline: "nearest" });
-      }
+  if (document.location.hash) {
+    const hash = document.location.hash.substr(1);
+    const anchor = (document.getElementsByName(hash)||[])[0];
+    anchor.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
 
-
-      async function render(){
-        if (sessionStorage.getItem('password')) {
-          console.log(sessionStorage.getItem('password'));
-          const config = await fetch('myconfig.php?password='+sessionStorage.getItem('password')).then(res => res.json());
-          (function rep(cfg, path){
-            Object.entries(cfg).forEach(([key,value]) => {
-              if (typeof value === 'object') {
-                rep(value, path.concat(key));
-              } else {
-                body = body.replace(`{${path.concat(key).join('.')}}`, value);
-              }
-            });
-          })(config, []);
-          console.log(config, sessionStorage.getItem('password'));
-        }
-        $("doc-content").text('').append(aim.markdown().render(body));//.renderCode(e.target.responseURL);
-      }
-      function mdSignin(el){
-        sessionStorage.setItem('password', el.value);
-        render();
-      }
-      render();
-
-  //   });
-  // };
+  async function render(){
+    if (sessionStorage.getItem('password')) {
+      const config = await fetch('myconfig.php?password='+sessionStorage.getItem('password')).then(res => res.json());
+      (function rep(cfg, path){
+        Object.entries(cfg).forEach(([key,value]) => {
+          if (typeof value === 'object') {
+            rep(value, path.concat(key));
+          } else {
+            body = body.replace(`{${path.concat(key).join('.')}}`, `<span title="${value}">{${path.concat(key).join('.')}}</span>`);
+          }
+        });
+      })(config, []);
+      $("doc-content").text('').append(aim.markdown().render(body));//.renderCode(e.target.responseURL);
+    }
+  }
+  function mdSignin(el){
+    sessionStorage.setItem('password', el.value);
+    render();
+  }
+  render();
   // load(document.location.pathname);
   // $().url('/api/Aim/Tools/Dir').query('fn', document.location.pathname).get().then(e => {
   //   const folders = {};
@@ -153,7 +132,6 @@
   //   // console.log(e.body);
   // });
   $(window).on('click', e => {
-    // console.log(e.target)
     if (e.target && e.target.hasAttribute('open')) {
       e.target.setAttribute('open', e.target.getAttribute('open') ^1)
     }

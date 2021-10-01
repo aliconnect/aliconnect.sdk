@@ -471,7 +471,7 @@ code {
 code:not(.block) {
   border:1px solid rgba(0,0,0,.1);
   position:relative;
-  padding: .2em .5em;
+  padding: 2px 5px;
   /* border-radius:.3em; */
   /* color:#c92c2c; */
   display:inline;
@@ -485,7 +485,7 @@ code.block {
   /* position:relative; */
   /* margin:1.5em 0; */
   /* box-shadow:-1px 0 0 0 #8892bf, 0 0 0 1px #dfdfdf; */
-  border-left:10px solid #8892bf;
+  border-left:4px solid var(--blue);
   /* background-color:inherit; */
   background-size:3em 3em;
   background-origin:content-box;
