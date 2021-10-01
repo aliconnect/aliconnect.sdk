@@ -1,21 +1,21 @@
 (function(global, factory) {
   typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self,
-  global.markdown = factory());
+  global.markdownit = factory());
 })(this, (function() {
-  function replaceOutsideQuotes(codeString, callback, pre = '<span class=hl-string>', post = '</span>') {
-    // const a = codeString.split(/((?<![\\])['"`])((?:.(?!(?<![\\])\1))*.?)\1/);
-    const a = codeString.split(/(['"`])\1/);
-    return a.map((s,i) => i%3===0 ? (callback ? callback(s) : s) : i%3===2 ? `${a[i-1]}${pre}${s}${post}${a[i-1]}` : '').join('');
-  }
-  function Markdown() {
-    if (!(this instanceof Markdown)) {
-      return new Markdown();
+  function MarkdownIt() {
+    if (!(this instanceof MarkdownIt)) {
+      return new MarkdownIt();
     }
   }
-  function toLink(s){
-    return s.replace(/\(|\)|\[|\]|,|\.|\=|\{|\}/g,'').replace(/ /g,'-').toLowerCase();
-  }
-  Markdown.prototype.render = function (s, type) {
+  Object.defineProperties(MarkdownIt.prototype, {
+    isImg: { value: function (src) {
+      return src.match(/jpg|png|bmp|jpeg|gif|bin/i)
+    }},
+    isImgSrc: { value: function (src) {
+      if (src) for (var i = 0, ext; ext = ['.jpg', '.png', '.bmp', '.jpeg', '.gif', '.bin'][i]; i++) if (src.toLowerCase().indexOf(ext) != -1) return true;
+      return false;
+    }},
+    render: { value: function render(s) {
       function code(s, type) {
         const highlight = {
           html(s) {
@@ -126,7 +126,7 @@
               ) + (cmt ? `<span class=hl-cmt>${cmt}</span>` : '')
             })
           },
-        };
+        }
         s = s || '';
         const ident = (s.match(/^ +/)||[''])[0].length;
         // console.log(s);
@@ -135,16 +135,13 @@
         .replace(/>/g, '&gt;')
         .replace(/=/g, '&equals;')
         .replace(/\t/g, '  ')
-        .replace(/\^\^(.*?)\^\^/g, '<MARK>$1</MARK>');
+        .replace(/\^\^(.*?)\^\^/g, '<MARK>$1</MARK>')
         // .replace(/"/g, '&quot;')
         // .replace(/'/g, '&apos;')
         if (highlight[type]) {
           return highlight[type](s);
         }
         return s;
-      }
-      if (type) {
-        return code(s, type);
       }
 
 
@@ -170,8 +167,6 @@
         tag = p;
       }
 
-      // console.error('JAAAAA');
-
       for (var i=0;i<arr.length;i++) {
         s = arr[i];
         if (s || i === arr.length - 1 ) {
@@ -190,7 +185,7 @@
                 lines.push('</li>');
               }
             }
-          })();
+          })()
 
           if (s.match(/```/)) {
             setTag();
@@ -199,17 +194,11 @@
               if (arr[i].match(/```/)) {
                 let type = '';
                 // codeLines = code(codeLines.join('\n'));
-                // lines.push(
-                //   s.replace(/```/, '<pre><code>')
-                //   .replace(/<pre><code>(\w+)/, (s,p1) => `<div class="code-header row" language="${type = p1.toLowerCase()}"><span class="aco">${p1}</span></div><pre><code language="${p1.toLowerCase()}">`)
-                //   + code(codeLines.join('\n'), type)
-                //   + '</code></pre>'
-                // );
                 lines.push(
-                  s.replace(/```/, '<code class="block"><pre>')
-                  .replace(/<code class="block"><pre>(\w+)/, (s,p1) => `<code class="block" language="${type = p1.toLowerCase()}"><pre>`)
+                  s.replace(/```/, '<pre><code>')
+                  .replace(/<pre><code>(\w+)/, (s,p1) => `<div class="code-header row" language="${type = p1.toLowerCase()}"><span class="aco">${p1}</span></div><pre><code language="${p1.toLowerCase()}">`)
                   + code(codeLines.join('\n'), type)
-                  + '</pre></code>'
+                  + '</code></pre>'
                 );
                 break;
               }
@@ -249,15 +238,9 @@
           // .replace(/`(.+?)`/g, (s, p1) => `<CODE>${$.string.code(p1)}</CODE>`)
           .trim();
           if (match) {
-            const tag = s.trim().match(/^(\*|-) /) ? 'ul' : 'ol';
             setTag();
-            if (identOptions && identOptions.tag !== tag && identOptions.ident == lineIdent) {
-              lines.push(`</li></${identOptions.tag}>`);
-              identList.shift();
-              identList.unshift({ident: lineIdent, tag: tag});
-              lines.push(`<${tag}>`);
-            } else if (!identOptions || identOptions.ident < lineIdent) {
-              identOptions = {ident: lineIdent, tag: tag};
+            if (!identOptions || identOptions.ident < lineIdent) {
+              identOptions = {ident: lineIdent, tag: s.trim().match(/^(\*|-) /) ? 'ul' : 'ol'};
               identList.unshift(identOptions);
               lines.push(`<${identOptions.tag}>`);
             }
@@ -265,9 +248,9 @@
           } else if (s.match(/^#/)) {
             setTag();
             s = s
-            .replace(/^# (.*?)$/gm, (s,p1) => `<A class='anchor' title="${p1}" name="${s = toLink(p1)}"></A><H1 class="${s}"><a class="anchorref" href="#${s}"></a> ${p1}</H1>`)
-            .replace(/^## (.*?)$/gm, (s,p1) => `<A class='anchor' title="${p1}" name="${s = toLink(p1)}" href="#${s}"></A><H2 class="${s}"><a class="anchorref" href="#${s}"></a>${p1}</H2>`)
-            .replace(/^### (.*?)$/gm, (s,p1) => `<A class='anchor' title="${p1}" name="${s = toLink(p1)}" href="#${s}"></A><H3 class="${s}"><a class="anchorref" href="#${s}"></a>${p1}</H3>`)
+            .replace(/^# (.*?)$/gm, '<H1>$1</H1>')
+            .replace(/^## (.*?)$/gm, '<H2>$1</H2>')
+            .replace(/^### (.*?)$/gm, '<H3>$1</H3>')
             .replace(/^#### (.*?)$/gm, '<H4>$1</H4>')
             .replace(/^##### (.*?)$/gm, '<H5>$1</H5>')
             .replace(/^###### (.*?)$/gm, '<H6>$1</H6>')
@@ -289,9 +272,8 @@
           .replace(/\[v\]/, '&#9745;')
           .replace(/\[x\]/, '&#9745;')
           .replace(/\!\[(.*?)\]\((.*?)\)(?=(?:(?:[^`]*`){2})*[^`]*$)/g, '<IMG src="$2" alt="$1">')
-          .replace(/\[(.*?)\]\((.*?)\)(?= |$)(?=(?:(?:[^`]*`){2})*[^`]*$)/g, '<A href="$2">$1</A>')
-          // .replace(/:::(\w+)(.*?):::/gs, '<PRE><$1$2></$1></PRE>')
-          .replace(/:::(\w+)(.*?):::/gs, '<$1$2></$1>')
+          .replace(/\[(.*?)\]\((.*?)\)(?=(?:(?:[^`]*`){2})*[^`]*$)/g, '<A href="$2">$1</A>')
+          .replace(/:::(\w+)(.*?):::/gs, '<PRE><$1$2></$1></PRE>')
         } else {
           setTag();
         }
@@ -305,15 +287,8 @@
       //.split(/\n\n/).map(s => s.trim()).map(s => s ? `<p>${s}</p>` : s).join('\n');
       // console.log(s);
       return s;
-    };
-  Object.defineProperties(Markdown.prototype, {
-    isImg: { value: function (src) {
-      return src.match(/jpg|png|bmp|jpeg|gif|bin/i)
-    }},
-    isImgSrc: { value: function (src) {
-      if (src) for (var i = 0, ext; ext = ['.jpg', '.png', '.bmp', '.jpeg', '.gif', '.bin'][i]; i++) if (src.toLowerCase().indexOf(ext) != -1) return true;
-      return false;
     }},
   });
-  return Markdown;
+  return MarkdownIt;
 }));
+console.error(window.markdownit());

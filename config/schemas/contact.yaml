@@ -1,0 +1,294 @@
+components:
+  schemas:
+    Contact:
+      headers:
+        - a
+        - b
+      properties:
+        State:
+          type: string
+          format: radio
+          title: Functie Status
+          legend: Item
+          filter: 1
+          options:
+            run:
+              title: Stopping
+              color: green
+            stopped:
+              title: Clearing
+              color: red
+            offline:
+              title: Offline
+              color: rgb(130,130,130)
+            online:
+              title: Online
+              color: rgb(50,50,200)
+            focus:
+              title: Focus
+              color: rgb(50,50,200)
+          send: 1
+          hostID: 1
+        CreatedDateTime:
+          type: string
+          format: datetime
+          description: Start date
+          pattern: YYYY-MM-DD
+          example: "2017-01-01"
+          minLength: 0
+          maxLength: 10
+          readOnly: true
+        LastModifiedDateTime:
+          type: string
+          format: datetime
+        LastVisitDateTime:
+          type: string
+          format: datetime
+        StartDateTime:
+          type: string
+          format: datetime
+          title: StartDateTime
+        EndDateTime:
+          type: string
+          format: datetime
+        FinishDateTime:
+          type: string
+          format: datetime
+          title: FinishDateTime
+        Master:
+          filter: true
+          title: Onderdeel van
+          schema: '*'
+        Parent:
+          title: Onderdeel van
+          schema: company
+          idname: masterID
+        Src:
+          filter: true
+          title: Kopie van
+          schema: '*'
+        Class:
+          filter: true
+          title: Class
+          schema: '*'
+        Message:
+          format: hidden
+          type: array
+        File:
+          format: files
+        Prefix:
+          format: text
+          filter: true
+        Tag:
+          format: text
+        Keyname:
+          legend: Organisatie
+          title: Keyname
+          idname: keyname
+        Title:
+          format: text
+        Name:
+          format: text
+        Tagname:
+          format: hidden
+          type: array
+        Children:
+          format: hidden
+          type: array
+        Fav:
+          title: Fav
+          hidden: true
+        name:
+          title: name
+        myproperty:
+          title: myproperty
+          security:
+          - manager
+        email:
+          title: email
+        Initials:
+          legend: Contactperson
+          title: Initials
+        GivenName:
+          title: GivenName
+          gdpr_type: reguliere persoonsgegevens
+          category: Naam, adres, woonplaats
+          involved: Bezoekers
+          basis: Overeenkomst
+          target: Contact gegevens
+          processor: Internal
+          processor_location: Binnen de EU of in een land met voldoende juridische
+            waarborgen
+          term_days: 0
+          encrypt: false
+        FirstName:
+          title: FirstName
+          gdpr_type: reguliere persoonsgegevens
+          category: Naam, adres, woonplaats
+          involved: Bezoekers
+          basis: Overeenkomst
+          target: Contact gegevens
+          processor: Internal
+          processor_location: Binnen de EU of in een land met voldoende juridische
+            waarborgen
+          term_days: 0
+          encrypt: false
+        MiddleName:
+          title: MiddleName
+          gdpr_type: reguliere persoonsgegevens
+          category: Naam, adres, woonplaats
+          involved: Bezoekers
+          basis: Overeenkomst
+          target: Contact gegevens
+          processor: Internal
+          processor_location: Binnen de EU of in een land met voldoende juridische
+            waarborgen
+          term_days: 0
+          encrypt: false
+        Surname:
+          title: Surname
+        Company:
+          legend: Company
+          title: Company
+          schema: Company
+          idname: masterID
+        CompanyName:
+          title: CompanyName
+        OfficeLocation:
+          title: OfficeLocation
+        Department:
+          title: Afdeling
+          filter: 1
+          schema: Department
+        Manager:
+          title: Manager
+          schema: Contact
+        Assistant:
+          title: Assistant
+          hostID: 1
+          schema: Contact
+        JobTitle:
+          legend: Job
+          title: JobTitle
+          filter: 1
+          gdpr_type: reguliere persoonsgegevens
+          category: Naam, adres, woonplaats
+          involved: Personeel
+          basis: Overeenkomst
+          target: Contact gegevens
+          processor: Internal
+          processor_location: Binnen de EU of in een land met voldoende juridische
+            waarborgen
+          term_days: 0
+          encrypt: false
+        Arbeidsrelatie:
+          title: Contract
+          type: string
+          format: radio
+          filter: 1
+          options:
+            werknemer:
+              title: Werknemer
+              color: rgb(112,48,160)
+            interim:
+              title: Interim
+              color: rgb(112,48,160)
+            detachering:
+              title: Detachering
+              color: rgb(0,176,240)
+        BusinessPhones0:
+          legend: Contactgegevens
+          title: Company Phone
+          format: tel
+          hostID: 1
+        BusinessHomePage:
+          title: Company Website
+          format: url
+          hostID: 1
+        EmailAddresses1Address:
+          title: Company Email
+          format: email
+          hostID: 1
+        MobilePhone1:
+          title: Contact Mobile
+          format: tel
+        BusinessPhones1:
+          title: Contact Phone
+          format: tel
+        EmailAddresses0Address:
+          title: Contact Email
+          format: email
+          rights: 3
+        BusinessAddress:
+          title: BusinessAddress
+          type: object
+          format: address
+          location: true
+        OtherAddress:
+          title: Post adres
+          type: object
+          format: address
+        EmailAddresses2Address:
+          legend: "Priv\xE9 contactgegevens"
+          title: EmailAddresses2Address
+          format: email
+          state: personal
+        HomePhones0:
+          title: HomePhones0
+          format: tel
+        HomePhones1:
+          title: HomePhones1
+          format: tel
+        SpouseName:
+          title: SpouseName
+        Birthday:
+          title: Birthday
+          type: string
+          format: date
+        HomeAddress:
+          title: HomeAddress
+          type: object
+          format: address
+        AfspraakDatum:
+          legend: Planning
+          title: Volgend overleg
+          user: host
+          type: string
+          format: date
+        AfspraakTijd:
+          title: Starttijd
+          user: host
+          type: string
+          format: time
+        AfspraakOnderwerp:
+          title: Onderwerp
+          user: host
+          format: textarea
+        ResourceName:
+          legend: Resource settings
+          title: Resource name
+          idname: keyname
+        ResourceType:
+          title: Resource type
+        ResourceAvail:
+          title: Beschikbaarheid
+          unit: FTE
+        ResourcePlan:
+          title: Planbaar
+          unit: FTE
+        verlof:
+          title: Verlof
+          format: textarea
+        Gebruiker:
+          legend: Account
+          title: User
+          class: account
+          idname: toID
+        groupID:
+          title: Usergroup
+          type: string
+          class: groups
+        Product:
+          title: Products
+          type: array
+          schema: System

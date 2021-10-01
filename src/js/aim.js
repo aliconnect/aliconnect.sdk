@@ -231,11 +231,12 @@ eol = '\n';
 
   function messagePopup(msg){
     // self.messageElem = self.messageElem || $('div').class('message error');
+    console.log(msg);
     const elem = $('div')
     .parent(self.messageElem = self.messageElem || $('div').parent(document.body).class('message error'))
     .append(
       $('h1').text(`${msg.code||''} ${msg.status||''} ${msg.statusText||''}`),
-      $('div').text(msg.message||''),
+      $('pre').text(typeof msg.message === 'object' ? JSON.stringify(msg.message, null, 2) : msg.message || ''),
       $('code').text(msg.url||''),
       $('pre').html(msg.body||'').append(
         $('ol').append(
@@ -977,7 +978,7 @@ eol = '\n';
         search.forEach((value,key) => this.url.searchParams.set(key,value));
         // this.url.search = selector;
       } else {
-        this.url.searchParams.set(...arguments);
+        this.url.searchParams.set(selector, context === undefined ? '' : context);
       }
       return this;
     },
@@ -985,15 +986,23 @@ eol = '\n';
       this.method = 'delete';
       return this.http();
     },
+    accept(selector){
+      return this.headers('Accept', selector);
+    },
+    headers(selector, context){
+      if (typeof selector === 'object'){
+        Object.assign(this.url.headers, selector)
+      } else {
+        this.url.headers[selector] = context;
+      }
+      return this;
+    },
   }
   Object.defineProperties(Request.prototype, {
     body: { value: function(){
       this.returnBody = true;
       return this;
     }},
-    accept: { value: function(selector){
-      return this.headers('Accept', selector);
-    },},
     exec: { value: function(){
       for ([key, value] of this.url.searchParams) {
         // //console.log(key, value);
@@ -1117,14 +1126,6 @@ eol = '\n';
       var [dummy, basePath, folder, sep, id] = path.match(/(.*?\/om|\/api|^)(\/.*?)(\/id\/|aim)(.*)/) || [];
       return [basePath, folder, sep, id];
     },},
-    headers: { value: function(selector, context){
-      if (typeof selector === 'object'){
-        Object.assign(this.url.headers, selector)
-      } else {
-        this.url.headers[selector] = context;
-      }
-      return this;
-    },},
     authProvider: { value: function(authProvider){
       this.getAccessToken = authProvider.getAccessToken;
       return this;
@@ -1155,8 +1156,8 @@ eol = '\n';
       this.method = method;
       return this;
     },},
-    node: { value: function(resolve){
-      this.resolve = resolve;
+    node: { value: function(resolve,reject){
+      // this.resolve = resolve;
       const input = this.input();
       if (input){
         this.headers('Content-Length',input.length);
@@ -1199,15 +1200,25 @@ eol = '\n';
             e.response = e.body = e.body; // deprecated
           } catch(err){
             console.debug('ERROR JSON', err, e.target.responseText.substr(0,1000));
+            return reject(e);
             // throw e.target.responseText;
           }
-          resolve(e);
+          if (e.status===200) {
+            return resolve(e.body);
+          }
+          return reject({
+            error: {
+              code: e.status,
+              message: e.statusMessage,
+            }
+          });
           // if (req.params.then){
           // 	req.params.then.call(e.target, e);
           // }
         });
       }).on('error', e => {
         console.debug('ERROR');
+        reject(error);
       });
       if (input){
         xhr.write(input);
@@ -1284,6 +1295,7 @@ eol = '\n';
           self.collist.setAttribute('wait', Number(self.collist.getAttribute('wait')) - 1);
         }
         e.body = xhr.response;
+        console.log(this.url.headers);
         if (xhr.status >= 400) {
           // console.error(`${xhr.method} ${xhr.src} ${xhr.status} (${xhr.statusText})`, e.body); // responseText is the server
           // //console.log(xhr);
@@ -1313,10 +1325,27 @@ eol = '\n';
           return reject(e);
           // throw 'FOUTJE';
           // reject('STATUS', xhr.status);
-        } else if (this.url.headers.accept === 'application/json' || xhr.getResponseHeader('content-type').includes('application/json')) {
+        } else if (this.url.headers.Accept === 'application/json' || xhr.getResponseHeader('content-type').includes('application/json')) {
           try {
             // console.log(e.body.replace(/.*?(?=\[|\{)/s, ''));
-            e.body = JSON.parse(e.body.replace(/.*?(?=\[|\{)/s, ''));
+            // e.body = JSON.parse(e.body.replace(/.*?(?=\[|\{)/s, ''));
+            console.log(e);
+            const arr = e.body.match(/(.*?)([\[|\{].*)/s
+            );
+            e.body = JSON.parse(arr[2]);
+            if (arr[1]) {
+              messagePopup({
+                code: error.code,
+                status: error.status,
+                message: error.message,
+                duration: error.duration,
+                trace: error.trace,
+                body: arr[1],
+                url: this.method.toUpperCase() + ' ' + decodeURIComponent(xhr.request.url.href),
+              });
+              // const error = data.error || data;
+
+            }
           } catch (err) {
             messagePopup({
               status: xhr.status, statusText: xhr.statusText,
@@ -1655,7 +1684,7 @@ eol = '\n';
           .replace(/\[v\]/, '&#9745;')
           .replace(/\[x\]/, '&#9745;')
           .replace(/\!\[(.*?)\]\((.*?)\)(?=(?:(?:[^`]*`){2})*[^`]*$)/g, '<IMG src="$2" alt="$1">')
-          .replace(/\[(.*?)\]\((.*?)\)(?= |$)(?=(?:(?:[^`]*`){2})*[^`]*$)/g, '<A href="$2">$1</A>')
+          .replace(/\[(.*?)\]\((.*?)\)(?=\B)(?=(?:(?:[^`]*`){2})*[^`]*$)/g, '<A href="$2">$1</A>')
           // .replace(/:::(\w+)(.*?):::/gs, '<PRE><$1$2></$1></PRE>')
           .replace(/:::(\w+)(.*?):::/gs, '<$1$2></$1>')
         } else {

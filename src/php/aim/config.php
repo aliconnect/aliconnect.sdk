@@ -1,5 +1,7 @@
 <?php
-class Config1 {
+namespace Aim;
+
+class Config {
   public function get() {
     header('Access-Control-Allow-Origin: *');
     $config = aim()->config;

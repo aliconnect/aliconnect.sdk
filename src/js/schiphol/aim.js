@@ -1049,7 +1049,7 @@ function idToUrl(id){
       return this;
     },},
     http: { value: function(){
-      return aim.promise('http', async (resolve,reject) => {
+      return new Promise(async (resolve,reject) => {
         if (this.getAccessToken) {
           const access_token = await this.getAccessToken();
           // //console.log('access_token', access_token);
@@ -1074,8 +1074,8 @@ function idToUrl(id){
       this.method = method;
       return this;
     },},
-    node: { value: function(resolve){
-      this.resolve = resolve;
+    node: { value: function(resolve,reject){
+      // this.resolve = resolve;
       const input = this.input();
       if (input){
         this.headers('Content-Length',input.length);
@@ -1118,15 +1118,25 @@ function idToUrl(id){
             e.response = e.body = e.body; // deprecated
           } catch(err){
             console.debug('ERROR JSON', err, e.target.responseText.substr(0,1000));
+            return reject(e);
             // throw e.target.responseText;
           }
-          resolve(e);
+          if (e.status===200) {
+            return resolve(e.body);
+          }
+          return reject({
+            error: {
+              code: e.status,
+              message: e.statusMessage,
+            }
+          });
           // if (req.params.then){
           // 	req.params.then.call(e.target, e);
           // }
         });
       }).on('error', e => {
         console.debug('ERROR');
+        reject(error);
       });
       if (input){
         xhr.write(input);
@@ -1283,9 +1293,13 @@ function idToUrl(id){
       }
     }
     // console.warn(5, selector, self.Element, selector instanceof self.Element);
+    // console.log(selector, selector instanceof self.Element, aim.Elem);
     if (self.Element && selector instanceof self.Element) {
       if (aim.his.map.has(selector.id)) {
         return aim.his.map.get(selector.id);
+      }
+      if (aim.Elem) {
+        return new aim.Elem(selector);
       }
     }
     if (aim.Elem && selector instanceof aim.Elem) {
@@ -6167,7 +6181,7 @@ function idToUrl(id){
     const server = this;
     server.config = config;
     const events = require('events');
-    server.paths = process.mainModule.paths.map(path => path.replace(/node_modules$/,'public'));
+    const paths = server.paths = process.mainModule.paths.map(path => path.replace(/node_modules$/,'public'));
     (function addpath(module) {
       if (module.parent) addpath(module.parent);
       //console.log(module.paths);
@@ -6429,7 +6443,115 @@ function idToUrl(id){
     } : null;
     console.log('host active', protocol, host.port, options);
     const http = require(protocol);
-    const httpServer = http.createServer(options, server.processRequest).listen(host.port);
+    function processRequest (req, res) {
+      function end(statusCode, header, body) {
+        res.writeHead(res.statusCode = statusCode, header);
+        res.end(body);
+      }
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Headers', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+      res.setHeader('Access-Control-Request-Method', '*');
+
+      var url = new URL(req.url, 'http://localhost');
+      //console.log(url.pathname, fname);
+      if (config.paths) {
+        if (config.paths[url.pathname]) {
+          if (config.paths[url.pathname].get) {
+            if (config.paths[url.pathname].get.operationId) {
+              const operationId = config.paths[url.pathname].get.operationId;
+              console.log(operationId, server[operationId]);
+              if (server[operationId]) {
+                (async function () {
+                  const res = await server[operationId]();
+                  const body = JSON.stringify(res);
+                  end(200, { 'Content-Type': 'application/json' }, body);
+                })()
+              }
+            }
+          }
+        }
+      }
+
+      if (url.pathname === '/config.js') {
+        return end(200, { 'Content-Type': 'application/json' }, 'config='+JSON.stringify(config));
+      }
+      if (url.pathname === '/sql.json') {
+        const sql = `SELECT TOP 1000 * FROM his.attr WHERE ${url.searchParams.get('filter')}`;
+        debug(sql);
+        return new mssql.Request().query(sql, (err, res) => {
+          if (err) //console.log(err);
+          end(200, { 'Content-Type': 'application/json' }, JSON.stringify(res.recordsets));
+        })
+      }
+      const headers = {
+        json: {
+          'Content-Type': 'application/json',
+          'OData-Version': '4.0',
+        },
+        js: {
+          'Content-Type': 'text/javascript',
+          'Service-Worker-Allowed': '/',
+        },
+        md: {
+          'Content-Type': 'text/md',
+          'Service-Worker-Allowed': '/',
+        },
+        css: {
+          'Content-Type': 'text/css',
+          'Service-Worker-Allowed': '/',
+        },
+        html: {
+          'Content-Type': 'text/html',
+          'Service-Worker-Allowed': '/',
+        },
+      };
+      let pathname = url.pathname;
+
+      pathname = pathname.replace(/\/blob\/main(.*?)\.md/, '$1');
+      pathname = pathname.replace(/^\/(.*?)\/.*?\.(.*?)\//, '/@$1/$2/');
+      console.log(pathname);
+      var fname = paths.map(path => path+pathname).find(fname => fs.existsSync(fname) && fs.statSync(fname).isFile()) || paths.map(path => path+pathname+'index.html').find(fs.existsSync);
+
+
+      if (!fname && paths.map(path => path+pathname+'.md').find(fs.existsSync)) {
+        return fs.readFile(module.path+'/../../public/md.html', (err, data) => {
+          data = String(data)
+          .replace(/\@\d+\.\d+\.\d+/g, '')
+          .replace(/=".*aliconnect.sdk/g, '="/@aliconnect/sdk')
+          .replace(/="\/\/.*?\.github\.io\/(.*?)\./g, '="/@$1/')
+          end(200, headers.html, data);
+        });
+        // fname = paths.map(path => '/@aliconnect/sdk/public/md.html').find(fs.existsSync);
+      }
+      if (fname) {
+        return fs.readFile(fname, (err, data) => {
+          if (err) {
+            return end(404, { 'Content-Type': 'text/html' }, `404 Not Found 1 ${req.url}`);
+          }
+          var ext = fname.split('.').pop();
+          if (fname.match(/\.html/)) {
+            data = String(data)
+            .replace(/\@\d+\.\d+\.\d+/g, '')
+            .replace(/=".*aliconnect.sdk/g, '="/@aliconnect/sdk')
+            .replace(/="\/\/.*?\.github\.io\/(.*?)\./g, '="/@$1/')
+          }
+          // //console.log('JA');
+          end(200, headers[ext], data);
+        })
+      }
+      return end(404, { 'Content-Type': 'text/html' }, `404 Not Found 1 ${req.url}`);
+      // //console.log(url.pathname, fname);
+      //
+      //
+      //
+      // res.writeHead(200);
+      // //res.end(JSON.stringify({ clients: wss, a: a }));
+      //
+      // res.end("This is the Aliconnect messageserver");
+      //
+    };
+    const httpServer = http.createServer(options, processRequest).listen(host.port);
     const ws = require('ws');
     const wsServer = new ws.Server({server: httpServer}).on('connection', onconnection);
     const clients = this.clients = wsServer.clients;
@@ -6504,70 +6626,6 @@ function idToUrl(id){
       for (var property in object) params.push('@' + property + "='" + String(object[property]).replace(/'/g, "''") + "'");
       return params.join(',');
     };
-
-    // function Request(url) {
-    //   this.url = new URL(url, 'https://aliconnect.nl');
-    //   // console.log(this.url);
-    //   this.options = {
-    //     method: 'get',
-    //     host: this.url.hostname,
-    //     path: this.url.pathname + '?' + this.url.searchParams.toString(),
-    //     headers:{},
-    //   };
-    // }
-    // Object.defineProperties(Request.prototype, {
-    //   headers:{value(selector, context) {
-    //     if (typeof selector === 'object'){
-    //       Object.assign(this.options.headers, selector)
-    //     } else {
-    //       this.options.headers[selector] = context;
-    //     }
-    //     return this;
-    //   }},
-    //   end:{value(method, data) {
-    //     return new Promise((resolve, fail) => {
-    //       const protocol = this.url.protocol.replace(/:/,'');
-    //       const http = require(protocol);
-    //       if (data) {
-    //         this.headers('Content-Length', data.length);
-    //       }
-    //       const xhr = http.request(this.options, e => {
-    //         let responseText = '';
-    //         e.on('data', data => {
-    //           responseText += data;
-    //         }).on('end', () => {
-    //           e.status = e.statusCode;
-    //           e.statusText = e.statusMessage;
-    //           e.target = xhr;
-    //           e.target.response = e.target.responseText = responseText;
-    //           try {
-    //             if (e.headers['content-type'].includes('application/json')) {
-    //               e.target.response = JSON.parse(responseText);
-    //             }
-    //           } catch(err){
-    //             console.debug('ERROR JSON', err, responseText.substr(0,1000));
-    //           }
-    //           e.body = e.target.response;
-    //           resolve(e);
-    //         });
-    //       }).on('error', e => {
-    //         fail(e);
-    //       });
-    //       if (data){
-    //         xhr.write(data);
-    //       }
-    //       xhr.startTime = new Date();
-    //       xhr.end();
-    //     })
-    //   }},
-    //   get:{value() {
-    //     return this.end(this.options.method = 'get');
-    //   }},
-    //   post:{value(data) {
-    //     return this.end(this.options.method = 'post', this.data = data);
-    //   }},
-    // });
-
     if (config.dbs) {
       const options = {
         port: config.dbs.port || 1433,
@@ -6588,20 +6646,23 @@ function idToUrl(id){
         },
       };
       server.requests = [];
-      server.tedious = require('tedious');
-      server.conn = new this.tedious.Connection(options);
-      server.conn.on('connect', err => {
+      const tedious = server.tedious = require('tedious');
+      const conn = server.conn = new tedious.Connection(options);
+      conn.on('connect', err => {
         if (err) throw err;
         console.log('SQL ONN');
         server.query(
           `IF OBJECT_ID('his.attr') IS NULL
           BEGIN
           CREATE TABLE [his].[attr](
-            [ts] [timestamp] NULL,
-            [id] [bigint] NULL,
-            [name] [varchar](50) NULL,
-            [value] [varchar](max) NULL,
-            [modifiedDateTime] [datetime] NULL CONSTRAINT [DF_attr_modifiedDateTime]  DEFAULT (getdate())
+          	[ts] [timestamp] NULL,
+          	[id] [bigint] NULL,
+          	[name] [varchar](50) NULL,
+          	[value] [varchar](max) NULL,
+          	[modifiedDateTime] [datetime] NULL,
+          	[parent] [varchar](500) NULL,
+          	[attributeType] [varchar](50) NULL,
+          	[title] [varchar](500) NULL
           ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
           END`
         );
@@ -6677,6 +6738,259 @@ function idToUrl(id){
         //   setTimeout(getSystemAttributes, 5000);
         // })();
 
+        config.items1 = [
+          {
+            Parent: 'MONITOREN',
+            Tag: 'SYSTEEM',
+            name: 'TEST',
+            SystemId: 1,
+            ip: '127.0.0.0',
+            children:[
+              {
+                SystemId: 1,
+                name: `MEMORY_USED_SPACE`,
+                AttributeType: 'measurement_1',
+                title: `Status `,
+                children: [
+                  {
+                    SystemId: 1,
+                    High: 70,
+                    name: 'HOOG',
+                    title: 'Memory hoog',
+                    AttributeType: 'prewarning_1',
+                    Enumeration: 'No failure, Failure',
+                  },
+                ]
+              },
+              {
+                SystemId: 1,
+                name: `HDD_USED_SPACE`,
+                AttributeType: 'measurement_1',
+                title: `Status `,
+                children: [
+                  {
+                    SystemId: 1,
+                    High: 70,
+                    name: 'HOOG',
+                    title: 'HDD opslag hoog',
+                    AttributeType: 'prewarning_1',
+                    Enumeration: 'No failure, Failure',
+                  },
+                ]
+              },
+              {
+                SystemId: 1,
+                name: `TIME_SYNC`,
+                AttributeType: 'failure',
+                title: `Status `,
+                Enumeration: 'No failure, Failure',
+              },
+              {
+                SystemId: 1,
+                name: `WATCHDOG_ACSM`,
+                AttributeType: 'measurement_1',
+                title: `Status `,
+              },
+            ],
+          },
+          {
+            Parent: "MIN.RIO",
+            Tag: "CSHI-1",
+            SystemId: 252,
+          },
+          {
+            Device: "MODBUS",
+            IPAddress: "192.168.2.4",
+            PollInterval: 500,
+            ReadAddress: 191,
+            children: [
+              {
+                children: [
+                  {
+                    SystemId: 252,
+                    type: "UInt",
+                    name: "STATUS",
+                    title: "Status",
+                    AttributeType: "measurement_1",
+                    children: [
+                      {
+                        SystemId: 252,
+                        name: "STATUS.ERROR",
+                        Low: "0",
+                        title: "Status probleem",
+                        AttributeType: "prewarning_2",
+                        Enumeration: "No failure, Failure"
+                      },
+                    ]
+                  }
+                ]
+              },
+            ],
+          },
+        ]
+        config.items2 = [
+          {
+            Parent: "PW",
+            Tag: "PW-1",
+            SystemId: 252,
+          },
+          {
+            Device: "MODBUS",
+            IPAddress: "192.168.2.27",
+            PollInterval: 500,
+
+            children: [
+              {
+                SystemId: 252,
+                ReadAddress: 43,
+                type: "Float",
+                name: "THD_V_FASE_1",
+                title: "V Fase",
+                AttributeType: "measurement_1",
+              },
+                {
+                SystemId: 252,
+                ReadAddress: 49,
+                type: "Float",
+                name: "THD_A_FASE_1",
+                title: "A Fase",
+                AttributeType: "measurement_1",
+              },
+              {
+                SystemId: 252,
+                ReadAddress: 69,
+                type: "Float",
+                name: "COSPHI",
+                title: "CosPhi",
+                AttributeType: "measurement_1",
+              },
+              {
+                SystemId: 252,
+                ReadAddress: 801,
+                type: "Double",
+                name: "KWH",
+                title: "KwH",
+                AttributeType: "measurement_1",
+              },
+              {
+                SystemId: 252,
+                ReadAddress: 833,
+                type: "Double",
+                name: "KVAH",
+                title: "KvAh",
+                AttributeType: "measurement_1",
+              },
+            ],
+          },
+        ]
+
+        Array.from(config.items).forEach(item => {
+          if (item.Device === 'RIO') {
+            config.items.push(
+              {
+                Device: "MODBUS",
+                IPAddress: item.IPAddress,
+                PollInterval: 500,
+                ReadAddress: 191,
+                children: [
+                  {
+                    children: [
+                      {
+                        SystemId: item.SystemId,
+                        type: "Bool",
+                        name: "RIO_CONTROLE",
+                        Low: "0",
+                        title: "Remote I/O In storing",
+                        AttributeType: "failure",
+                        Enumeration: "No failure, Failure"
+                      }
+                    ]
+                  },
+                ],
+              },
+            );
+          }
+          if (item.Device === 'PW') {
+            config.items.push(
+              {
+                Device: "MODBUS",
+                IPAddress: item.IPAddress,
+                PollInterval: 500,
+
+                children: [
+                  {
+                    SystemId: item.SystemId,
+                    ReadAddress: 43,
+                    type: "Float",
+                    name: "THD_V_FASE_1",
+                    title: "V Fase",
+                    AttributeType: "measurement_1",
+                  },
+                    {
+                    SystemId: item.SystemId,
+                    ReadAddress: 49,
+                    type: "Float",
+                    name: "THD_A_FASE_1",
+                    title: "A Fase",
+                    AttributeType: "measurement_1",
+                  },
+                  {
+                    SystemId: item.SystemId,
+                    ReadAddress: 69,
+                    type: "Float",
+                    name: "COSPHI",
+                    title: "CosPhi",
+                    AttributeType: "measurement_1",
+                  },
+                  {
+                    SystemId: item.SystemId,
+                    ReadAddress: 801,
+                    type: "Double",
+                    name: "KWH",
+                    title: "KwH",
+                    AttributeType: "measurement_1",
+                  },
+                  {
+                    SystemId: item.SystemId,
+                    ReadAddress: 833,
+                    type: "Double",
+                    name: "KVAH",
+                    title: "KvAh",
+                    AttributeType: "measurement_1",
+                  },
+                ],
+              },
+            );
+            //   {
+            //     Device: "MODBUS",
+            //     IPAddress: item.IPAddress,
+            //     PollInterval: 500,
+            //     ReadAddress: 43,
+            //     children: [
+            //       {
+            //         children: [
+            //           {
+            //             SystemId: item.SystemId,
+            //             type: "UDInt",
+            //             name: "THD_V_FASE_1",
+            //             title: "THD spanning fase 1",
+            //             AttributeType: "measurement_4",
+            //             // Range cosphi
+            //             MinRawValue: 0,
+            //             MaxRawValue: 65535,
+            //             MinEngValue: 0,
+            //             MaxEngValue: 100,
+            //             Deadband: 1,
+            //           }
+            //         ]
+            //       },
+            //     ],
+            //   },
+            // );
+            // console.log(item);
+          }
+        })
+        // Voorverwerken van de configuraties
         Array.from(config.items).forEach(function addChildren(item) {
           if (item) {
             if (systemAttributes[item.name]) {
@@ -6713,19 +7027,32 @@ function idToUrl(id){
         this.initControlEquipment(items);
         attributes.on('change', attr => clients.send({attr:attr}));
       });
-      this.conn.connect();
+      conn.connect();
     }
   }
   Server.prototype = {
     query(sql) {
-      return new Promise((succes,fail) => {
-        if (sql) this.requests.push([sql,succes,fail]);
-        else this.sqlBusy = false;
+      return new Promise((resolve, reject) => {
+        if (sql) {
+          this.requests.push([sql,resolve, reject]);
+        } else {
+          this.sqlBusy = false;
+        }
         if (!this.sqlBusy && this.requests.length) {
           this.sqlBusy = true;
-          [sql,succes,fail] = this.requests.shift();
+          [sql, resolve, reject] = this.requests.shift();
           const rows = [];
-          const request = new this.tedious.Request(sql, err => err ? fail(err) : succes(rows) || this.query());
+          const request = new this.tedious.Request(sql, err => {
+            if (err) {
+              // console.log(1, sql);
+              err.query = sql;
+              // console.log(2, err);
+              reject(err);
+            } else {
+              resolve(rows);
+              this.query();
+            }
+          });
           request.on('row', columns => rows.push(Object.fromEntries(columns.map(col => [col.metadata.colName, col.value]))));
           this.conn.execSql(request);
         }
@@ -6739,6 +7066,8 @@ function idToUrl(id){
       }
     },
     attrSetValue(attribute, value, path = []) {
+
+      const server = this;
       function has(name) {
         return (name in attribute) && attribute[name] !== null;
       }
@@ -6756,7 +7085,16 @@ function idToUrl(id){
 
         // Omrekenen raw value naar value
         if (has('MaxEngValue') && has('MinEngValue') && has('MaxRawValue') && has('MinRawValue')) {
+          console.log(attribute.SystemId, attribute.name, value);
           value = Math.round(((Number(attribute.MaxEngValue) - Number(attribute.MinEngValue)) / (Number(attribute.MaxRawValue) - Number(attribute.MinRawValue)) * (value - Number(attribute.MinRawValue)) + Number(attribute.MinEngValue)) * 100) / 100;
+          // 16200
+          // 0.66 = int(66)/100;
+        }
+
+        // Binnenkomende waarde bewaren voor enum text
+        // if (attribute.type === 'Bool' || has('Ne')) {
+        if (has('Ne')) {
+          attribute.TextualValue = value;
         }
 
         // Low High
@@ -6789,11 +7127,11 @@ function idToUrl(id){
           value = value != attribute.Ne ? 1 : 0;
         }
 
-
         curValue = Number(attribute.value || 0);
+
         // Hysteresis
         const hyst = Number(attribute.Hysteresis || 0);
-        if (value < curValue - hyst || value > curValue + hyst) {
+        if (value < curValue - hyst || value > curValue + hyst || !('value' in attribute)) {
 
           // console.log(1, attribute.name, attribute.SystemId);
           // if (attribute.systemId)
@@ -6811,7 +7149,7 @@ function idToUrl(id){
               attribute.title,
               attribute.AttributeType,
             ];
-            this.query(`INSERT his.attr(id,name,value,parent,title,AttributeType) VALUES('${values.join("','")}')`);
+            this.query(`INSERT his.attr(id,name,value,parent,title,AttributeType) VALUES('${values.join("','")}')`).catch((err,sql) => console.error('attrSetValue', err));
             server.attributes.emit('changeValue', attribute);
           }
 
@@ -6866,11 +7204,15 @@ function idToUrl(id){
         const net = require('net');
         const jsmodbus = require('jsmodbus');
         modbusDevices.forEach((item, i) => {
-          let readAddress = item.ReadAddress || 0;
-          const devices = item.children;
-          let readLength = devices.length;
+          // let readAddress = item.ReadAddress || 0;
+          // const devices = item.children;
+          // let readLength = 0;
+          // devices.forEach(d => {
+          //   readLength += d.children.length;
+          //   readLength += d.children.filter(c => ['Float'].includes(c.type)).length;
+          // })
           const attributes = initAttributes(item);
-          console.log('MODBUS', item.IPAddress);
+          // console.log(attributes);
           function setSate(state){
             attributes.forEach(attr => server.attrSet(attr, 'state', state));
           }
@@ -6880,41 +7222,92 @@ function idToUrl(id){
             setSate('connecting');
             socket.connect({ host: item.IPAddress, port: item.Port || 502 });
           }
+
+          const types = {
+            D: { title: "Digital", bitLength: 1 },
+            Bool: { title: "Boolean", bitLength: 1 },
+            SByte: { title: "Signed Byte", bitLength: 8, signed: 1 },
+            UByte: { title: "Unsigned Byte", bitLength: 8 },
+            SInt: { title: "Signed Integer", bitLength: 16, signed: 1 },
+            UInt: { title: "Unsigned Integer", bitLength: 16, dec:0 },
+            SDInt: { title: "Signed Double Integer", bitLength: 32, signed: 1 },
+            UDInt: { title: "Unsigned Double Integer", bitLength: 32 },
+            Float: { title: "Float", bitLength: 32, signed: 1, exponent: 8, dec: 2 },
+            Double: { title: "Double", bitLength: 64, signed: 1, exponent: 11, dec: 2 },
+          };
+
+          function bitTo (typename, s) {
+          	var s = s.match(/.{1,16}/g).reverse().join('');
+          	var type = types[typename], arr = s.replace(/ /g, '').split(''), sign = type.signed ? (Number(arr.shift()) ? -1 : 1) : 1;
+          	if (!type.exponent) return parseInt(arr.join(''), 2) * sign;
+          	var mantissa = 0, exponent = parseInt(exp = arr.splice(0, type.exponent).join(''), 2) - (Math.pow(2, type.exponent - 1) - 1);
+          	arr.unshift(1);
+          	arr.forEach(function (val, i) { if (Number(val)) mantissa += Math.pow(2, -i); });
+          	return sign * mantissa * Math.pow(2, exponent);
+          };
+
           socket.on('connect', e => {
             setSate('connected');
-            // console.log('MODBUS', item.IPAddress, 'CONNECTED');
-            (function readData() {
-              client.readInputRegisters(readAddress, readLength).then(resp => {
-                var readArray = resp.response._body._valuesAsArray;
-                // console.log('MODBUS', item.IPAddress, 'READ', readArray);
-                devices.forEach((device,i) => {
-                  if (device && device.children) {
-                    const readValue = readArray[i];
-                    const bitString = ('0000000000000000' + readValue.toString(2)).substr(-16);
+            console.log('MODBUS', item.IPAddress, 'CONNECTED');
+            // function readRegister(readAddress, readLength) {
+            //   return new Promise((succes, reject) => {
+            //     client.readInputRegisters(readAddress, readLength)
+            //     .then(resp => {
+            //       succes(resp);
+            //     })
+            //   })
+            // }
+            (async function readData() {
+              let readAddress = item.readAddress || item.ReadAddress || 0;
+              for (let device of item.children) {
+                if (device) {
+                  readAddress = device.readAddress || device.ReadAddress || readAddress;
+                  device.type = device.type || device.Type || 'UInt';
+                  const bitPos = device.bitPos || device.BitPos || 0;
+                  const type = types[device.type];
+                  const bitLength = type.bitLength;
+                  const readLength = Math.ceil(bitLength/16);
+                  // console.log(item.IPAddress, child.name, readAddress, readLength);
+                  // continue;
+
+                  await client.readInputRegisters(readAddress, readLength).then(resp => {
+                    // const bitArray = [];
+                    const byteArray = resp.response._body._valuesAsArray;
+                    const bitString = byteArray.reverse().map(b => ('0000000000000000' + b.toString(2)).substr(-16)).join('');
                     const bitArray = bitString.split('').reverse();
-                    device.children.forEach((child,i) => {
+                    const childBitString = bitString.substr(bitString.length - bitLength - bitPos, bitLength)
+                    let readValue = bitTo(device.type, device.bitString = bitString.substr(bitString.length - bitLength - bitPos, bitLength));
+                    if (device.SystemId && device.name && device.AttributeType) {
+                      if (type.dec) readValue = Math.round ( readValue * 10**type.dec ) / 10**type.dec || 0;
+                      server.attrSetValue(device, readValue);
+                    }
+                    const children = device.children || [];
+                    children.forEach((child,i) => {
                       if (child && child.type) {
-                        // console.log(child.type, i, bitArray[i], bitArray, readValue);
+                        // console.log('aaa', item.IPAddress, device.readAddress, device.ReadAddress, child.type, readValue, byteArray, readAddress, readLength);
                         switch(child.type) {
                           case 'UInt': return server.attrSetValue(child, readValue);
                           case 'Bool': return server.attrSetValue(child, bitArray[i]);
                         }
                       }
                     })
-                  }
-                });
-                setTimeout(readData, item.PollInterval);
-              }).catch(err => {
-                // console.log('read error', item.IPAddress, readAddress, readLength);
-                attributes.forEach(attr => server.attrSet(attr, 'state', 'error'));
-                setTimeout(connect, 2000);
-              })
+                  })
+                  .catch(err => {
+                    console.log('modbus read error', item.IPAddress);
+                    attributes.forEach(attr => server.attrSet(attr, 'state', 'error'));
+                    setTimeout(connect, 20000);
+                  })
+
+                }
+                readAddress++;
+              }
+              setTimeout(readData, item.PollInterval = 10000);
             })();
           }).on('disconnect', e => {
             setSate('disconnect');
-            console.error('disconnect');
+            console.error('modbus disconnect');
           }).on('error', e => {
-            console.error('error', item.parent, item.name, item.id );
+            console.error('modbus error', item.state, item.IPAddress);
             setSate('error');
             setTimeout(connect, 5000);
           });
@@ -6935,18 +7328,15 @@ function idToUrl(id){
           const session = new snmpNative.Session({ host: item.IPAddress, community: item.Community || 'public' });
           const children = item.children.filter(Boolean);
           const oids = children.map(child => strToOid(child.oid));
+          itemSetState(item, 'connecting');
           (function read() {
             session.getAll({ oids: oids }, (err, varbinds) => {
-              if (err) {
+              if (!varbinds.length) {
                 itemSetState(item, 'error');
-                console.error(err);
-                // children.forEach(child => attrSet(child, 'state', 'error'));
                 setTimeout(() => {
                   itemSetState(item, 'connecting');
-                  // children.forEach(child => attrSet(child, 'state', 'connecting'));
                   read();
                 }, 5000);
-                // return;
               } else {
                 itemSetState(item, 'connected');
                 children.forEach((child,i) => server.attrSetValue(child, varbinds[i] && varbinds[i].value));
@@ -6956,85 +7346,6 @@ function idToUrl(id){
           })();
         });
       }
-    },
-    processRequest (req, res) {
-      function end(statusCode, header, body) {
-        res.writeHead(res.statusCode = statusCode, header);
-        res.end(body);
-      }
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Headers', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
-      res.setHeader('Access-Control-Request-Method', '*');
-
-      var url = new URL(req.url, 'http://localhost');
-      //console.log(url.pathname, fname);
-      console.log(this.config.paths);
-
-      if (url.pathname === '/config.js') {
-        return end(200, { 'Content-Type': 'application/json' }, 'config='+JSON.stringify(config));
-      }
-      if (url.pathname === '/sql.json') {
-        const sql = `SELECT TOP 1000 * FROM his.attr WHERE ${url.searchParams.get('filter')}`;
-        debug(sql);
-        return new mssql.Request().query(sql, (err, res) => {
-          if (err) //console.log(err);
-          end(200, { 'Content-Type': 'application/json' }, JSON.stringify(res.recordsets));
-        })
-      }
-
-
-
-      for (var path of this.paths) {
-        for (var fname of [path+url.pathname, path+url.pathname+'index.html']) {
-          if (fs.existsSync(fname) && fs.statSync(fname).isFile()) {
-            return fs.readFile(fname, (err, data) => {
-              if (err) {
-                return end(404, { 'Content-Type': 'text/html' }, `404 Not Found 1 ${req.url}`);
-              }
-              var ext = fname.split('.').pop();
-              const headers = {
-                json: {
-                  'Content-Type': 'application/json',
-                  'OData-Version': '4.0',
-                },
-                js: {
-                  'Content-Type': 'text/javascript',
-                  'Service-Worker-Allowed': '/',
-                },
-                css: {
-                  'Content-Type': 'text/css',
-                  'Service-Worker-Allowed': '/',
-                },
-                html: {
-                  'Content-Type': 'text/html',
-                  'Service-Worker-Allowed': '/',
-                },
-              };
-              if (fname.match(/\.html/)) {
-                data = String(data)
-                // .replace(/=".*?public\//g, '="')
-
-                .replace(/\@\d+\.\d+\.\d+/g, '')
-                .replace(/=".*aliconnect.sdk/g, '="@aliconnect/sdk')
-                .replace(/="\/\/.*?\.github\.io\/(.*?)\./g, '="@$1/')
-              }
-              // //console.log('JA');
-              end(200, headers[ext], data);
-            })
-          }
-        }
-      }
-      return end(404, { 'Content-Type': 'text/html' }, `404 Not Found 1 ${req.url}`);
-      // //console.log(url.pathname, fname);
-      //
-      //
-      //
-      // res.writeHead(200);
-      // //res.end(JSON.stringify({ clients: wss, a: a }));
-      //
-      // res.end("This is the Aliconnect messageserver");
-      //
     },
   }
 
@@ -7053,6 +7364,7 @@ function idToUrl(id){
     return s.replace(/\(|\)|\[|\]|,|\.|\=|\{|\}/g,'').replace(/ /g,'-').toLowerCase();
   }
   const all = [];
+
   function distDoc(objectname, topobj) {
     return new Promise((success, fail) => {
       // this[objectname] = require(`../${objectname}/src/${objectname}.js`);
@@ -7175,7 +7487,7 @@ function idToUrl(id){
     Server,
     WebsocketClient,
     UserAgentApplication,
-    Markdown,
+    markdown: Markdown,
     Request,
     dist: {
       doc: distDoc,

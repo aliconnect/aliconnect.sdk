@@ -39,7 +39,7 @@ class Jwt {
       if (isset($arr[2])) {
         $this->header = json_decode(base64_decode($this->base64UrlHeader = $arr[0]), true);
         $this->alg = $this->header['alg'];
-        $this->payload = json_decode(\base64_decode($this->base64UrlPayload = $arr[1]), true);
+        $this->payload = json_decode(base64_decode($this->base64UrlPayload = $arr[1]), true);
         $this->not_expired = isset($this->payload['exp']) ? $this->payload['exp'] >= time() : null;
         $this->expired = !$this->not_expired;
         $this->base64UrlSignature = $arr[2];

@@ -482,6 +482,309 @@ eol = '\n';
     },
   };
 
+  Paint = function (canvas, options) {
+    setTimeout(()=>{
+      var self = this;
+      var opts = options || {};
+      this._handleMouseDown = function(e) {
+        if (e.which === 1) {
+          self._mouseButtonDown = true;
+          self._strokeBegin(e);
+        }
+      };
+      this._handleMouseMove = function(e) {
+        if (self._mouseButtonDown) {
+          self._strokeUpdate(e);
+        }
+      };
+      this._handleMouseUp = function(e) {
+        if (e.which === 1 && self._mouseButtonDown) {
+          self._mouseButtonDown = false;
+          self._strokeEnd(e);
+        }
+      };
+      this._handleTouchStart = function(e) {
+        if (e.targetTouches.length == 1) {
+          var touch = e.changedTouches[0];
+          self._strokeBegin(touch);
+        }
+      };
+      this._handleTouchMove = function(e) {
+        // Prevent scrolling.
+        e.preventDefault();
+        var touch = e.targetTouches[0];
+        self._strokeUpdate(touch);
+      };
+      this._handleTouchEnd = function(e) {
+        var wasCanvasTouched = e.target === self._canvas;
+        if (wasCanvasTouched) {
+          e.preventDefault();
+          self._strokeEnd(e);
+        }
+      };
+      this._canvas = canvas;
+      this._ctx = canvas.context = canvas.getContext("2d");
+      // console.log(canvas);
+      // canvas.width = canvas.clientWidth;
+      // canvas.height = canvas.clientHeight;
+      // console.log(canvas.clientWidth,canvas.offsetWidth,canvas.width,canvas.height)
+      // canvas.width = 640;
+      // canvas.height = 480;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      // console.log('CANVAS', canvas.getBoundingClientRect(), canvas.height, canvas.width, canvas.clientWidth, canvas.clientHeight, canvas.offsetHeight)
+      this.velocityFilterWeight = opts.velocityFilterWeight || 0.7;
+      this.minWidth = opts.minWidth || 0.5;
+      this.maxWidth = opts.maxWidth || 2.5;
+      this.dotSize = opts.dotSize || function() {
+        return (this.minWidth + this.maxWidth) / 2;
+      };
+      this.penColor = opts.penColor || "black";
+      this.backgroundColor = opts.backgroundColor || "rgba(0, 0, 0, 0)";
+      this.onEnd = opts.onEnd;
+      this.onBegin = opts.onBegin;
+      // this.clear();
+      // we need add these inline so they are available to unbind while still having
+      //  access to 'self' we could use _.bind but it's not worth adding a dependency
+      // setTimeout(()=>{
+        this._handleMouseEvents();
+        this._handleTouchEvents();
+        // })
+
+    })
+  };
+  Paint.prototype = {
+    clear : function() {
+      var ctx = this._ctx,
+      canvas = this._canvas;
+      ctx.fillStyle = this.backgroundColor;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      this._reset();
+    },
+    toDataURL : function(imageType, quality) {
+      var canvas = this._canvas;
+      return canvas.toDataURL.apply(canvas, arguments);
+    },
+    fromDataURL : function(dataUrl) {
+      var self = this,
+      image = new Image(),
+      ratio = window.devicePixelRatio || 1,
+      width = this._canvas.width / ratio,
+      height = this._canvas.height / ratio;
+      this._reset();
+      image.src = dataUrl;
+      image.onload = function() {
+        self._ctx.drawImage(image, 0, 0, width, height);
+      };
+      this._isEmpty = false;
+    },
+    _strokeUpdate : function(e) {
+      var point = this._createPoint(e);
+      this._addPoint(point);
+    },
+    _strokeBegin : function(e) {
+      this._reset();
+      this._strokeUpdate(e);
+      if (typeof this.onBegin === 'function') {
+        this.onBegin(e);
+      }
+    },
+    _strokeDraw : function(point) {
+      var ctx = this._ctx,
+      dotSize = typeof (this.dotSize) === 'function' ? this.dotSize() : this.dotSize;
+      ctx.beginPath();
+      this._drawPoint(point.x, point.y, dotSize);
+      ctx.closePath();
+      ctx.fill();
+    },
+    _strokeEnd : function(e) {
+      var canDrawCurve = this.points.length > 2,
+      point = this.points[0];
+      if (!canDrawCurve && point) {
+        this._strokeDraw(point);
+      }
+      if (typeof this.onEnd === 'function') {
+        this.onEnd(e);
+      }
+    },
+    _handleMouseEvents : function() {
+      this._mouseButtonDown = false;
+      this._canvas.addEventListener("mousedown", this._handleMouseDown);
+      this._canvas.addEventListener("mousemove", this._handleMouseMove);
+      document.addEventListener("mouseup", this._handleMouseUp);
+    },
+    _handleTouchEvents : function() {
+      // Pass touch events to canvas elem on mobile IE.
+      this._canvas.style.msTouchAction = 'none';
+      this._canvas.addEventListener("touchstart", this._handleTouchStart);
+      this._canvas.addEventListener("touchmove", this._handleTouchMove);
+      document.addEventListener("touchend", this._handleTouchEnd);
+    },
+    on : function() {
+      this._handleMouseEvents();
+      this._handleTouchEvents();
+    },
+    off : function() {
+      this._canvas.removeEventListener("mousedown", this._handleMouseDown);
+      this._canvas.removeEventListener("mousemove", this._handleMouseMove);
+      document.removeEventListener("mouseup", this._handleMouseUp);
+      this._canvas.removeEventListener("touchstart", this._handleTouchStart);
+      this._canvas.removeEventListener("touchmove", this._handleTouchMove);
+      document.removeEventListener("touchend", this._handleTouchEnd);
+    },
+    isEmpty : function() {
+      return this._isEmpty;
+    },
+    _reset : function() {
+      this.points = [];
+      this._lastVelocity = 0;
+      this._lastWidth = (this.minWidth + this.maxWidth) / 2;
+      this._isEmpty = true;
+      this._ctx.fillStyle = this.penColor;
+    },
+    _createPoint : function(e) {
+      var rect = this._canvas.getBoundingClientRect();
+      return new Point(
+        e.clientX - rect.left,
+        e.clientY - rect.top
+      );
+    },
+    _addPoint : function(point) {
+      var points = this.points,
+      c2, c3,
+      curve, tmp;
+      points.push(point);
+      if (points.length > 2) {
+        // To reduce the initial lag make it work with 3 points
+        // by copying the first point to the beginning.
+        if (points.length === 3) points.unshift(points[0]);
+        tmp = this._calculateCurveControlPoints(points[0], points[1], points[2]);
+        c2 = tmp.c2;
+        tmp = this._calculateCurveControlPoints(points[1], points[2], points[3]);
+        c3 = tmp.c1;
+        curve = new Bezier(points[1], c2, c3, points[2]);
+        this._addCurve(curve);
+        // Remove the first elem from the list,
+        // so that we always have no more than 4 points in points array.
+        points.shift();
+      }
+    },
+    _calculateCurveControlPoints : function(s1, s2, s3) {
+      var dx1 = s1.x - s2.x, dy1 = s1.y - s2.y,
+      dx2 = s2.x - s3.x, dy2 = s2.y - s3.y,
+      m1 = { x: (s1.x + s2.x) / 2.0, y: (s1.y + s2.y) / 2.0 },
+      m2 = { x: (s2.x + s3.x) / 2.0, y: (s2.y + s3.y) / 2.0 },
+      l1 = Math.sqrt(dx1 * dx1 + dy1 * dy1),
+      l2 = Math.sqrt(dx2 * dx2 + dy2 * dy2),
+      dxm = (m1.x - m2.x),
+      dym = (m1.y - m2.y),
+      k = l2 / (l1 + l2),
+      cm = { x: m2.x + dxm * k, y: m2.y + dym * k },
+      tx = s2.x - cm.x,
+      ty = s2.y - cm.y;
+      return {
+        c1: new Point(m1.x + tx, m1.y + ty),
+        c2: new Point(m2.x + tx, m2.y + ty)
+      };
+    },
+    _addCurve : function(curve) {
+      var startPoint = curve.startPoint,
+      endPoint = curve.endPoint,
+      velocity, newWidth;
+      velocity = endPoint.velocityFrom(startPoint);
+      velocity = this.velocityFilterWeight * velocity
+      + (1 - this.velocityFilterWeight) * this._lastVelocity;
+      newWidth = this._strokeWidth(velocity);
+      this._drawCurve(curve, this._lastWidth, newWidth);
+      this._lastVelocity = velocity;
+      this._lastWidth = newWidth;
+    },
+    _drawPoint : function(x, y, size) {
+      var ctx = this._ctx;
+      ctx.moveTo(x, y);
+      ctx.arc(x, y, size, 0, 2 * Math.PI, false);
+      this._isEmpty = false;
+    },
+    _drawCurve : function(curve, startWidth, endWidth) {
+      var ctx = this._ctx,
+      widthDelta = endWidth - startWidth,
+      drawSteps, width, i, t, tt, ttt, u, uu, uuu, x, y;
+      drawSteps = Math.floor(curve.length());
+      ctx.beginPath();
+      for (i = 0; i < drawSteps; i++) {
+        // Calculate the Bezier (x, y) coordinate for this step.
+        t = i / drawSteps;
+        tt = t * t;
+        ttt = tt * t;
+        u = 1 - t;
+        uu = u * u;
+        uuu = uu * u;
+        x = uuu * curve.startPoint.x;
+        x += 3 * uu * t * curve.control1.x;
+        x += 3 * u * tt * curve.control2.x;
+        x += ttt * curve.endPoint.x;
+        y = uuu * curve.startPoint.y;
+        y += 3 * uu * t * curve.control1.y;
+        y += 3 * u * tt * curve.control2.y;
+        y += ttt * curve.endPoint.y;
+        width = startWidth + ttt * widthDelta;
+        this._drawPoint(x, y, width);
+      }
+      ctx.closePath();
+      ctx.fill();
+    },
+    _strokeWidth : function(velocity) {
+      return Math.max(this.maxWidth / (velocity + 1), this.minWidth);
+    },
+  };
+  function Point(x, y, time) {
+    this.x = x;
+    this.y = y;
+    this.time = time || new Date().getTime();
+  };
+  Point.prototype = {
+    velocityFrom : function(start) {
+      return (this.time !== start.time) ? this.distanceTo(start) / (this.time - start.time) : 1;
+    },
+    distanceTo : function(start) {
+      return Math.sqrt(Math.pow(this.x - start.x, 2) + Math.pow(this.y - start.y, 2));
+    },
+  };
+  function Bezier(startPoint, control1, control2, endPoint) {
+    this.startPoint = startPoint;
+    this.control1 = control1;
+    this.control2 = control2;
+    this.endPoint = endPoint;
+  };
+  Bezier.prototype = {
+    length : function() {
+      var steps = 10,
+      length = 0,
+      i, t, cx, cy, px, py, xdiff, ydiff;
+      for (i = 0; i <= steps; i++) {
+        t = i / steps;
+        cx = this._point(t, this.startPoint.x, this.control1.x, this.control2.x, this.endPoint.x);
+        cy = this._point(t, this.startPoint.y, this.control1.y, this.control2.y, this.endPoint.y);
+        if (i > 0) {
+          xdiff = cx - px;
+          ydiff = cy - py;
+          length += Math.sqrt(xdiff * xdiff + ydiff * ydiff);
+        }
+        px = cx;
+        py = cy;
+      }
+      return length;
+    },
+    _point : function(t, start, c1, c2, end) {
+      return start * (1.0 - t) * (1.0 - t) * (1.0 - t)
+      + 3.0 * c1 * (1.0 - t) * (1.0 - t) * t
+      + 3.0 * c2 * (1.0 - t) * t * t
+      + end * t * t * t;
+    },
+  };
+
   function Elem (selector) {
     const args = Array.from(arguments);
     // selector = element ? element : (aim.Elem && aim.Elem.tagnames.includes(selector) ? document.createElement(selector) : selector);
@@ -549,7 +852,31 @@ eol = '\n';
     },
     get children(){
       return this.elem.children;
-    }
+    },
+    paint(options) {
+      this.paint = new Paint(this.elem, options);
+      return this;
+    },
+    cam() {
+      const video = this.video = $('video').parent(this).autoplay().on('click', e => {
+        if (video.paused) {
+          video.play();
+        } else {
+          video.pause();
+        }
+      }).elem;
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+          try {
+            video.srcObject = stream;
+          } catch (error) {
+            video.src = window.URL.createObjectURL(stream);
+          }
+          video.play();
+        });
+      }
+      return this;
+    },
   }
   Object.defineProperties(Elem.prototype, {
     // action() {
@@ -604,26 +931,6 @@ eol = '\n';
           : Object.entries(selector).forEach(entry => btn(...entry))
         )
       );
-      return this;
-    }},
-    cam: { value: function () {
-      const video = this.video = $('video').parent(this).autoplay().on('click', e => {
-        if (video.paused) {
-          video.play();
-        } else {
-          video.pause();
-        }
-      }).elem;
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-          try {
-            video.srcObject = stream;
-          } catch (error) {
-            video.src = window.URL.createObjectURL(stream);
-          }
-          video.play();
-        });
-      }
       return this;
     }},
     cancel: { value: function () {
@@ -5485,7 +5792,6 @@ eol = '\n';
     }
   }));
 
-
   function Om() {
     const om = this;
     function construct(selector) {
@@ -8199,6 +8505,81 @@ eol = '\n';
       om() {
         om = new Om();
       },
+      oas(){
+        $().on('load', e => {
+          let config = {
+            client_id: $.config.client_id || sessionStorage.getItem('client_id') || '',
+            client_secret: $.config.client_secret || sessionStorage.getItem('client_secret') || '',
+            domain: '',
+            // last_modified: '',
+            // info: {
+            //   contact: {
+            //     email: '',
+            //   }
+            // }
+          }
+          // sessionStorage.clear();
+          function load(){
+            $().url('https://aliconnect.nl/api/aim/oas')
+            .accept('application/json')
+            .query('response_type', 'config')
+            .query('client_id', config.client_id)
+            .query('client_secret', config.client_secret)
+            .post(JSON.stringify(config)).then(e => start(config = e.body))
+            return false;
+          }
+          function start(){
+            $(document.body).text('').class('aim-config');
+            // const config = e.body;
+            sessionStorage.setItem('client_id', config.client_id || '');
+            sessionStorage.setItem('client_secret', config.client_secret || '');
+            // config.client_secret = $.config.client_secret;
+            console.log('CONFIG', sessionStorage);
+            const formElem = $('form').autocomplete("off").parent(document.body).on('submit', load);
+            var contentElem = $('details').parent(formElem).append(
+              $('summary').text('Config')
+            );
+            (function build(obj, path){
+              Object.entries(obj).forEach(([key,val]) => {
+                // return;
+                if (val && typeof val === 'object') {
+                  const parent = contentElem;
+                  contentElem = $('details').parent(contentElem).append(
+                    $('summary').text(isNaN(key) ? key : Number(key)+1)
+                  );
+                  build(val, path.concat(key));
+                  contentElem = parent;
+                } else {
+                  // val = String(val);
+                  // console.log(typeof val)
+                  contentElem.append(
+                    $('div').append(
+                      $('label').text(key),
+                      $('input').name(path.join('-')+key).required(val === null ? '' : null).value(val || '').placeholder(' ').on('change', e => {
+                        obj[key] = e.target.value;
+                        console.log(obj, config)
+                      }),
+                    )
+                  )
+                  if (val === null) {
+                    for (var p = contentElem; p; p = p.parentElement) p.open(1);
+                  }
+
+                }
+              })
+            })(config, []);
+            formElem.append(
+              $('button').text('SUBMIT')
+            )
+            // console.log(e);
+          }
+          if (config.client_secret) {
+            load();
+          } else {
+            start();
+          }
+        })
+      }
     },
     checkPath: (e) => {
       let elem;
@@ -9348,67 +9729,198 @@ eol = '\n';
       }
       return this;
     }},
-    producties: {value: function(elem){
-      const producties = {};
-      // console.log(111, elem, elem.getElementsByTagName('A'));
-      const links = Array.from(elem.getElementsByTagName('A')).filter(a => a.href);
-      let ip = 1;
-      links.forEach((a,i) => {
-        if (a.href.match(/pdf$/)) {
-          if (producties[a.href]) return a.text = producties[a.href].toLowerCase();
-          const title = producties[a.href] = 'Productie ' + ip++ + ', ' + a.text;
-          $(elem).append($('h1').class('productie').text(title));
-          a.text = title.toLowerCase();
+    producties: {value: async function(elem){
 
-          const divElem = $('div').parent(elem);
-          var loadingTask = pdfjsLib.getDocument(a.href);
-          loadingTask.promise.then(async pdf => {
-            // console.log('PDF loaded');
-            var numPages = pdf.numPages;
-            // console.log(pdf);
-            for (var pageNumber=1, numPages = pdf.numPages;pageNumber<=numPages;pageNumber++) {
-              await pdf.getPage(pageNumber).then(function(page) {
-                // console.log('Page loaded');
+      // console.log('producties');
 
-                var scale = 1;
-                var viewport = page.getViewport({scale: scale});
+      const producties = [];
 
-                // Prepare canvas using PDF page dimensions
-                // var a = $('a').parent(divElement).href(divElement.getAttribute('source'));
-                var canvas = $('canvas').parent(divElem).elem;
-                // document.body.appendChild(canvas);
-                // var canvas = document.getElementById('the-canvas');
-                var context = canvas.getContext('2d');
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
+      const { PDFDocument } = PDFLib;
 
-                // Render PDF page into canvas context
-                var renderContext = {
-                  canvasContext: context,
-                  viewport: viewport
-                };
-                var renderTask = page.render(renderContext);
-                renderTask.promise.then(function () {
-                  // console.log('Page rendered');
-                });
-              });
-            }
 
-            // Fetch the first page
-          }, function (reason) {
-            // PDF loading error
-            console.error(reason);
+      // var doc = new jsPDF();
+      // var elementHandler = {
+      //   '#ignorePDF': function (element, renderer) {
+      //     return true;
+      //   }
+      // };
+      // var source = document.getElementById('doc-content');//window.document.getElementsByTagName("body")[0];
+      // doc.fromHTML(
+      //     source,
+      //     15,
+      //     15,
+      //     {
+      //       'width': 180,'elementHandlers': elementHandler
+      //     });
+      //
+      //     window.open(doc.output('bloburl'))
+      //
+      // // doc.output("dataurlnewwindow");
+      //
+      // return;
+      // var pdf = new jsPDF('p','pt','a4');
+      // pdf.addHTML(document.getElementById('doc-content'), e => {
+      //   pdf.save('web.pdf');
+      // });
+      // return;
+      const docs = [];
+      const pdfDoc = await PDFDocument.create();
+
+      const links = Array.from(elem.getElementsByTagName('A')).filter(a => a.href && a.href.match(/\.pdf$/));
+      let i=1;
+      Array.from(elem.getElementsByTagName('A')).filter(a => a.href && a.href.match(/\.pdf$/)).forEach(a => {
+        a.className = 'productie-link';
+        if (producties[a.href]) {
+          a.text = producties[a.href].link;
+        } else {
+          producties.push(producties[a.href] = {
+            text: a.innerText,
+            link: a.innerText = `productie ${i}, ${a.innerText.toLowerCase()}`,
+            href: a.href,
+            i: i++,
           });
-          // console.log(source);
-        }
-        if (a.href.match(/jpg$/)) {
-          if (producties[a.href]) return a.text = producties[a.href].toLowerCase();
-          const title = producties[a.href] = 'Productie ' + (i+1) + ', ' + a.text;
-          $(elem).append($('h1').class('productie').text(title));
-          a.text = title.toLowerCase();
-          $('img').parent(elem).src(a.href);
         }
       })
+
+      await (async function(){
+        const pdfBytes = await fetch('http://localhost/api/Aim/Pdf', {
+          method: 'POST', // *GET, POST, PUT, DELETE, etc.
+          // mode: 'cors', // no-cors, *cors, same-origin
+          // cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+          // credentials: 'same-origin', // include, *same-origin, omit
+          headers: {
+            'Content-Type': 'text/html'
+            // 'Content-Type': 'application/json'
+            // 'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          // redirect: 'follow', // manual, *follow, error
+          referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+          // body: JSON.stringify(data), // body data type must match "Content-Type" header
+          body: document.getElementById('doc-content').innerHTML, // body data type must match "Content-Type" header
+        }).then((res) => res.arrayBuffer());
+        const pdfLoad = await PDFDocument.load(pdfBytes);
+        const pages = pdfLoad.getPages();
+        for (let page of pages) {
+          const embedPage = await pdfDoc.embedPage(page);
+          pdfDoc.addPage().drawPage(embedPage);
+        }
+      })()
+
+
+
+
+      for (let productie of producties) {
+
+        var doc = new jsPDF();
+
+        let top = 20;
+        let marginLeft = 20;
+        doc.setFontSize(22);
+        doc.setFontSize(22);
+        doc.text(marginLeft, top+=10, 'Productie');
+        doc.setFont('helvetica'); // string: courier | times | helvetica
+        doc.setFontType("italic"); // string: italic | bold | bolditalic
+        doc.setTextColor(255, 0, 0); // red
+        doc.setTextColor(150); // light gray
+        doc.setTextColor(100); // gray
+        doc.text(marginLeft, top+=10, String(productie.i));
+        doc.setTextColor(0); // black
+        doc.setFontSize(16);
+        doc.text(marginLeft, top+=10, productie.text);
+        // doc.fromHTML('');
+
+        const docArray = doc.output('arraybuffer');
+
+        const firstDoc = await PDFDocument.load(docArray);
+        const firstPage = await pdfDoc.copyPages(firstDoc, firstDoc.getPageIndices());
+        firstPage.forEach((page) => pdfDoc.addPage(page));
+
+
+        const pdfBytes = await fetch(productie.href).then((res) => res.arrayBuffer());
+        const pdfLoad = await PDFDocument.load(pdfBytes);
+        const pages = pdfLoad.getPages();
+        for (let page of pages) {
+          const embedPage = await pdfDoc.embedPage(page);
+          pdfDoc.addPage().drawPage(embedPage);
+        }
+      }
+      const pdfBytes = await pdfDoc.save();
+
+      let file = new Blob([pdfBytes], { type: 'application/pdf' });
+      var fileURL = URL.createObjectURL(file);
+      window.open(fileURL);
+      // download(pdfBytes, "doc.pdf", "application/pdf");
+
+      // window.open(doc.output('bloburl'))
+      // return;
+      // window.open(doc.output('dataurlnewwindow'));
+      // return doc.output('dataurlnewwindow');     //opens the data uri in new window
+      // return doc.output('datauri');              //opens the data uri in current window
+      // doc.output('datauristring');        //returns the data uri string
+      // doc.output('save', 'filename.pdf'); //Try to save PDF as a file (not works on ie before 10, and some mobile devices)
+      // doc.save('Test.pdf');
+      //
+      // return
+      // // console.log(111, elem, elem.getElementsByTagName('A'));
+      // const links = Array.from(elem.getElementsByTagName('A')).filter(a => a.href);
+      // let ip = 1;
+      // links.forEach((a,i) => {
+      //   if (a.href.match(/pdf$/)) {
+      //     if (producties[a.href]) return a.text = producties[a.href].toLowerCase();
+      //     const title = producties[a.href] = 'Productie ' + ip++ + ', ' + a.text;
+      //     a.text = title.toLowerCase();
+      //
+      //     $(elem).append($('h1').class('productie').text(title));
+      //
+      //     const divElem = $('div').parent(elem);
+      //     var loadingTask = pdfjsLib.getDocument(a.href);
+      //     loadingTask.promise.then(async pdf => {
+      //       // console.log('PDF loaded');
+      //       var numPages = pdf.numPages;
+      //       // console.log(pdf);
+      //       for (var pageNumber=1, numPages = pdf.numPages;pageNumber<=numPages;pageNumber++) {
+      //         await pdf.getPage(pageNumber).then(function(page) {
+      //           // console.log('Page loaded');
+      //
+      //           var scale = 1;
+      //           var viewport = page.getViewport({scale: scale});
+      //
+      //           // Prepare canvas using PDF page dimensions
+      //           // var a = $('a').parent(divElement).href(divElement.getAttribute('source'));
+      //           var canvas = $('canvas').parent(divElem).elem;
+      //           // document.body.appendChild(canvas);
+      //           // var canvas = document.getElementById('the-canvas');
+      //           var context = canvas.getContext('2d');
+      //           canvas.height = viewport.height;
+      //           canvas.width = viewport.width;
+      //
+      //           // Render PDF page into canvas context
+      //           var renderContext = {
+      //             canvasContext: context,
+      //             viewport: viewport
+      //           };
+      //           var renderTask = page.render(renderContext);
+      //           renderTask.promise.then(function () {
+      //             // console.log('Page rendered');
+      //           });
+      //         });
+      //       }
+      //
+      //       // Fetch the first page
+      //     }, function (reason) {
+      //       // PDF loading error
+      //       console.error(reason);
+      //     });
+      //     // console.log(source);
+      //   }
+      //   if (a.href.match(/jpg$/)) {
+      //     if (producties[a.href]) return a.text = producties[a.href].toLowerCase();
+      //     const title = producties[a.href] = 'Productie ' + (i+1) + ', ' + a.text;
+      //     $(elem).append($('h1').class('productie').text(title));
+      //     a.text = title.toLowerCase();
+      //     $('img').parent(elem).src(a.href);
+      //   }
+      // })
     }},
   });
   Object.defineProperties(aim.prototype, {

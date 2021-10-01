@@ -358,6 +358,7 @@ class Aim {
   public function oas($config) {
     $item_classname = '\Aliconnect\Server\Data\Item';
     foreach($config['components']['schemas'] as $schema_name => $schema) {
+      if (!$schema) continue;
       $all_schema = [];
       if (isset($schema['allOf'])) {
         foreach($schema['allOf'] as $allOf_schema_name) {
@@ -396,6 +397,7 @@ class Aim {
       'schema'=> ['type' => 'string']
     ];
     foreach ($config['components']['schemas'] as $schemaName => $schema) {
+      if (!$schema) continue;
       $schema_name = strToLower($schemaName);
       $security_write = ["$schema_name.write"];
       $security_read = ["$schema_name.read","$schema_name.write"];
@@ -551,15 +553,17 @@ class Aim {
     return $this->oas = $api;
   }
   public function __construct() {
-    debug(1,getcwd());
+    // debug(getcwd());
     $GLOBALS['aim'] = $this;
     $this->config = [];
     $this->secret = [];
-    $this->config = array_replace_recursive($this->config, is_file($fname = getcwd()."/config.yaml") ? yaml_parse_file($fname) : []);
+    $this->config = array_replace_recursive($this->config, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/config.yaml") ? yaml_parse_file($this->default_config_filename = $fname) : []);
     $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/secret.yaml") ? yaml_parse_file($fname) : []);
-    $this->config = array_replace_recursive($this->config, is_file($fname = getcwd()."/".$_SERVER['HTTP_HOST'].".config.yaml") ? yaml_parse_file($fname) : []);
+    $this->config = array_replace_recursive($this->config, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$_SERVER['HTTP_HOST'].".config.yaml") ? yaml_parse_file($fname) : []);
+
     // $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$_SERVER['HTTP_HOST'].".secret.yaml") ? yaml_parse_file($fname) : []);
-    $this->client_id = request('client_id', $_REQUEST) ?: request('client_id', $this->config);
+    $this->client_id = request('client_id', $_REQUEST) ?: request('client_id',$this->config);
+    // debug($this->client_id, $this->config);
     header("Access-Control-Allow-Headers: Authorization");
     $headers = getallheaders();
     $this->access = [
@@ -581,22 +585,26 @@ class Aim {
       $jwt->validate($this->secret['client_secret']);
       if (!$jwt->valid) http_response(401);
     }
-    // debug($this->client_id);
-    $this->config = array_replace_recursive($this->config, is_file($fname = getcwd()."/".$this->client_id.".config.yaml") ? yaml_parse_file($fname) : []);
-    $fname = str_replace('.config.','.oas.',$fname);
-    if (isset($this->config['client_secret'])) {
-      unset($this->config['client_secret']);
-      yaml_emit_file($fname, $this->config);
-      yaml_emit_file($fname, $this->oas  = $this->oas($this->config));
-    } else if (!is_file($fname)) {
-      yaml_emit_file($fname, $this->oas  = $this->oas($this->config));
-    } else {
-      $this->oas = yaml_parse_file($fname);
-    }
+    $this->config = array_replace_recursive($this->config, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/client/".$this->client_id.".config.yaml") ? yaml_parse_file($this->config_filename = $fname) : []);
+    // debug($this->client_id, $this->config);
+    // $fname = str_replace('.config.','.oas.',$fname);
+    // if (!empty($this->config['client_secret'])) {
+    //   $this->config['client_secret'] = null;
+    //   yaml_emit_file($fname, $this->config);
+    //   yaml_emit_file($fname, $this->oas  = $this->oas($this->config));
+    // } else if (!is_file($fname)) {
+    //   yaml_emit_file($fname, $this->oas  = $this->oas($this->config));
+    // } else {
+    //   $this->oas = yaml_parse_file($fname);
+    // }
+    $this->oas  = $this->oas($this->config);
+    // debug($this->config);
+    // $this->oas = $this->oas($this->config);
+
     // debug($this->oas);
     // debug(1);
 
-    // debug($this->config);
+    // debug(3, $this->client_id, $this->config);
 
     $this->origin = $_SERVER['HTTP_ORIGIN'];
     $this->context = $this->origin.$_SERVER['REQUEST_URI'];
@@ -694,7 +702,7 @@ class Aim {
           }
         }
       }
-      // debug($path_to_search, $this->oas['paths']);
+      // debug($path_to_search, $this->oas);
     }
   }
   // public function __construct1() {
@@ -1154,6 +1162,7 @@ function get_real_user_ip($default = NULL, $filter_options = 12582912) {
   }
 
 function aim() { return $GLOBALS['aim']; }
+
 function request($selector, $context = null, $required = false) {
   $context = $context ? (array)$context : $_REQUEST;
   if (isset($context[$selector])) {
@@ -1407,14 +1416,25 @@ function http_response($code = 200, $body = null, $errors = null) {
     $status = strToUpper($status);
     // $description = $description ?: (isset($error['description']) ? $error['description'] : $status);
     $request = $_SERVER['REQUEST_METHOD'].' '.$_SERVER['REQUEST_URI'];
+    $t = round(microtime(true)*1000-__startTime);
+    $bt = debug_backtrace();
+    $trace = array_map(function ($row){
+      // $line = explode('\\src\\',$row['file'])[1];
+      $line = $row['file'];
+      $line .= "($row[line]): ";
+      if (isset($row['class'])) $line .= $row['class'].'->';
+      if (isset($row['function'])) $line .= $row['function'];
+      return $line;
+      // return parse_url(str_replace('\\', '/', $row['file']));
+    }, $bt);
     if (!strstr($keys['accept'], 'text/html')) {
-      $t = round(microtime(true)*1000-__startTime);
-      $bt = debug_backtrace();
       // array_shift($bt);
       $body = [
         "error"=> [
           "code"=> $code,
           "status"=> $status,
+          "duration"=> "$t ms",
+          "trace"=> $trace,
           "message"=> $body,
           // "errors"=> $body ?: [
           //   [
@@ -1424,16 +1444,6 @@ function http_response($code = 200, $body = null, $errors = null) {
           //     // "extendedHelp"=> "https://console.developers.google.com"
           //   ]
           // ],
-          "trace"=> array_map(function ($row){
-            // $line = explode('\\src\\',$row['file'])[1];
-            $line = $row['file'];
-            $line .= "($row[line]): ";
-            if (isset($row['class'])) $line .= $row['class'].'->';
-            if (isset($row['function'])) $line .= $row['function'];
-            return $line;
-            // return parse_url(str_replace('\\', '/', $row['file']));
-          }, $bt),
-          "duration"=> "$t ms",
         ],
       ];
       // $body = is_string($body) ? 'ja' : 'nee';
@@ -1476,9 +1486,9 @@ function http_response($code = 200, $body = null, $errors = null) {
         </style>
       </head>
       <body><div class='message error'><div>
-        <h1>$code $status</h1>
+        <h1>$code $status $ms ms</h1>
         <pre>$request</pre>
-        <pre class='err'>$body</pre>
+        <pre class='err'><ol>".implode("", array_map(function($l){return "<li>$l</li>";}, $trace))."</ol>$body</pre>
       </div></div></body></html>";
     }
   }
