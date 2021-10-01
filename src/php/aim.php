@@ -604,6 +604,9 @@ class Aim {
     // debug($this->oas);
     // debug(1);
 
+
+    // debug($this->config);
+
     // debug(3, $this->client_id, $this->config);
 
     $this->origin = $_SERVER['HTTP_ORIGIN'];
