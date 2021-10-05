@@ -48,6 +48,9 @@ function str_contains($haystack, $needle) {
 
 
 class Aim {
+  // private $config;
+  // private $secret;
+  // private $oas;
   // public static $options;
   // public static $root;
   public function method_get() {
@@ -554,7 +557,18 @@ class Aim {
   }
   public function __construct() {
     // debug(getcwd());
+
+
     $GLOBALS['aim'] = $this;
+
+    $this->origin = $_SERVER['HTTP_ORIGIN'];
+    $this->context = $this->origin.$_SERVER['REQUEST_URI'];
+    $this->base_path = dirname(parse_url($_SERVER['SCRIPT_NAME'])['path']);
+    $this->request_url = parse_url($_SERVER['REQUEST_URI']);
+    $this->request_path = $this->request_url['path'];
+    $this->hostname = explode('.',$_SERVER['HTTP_HOST'])[0];
+    $this->method = strToLower($_SERVER['REQUEST_METHOD']);
+
     $this->config = [];
     $this->secret = [];
     $this->config = array_replace_recursive($this->config, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/config.yaml") ? yaml_parse_file($this->default_config_filename = $fname) : []);
@@ -565,7 +579,7 @@ class Aim {
     $this->client_id = request('client_id', $_REQUEST) ?: request('client_id',$this->config);
     // debug($this->client_id, $this->config);
     header("Access-Control-Allow-Headers: Authorization");
-    $headers = getallheaders();
+    $headers = $this->headers = getallheaders();
     $this->access = [
       'client_id'=> $this->client_id,
       'scope'=> 'guest.read',
@@ -609,20 +623,36 @@ class Aim {
 
     // debug(3, $this->client_id, $this->config);
 
-    $this->origin = $_SERVER['HTTP_ORIGIN'];
-    $this->context = $this->origin.$_SERVER['REQUEST_URI'];
-    $this->request_url = parse_url($_SERVER['REQUEST_URI']);
-    $this->request_path = $this->request_url['path'];
-
-    $this->base_path = dirname(parse_url($_SERVER['SCRIPT_NAME'])['path']);
-    $method = $this->method = strToLower($_SERVER['REQUEST_METHOD']);
+    // debug(1);
+  }
+  public function api(){
+    // aiminfo();
+    $method = $this->method;
+    $paths = [
+      "/$this->hostname/$this->hostname.github.io$this->request_path",
+      "/$this->hostname$this->request_path",
+      $this->request_path,
+    ];
+    foreach ($paths as $path) {
+      foreach([".md", "home.md", "index.md", "readme.md"] as $filename) {
+        if (is_file($fname = $_SERVER['DOCUMENT_ROOT'].$path.$filename)) {
+          readfile(__DIR__.'/../html/md.html');
+          $data = base64_encode(json_encode(["md"=>file_get_contents($fname)]));
+          echo "<data md='$data'></data>";
+          die();
+        }
+      }
+    }
     $scopes = explode(' ', $this->access['scope']);
     if ($oas = $this->oas) {
       if ($paths = $oas['paths']) {
+        // debug($paths);
         $path_to_search = preg_replace('/\(.*?\)/', '()', $this->request_path);
         $path_to_search = str_replace($this->base_path, '', $path_to_search);
         $path_to_search = strtolower($path_to_search);
+        // debug($paths);
         foreach ($paths as $path_name => $path) {
+          // echo strtolower(preg_replace('/\(.*?\)/', '()', $path_name));
           if (strtolower(preg_replace('/\(.*?\)/', '()', $path_name)) === $path_to_search) {
             if (!$path_method = request($method, $path)) {
               http_response(400, 'Method not found');
@@ -636,7 +666,7 @@ class Aim {
 
             // http_response(200, 'JA');
             $operationId = request('operationId', $path_method) ?: str_replace("/","\\",$path_name);
-            // debug($operationId);
+
             http_response(200, (new $operationId)->$method());
             // debug($operationId, class_exists($path_name));
             // // : $path_method['operationId'];
@@ -1150,6 +1180,60 @@ class Aim {
 
 }
 
+function aiminfo(){
+  ?><html xmlns="http://www.w3.org/1999/xhtml"><head>
+    <style type="text/css">
+    body {background-color: #eee; color: #222; font-family: sans-serif; margin:auto; max-width: 900px;}
+    pre {margin: 0; font-family: monospace;}
+    a:link {color: #009; text-decoration: none; background-color: #fff;}
+    a:hover {text-decoration: underline;}
+    table {border: 3px; width: 100%;}
+    .center {text-align: center;}
+    .center table {margin: 1em auto; text-align: left;}
+    .center th {text-align: center !important;}
+    td, th {border: none; font-size: 75%; vertical-align: baseline; padding: 4px 5px;}
+    h1 {font-size: 150%;}
+    h2 {font-size: 125%;}
+    .p {text-align: left;}
+    .e {background-color: #ccf; width: 300px; font-weight: bold;}
+    .h {background-color: #99c; font-weight: bold;}
+    .v {background-color: #ddd; max-width: 300px; overflow-x: auto; word-wrap: break-word;}
+    .v i {color: #999;}
+    img {float: right; border: 0;}
+    hr {width: 934px; background-color: #ccc; border: 0; height: 1px;}
+    </style>
+    <title>aiminfo</title><meta name="ROBOTS" content="NOINDEX,NOFOLLOW,NOARCHIVE" />
+  </head>
+  <body>
+    <div>
+      <?php
+      $aim = aim();
+      $aim->IP = get_real_user_ip();
+      function write_chapters($obj, $path = []){
+        $s = "<table>";
+        $p = '';
+        foreach($obj as $key => $value) {
+          if (!is_array($value) && !is_object($value)) {
+            $s .= "<tr><td class=e>$key</td><td class=v>$value</td></tr>".PHP_EOL;
+          } else {
+            $keypath = array_merge($path, [$key]);
+            $p.= "<details open><summary>".join(".",$keypath)."</summary>";
+            $p.= write_chapters($value, $keypath);
+            // echo "<tr><td class=e>$key</td><td class=v>$value</td></tr>".PHP_EOL;
+            $p.= "</details>";
+          }
+        }
+        $s .= "</table>";
+        return  $s.$p;
+      }
+      echo write_chapters(['aim'=>$aim]);
+      ?>
+      <table>
+      </table>
+    </div>
+  </body></html><?php
+}
+
 function get_real_user_ip($default = NULL, $filter_options = 12582912) {
     $HTTP_X_FORWARDED_FOR = isset($_SERVER) && isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : getenv('HTTP_X_FORWARDED_FOR');
     $HTTP_CLIENT_IP = isset($_SERVER) && isset($_SERVER['HTTP_CLIENT_IP']) ? $_SERVER['HTTP_CLIENT_IP'] : getenv('HTTP_CLIENT_IP');
@@ -1611,4 +1695,4 @@ function aim_uid($id){
 }
 
 new Aim();
-http_response(404);
+// http_response(404);

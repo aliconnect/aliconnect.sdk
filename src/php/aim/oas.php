@@ -3,6 +3,7 @@ namespace Aim;
 
 class Oas {
   public function __construct() {
+    // debug(1);
     $headers = getallheaders();
     $accept = request('Accept', $headers);
     $config = aim()->config;

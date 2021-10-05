@@ -1295,7 +1295,7 @@ eol = '\n';
           self.collist.setAttribute('wait', Number(self.collist.getAttribute('wait')) - 1);
         }
         e.body = xhr.response;
-        console.log(this.url.headers);
+        // console.log(this.url.headers);
         if (xhr.status >= 400) {
           // console.error(`${xhr.method} ${xhr.src} ${xhr.status} (${xhr.statusText})`, e.body); // responseText is the server
           // //console.log(xhr);
@@ -1329,7 +1329,7 @@ eol = '\n';
           try {
             // console.log(e.body.replace(/.*?(?=\[|\{)/s, ''));
             // e.body = JSON.parse(e.body.replace(/.*?(?=\[|\{)/s, ''));
-            console.log(e);
+            // console.log(e);
             const arr = e.body.match(/(.*?)([\[|\{].*)/s
             );
             e.body = JSON.parse(arr[2]);
@@ -1541,8 +1541,6 @@ eol = '\n';
       if (type) {
         return code(s, type);
       }
-
-
       let identList = [];
       let identOptions = null;
       let html = [];
@@ -1550,6 +1548,23 @@ eol = '\n';
         return '                '.slice(0,ident);
       }
       const lines = [];
+
+      // console.log(s);
+
+      s = s.replace(
+        /<\!-- docIndex -->.*?<\!-- \/docIndex -->/s,
+        p => `<!-- docIndex -->\n${
+          s.match(/^(#+) (.*)/gm)
+          .map(h => h.replace(
+            /(#+) (.*)/,
+            (s,p1,h) => p1.replace(/#/g, '    ') + `- [${h}](#${toLink(h)})`
+          ))
+          .join("\n")
+        }\n<!-- /docIndex -->`
+      );
+
+      // console.log(s);
+
       const arr = !s ? '' : s
       .replace(/\r/gs ,'')
       .split(/\n/);
@@ -1637,7 +1652,7 @@ eol = '\n';
           .replace(/\*\*(.+?)\*\*/g, '<B>$1</B>')
           .replace(/\*(.*?)\*/g, '<I>$1</I>')
           .replace(/__(.*?)__/g, '<B>$1</B>')
-          .replace(/_(.*?)_/g, '<I>$1</I>')
+          .replace(/_(.*?)_(?<=\[).+?(?=\])(?<=\().+?(?=\))/g, '<I>$1</I>')
           .replace(/~~(.*?)~~/g, '<DEL>$1</DEL>')
           .replace(/~(.*?)~/g, '<U>$1</U>')
           .replace(/\^\^(.*?)\^\^/g, '<MARK>$1</MARK>')
@@ -3516,8 +3531,11 @@ eol = '\n';
     //   });
     // },
     api: { value: function (src){
-      console.error(5555, this.options, this.config, this.url);
-      return aim().url(this.url + src)//new URL(src, this.url).href)
+      // console.error(5555, this.options, this.config, this.url);
+      // const thisUrl = new URL(this.url);
+      // const basePath =
+      // const url = new URL(src, this.url);
+      return aim().url(src.match(/\/\//) ? src : this.url + src)//new URL(src, this.url).href)
       .headers('accept', 'application/json')
       .headers(this.headers)
       .authProvider(this.options.authProvider)

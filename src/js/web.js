@@ -1,5 +1,5 @@
 // Version 0.0.6
-console.log('elem 111');
+// console.log('elem 111');
 eol = '\n';
 (function (){
 
@@ -8,6 +8,7 @@ eol = '\n';
   }
 
   const tagnames = ['a', 'abbr', 'address', 'area', 'article', 'aside', 'audio', 'b', 'base', 'bdi', 'bdo', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 'cite', 'code', 'col', 'colgroup', 'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html', 'i', 'iframe', 'frameset', 'frame', 'img', 'input', 'ins', 'kbd', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 'menu', 'meta', 'meter', 'nav', 'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'p', 'param', 'picture', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'section', 'select', 'slot', 'small', 'source', 'span', 'strong', 'style', 'sub', 'summary', 'sup', 'table', 'tbody', 'td', 'template', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track', 'u', 'ul', 'var', 'video', 'wbr', ];
+
   const libraries = {
     start() {
       // console.log('START');
@@ -60,403 +61,404 @@ eol = '\n';
       }
     },
     om() {
+      om = new Om();
     },
-    // omd() {
-    //   function childObject(object, schemaname) {
-    //     // console.log(schemaname);
-    //     if (object) {
-    //       const obj = Object.fromEntries(Object.entries(object).filter(([name, obj]) => typeof obj !== 'object'));
-    //       obj.children = Object
-    //       .entries(object)
-    //       .filter(([name, obj]) => typeof obj === 'object')
-    //       .map(([name, obj]) => Item.get(Object.assign({
-    //         schema: schemaname,
-    //         name: name,
-    //         title: name.replace(/^\d+[-| ]/,'')
-    //       }, childObject(obj, schemaname))));
-    //       return obj;
-    //     }
-    //   }
-    //   $().on({
-    //     async load() {
-    //       ($().server = $().server || {}).url = $().server.url || ('//' + document.location.hostname.split('.')[0] + '.aliconnect.nl/api');
-    //       if (!$().client_id) {
-    //         console.warn($().server.url);
-    //         await $().url($().server.url+'/').get().then(e => $().extend(e.body)).catch(console.error);
-    //         console.warn(1, aimClient.api('/').toString());
-    //         // await $().url($().server.url+'/').get().then(e => console.log(JSON.stringify(JSON.parse(e.target.responseText),null,2).replace(/"(\w+)"(?=: )/gs,'$1'))).catch(console.error);
-    //       }
-    //       $(document.documentElement).class('app');
-    //       $(document.body).class('row aim om bg').id('body').append(
-    //         $.his.elem.navtop = $('header').id('navtop').class('row top bar noselect np').append(
-    //           $.his.elem.menu = $('a').class('abtn icn menu').on('click', e => {
-    //             if ($.his.elem.menuList && $.his.elem.menuList.style()) {
-    //               $.his.elem.menuList.style('');
-    //             } else {
-    //               if ($.his.elem.menuList) $.his.elem.menuList.style('display:none;');
-    //               $(document.body).attr('tv', document.body.hasAttribute('tv') ? $(document.body).attr('tv')^1 : 0)
-    //             }
-    //           }),
-    //           $('a').class('title').id('toptitle').on('click', e => $().start() ),
-    //           $('form').class('search row aco')
-    //           .on('submit', e => {
-    //             const value = $.searchValue = e.target.search.value;
-    //             var result = value
-    //             ? [...$.props.values()]
-    //             .filter(item => item instanceof Item)
-    //             .unique()
-    //             .filter(item => item.header0 && value.split(' ').every(value => [item.header0,item.name].join(' ').match(new RegExp(`\\b${value}\\b`, 'i'))))
-    //             : [];
-    //             $().list(result);
-    //             return false;
-    //           })
-    //           .append(
-    //             $('input').name('search').autocomplete('off').placeholder('zoeken'),
-    //             $('button').class('abtn icn search fr').title('Zoeken'),
-    //           ),
-    //           $('a').class('abtn icn dark').dark(),
-    //         ),
-    //         $('section').tree().id('tree').css('max-width', $().storage('tree.width') || '200px'),
-    //         // $('div').seperator(),
-    //         $('section').id('list').list(),
-    //         // $('div').seperator('right'),
-    //         $('section').id('view').class('col aco apv printcol').css('max-width', $().storage('view.width') || '600px'),
-    //         $('section').id('preview').class('col aco apv info'),
-    //         $('section').class('row aco doc').id('doc'),
-    //         $('section').class('prompt').id('prompt').tabindex(-1).append(
-    //           $('button').class('abtn abs close').attr('open', '').tabindex(-1).on('click', e => $().prompt(''))
-    //         ),
-    //         // $('section').id('section_main').class('row aco main section_main').append(
-    //         // ),
-    //         $('footer').statusbar(),
-    //       );
-    //       $(document.body).messagesPanel();
-    //       // console.log(document.location.hostname.split('.')[0]);
-    //       // console.warn($().server.url, $());
-    //       await $().translate();
-    //       // await $().getApi(document.location.origin+'/api/');
-    //       await $().login();
-    //       if (aimClient.sub) {
-    //         // await aimClient.api('/').get().then(e => $($()).extend(e.body));
-    //         // await $().url($().server.url+`/config/${aimClient.sub}/api.json`).get().then(e => $().extend(e.body));
-    //         if ('Notification' in window) {
-    //           var permission = Notification.permission;
-    //           // const notificationPermission = Notification.permission.toString();
-    //           // console.log('Notification', permission);
-    //           if (Notification.permission === 'default') {
-    //             $.his.elem.navtop.append(
-    //               $('a').class('abtn').text('Notifications').on('click', e => Notification.requestPermission())
-    //             )
-    //           }
-    //           // if (!['denied','granted'].includes(Notification.permission)) {
-    //           //   this.elemNavtop.append(
-    //           //     // $('a').class('abtn').test('Notifications').on('click', e => Notification.requestPermission())
-    //           //   )
-    //           // }
-    //         }
-    //         $.his.elem.navtop
-    //         .prompts(...$.const.prompt.menu.prompts)
-    //         .append(
-    //           $.his.elem.account = $('a').class('abtn account').caption('Account').href('#?prompt=account').draggable(),
-    //         );
-    //         if ($().menu) {
-    //           $().menuChildren = childObject($().menu).children;
-    //           $().tree(...$().menuChildren);
-    //         }
-    //         if ($.aud = await $(`/Company(${aimClient.aud})`).details()) {
-    //           $().tree($.aud)
-    //         }
-    //         if ($.user = await $(`/Contact(${aimClient.sub})`).details()) {
-    //           $().tree($.user);
-    //           await aimClient.api(`/`).query('request_type','visit').get().then(body => $.his.items = body);
-    //           $.his.elem.account.item($.user, 'accountElem');
-    //           $.user.emit('change');
-    //           if ($.user.data.mse_access_token) {
-    //             $()
-    //             .schemas('msaEvent', {
-    //               properties: {
-    //                 title: {
-    //                   get() {
-    //                     // console.log(this);
-    //                     return this.data.start ? `${this.data.start.dateTime} ${this.data.start.endTime}` : '';
-    //                   },
-    //                 },
-    //                 subject: {},
-    //                 summary: {
-    //                   get(){
-    //                     // console.log(this);
-    //                     return `${this.data.organizer.emailAddress.name} (${this.data.organizer.emailAddress.address})`;
-    //                   },
-    //                 },
-    //                 // "@odata.etag": {},
-    //                 // id: {},
-    //                 start: {},
-    //                 end: {},
-    //                 organizer: {}
-    //               }
-    //             })
-    //             .schemas('msaContact', {
-    //               // title() {
-    //               //   return this.combine('displayName');
-    //               // },
-    //               // subject() {
-    //               //   return this.combine('givenName,firstName,middleName,lastName,companyName');
-    //               // },
-    //               header: [
-    //                 ['DisplayName'],
-    //                 ['GivenName','FirstName','MiddleName','LastName','CompanyName'],
-    //                 [],
-    //               ],
-    //               // filterfieldnames: 'Surname,CompanyName',
-    //               properties: {
-    //                 // "@odata.etag": {},
-    //                 // id: {},
-    //                 // createdDateTime: {},
-    //                 // lastModifiedDateTime: {},
-    //                 // changeKey: {},
-    //                 // parentFolderId: {},
-    //                 // fileAs: {},
-    //                 // categories: {},
-    //                 DisplayName: {
-    //                   legend: 'Personalia',
-    //                 },
-    //                 Initials: {
-    //                 },
-    //                 GivenName: {
-    //                 },
-    //                 MiddleName: {
-    //                 },
-    //                 Surname: {
-    //                 },
-    //                 Title: {
-    //                 },
-    //                 nickName: {
-    //                 },
-    //                 // yomiGivenName: {},
-    //                 // yomiSurname: {},
-    //                 // yomiCompanyName: {},
-    //                 // imAddresses: {},
-    //                 companyName: {
-    //                   legend: 'Business',
-    //                 },
-    //                 department: {
-    //                 },
-    //                 officeLocation: {
-    //                 },
-    //                 profession: {
-    //                 },
-    //                 jobTitle: {
-    //                 },
-    //                 assistantName: {
-    //                 },
-    //                 manager: {
-    //                 },
-    //                 businessHomePage: {
-    //                 },
-    //                 emailAddresses: {
-    //                   legend: 'Contact',
-    //                 },
-    //                 mobilePhone: {
-    //                 },
-    //                 businessPhones: {
-    //                 },
-    //                 businessAddress: {
-    //                 },
-    //                 otherAddress: {
-    //                 },
-    //                 homePhones: {
-    //                   legend: 'Personal',
-    //                 },
-    //                 homeAddress: {
-    //                 },
-    //                 birthday: {
-    //                 },
-    //                 spouseName: {
-    //                 },
-    //                 children: {
-    //                 },
-    //                 generation: {
-    //                 },
-    //                 personalNotes: {
-    //                 },
-    //               }
-    //             })
-    //             .schemas('msaMessage', {
-    //               title() {
-    //                 return this.data.from ? (this.data.from.emailAddress.name ? this.data.from.emailAddress.name : this.data.from.emailAddress.address) : '';
-    //               },
-    //               subject() {
-    //                 return this.data.subject;
-    //               },
-    //               bodyPreview() {
-    //                 return this.data.bodyPreview;
-    //               },
-    //               properties: {
-    //                 // "@odata.etag": {},
-    //                 // createdDateTime: {},
-    //                 // lastModifiedDateTime: {},
-    //                 // id: {},
-    //                 // changeKey: {},
-    //                 // hasAttachments: {},
-    //                 // isDeliveryReceiptRequested: {},
-    //                 // isReadReceiptRequested: {},
-    //                 // isRead: {},
-    //                 // isDraft: {},
-    //                 // flag: {},
-    //                 // bodyPreview: {},
-    //                 // parentFolderId: {},
-    //                 // conversationId: {},
-    //                 // conversationIndex: {},
-    //                 // internetMessageId: {},
-    //                 // receivedDateTime: {},
-    //                 // sentDateTime: {},
-    //                 // importance: {},
-    //                 // inferenceClassification: {},
-    //                 // from: {},
-    //                 // sender: {},
-    //                 // toRecipients: {},
-    //                 // ccRecipients: {},
-    //                 // bccRecipients: {},
-    //                 // replyTo: {},
-    //                 // webLink: {},
-    //                 // categories: {},
-    //                 subject: {},
-    //                 body: {},
-    //               }
-    //             })
-    //             .schemas('msaNotebook', {
-    //               properties: {
-    //                 title: {
-    //                   get: 'displayName',
-    //                 },
-    //                 summary: {
-    //                   get() {
-    //                     return `${this.data.lastModifiedDateTime} ${this.data.lastModifiedBy.user.displayName}`
-    //                   },
-    //                 },
-    //                 // createdDateTime: {},
-    //                 // createdBy: {},
-    //                 // lastModifiedDateTime: {},
-    //                 // lastModifiedBy: {},
-    //                 // id: {},
-    //                 isDefault: {},
-    //                 isShared: {},
-    //                 self: {},
-    //                 displayName: {},
-    //                 userRole: {},
-    //                 sectionsUrl: {},
-    //                 sectionGroupsUrl: {},
-    //                 links: {}
-    //               }
-    //             });
-    //             $().tree(...childObject({
-    //               Outlook: {
-    //                 Contacts: {
-    //                   onclick: e => $().msa().getContacts(),
-    //                 },
-    //                 Events: {
-    //                   onclick: e => $().msa().getEvents(),
-    //                 },
-    //                 Messages: {
-    //                   onclick: e => $().msa().getMessages(),
-    //                 },
-    //                 Notes: {
-    //                   onclick: e => $().msa().getNotes(),
-    //                 },
-    //               }
-    //             }).children);
-    //           }
-    //         }
-    //         // $().url('https://aliconnect.nl/api/').query('request_type', 'build_doc').get().then(e => {
-    //         //   console.log('DOCBUILD', e.body);
-    //         //   $($).extend(e.body);
-    //         //   $().tree(...childObject($.docs, 'Chapter').children);
-    //         // });
-    //       } else {
-    //         $.his.elem.navtop
-    //         .append(
-    //           $('a').class('abtn login').text('Aanmelden').href($().loginUrl().query('prompt', 'login').toString()),
-    //         );
-    //         // $(document.documentElement).class('site');
-    //         //
-    //         // $('navtop').append(
-    //         //   $.his.elem.menu = $('a').class('abtn icn menu').on('click', e => {
-    //         //     if ($.his.elem.menuList && $.his.elem.menuList.style()) {
-    //         //       $.his.elem.menuList.style('');
-    //         //     } else {
-    //         //       if ($.his.elem.menuList) $.his.elem.menuList.style('display:none;');
-    //         //     }
-    //         //   }),
-    //         //   $('a').class('title').href('/').id('toptitle'),
-    //         //   $('form').class('search row aco'),
-    //         //   $('a').class('abtn icn dark').dark(),
-    //         //   $.his.elem.account = $('a').class('abtn account').caption('Account').href('#?prompt=account').draggable(),
-    //         // );
-    //         //
-    //         // $('section_main').append(
-    //         //   $('section').id('list').list(),
-    //         //   $('div').seperator('right'),
-    //         //   $('section').id('view').class('col aco apv printcol').css('max-width', $().storage('view.width') || '600px'),
-    //         //   $('section').id('preview').class('col aco apv info'),
-    //         //   $('section').class('row aco doc').id('doc'),
-    //         //   $('section').class('prompt').id('prompt').append(
-    //         //     $('button').class('abtn abs close').attr('open', '').on('click', e => $().prompt(''))
-    //         //   ),
-    //         // );
-    //         //
-    //       }
-    //       // if ($().schemas()) {
-    //       //   const itemItem = $().schemas().get('Item');
-    //       //   if (itemItem) {
-    //       //     itemItem.HasChildren = true;
-    //       //     [...$().schemas().values()].forEach(item => {
-    //       //       if (item !== itemItem) {
-    //       //         if (!item.Master || !item.Master.LinkID) {
-    //       //           $(item).Master = { LinkID: itemItem.ID };
-    //       //         }
-    //       //         // console.log(item.name, item.SrcID, item.MasterID);
-    //       //         if (!item.SrcID || item.SrcID !== item.MasterID) {
-    //       //           $(item).Src = { LinkID: item.MasterID };
-    //       //         }
-    //       //       }
-    //       //     });
-    //       //     $().tree($().schemas().get('Item'));
-    //       //   }
-    //       //   if ($().schemas().has('Equipment')) {
-    //       //     aimClient.api(`/Equipment`).select($.config.listAttributes).top(10000).filter('keyID IS NOT NULL').get()
-    //       //   }
-    //       // }
-    //       if ($().aud) {
-    //         // console.log($().aud, $({tag: `Company(${$().aud})`}));
-    //         $.his.elem.menu.showMenuTop($({tag: `Company(${$().aud})`}));
-    //       }
-    //       if ($().info) {
-    //         $('toptitle').text(document.title = $().info.title).title([$().info.description,$().info.version,$().info.lastModifiedDateTime].join(' '));
-    //       }
-    //       // console.log(document.location.application_path);
-    //       $().application_path = $().application_path || '/';
-    //       // var url = new URL(document.location);
-    //       // $().pageHome = $().pageHome || '//' + document.location.hostname.replace(/([\w\.-]+)\.github\.io/, 'github.com/$1/$1.github.io') + '/wiki/Home';
-    //       $().ref = $().ref || {};
-    //       $().ref.home = $().ref.home || '//aliconnect.nl/sdk/wiki/Home';
-    //       console.log($().ref.home);
-    //
-    //       if (!document.location.search) {
-    //
-    //         $().execQuery('l', $().ref.home, true );
-    //         // $().execQuery('l', document.location.origin);
-    //       }
-    //       // if (document.location.pathname === $().application_path && !document.location.search) {
-    //       //   window.history.replaceState('page', 'PAGINA', '?p='+($().ref && $().ref.home ? $().ref.home : document.location.origin));
-    //       //   // $(window).emit('popstate');
-    //       // }
-    //       // $(document.body).cookieWarning();
-    //       function response(e) {
-    //         console.log(e.target.responseText);
-    //       }
-    //     },
-    //   });
-    // },
+    omd() {
+      //   function childObject(object, schemaname) {
+      //     // console.log(schemaname);
+      //     if (object) {
+      //       const obj = Object.fromEntries(Object.entries(object).filter(([name, obj]) => typeof obj !== 'object'));
+      //       obj.children = Object
+      //       .entries(object)
+      //       .filter(([name, obj]) => typeof obj === 'object')
+      //       .map(([name, obj]) => Item.get(Object.assign({
+      //         schema: schemaname,
+      //         name: name,
+      //         title: name.replace(/^\d+[-| ]/,'')
+      //       }, childObject(obj, schemaname))));
+      //       return obj;
+      //     }
+      //   }
+      //   $().on({
+      //     async load() {
+      //       ($().server = $().server || {}).url = $().server.url || ('//' + document.location.hostname.split('.')[0] + '.aliconnect.nl/api');
+      //       if (!$().client_id) {
+      //         console.warn($().server.url);
+      //         await $().url($().server.url+'/').get().then(e => $().extend(e.body)).catch(console.error);
+      //         console.warn(1, aimClient.api('/').toString());
+      //         // await $().url($().server.url+'/').get().then(e => console.log(JSON.stringify(JSON.parse(e.target.responseText),null,2).replace(/"(\w+)"(?=: )/gs,'$1'))).catch(console.error);
+      //       }
+      //       $(document.documentElement).class('app');
+      //       $(document.body).class('row aim om bg').id('body').append(
+      //         $.his.elem.navtop = $('header').id('navtop').class('row top bar noselect np').append(
+      //           $.his.elem.menu = $('a').class('abtn icn menu').on('click', e => {
+      //             if ($.his.elem.menuList && $.his.elem.menuList.style()) {
+      //               $.his.elem.menuList.style('');
+      //             } else {
+      //               if ($.his.elem.menuList) $.his.elem.menuList.style('display:none;');
+      //               $(document.body).attr('tv', document.body.hasAttribute('tv') ? $(document.body).attr('tv')^1 : 0)
+      //             }
+      //           }),
+      //           $('a').class('title').id('toptitle').on('click', e => $().start() ),
+      //           $('form').class('search row aco')
+      //           .on('submit', e => {
+      //             const value = $.searchValue = e.target.search.value;
+      //             var result = value
+      //             ? [...$.props.values()]
+      //             .filter(item => item instanceof Item)
+      //             .unique()
+      //             .filter(item => item.header0 && value.split(' ').every(value => [item.header0,item.name].join(' ').match(new RegExp(`\\b${value}\\b`, 'i'))))
+      //             : [];
+      //             $().list(result);
+      //             return false;
+      //           })
+      //           .append(
+      //             $('input').name('search').autocomplete('off').placeholder('zoeken'),
+      //             $('button').class('abtn icn search fr').title('Zoeken'),
+      //           ),
+      //           $('a').class('abtn icn dark').dark(),
+      //         ),
+      //         $('section').tree().id('tree').css('max-width', $().storage('tree.width') || '200px'),
+      //         // $('div').seperator(),
+      //         $('section').id('list').list(),
+      //         // $('div').seperator('right'),
+      //         $('section').id('view').class('col aco apv printcol').css('max-width', $().storage('view.width') || '600px'),
+      //         $('section').id('preview').class('col aco apv info'),
+      //         $('section').class('row aco doc').id('doc'),
+      //         $('section').class('prompt').id('prompt').tabindex(-1).append(
+      //           $('button').class('abtn abs close').attr('open', '').tabindex(-1).on('click', e => $().prompt(''))
+      //         ),
+      //         // $('section').id('section_main').class('row aco main section_main').append(
+      //         // ),
+      //         $('footer').statusbar(),
+      //       );
+      //       $(document.body).messagesPanel();
+      //       // console.log(document.location.hostname.split('.')[0]);
+      //       // console.warn($().server.url, $());
+      //       await $().translate();
+      //       // await $().getApi(document.location.origin+'/api/');
+      //       await $().login();
+      //       if (aimClient.sub) {
+      //         // await aimClient.api('/').get().then(e => $($()).extend(e.body));
+      //         // await $().url($().server.url+`/config/${aimClient.sub}/api.json`).get().then(e => $().extend(e.body));
+      //         if ('Notification' in window) {
+      //           var permission = Notification.permission;
+      //           // const notificationPermission = Notification.permission.toString();
+      //           // console.log('Notification', permission);
+      //           if (Notification.permission === 'default') {
+      //             $.his.elem.navtop.append(
+      //               $('a').class('abtn').text('Notifications').on('click', e => Notification.requestPermission())
+      //             )
+      //           }
+      //           // if (!['denied','granted'].includes(Notification.permission)) {
+      //           //   this.elemNavtop.append(
+      //           //     // $('a').class('abtn').test('Notifications').on('click', e => Notification.requestPermission())
+      //           //   )
+      //           // }
+      //         }
+      //         $.his.elem.navtop
+      //         .prompts(...$.const.prompt.menu.prompts)
+      //         .append(
+      //           $.his.elem.account = $('a').class('abtn account').caption('Account').href('#?prompt=account').draggable(),
+      //         );
+      //         if ($().menu) {
+      //           $().menuChildren = childObject($().menu).children;
+      //           $().tree(...$().menuChildren);
+      //         }
+      //         if ($.aud = await $(`/Company(${aimClient.aud})`).details()) {
+      //           $().tree($.aud)
+      //         }
+      //         if ($.user = await $(`/Contact(${aimClient.sub})`).details()) {
+      //           $().tree($.user);
+      //           await aimClient.api(`/`).query('request_type','visit').get().then(body => $.his.items = body);
+      //           $.his.elem.account.item($.user, 'accountElem');
+      //           $.user.emit('change');
+      //           if ($.user.data.mse_access_token) {
+      //             $()
+      //             .schemas('msaEvent', {
+      //               properties: {
+      //                 title: {
+      //                   get() {
+      //                     // console.log(this);
+      //                     return this.data.start ? `${this.data.start.dateTime} ${this.data.start.endTime}` : '';
+      //                   },
+      //                 },
+      //                 subject: {},
+      //                 summary: {
+      //                   get(){
+      //                     // console.log(this);
+      //                     return `${this.data.organizer.emailAddress.name} (${this.data.organizer.emailAddress.address})`;
+      //                   },
+      //                 },
+      //                 // "@odata.etag": {},
+      //                 // id: {},
+      //                 start: {},
+      //                 end: {},
+      //                 organizer: {}
+      //               }
+      //             })
+      //             .schemas('msaContact', {
+      //               // title() {
+      //               //   return this.combine('displayName');
+      //               // },
+      //               // subject() {
+      //               //   return this.combine('givenName,firstName,middleName,lastName,companyName');
+      //               // },
+      //               header: [
+      //                 ['DisplayName'],
+      //                 ['GivenName','FirstName','MiddleName','LastName','CompanyName'],
+      //                 [],
+      //               ],
+      //               // filterfieldnames: 'Surname,CompanyName',
+      //               properties: {
+      //                 // "@odata.etag": {},
+      //                 // id: {},
+      //                 // createdDateTime: {},
+      //                 // lastModifiedDateTime: {},
+      //                 // changeKey: {},
+      //                 // parentFolderId: {},
+      //                 // fileAs: {},
+      //                 // categories: {},
+      //                 DisplayName: {
+      //                   legend: 'Personalia',
+      //                 },
+      //                 Initials: {
+      //                 },
+      //                 GivenName: {
+      //                 },
+      //                 MiddleName: {
+      //                 },
+      //                 Surname: {
+      //                 },
+      //                 Title: {
+      //                 },
+      //                 nickName: {
+      //                 },
+      //                 // yomiGivenName: {},
+      //                 // yomiSurname: {},
+      //                 // yomiCompanyName: {},
+      //                 // imAddresses: {},
+      //                 companyName: {
+      //                   legend: 'Business',
+      //                 },
+      //                 department: {
+      //                 },
+      //                 officeLocation: {
+      //                 },
+      //                 profession: {
+      //                 },
+      //                 jobTitle: {
+      //                 },
+      //                 assistantName: {
+      //                 },
+      //                 manager: {
+      //                 },
+      //                 businessHomePage: {
+      //                 },
+      //                 emailAddresses: {
+      //                   legend: 'Contact',
+      //                 },
+      //                 mobilePhone: {
+      //                 },
+      //                 businessPhones: {
+      //                 },
+      //                 businessAddress: {
+      //                 },
+      //                 otherAddress: {
+      //                 },
+      //                 homePhones: {
+      //                   legend: 'Personal',
+      //                 },
+      //                 homeAddress: {
+      //                 },
+      //                 birthday: {
+      //                 },
+      //                 spouseName: {
+      //                 },
+      //                 children: {
+      //                 },
+      //                 generation: {
+      //                 },
+      //                 personalNotes: {
+      //                 },
+      //               }
+      //             })
+      //             .schemas('msaMessage', {
+      //               title() {
+      //                 return this.data.from ? (this.data.from.emailAddress.name ? this.data.from.emailAddress.name : this.data.from.emailAddress.address) : '';
+      //               },
+      //               subject() {
+      //                 return this.data.subject;
+      //               },
+      //               bodyPreview() {
+      //                 return this.data.bodyPreview;
+      //               },
+      //               properties: {
+      //                 // "@odata.etag": {},
+      //                 // createdDateTime: {},
+      //                 // lastModifiedDateTime: {},
+      //                 // id: {},
+      //                 // changeKey: {},
+      //                 // hasAttachments: {},
+      //                 // isDeliveryReceiptRequested: {},
+      //                 // isReadReceiptRequested: {},
+      //                 // isRead: {},
+      //                 // isDraft: {},
+      //                 // flag: {},
+      //                 // bodyPreview: {},
+      //                 // parentFolderId: {},
+      //                 // conversationId: {},
+      //                 // conversationIndex: {},
+      //                 // internetMessageId: {},
+      //                 // receivedDateTime: {},
+      //                 // sentDateTime: {},
+      //                 // importance: {},
+      //                 // inferenceClassification: {},
+      //                 // from: {},
+      //                 // sender: {},
+      //                 // toRecipients: {},
+      //                 // ccRecipients: {},
+      //                 // bccRecipients: {},
+      //                 // replyTo: {},
+      //                 // webLink: {},
+      //                 // categories: {},
+      //                 subject: {},
+      //                 body: {},
+      //               }
+      //             })
+      //             .schemas('msaNotebook', {
+      //               properties: {
+      //                 title: {
+      //                   get: 'displayName',
+      //                 },
+      //                 summary: {
+      //                   get() {
+      //                     return `${this.data.lastModifiedDateTime} ${this.data.lastModifiedBy.user.displayName}`
+      //                   },
+      //                 },
+      //                 // createdDateTime: {},
+      //                 // createdBy: {},
+      //                 // lastModifiedDateTime: {},
+      //                 // lastModifiedBy: {},
+      //                 // id: {},
+      //                 isDefault: {},
+      //                 isShared: {},
+      //                 self: {},
+      //                 displayName: {},
+      //                 userRole: {},
+      //                 sectionsUrl: {},
+      //                 sectionGroupsUrl: {},
+      //                 links: {}
+      //               }
+      //             });
+      //             $().tree(...childObject({
+      //               Outlook: {
+      //                 Contacts: {
+      //                   onclick: e => $().msa().getContacts(),
+      //                 },
+      //                 Events: {
+      //                   onclick: e => $().msa().getEvents(),
+      //                 },
+      //                 Messages: {
+      //                   onclick: e => $().msa().getMessages(),
+      //                 },
+      //                 Notes: {
+      //                   onclick: e => $().msa().getNotes(),
+      //                 },
+      //               }
+      //             }).children);
+      //           }
+      //         }
+      //         // $().url('https://aliconnect.nl/api/').query('request_type', 'build_doc').get().then(e => {
+      //         //   console.log('DOCBUILD', e.body);
+      //         //   $($).extend(e.body);
+      //         //   $().tree(...childObject($.docs, 'Chapter').children);
+      //         // });
+      //       } else {
+      //         $.his.elem.navtop
+      //         .append(
+      //           $('a').class('abtn login').text('Aanmelden').href($().loginUrl().query('prompt', 'login').toString()),
+      //         );
+      //         // $(document.documentElement).class('site');
+      //         //
+      //         // $('navtop').append(
+      //         //   $.his.elem.menu = $('a').class('abtn icn menu').on('click', e => {
+      //         //     if ($.his.elem.menuList && $.his.elem.menuList.style()) {
+      //         //       $.his.elem.menuList.style('');
+      //         //     } else {
+      //         //       if ($.his.elem.menuList) $.his.elem.menuList.style('display:none;');
+      //         //     }
+      //         //   }),
+      //         //   $('a').class('title').href('/').id('toptitle'),
+      //         //   $('form').class('search row aco'),
+      //         //   $('a').class('abtn icn dark').dark(),
+      //         //   $.his.elem.account = $('a').class('abtn account').caption('Account').href('#?prompt=account').draggable(),
+      //         // );
+      //         //
+      //         // $('section_main').append(
+      //         //   $('section').id('list').list(),
+      //         //   $('div').seperator('right'),
+      //         //   $('section').id('view').class('col aco apv printcol').css('max-width', $().storage('view.width') || '600px'),
+      //         //   $('section').id('preview').class('col aco apv info'),
+      //         //   $('section').class('row aco doc').id('doc'),
+      //         //   $('section').class('prompt').id('prompt').append(
+      //         //     $('button').class('abtn abs close').attr('open', '').on('click', e => $().prompt(''))
+      //         //   ),
+      //         // );
+      //         //
+      //       }
+      //       // if ($().schemas()) {
+      //       //   const itemItem = $().schemas().get('Item');
+      //       //   if (itemItem) {
+      //       //     itemItem.HasChildren = true;
+      //       //     [...$().schemas().values()].forEach(item => {
+      //       //       if (item !== itemItem) {
+      //       //         if (!item.Master || !item.Master.LinkID) {
+      //       //           $(item).Master = { LinkID: itemItem.ID };
+      //       //         }
+      //       //         // console.log(item.name, item.SrcID, item.MasterID);
+      //       //         if (!item.SrcID || item.SrcID !== item.MasterID) {
+      //       //           $(item).Src = { LinkID: item.MasterID };
+      //       //         }
+      //       //       }
+      //       //     });
+      //       //     $().tree($().schemas().get('Item'));
+      //       //   }
+      //       //   if ($().schemas().has('Equipment')) {
+      //       //     aimClient.api(`/Equipment`).select($.config.listAttributes).top(10000).filter('keyID IS NOT NULL').get()
+      //       //   }
+      //       // }
+      //       if ($().aud) {
+      //         // console.log($().aud, $({tag: `Company(${$().aud})`}));
+      //         $.his.elem.menu.showMenuTop($({tag: `Company(${$().aud})`}));
+      //       }
+      //       if ($().info) {
+      //         $('toptitle').text(document.title = $().info.title).title([$().info.description,$().info.version,$().info.lastModifiedDateTime].join(' '));
+      //       }
+      //       // console.log(document.location.application_path);
+      //       $().application_path = $().application_path || '/';
+      //       // var url = new URL(document.location);
+      //       // $().pageHome = $().pageHome || '//' + document.location.hostname.replace(/([\w\.-]+)\.github\.io/, 'github.com/$1/$1.github.io') + '/wiki/Home';
+      //       $().ref = $().ref || {};
+      //       $().ref.home = $().ref.home || '//aliconnect.nl/sdk/wiki/Home';
+      //       console.log($().ref.home);
+      //
+      //       if (!document.location.search) {
+      //
+      //         $().execQuery('l', $().ref.home, true );
+      //         // $().execQuery('l', document.location.origin);
+      //       }
+      //       // if (document.location.pathname === $().application_path && !document.location.search) {
+      //       //   window.history.replaceState('page', 'PAGINA', '?p='+($().ref && $().ref.home ? $().ref.home : document.location.origin));
+      //       //   // $(window).emit('popstate');
+      //       // }
+      //       // $(document.body).cookieWarning();
+      //       function response(e) {
+      //         console.log(e.target.responseText);
+      //       }
+      //     },
+      //   });
+    },
     loadclient() {
       // console.log('AA');
       $().on({
@@ -480,6 +482,556 @@ eol = '\n';
         }
       });
     },
+    oas(){
+      $().on('load', e => {
+        let config = {
+          client_id: $.config.client_id || sessionStorage.getItem('client_id') || '',
+          client_secret: $.config.client_secret || sessionStorage.getItem('client_secret') || '',
+          domain: '',
+          // last_modified: '',
+          // info: {
+          //   contact: {
+          //     email: '',
+          //   }
+          // }
+        }
+        // sessionStorage.clear();
+        function load(){
+          $().url('https://aliconnect.nl/api/aim/oas')
+          .accept('application/json')
+          .query('response_type', 'config')
+          .query('client_id', config.client_id)
+          .query('client_secret', config.client_secret)
+          .post(JSON.stringify(config)).then(e => start(config = e.body))
+          return false;
+        }
+        function start(){
+          $(document.body).text('').class('aim-config');
+          // const config = e.body;
+          sessionStorage.setItem('client_id', config.client_id || '');
+          sessionStorage.setItem('client_secret', config.client_secret || '');
+          // config.client_secret = $.config.client_secret;
+          console.log('CONFIG', sessionStorage);
+          const formElem = $('form').autocomplete("off").parent(document.body).on('submit', load);
+          var contentElem = $('details').parent(formElem).append(
+            $('summary').text('Config')
+          );
+          (function build(obj, path){
+            Object.entries(obj).forEach(([key,val]) => {
+              // return;
+              if (val && typeof val === 'object') {
+                const parent = contentElem;
+                contentElem = $('details').parent(contentElem).append(
+                  $('summary').text(isNaN(key) ? key : Number(key)+1)
+                );
+                build(val, path.concat(key));
+                contentElem = parent;
+              } else {
+                // val = String(val);
+                // console.log(typeof val)
+                contentElem.append(
+                  $('div').append(
+                    $('label').text(key),
+                    $('input').name(path.join('-')+key).required(val === null ? '' : null).value(val || '').placeholder(' ').on('change', e => {
+                      obj[key] = e.target.value;
+                      console.log(obj, config)
+                    }),
+                  )
+                )
+                if (val === null) {
+                  for (var p = contentElem; p; p = p.parentElement) p.open(1);
+                }
+
+              }
+            })
+          })(config, []);
+          formElem.append(
+            $('button').text('SUBMIT')
+          )
+          // console.log(e);
+        }
+        if (config.client_secret) {
+          load();
+        } else {
+          start();
+        }
+      })
+    },
+    oas(){
+      window.addEventListener('load', e => {
+        let elements = document.querySelectorAll('data');
+        Array.from(elements[0].attributes).forEach(a => this[a.name]=JSON.parse(a.value));
+        console.log(this.config);
+        const config = this.config;
+        const formElem = $('form').parent(document.body).on('submit', e => {
+          console.log(config);
+          return false;
+        });
+        var contentElem = $('details').parent(formElem).append(
+          $('summary').text('Config')
+        );
+        (function build(obj){
+          Object.entries(obj).forEach(([key,val]) => {
+            // return;
+            if (val && typeof val === 'object') {
+              const parent = contentElem;
+              contentElem = $('details').parent(contentElem).append(
+                $('summary').text(isNaN(key) ? key : Number(key)+1)
+              );
+              build(val);
+              contentElem = parent;
+            } else {
+              if (val === null) {
+                val === '';
+                for (var p = contentElem; p; p = p.parentElement) p.open(1);
+              }
+              // val = String(val);
+              console.log(typeof val)
+              contentElem.append(
+                $('div').append(
+                  $('label').text(key),
+                  $('input').value(val||'').placeholder(' ').on('change', e => {
+                    obj[key] = e.target.value;
+                    console.log(obj, config)
+                  }),
+                )
+              )
+            }
+          })
+        })(config);
+        formElem.append(
+          $('button').text('SUBMIT')
+        )
+
+        // let config = elements[0].getAttribute('config');
+        // console.log(elements[0]);
+
+      })
+    },
+    forms(){
+      aim().on('load', async e => {
+        console.log(document.location.pathname);
+        // return;
+        const formDefinitions = await fetch(document.location.pathname+'?a', {
+          headers: { 'Accept': 'application/json' },
+        }).then(res => res.json());
+        // const formDefinitions = await fetch('/aim/oas?response_type=config').then(res => res.text());
+        console.log(formDefinitions);
+        // return
+        let data = {
+          info: {
+            name: '',
+            title: '',
+            contact: {
+              email: '',
+              // phone_number: '',
+            },
+            // description: 'sdfas',
+          },
+          client: {
+            client_id: $.config.client_id || sessionStorage.getItem('client_id') || '',
+            client_secret: $.config.client_secret || sessionStorage.getItem('client_secret') || '',
+          }
+
+        }
+        // console.log(formDefinitions);
+        // let config = {
+        //   client_id: $.config.client_id || sessionStorage.getItem('client_id') || '',
+        //   client_secret: $.config.client_secret || sessionStorage.getItem('client_secret') || '',
+        //   domain: '',
+        //   // last_modified: '',
+        //   // info: {
+        //   //   contact: {
+        //   //     email: '',
+        //   //   }
+        //   // }
+        // }
+        // sessionStorage.clear();
+        let activeField;
+        function postForm(e){
+          activeField = document.activeElement.name;
+          // console.log(e, document.activeElement.name);
+
+          // $().url(document.location.pathname + 'yaml')
+          $().url(document.location.pathname)
+          .accept('application/json')
+          .query('response_type', 'config')
+          .query('client_id', data.client.client_id)
+          .query('client_secret', data.client.client_secret)
+          .post(JSON.stringify(data)).then(e => start(data = e.body))
+          return false;
+        }
+        function start(){
+          $(document.body).text('').class('aim-config');
+          // var focusElement;
+          // const config = e.body;
+          sessionStorage.setItem('client_id', data.client.client_id || '');
+          sessionStorage.setItem('client_secret', data.client.client_secret || '');
+          // config.client_secret = $.config.client_secret;
+          console.log('START', data, sessionStorage);
+          const formElem = $('form').autocomplete("off").parent(document.body).on('submit', postForm);
+          var contentElem = formElem;
+          // $('details').open(1).parent(formElem).append(
+          //   $('summary').text('Config')
+          // );
+          let inputId=0;
+          function build(key, cfg, path){
+            const metaData = cfg.metaData || { title: isNaN(key) ? key : Number(key)+1 };
+            var dataObj = data;
+            for (let p of path.concat(key)) {
+              if (!(p in dataObj)) {
+                dataObj = ''; break;
+                return;
+              }
+              dataObj = dataObj[p];
+            }
+            // console.log(path,key,cfg,dataObj);
+            const types = {
+              boolean: 'checkbox',
+              number: 'number',
+              string: 'text',
+              object: 'object',
+            }
+
+            // var inputElem;') Object.keys(cfg).length === 1) {
+            if (cfg.metaData && Object.keys(cfg).length === 1 && (cfg.metaData.type = cfg.metaData.type || types[dataObj ? typeof dataObj : 'string']) && ['text','number','string','boolean'].includes(cfg.metaData.type || 'text')) {
+              const name = path.concat(key).join('-');
+              // console.log(name, typeof dataObj);
+              var placeholder = metaData.placeholder || (metaData.required || dataObj === null ? metaData.title || key : ' ');
+              if (typeof dataObj === 'string' && dataObj.match(/^  .*  $/)) {
+                placeholder = dataObj.trim();
+                dataObj = null;
+              }
+              if (metaData.format === 'cam') {
+                let userMedia;
+                const video = $('video').style('background:white;flex-base: 50px;').autoplay().elem;
+                const pausePlayElem = $('button').type('button').class('pause').text('Pause/Play').on('click', e => video.paused ? video.play() : video.pause());
+                function toggleCam() {
+                  const rect = video.getBoundingClientRect();
+                  video.width = rect.width;
+                  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    if (video.srcObject) {
+                      video.srcObject.getTracks().forEach(track => track.stop());
+                      pausePlayElem.disabled(true);
+                      video.srcObject = null;
+                    } else {
+                      navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+                        try {
+                          video.srcObject = stream;
+                        } catch (error) {
+                          video.src = window.URL.createObjectURL(stream);
+                        }
+                        video.play();
+                        pausePlayElem.disabled(false);
+                      });
+                    }
+                  }
+                }
+                contentElem.append(
+                  $('div').class('input').append(
+                    $('span').class('info').title(metaData.description),
+                    $('label').class('title').text(metaData.title || key),
+                    $('div').class('aco col').append(
+                      $('div').class('row').append(
+                        $('button').type('button').class('clear').text('Clear'),
+                        $('button').type('button').class('on').text('On/Off').on('click', toggleCam),
+                        pausePlayElem.disabled(true),
+                        $('button').type('button').class('share').text('Share'),
+                        $('button').type('button').class('save').text('Save'),
+                        $('button').type('button').class('paint').text('Paint'),
+                      ),
+                      video,
+                    )
+                  ),
+                );
+              } else if (metaData.format === 'draw') {
+                const canvasElem = $('canvas').style('background:white;height:150px;').paint();
+                contentElem.append(
+                  $('div').class('input').append(
+                    $('span').class('info').title(metaData.description),
+                    $('label').class('title').text(metaData.title || key),
+                    $('div').class('aco col').append(
+                      $('div').class('row').append(
+                        $('button').type('button').class('clear').text('Clear').on('click', e => canvasElem.paint.clear()),
+                      ),
+                      canvasElem,
+                      // $('canvas').class('aco').style('background:white;height:150px;').paint(),
+                    )
+                  ),
+                );
+              } else {
+                contentElem.append(
+                  $('div').class('input').append(
+                    $('span').class('info').title(metaData.description),
+                    $('label').class('title').text(metaData.title || key),
+                    $('input').id('input'+inputId).class('aco')
+                    .name(name)
+                    .value(dataObj === null ? metaData.defaultValue || '' : dataObj)
+                    .type(types[typeof dataObj])
+                    // .autofocus(name === activeField ? '' : null)
+                    .required(metaData.required || dataObj === null ? '' : null)
+                    .placeholder(placeholder)
+                    .pattern(metaData.pattern)
+                    .on('change', e => {
+                      let obj = data;
+                      path.forEach(key => obj = obj[key] = obj[key] || {});
+                      obj[key] = e.target.value;
+                    }),
+                    // $('label').class('caption').for('input'+inputId),
+                    $('label').class('ico').for('input'+inputId),
+                  )
+                )
+              }
+              inputId++;
+              // console.log(inputElem, focusElement);
+              // focusElement = focusElement || inputElem;
+              // if (name === activeField || metaData.required || dataObj === null || !dataObj) {
+              //   focusElement = inputElem;
+              // }
+
+              // if (cfg === null) {
+              //   for (var p = contentElem; p; p = p.parentElement) p.open(1);
+              // }
+            } else {
+              const parent = contentElem;
+              contentElem = $('details').open(1).parent(contentElem).append(
+                $('summary').text(metaData.title)
+              );
+              if (metaData.description) {
+                contentElem.append($('div').html(metaData.description))
+              }
+              Object.entries(cfg).filter(([key,cfg])=>key !== 'metaData').forEach(entry => {
+                build(...entry, path.concat(key));
+              });
+              contentElem = parent;
+            }
+          }
+          Object.entries(formDefinitions).filter(([key,cfg])=>key !== 'metaData').forEach(entry => build(...entry, []));
+          // console.log(1, focusElement)
+          formElem.append(
+            $('button').text('SUBMIT')
+          )
+          const elems = Array.from(formElem.elem.elements);
+          const activeElement = elems.find(el => el.required) || elems.find(el => el.name === activeField) || elems.find(el => !el.value) || elems[0];
+          // console.log(elems, activeElement)
+          document.querySelectorAll('details').forEach(el => el.open = false);
+          Array.from(formElem.elem.elements).forEach(el => {
+            if (el.required || el.value) {
+              for (var p = el; p; p = p.parentElement) {
+                if ('open' in p) {
+                  p.open = true;
+                }
+              }
+            }
+          })
+          // console.log(formElem.elem.elements);
+          activeElement.focus();
+
+          // focusElement.elem.focus();
+        }
+
+        // console.log(data.client.client_secret);
+
+        if (data.client.client_secret) {
+          postForm();
+        } else {
+          start();
+        }
+      })
+    },
+    md(){
+      $().on('load', e => {
+        const data = JSON.parse(atob(document.querySelector('data').getAttribute('md')));
+        let body = data.md;
+        // console.log(body);
+        const lastModified = '';
+        fetch('/_top.md').then(res => res.text().then(body => {
+          $("nav-top").text('').html(aim.markdown().render(body));
+        }));
+        fetch('/_footer.md').then(res => res.text().then(body => {
+          $("footer").text('').html(aim.markdown().render(body));
+        }));
+        $("doc-header").text('').append(
+          $('h1').text(document.title),
+          // $('time').text('Laatst gewijzigd', lastModified.toLocaleDateString(), lastModified.toLocaleTimeString()),
+        );
+
+
+
+        $("doc-content").text('').append(aim.markdown().render(body));//.renderCode(e.target.responseURL);
+        $("aside.right").index("section.doc-content");
+
+        if (document.location.hash) {
+          const hash = document.location.hash.substr(1);
+          const anchor = (document.getElementsByName(hash)||[])[0];
+          anchor.scrollIntoView({ block: "nearest", inline: "nearest" });
+        }
+
+        async function render(){
+          if (sessionStorage.getItem('password')) {
+            const config = await fetch('myconfig.php?password='+sessionStorage.getItem('password')).then(res => res.json());
+            (function rep(cfg, path){
+              Object.entries(cfg).forEach(([key,value]) => {
+                if (typeof value === 'object') {
+                  rep(value, path.concat(key));
+                } else {
+                  body = body.replace(`{${path.concat(key).join('.')}}`, `<span title="${value}">{${path.concat(key).join('.')}}</span>`);
+                }
+              });
+            })(config, []);
+            $("doc-content").text('').append(aim.markdown().render(body));//.renderCode(e.target.responseURL);
+          }
+        }
+        function mdSignin(el){
+          sessionStorage.setItem('password', el.value);
+          render();
+        }
+        render();
+        // load(document.location.pathname);
+        // $().url('/api/Aim/Tools/Dir').query('fn', document.location.pathname).get().then(e => {
+        //   const folders = {};
+        //   const filename = document.location.pathname.split('/').pop();
+        //   // console.log(filename);
+        //
+        //   e.body
+        //   .filter(name => !name.match(/^\.|^_/))
+        //   .filter(name => name.match(/\.md$/))
+        //   .map(name => name.replace(/\.md$/, ''))
+        //   // .map(name => Object({name: name, path: name.split(/-(?=[A-Z])/)}))
+        //   .forEach(name => {
+        //     var elem = $("doc-list");
+        //     var link;
+        //     name.split(/-(?=[A-Z])/).forEach(folder => {
+        //       elem = elem[folder] = elem[folder] || $('ul').parent($('li').parent(elem).append($('a').attr('open', '0').text(folder)));
+        //     });
+        //     var link = elem.parentElement.children[0].href(name);
+        //     if (name === filename) {
+        //       for (var link; link; link = link.parentElement.parentElement.parentElement.children[0]) {
+        //         link.attr('open', 1);
+        //         if (!link.parentElement.parentElement.parentElement) break;
+        //       }
+        //     }
+        //     // name = name.split(/-(?=[A-Z])/);
+        //     // console.log(elem, name);
+        //   })
+        //   // console.log(e.body);
+        //   // $("doc-list").append(
+        //   //   e.body.map(name => $('li').append(
+        //   //     $('a').href(name = name.replace(/\.md$/,'')).text(name.replace(/-/g, ' ')),
+        //   //   ))
+        //   // );
+        //   // console.log(e.body);
+        // });
+        $(window).on('click', e => {
+          if (e.target && e.target.hasAttribute('open')) {
+            e.target.setAttribute('open', e.target.getAttribute('open') ^1)
+          }
+        }).on('popstate', e => {
+          if (document.location.hash) {
+            const el = document.querySelector(`a[name="${document.location.hash.substr(1)}"]`);
+            if (el) el.scrollIntoView(true);
+          } else {
+            window.scrollTo(0,0);
+          }
+        })
+        // $.initEvents();
+
+      })
+    },
+    import(){
+      aim().on('load', async e => {
+
+        // const configYaml = await fetch('../config/import.yaml').then(res => res.text());
+        const config = await fetch('https://aliconnect.nl/yaml.php', {
+          method: 'POST',
+          body: await fetch('../config/import.yaml').then(res => res.text()),
+        }).then(res => res.json());
+        console.log(1, config);
+        // return;
+
+        window.addEventListener('dragover', e => {
+          e.preventDefault();
+        })
+        window.addEventListener('drop', e => {
+          e.preventDefault();
+          const data = e.dataTransfer || e.clipboardData;
+          if (data.types.includes('Files')) {
+            e.preventDefault();
+            e.stopPropagation();
+            Array.from(data.files).filter(file => file.name.includes('.xls')).forEach(file => {
+              const fileConfig = config.import.xls[file.name];
+              if (fileConfig) {
+                const reader = new FileReader();
+                reader.readAsBinaryString(file);
+                reader.onload = async e => {
+                  const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                  for (let tab of fileConfig) {
+                    tab.colRow = tab.colRow || 1;
+                    const sheet = workbook.Sheets[tab.name];
+                    for (var c=0; c<100; c++) {
+                      var cell = sheet[XLSX.utils.encode_cell({c:c,r:tab.colRow-1})];
+                      if (cell && cell.v) {
+                        // console.log(String(cell.v))
+                        tab.cols.filter(col => col.title === String(cell.v)).forEach(col => col.colIndex = c);
+                      }
+                    }
+                    const rows = tab.rows = [];
+                    // console.log(tab.cols);
+                    const cols = tab.cols.filter(col => 'colIndex' in col).filter(col => col.name)
+                    var [s,rowEnd] = sheet['!ref'].match(/:[A-Z]+(\d+)/);
+                    var rowStart=tab.colRow;
+                    const progressElem = $('progress.import').max(rowEnd).value(rowStart);
+                    const infoElem = $('span.info');
+                    console.log(rowStart,rowEnd, sheet['!ref']);
+                    // return;
+
+
+                    for (var r = tab.colRow; r<=rowEnd; r++) {
+                      let row;
+                      cols.forEach(col => {
+                        var cell = sheet[XLSX.utils.encode_cell({c:col.colIndex,r:r})];
+                        if (cell) {
+                          row = row || {};
+                          row[col.name] = String(cell.v).trim();
+                        }
+                      })
+                      progressElem.value(r);
+                      if (row) {
+                        tab.cols.filter(col => col.value).forEach(col => row[col.name] = col.value);
+                        // console.log(r, row);
+                        infoElem.text(row.host, row.schema, row.keyname);
+
+                        var res = await fetch('https://aliconnect.nl/import.php', {
+                          method: 'POST',
+                          body: JSON.stringify(row),
+                        }).then(res => res.text());
+                        // console.log(res);
+                        // return;
+                        // rows.push(row);
+                      } else {
+                        infoElem.text('');
+                      }
+                    };
+                  }
+                  // console.log(fileConfig);
+                  // for (let row of rows)
+                  // const res = await fetch('https://aliconnect.nl/import.php', {
+                  //   method: 'POST',
+                  //   body: JSON.stringify({
+                  //     filename: file.name,
+                  //     sheets: fileConfig
+                  //   }),
+                  // }).then(res => res.text());
+                  // console.log(res);
+                  // return importGeneriek(workbook.Sheets.Generiek, file.name);
+                }
+
+              }
+            })
+          }
+        });
+      });
+    }
   };
 
   Paint = function (canvas, options) {
@@ -787,29 +1339,33 @@ eol = '\n';
 
   function Elem (selector) {
     const args = Array.from(arguments);
-    // selector = element ? element : (aim.Elem && aim.Elem.tagnames.includes(selector) ? document.createElement(selector) : selector);
-    const elem = selector instanceof Element ? selector : (document.getElementById(selector) || (tagnames.includes(selector) ? document.createElement(selector) : null));
-    // console.log(selector, elem, this instanceof Elem);
-    if (!elem) return selector;
-    // if (!(this instanceof Elem)) return new Elem(...arguments);
     selector = args.shift();
+    // selector = element ? element : (aim.Elem && aim.Elem.tagnames.includes(selector) ? document.createElement(selector) : selector);
+    if (selector instanceof Element) {
+      this.elem = selector;
+    } else if (tagnames.includes(selector)) {
+      this.elem = document.createElement(selector);
+    } else {
+      this.elem = document.getElementById(selector) || document.querySelector(selector);
+    }
+    if (!this.elem) return selector;
+    // if (!(this instanceof Elem)) return new Elem(...arguments);
 
-    this.elem = elem;
     this.elem.selector = this.elem.is = this;
     this.map = new Map();
     if (args.length){
-      if (typeof this[elem.id] === 'function'){
+      if (typeof this[this.elem.id] === 'function'){
         // console.debug(elem.id);
-        this[elem.id](...args);
+        this[this.elem.id](...args);
       } else {
         args.forEach(arg => {
           if (arg instanceof Object){
-            Object.assign(elem, arg);
+            Object.assign(this.elem, arg);
           } else if (typeof arg === 'string'){
             if ('className' in this){
-              this.innerHTML = elem.innerHTML = arg;
+              this.innerHTML = this.elem.innerHTML = arg;
             } else if (this.className = arg){
-              elem.className = arg;
+              this.elem.className = arg;
             }
           }
         })
@@ -877,6 +1433,290 @@ eol = '\n';
       }
       return this;
     },
+    index(docelem){
+      docelem = $(docelem);
+      const all = Array.from(docelem.elem.querySelectorAll('a.anchor')).filter(el => el.nextElementSibling);
+      if (all[0]) {
+        const topItem = docelem.topItem = all[0].parentElement;
+        const elemTop = docelem.elemTop = docelem.elem.getBoundingClientRect().top;
+        const findAll = docelem.findAll = all.slice().reverse();
+        const allmenu = docelem.allmenu = [];
+        let i = 0;
+        var li;
+        var path = [];
+        function addChapters (ul, level) {
+          for (let elem = all[i]; elem; elem = all[i]) {
+            // console.log(elem);
+            const tagLevel = Number(elem.nextElementSibling.tagName[1]);
+            path.slice(0, tagLevel-1);
+            // console.log(path);
+            const title = elem.getAttribute('title');
+            path[tagLevel-1] = title.toLowerCase().replace(/ /g,'_');
+            const name = elem.getAttribute('name');//path.join('-');
+            // console.log(i,title,name,tagLevel,level);
+            if (tagLevel === level) {
+              // $(elem).append(
+              //   // $('a').attr('name', 'chapter' + i)
+              //   $('a').attr('name', name)
+              // );
+              li = $('li').parent(ul).append(
+                elem.a = $('a').text(title).href('#' + name).attr('open', '0').attr('target', '_self')
+              );
+              i++;
+              allmenu.push(elem.a);
+              // all.shift();
+            } else if (li && tagLevel > level) {
+              li.append(
+                addChapters($('ul'), level+1)
+              )
+            } else {
+              return ul;
+            }
+          }
+          return ul;
+        }
+        let to;
+        // all.reverse();
+        var lastScrollTop = 0;
+        addChapters($('ul').parent(this.text('')), 1);
+        // console.error(docelem.elem);
+
+        (document.body.onscroll = e => {
+          clearTimeout(to);
+          // console.log(e);
+          // if (!to) {
+          // const div = Math.abs(lastScrollTop - docelem.elem.scrollTop);
+          // clearTimeout(to);
+          to = setTimeout(() => {
+            // to = null;
+            console.log(elemTop);
+            // all.reverse().forEach(el => console.log(el.getBoundingClientRect().top));
+            const elem = findAll.find(el => el.getBoundingClientRect().top < elemTop) || topItem;
+            if (elem && elem.a) {
+              //
+              // return console.log('re', el);
+              // // if (div > 50) {
+              // lastScrollTop = document.body.scrollTop;
+              // let elem = findAll.find(elem => elem.getBoundingClientRect().top < elemTop) || topItem;
+              // console.log(findAll, elem);
+              // let elem = all.find(elem => elem.offsetParent );
+              // console.log(elem.innerText, elemTop, elem.getBoundingClientRect().top, elem.getBoundingClientRect().height, all.indexOf(elem));
+              // return;
+              // elem = all[all.indexOf(elem)-1];
+              allmenu.forEach(a => a.attr('open', '0').attr('select', null));
+              const path = [];
+              for (var p = elem.a.elem; p.tagName === 'A' && p.parentElement && p.parentElement.parentElement; p=p.parentElement.parentElement.parentElement.firstChild) {
+                p.setAttribute('select', '');
+                p.setAttribute('open', '1');
+                path.push(p);
+              }
+              $(elem.a.elem).scrollIntoView();
+              // if ($('navDoc')) {
+              //   $('navDoc').text('').append(...path.reverse().map(elem => ['/', $('a').text(elem.innerText)]))
+              // }
+              // elem.li.select();
+              // $()
+              // let elem = all.forEach(elem => //console.log(elem.getBoundingClientRect().top));
+              // //console.log(elem, elem.li);
+              // }
+
+            }
+          }, 500);
+          // }
+        })();
+        // document.body.removeEventListener('scroll', docelem.onscroll);
+        // document.body.addEventListener('scroll', docelem.onscroll);
+        return this;
+        // return $('ul').append(...[...this.elem.querySelectorAll("h1, h2, h3")].map(elem => $('li').text(elem.innerText)))
+        this.addNextPreviousButtons()
+
+      }
+		},
+    querySelector(selector){
+      return this.elem.querySelector(selector);
+    },
+    pageForm(config, data){
+      let activeField;
+      const properties = Object.entries(config.properties).map(([name,prop]) => Object({
+        metaData: Object.assign({name: name}, prop),
+      }));
+      var formDefinitions = {};
+      var chapterTitle = 'Top';
+      properties.forEach(prop => {
+        // console.log(chapterTitle,prop.metaData);
+        chapterTitle = prop.metaData.chapter = prop.metaData.chapter || chapterTitle;
+        const chapter = formDefinitions[chapterTitle] = formDefinitions[chapterTitle] || {
+          metaData: {
+            title: chapterTitle,
+          },
+        };
+        chapter[prop.metaData.name] = prop;
+      })
+
+      console.log(formDefinitions);
+      const formElem = $('form').class('page-form').autocomplete("off").parent(this.text('')).on('submit', e => false);
+      var contentElem = formElem;
+      // $('details').open(1).parent(formElem).append(
+      //   $('summary').text('Config')
+      // );
+      let inputId=0;
+      function build(key, cfg, path){
+        const metaData = cfg.metaData || { title: isNaN(key) ? key : Number(key)+1 };
+        var dataObj = data;
+        for (let p of path.concat(key)) {
+          if (!(p in dataObj)) {
+            dataObj = ''; break;
+            return;
+          }
+          dataObj = dataObj[p];
+        }
+        // console.log(path,key,cfg,dataObj);
+        const types = {
+          boolean: 'checkbox',
+          number: 'number',
+          string: 'text',
+          object: 'object',
+        }
+
+        // var inputElem;') Object.keys(cfg).length === 1) {
+        if (cfg.metaData && Object.keys(cfg).length === 1 && (cfg.metaData.type = cfg.metaData.type || types[dataObj ? typeof dataObj : 'string']) && ['text','number','string','boolean'].includes(cfg.metaData.type || 'text')) {
+          // console.log(metaData.name, data[metaData.name]);
+          const value = data[metaData.name];
+
+          const name = path.concat(key).join('-');
+          // console.log(name, typeof dataObj);
+          var placeholder = metaData.placeholder || (metaData.required || dataObj === null ? metaData.title || key : ' ');
+          if (typeof dataObj === 'string' && dataObj.match(/^  .*  $/)) {
+            placeholder = dataObj.trim();
+            dataObj = null;
+          }
+          if (metaData.format === 'cam') {
+            let userMedia;
+            const video = $('video').style('background:white;flex-base: 50px;').autoplay().elem;
+            const pausePlayElem = $('button').type('button').class('pause').text('Pause/Play').on('click', e => video.paused ? video.play() : video.pause());
+            function toggleCam() {
+              const rect = video.getBoundingClientRect();
+              video.width = rect.width;
+              if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                if (video.srcObject) {
+                  video.srcObject.getTracks().forEach(track => track.stop());
+                  pausePlayElem.disabled(true);
+                  video.srcObject = null;
+                } else {
+                  navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+                    try {
+                      video.srcObject = stream;
+                    } catch (error) {
+                      video.src = window.URL.createObjectURL(stream);
+                    }
+                    video.play();
+                    pausePlayElem.disabled(false);
+                  });
+                }
+              }
+            }
+            contentElem.append(
+              $('div').class('input').append(
+                $('span').class('info').title(metaData.description),
+                $('label').class('title').text(metaData.title || key),
+                $('div').class('aco col').append(
+                  $('div').class('row').append(
+                    $('button').type('button').class('clear').text('Clear'),
+                    $('button').type('button').class('on').text('On/Off').on('click', toggleCam),
+                    pausePlayElem.disabled(true),
+                    $('button').type('button').class('share').text('Share'),
+                    $('button').type('button').class('save').text('Save'),
+                    $('button').type('button').class('paint').text('Paint'),
+                  ),
+                  video,
+                )
+              ),
+            );
+          } else if (metaData.format === 'draw') {
+            const canvasElem = $('canvas').style('background:white;height:150px;').paint();
+            contentElem.append(
+              $('div').class('input').append(
+                $('span').class('info').title(metaData.description),
+                $('label').class('title').text(metaData.title || key),
+                $('div').class('aco col').append(
+                  $('div').class('row').append(
+                    $('button').type('button').class('clear').text('Clear').on('click', e => canvasElem.paint.clear()),
+                  ),
+                  canvasElem,
+                  // $('canvas').class('aco').style('background:white;height:150px;').paint(),
+                )
+              ),
+            );
+          } else {
+            contentElem.append(
+              $('div').class('input').append(
+                $('span').class('info').title(metaData.description),
+                $('label').class('title').text(metaData.title || key),
+                $('input').id('input'+inputId).class('aco')
+                .name(name)
+                .value(value === null ? metaData.defaultValue || '' : value)
+                .type(types[typeof dataObj])
+                // .autofocus(name === activeField ? '' : null)
+                .required(metaData.required || dataObj === null ? '' : null)
+                .placeholder(placeholder)
+                .pattern(metaData.pattern)
+                .on('change', e => {
+                  let obj = data;
+                  path.forEach(key => obj = obj[key] = obj[key] || {});
+                  obj[key] = e.target.value;
+                }),
+                // $('label').class('caption').for('input'+inputId),
+                $('label').class('ico').for('input'+inputId),
+              )
+            )
+          }
+          inputId++;
+          // console.log(inputElem, focusElement);
+          // focusElement = focusElement || inputElem;
+          // if (name === activeField || metaData.required || dataObj === null || !dataObj) {
+          //   focusElement = inputElem;
+          // }
+
+          // if (cfg === null) {
+          //   for (var p = contentElem; p; p = p.parentElement) p.open(1);
+          // }
+        } else {
+          const parent = contentElem;
+          contentElem = $('details').parent(contentElem).append(
+            $('summary').text(metaData.title)
+          );
+          if (metaData.description) {
+            contentElem.append($('div').html(metaData.description))
+          }
+          Object.entries(cfg).filter(([key,cfg])=>key !== 'metaData').forEach(entry => {
+            build(...entry, path.concat(key));
+          });
+          contentElem = parent;
+        }
+      }
+      Object.entries(formDefinitions).filter(([key,cfg])=>key !== 'metaData').forEach(entry => build(...entry, []));
+      const elems = Array.from(formElem.elem.elements);
+      const activeElement = elems.find(el => el.required) || elems.find(el => el.name === activeField) || elems.find(el => !el.value) || elems[0];
+      // console.log(elems, activeElement)
+      document.querySelectorAll('details').forEach(el => el.open = false);
+      Array.from(formElem.elem.elements).forEach(el => {
+        if (el.required || el.value) {
+          for (var p = el; p; p = p.parentElement) {
+            if ('open' in p) {
+              p.open = true;
+            }
+          }
+        }
+      })
+      // console.log(formElem.elem.elements);
+      activeElement.focus();
+
+
+      // this.text('').append(
+      //   $('h1').text('JAaa'),
+      // )
+
+    }
   }
   Object.defineProperties(Elem.prototype, {
     // action() {
@@ -2287,108 +3127,6 @@ eol = '\n';
 			// 	Object.entries($.localAttr[selector]).forEach(entry => this.elem.setAttribute(...entry));
 			// }
 			return this;
-		}},
-    index: { value: function (docelem){
-      docelem = $(docelem);
-      // const all = [...docelem.elem.querySelectorAll("h1, h2, h3")];
-      const all = Array.from(docelem.elem.getElementsByClassName("anchor")).filter(el => el.nextElementSibling);
-      // console.log(all,docelem);
-      // console.log(1111, all);
-      if (all[0]) {
-        const topItem = docelem.topItem = all[0].parentElement;
-        const elemTop = docelem.elemTop = docelem.elem.getBoundingClientRect().top;
-        const findAll = docelem.findAll = all.slice().reverse();
-        const allmenu = docelem.allmenu = [];
-        let i = 0;
-        var li;
-        var path = [];
-        function addChapters (ul, level) {
-          for (let elem = all[i]; elem; elem = all[i]) {
-            // console.log(elem);
-            const tagLevel = Number(elem.nextElementSibling.tagName[1]);
-            path.slice(0, tagLevel-1);
-            // console.log(path);
-            const title = elem.getAttribute('title');
-            path[tagLevel-1] = title.toLowerCase().replace(/ /g,'_');
-            const name = elem.getAttribute('name');//path.join('-');
-            // console.log(i,title,name,tagLevel,level);
-            if (tagLevel === level) {
-              // $(elem).append(
-              //   // $('a').attr('name', 'chapter' + i)
-              //   $('a').attr('name', name)
-              // );
-              li = $('li').parent(ul).append(
-                elem.a = $('a').text(title).href('#' + name).attr('open', '0').attr('target', '_self')
-              );
-              i++;
-              allmenu.push(elem.a);
-              // all.shift();
-            } else if (li && tagLevel > level) {
-              li.append(
-                addChapters($('ul'), level+1)
-              )
-            } else {
-              return ul;
-            }
-          }
-          return ul;
-        }
-        let to;
-        // all.reverse();
-        var lastScrollTop = 0;
-        addChapters(this.text(''), 1);
-        // console.error(docelem.elem);
-
-        (document.body.onscroll = e => {
-          clearTimeout(to);
-          // console.log(e);
-          // if (!to) {
-          // const div = Math.abs(lastScrollTop - docelem.elem.scrollTop);
-          // clearTimeout(to);
-          to = setTimeout(() => {
-            // to = null;
-            console.log(elemTop);
-            // all.reverse().forEach(el => console.log(el.getBoundingClientRect().top));
-            const elem = findAll.find(el => el.getBoundingClientRect().top < elemTop) || topItem;
-            if (elem && elem.a) {
-              //
-              // return console.log('re', el);
-              // // if (div > 50) {
-              // lastScrollTop = document.body.scrollTop;
-              // let elem = findAll.find(elem => elem.getBoundingClientRect().top < elemTop) || topItem;
-              // console.log(findAll, elem);
-              // let elem = all.find(elem => elem.offsetParent );
-              // console.log(elem.innerText, elemTop, elem.getBoundingClientRect().top, elem.getBoundingClientRect().height, all.indexOf(elem));
-              // return;
-              // elem = all[all.indexOf(elem)-1];
-              allmenu.forEach(a => a.attr('open', '0').attr('select', null));
-              const path = [];
-              for (var p = elem.a.elem; p.tagName === 'A' && p.parentElement && p.parentElement.parentElement; p=p.parentElement.parentElement.parentElement.firstChild) {
-                p.setAttribute('select', '');
-                p.setAttribute('open', '1');
-                path.push(p);
-              }
-              $(elem.a.elem).scrollIntoView();
-              // if ($('navDoc')) {
-              //   $('navDoc').text('').append(...path.reverse().map(elem => ['/', $('a').text(elem.innerText)]))
-              // }
-              // elem.li.select();
-              // $()
-              // let elem = all.forEach(elem => //console.log(elem.getBoundingClientRect().top));
-              // //console.log(elem, elem.li);
-              // }
-
-            }
-          }, 500);
-          // }
-        })();
-        // document.body.removeEventListener('scroll', docelem.onscroll);
-        // document.body.addEventListener('scroll', docelem.onscroll);
-        return this;
-        // return $('ul').append(...[...this.elem.querySelectorAll("h1, h2, h3")].map(elem => $('li').text(elem.innerText)))
-        this.addNextPreviousButtons()
-
-      }
 		}},
     item: { value: function (item, name) {
       if (item) {
@@ -7545,7 +8283,7 @@ eol = '\n';
     $().on('load', e => {
       // console.log(this);
       $(document.body).append(
-        om.navtop = $.his.elem.navtop = $('header').id('om-nav-top').class('row top bar noselect np')
+        om.navtop = $.his.elem.navtop = $('header').class('row top bar noselect np')
         .append(
           $.his.elem.menu = $('a').class('abtn icn menu').on('click', e => {
             if ($.his.elem.menuList && $.his.elem.menuList.style()) {
@@ -7558,6 +8296,16 @@ eol = '\n';
           $('a').class('title').id('toptitle').on('click', e => $.start() ),
           $('form').class('search row aco')
           .on('submit', e => {
+            e.preventDefault();
+            const url = new URL(document.location);
+            const listRef = url.searchParams.get('l');
+            if (!listRef) return;
+            console.log(aim.idToUrl(listRef));
+            const listUrl = new URL(aim.idToUrl(listRef), document.location);
+            listUrl.searchParams.set('$search', e.target.search.value);
+            // console.log(listRef,listUrl.toString());
+            document.location.hash = '#?l='+aim.urlToId(listUrl.toString());
+            return false;
             const value = $.searchValue = e.target.search.value;
             var result = value
             ? [...$.props.values()]
@@ -7574,12 +8322,11 @@ eol = '\n';
           ),
           $('a').class('abtn icn dark').dark(),
         ),
-        $('section').id('om-main').append(
-          om.tree = $('section').id('tree').class('col aco atv noselect np')
-          .css('max-width', $().storage('tree.width') || '200px')
+        $('section').append(
+          $('section').class('atv col aco noselect np').css('max-width', $().storage('tree.width') || '200px')
           // .contextmenu(this.menu)
           .append(
-            $('nav', 'row top abs btnbar np').append(
+            $('nav', 'row top btnbar np').append(
               $('button').class('abtn r popout').on('click', e => {
                 var url = document.location.origin;
                 // var url = 'about:blank';
@@ -7624,17 +8371,19 @@ eol = '\n';
               }),
               // $('button', 'abtn icn close'),
             ),
-            om.navleft = this.listElem = $('div').id('om-navleft').class('col aco oa list'),
+            $('div')
+            // .id('om-navleft')
+            .class('col aco oa list'),
           ),
           $('div').seperator(),
-          om.listElem = $('section').id('list'),
-          om.doc = $('section').class('row aco doc').id('doc'),
+          om.listElem = $('section').class('list'),
+          om.doc = $('section').class('doc row aco'),
           $('div').seperator('right'),
-          om.page = $('section').id('view').class('col aco apv printcol').css('max-width', $().storage('view.width') || '700px').append(
+          om.page = $('section').class('page col aco printcol').css('max-width', $().storage('view.width') || '700px').append(
             $('iframe').name('page').style('height: 100%;')
           ),
           $('section').id('preview'),
-          om.prompt = $('section').class('prompt').id('prompt').tabindex(-1).append(
+          om.prompt = $('section').class('prompt').tabindex(-1).append(
             $('button').class('abtn abs close').attr('open', '').tabindex(-1).on('click', e => $().prompt(''))
           ),
         ),
@@ -8501,86 +9250,6 @@ eol = '\n';
     Om,
     // Listview,
     Elem,
-    lib: {
-      om() {
-        om = new Om();
-      },
-      oas(){
-        $().on('load', e => {
-          let config = {
-            client_id: $.config.client_id || sessionStorage.getItem('client_id') || '',
-            client_secret: $.config.client_secret || sessionStorage.getItem('client_secret') || '',
-            domain: '',
-            // last_modified: '',
-            // info: {
-            //   contact: {
-            //     email: '',
-            //   }
-            // }
-          }
-          // sessionStorage.clear();
-          function load(){
-            $().url('https://aliconnect.nl/api/aim/oas')
-            .accept('application/json')
-            .query('response_type', 'config')
-            .query('client_id', config.client_id)
-            .query('client_secret', config.client_secret)
-            .post(JSON.stringify(config)).then(e => start(config = e.body))
-            return false;
-          }
-          function start(){
-            $(document.body).text('').class('aim-config');
-            // const config = e.body;
-            sessionStorage.setItem('client_id', config.client_id || '');
-            sessionStorage.setItem('client_secret', config.client_secret || '');
-            // config.client_secret = $.config.client_secret;
-            console.log('CONFIG', sessionStorage);
-            const formElem = $('form').autocomplete("off").parent(document.body).on('submit', load);
-            var contentElem = $('details').parent(formElem).append(
-              $('summary').text('Config')
-            );
-            (function build(obj, path){
-              Object.entries(obj).forEach(([key,val]) => {
-                // return;
-                if (val && typeof val === 'object') {
-                  const parent = contentElem;
-                  contentElem = $('details').parent(contentElem).append(
-                    $('summary').text(isNaN(key) ? key : Number(key)+1)
-                  );
-                  build(val, path.concat(key));
-                  contentElem = parent;
-                } else {
-                  // val = String(val);
-                  // console.log(typeof val)
-                  contentElem.append(
-                    $('div').append(
-                      $('label').text(key),
-                      $('input').name(path.join('-')+key).required(val === null ? '' : null).value(val || '').placeholder(' ').on('change', e => {
-                        obj[key] = e.target.value;
-                        console.log(obj, config)
-                      }),
-                    )
-                  )
-                  if (val === null) {
-                    for (var p = contentElem; p; p = p.parentElement) p.open(1);
-                  }
-
-                }
-              })
-            })(config, []);
-            formElem.append(
-              $('button').text('SUBMIT')
-            )
-            // console.log(e);
-          }
-          if (config.client_secret) {
-            load();
-          } else {
-            start();
-          }
-        })
-      }
-    },
     checkPath: (e) => {
       let elem;
       if (elem = e.path.find(elem => elem.item)) {
@@ -10010,154 +10679,150 @@ eol = '\n';
       }))
     },},
   });
-  if (this.document) {
-    $.his.openItems = localStorage.getItem('openItems');
-    let localAttr = localStorage.getItem('attr');
-    $.localAttr = localAttr = localAttr ? JSON.parse(localAttr) : {};
+  $.his.openItems = localStorage.getItem('openItems');
+  let localAttr = localStorage.getItem('attr');
+  $.localAttr = localAttr = localAttr ? JSON.parse(localAttr) : {};
 
-    const apiorigin = $.httpHost === 'localhost' && $().storage === 'api' ? 'http://localhost' : $.origin;
-    // aim = $.aim = $('aim');
-    require = function () {};
+  const apiorigin = $.httpHost === 'localhost' && $().storage === 'api' ? 'http://localhost' : $.origin;
+  // aim = $.aim = $('aim');
+  require = function () {};
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-      // Prevent the mini-infobar from appearing on mobile
-      e.preventDefault();
-      // Stash the e so it can be triggered later.
-      // deferredPrompt = e;
-      // Update UI notify the user they can install the PWA
-      // showInstallPromotion();
-      // Optionally, send analytics e that PWA install promo was shown.
-      // console.error(`LETOP 'beforeinstallprompt' e was fired.`);
-      // alert('install');
-    });
-    // console.log(1, document.currentScript.attributes.libraries.value);
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the mini-infobar from appearing on mobile
+    e.preventDefault();
+    // Stash the e so it can be triggered later.
+    // deferredPrompt = e;
+    // Update UI notify the user they can install the PWA
+    // showInstallPromotion();
+    // Optionally, send analytics e that PWA install promo was shown.
+    // console.error(`LETOP 'beforeinstallprompt' e was fired.`);
+    // alert('install');
+  });
+  // console.log(1, document.currentScript.attributes.libraries.value);
 
 
-    // console.log('WEB');
-    // const el = document.createElement('link');
-    // el.rel = 'stylesheet';
-    // el.href = 'https://aliconnect.nl/v1/api/css/web.css';
-    // document.head.appendChild(el);
-    // function require(){};
-    $.his.openItems = $.his.openItems ? $.his.openItems.split(',') : [];
-    window.console = window.console || { log: function() { } };
-    window.Object = window.Object || {
-      assign: function(dest) {
-        for (var i = 1, source; source = arguments[i]; i++) for (var name in source) dest[name] = source[name];
-        return dest;
-      },
-      values: function(obj) {
-        var arr = [];
-        for (var name in obj) arr.push(obj[name]);
-        return arr;
+  // console.log('WEB');
+  // const el = document.createElement('link');
+  // el.rel = 'stylesheet';
+  // el.href = 'https://aliconnect.nl/v1/api/css/web.css';
+  // document.head.appendChild(el);
+  // function require(){};
+  $.his.openItems = $.his.openItems ? $.his.openItems.split(',') : [];
+  window.console = window.console || { log: function() { } };
+  window.Object = window.Object || {
+    assign: function(dest) {
+      for (var i = 1, source; source = arguments[i]; i++) for (var name in source) dest[name] = source[name];
+      return dest;
+    },
+    values: function(obj) {
+      var arr = [];
+      for (var name in obj) arr.push(obj[name]);
+      return arr;
+    }
+  };
+  (function(arr) {
+    arr.forEach(function(item) {
+      if (item.hasOwnProperty('append')) {
+        return;
       }
-    };
-    (function(arr) {
-      arr.forEach(function(item) {
-        if (item.hasOwnProperty('append')) {
-          return;
+      Object.defineProperty(item, 'append', {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        value: function append() {
+          const argArr = Array.prototype.slice.call(arguments);
+          const docFrag = document.createDocumentFragment();
+          argArr.forEach(function(argItem) {
+            const isNode = argItem instanceof Node;
+            docFrag.appendChild(isNode ? argItem : document.createTextNode(String(argItem)));
+          });
+          this.appendChild(docFrag);
         }
-        Object.defineProperty(item, 'append', {
-          configurable: true,
-          enumerable: true,
-          writable: true,
-          value: function append() {
-            const argArr = Array.prototype.slice.call(arguments);
-            const docFrag = document.createDocumentFragment();
-            argArr.forEach(function(argItem) {
-              const isNode = argItem instanceof Node;
-              docFrag.appendChild(isNode ? argItem : document.createTextNode(String(argItem)));
-            });
-            this.appendChild(docFrag);
-          }
-        });
       });
-    })([Element.prototype, Document.prototype, DocumentFragment.prototype]);
-    let match = document.location.pathname.match(/(.*)(api|docs|omd|om)(?=\/)/);
-    if (match) {
-      $.basePath = match[0];
-    }
-    localAttr.set = function(id, selector, context) {
-      localAttr[id] = localAttr[id] || {};
-      if (context === null) {
-        delete localAttr[id][selector];
-      } else {
-        localAttr[id][selector] = context;
-      }
-      localStorage.setItem('attr', JSON.stringify(localAttr));
-    };
-    $(document.documentElement).attr('lang', navigator.language);
-    $().on('ready', async e => {
-      // console.log('web ready', $.prompts);
-      if ($.prompts) {
-        $.prompt($.prompts);
-      }
-      return;
-      // await $().emit('ready');
-      // //console.log('web ready2',$(), $().ws());
-      // $.prompt('TEST', e => {
-      // 	alert(1);
-      // });
-      // $.prompt('TEST');
-      // return;
-      // initConfigCss();
-      loadStoredCss();
-      // loadStoredAttr();
-      // initAllSeperators()
-      if (document.getElementById('colpage')) {
-        Object.assign(document.getElementById('colpage'), {
-          cancel(e) {
-            //console.log('PAGE CANCEL', this);
-          },
-          keydown: {
-            F2(e) {
-              if (this.item) {
-                this.item.PageEditElement()
-              }
-            }
-          },
-        });
-      }
-      // //console.log('AFTER READY', document.location.hostname);
-      // setTimeout(() => {
-      //   //console.log('web after ready')
-      //   $(window).emit('popstate');
-      //   $(window).emit('focus');
-      // })
-      //console.log('web ready done')
     });
-    // this.sw();
-
-    const currentScript = document.currentScript;
-    const scriptPath = currentScript.src.replace(/\/js\/.*/, '');
-    [...currentScript.attributes].forEach(attribute => $.extend({config: minimist(['--'+attribute.name.replace(/^--/, ''), attribute.value])}));
-    (new URLSearchParams(document.location.search)).forEach((value,key)=>$.extend({config: minimist([key,value])}));
-
-    if (currentScript.attributes.libraries) {
-      currentScript.attributes.libraries.value.split(',').forEach(lib => aim.lib[lib]())
-      // importScript(
-      //   currentScript.attributes.src.value.replace(/web/g, selector)
-      // ));
-    }
-
-    window.addEventListener('load', async function webLoad(e) {
-      // console.log('LOAD');
-      // if (currentScript.attributes.url) {
-      //   await $().url('config.json', currentScript.attributes.url.value).get().catch(console.error).then(e => $.extend({config: e.body}));
-      // }
-      // (new URL(document.currentScript.src)).searchParams.forEach((value, key)=>$.extend(config, minimist([key,value])));
-      // [...currentScript.attributes].forEach(attribute => $.extend({config: minimist(['--'+attribute.name.replace(/^--/, ''), attribute.value])}));
-      // (new URLSearchParams(document.location.search)).forEach((value,key)=>$.extend({config: minimist([key,value])}));
-
-      $().emit('load').then(function emitLoad(e) {
-        $().emit('ready').then(function emitReady(e) {
-          $(window).emit('popstate');
-          $(window).emit('focus');
-        });
-      })
-    })
-
-
+  })([Element.prototype, Document.prototype, DocumentFragment.prototype]);
+  let match = document.location.pathname.match(/(.*)(api|docs|omd|om)(?=\/)/);
+  if (match) {
+    $.basePath = match[0];
   }
+  localAttr.set = function(id, selector, context) {
+    localAttr[id] = localAttr[id] || {};
+    if (context === null) {
+      delete localAttr[id][selector];
+    } else {
+      localAttr[id][selector] = context;
+    }
+    localStorage.setItem('attr', JSON.stringify(localAttr));
+  };
+  $(document.documentElement).attr('lang', navigator.language);
+  $().on('ready', async e => {
+    // console.log('web ready', $.prompts);
+    if ($.prompts) {
+      $.prompt($.prompts);
+    }
+    return;
+    // await $().emit('ready');
+    // //console.log('web ready2',$(), $().ws());
+    // $.prompt('TEST', e => {
+    // 	alert(1);
+    // });
+    // $.prompt('TEST');
+    // return;
+    // initConfigCss();
+    loadStoredCss();
+    // loadStoredAttr();
+    // initAllSeperators()
+    if (document.getElementById('colpage')) {
+      Object.assign(document.getElementById('colpage'), {
+        cancel(e) {
+          //console.log('PAGE CANCEL', this);
+        },
+        keydown: {
+          F2(e) {
+            if (this.item) {
+              this.item.PageEditElement()
+            }
+          }
+        },
+      });
+    }
+    // //console.log('AFTER READY', document.location.hostname);
+    // setTimeout(() => {
+    //   //console.log('web after ready')
+    //   $(window).emit('popstate');
+    //   $(window).emit('focus');
+    // })
+    //console.log('web ready done')
+  });
+  // this.sw();
+
+  const currentScript = document.currentScript;
+  const scriptPath = currentScript.src.replace(/\/js\/.*/, '');
+  [...currentScript.attributes].forEach(attribute => $.extend({config: minimist(['--'+attribute.name.replace(/^--/, ''), attribute.value])}));
+  (new URLSearchParams(document.location.search)).forEach((value,key)=>$.extend({config: minimist([key,value])}));
+
+  if (currentScript.attributes.libraries) {
+    currentScript.attributes.libraries.value.split(',').forEach(lib => libraries[lib]())
+    // importScript(
+    //   currentScript.attributes.src.value.replace(/web/g, selector)
+    // ));
+  }
+
+  window.addEventListener('load', async function webLoad(e) {
+    // console.log('LOAD');
+    // if (currentScript.attributes.url) {
+    //   await $().url('config.json', currentScript.attributes.url.value).get().catch(console.error).then(e => $.extend({config: e.body}));
+    // }
+    // (new URL(document.currentScript.src)).searchParams.forEach((value, key)=>$.extend(config, minimist([key,value])));
+    // [...currentScript.attributes].forEach(attribute => $.extend({config: minimist(['--'+attribute.name.replace(/^--/, ''), attribute.value])}));
+    // (new URLSearchParams(document.location.search)).forEach((value,key)=>$.extend({config: minimist([key,value])}));
+
+    $().emit('load').then(function emitLoad(e) {
+      $().emit('ready').then(function emitReady(e) {
+        $(window).emit('popstate');
+        $(window).emit('focus');
+      });
+    })
+  })
 
 })();

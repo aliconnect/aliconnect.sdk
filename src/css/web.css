@@ -179,7 +179,7 @@ summary.list {
   outline: none;
 }
 summary::marker, summary::-webkit-details-marker {
-  display: none;
+  /* display: none; */
 }
 details>div>.abtn {
   line-height: 30px;
@@ -602,7 +602,7 @@ input.check {
 .row.top {
   line-height: 35px;
   background-color: rgba(140,140,140,0.15);
-  border-bottom: solid 1px var(--trans3);
+  /* border-bottom: solid 1px var(--trans3); */
 }
 body>.row.top {
   line-height: 48px;
@@ -3710,10 +3710,6 @@ body:not([busy]) .lds-roller,body[busy='0'] .lds-roller {
   border-bottom: solid 1px var(--trans2);
   line-height: 24px;
 }
-.atv details>summary {
-  list-style-type: none;
-  /* display: none; */
-}
 .apv details>summary {
   list-style-type: none;
   position: sticky;
@@ -5001,7 +4997,7 @@ section.listview:empty, section.apv:empty {
   display: none;
 }
 
-footer.statusbar {
+/* footer.statusbar {
   position: fixed;
   margin: auto;
   left: 0;
@@ -5009,7 +5005,7 @@ footer.statusbar {
   bottom: 0;
   height: var(--footer-height);
   z-index: 3;
-}
+} */
 #doc>div {
   width: -webkit-fill-available;
 }
@@ -5068,4 +5064,175 @@ section.listview:not(:empty)+#doc{
 }
 body>.message.error:empty {
   display:none;
+}
+
+
+
+/* FORMS */
+
+
+
+html{
+  --form-bg: rgba(200,180,180,0.3);
+}
+
+@media only screen {
+  .page-form {
+    background-color: var(--form-bg);
+  }
+  .page-form details>div{
+    padding: 0 6px;
+  }
+}
+@media only screen and (min-width: 600px) {
+  .page-form {
+    /* margin:auto; */
+    max-width: 800px;
+    /* padding:20px 50px; */
+  }
+  .page-form details>div{
+    padding: 3px 0;
+  }
+}
+
+.page-form {
+  counter-reset: artikel;
+}
+.page-form details{
+  /* border: solid 1px #ccc; */
+  /* padding: 10px; */
+  padding-bottom: 10px;
+  /* background: rgba(230,230,250,0.1); */
+}
+.page-form form>details {
+  counter-increment: artikel;
+  counter-reset: par;
+}
+.page-form summary{
+  background-color: var(--form-bg);
+  font-size: 0.8em;
+  font-weight: bold;
+  padding:5px;
+  outline:none;
+  border:solid 1px transparent;
+  margin-bottom: 5px;
+}
+.page-form summary:focus {
+  border-color: blue;
+}
+
+.page-form form>details>summary::before {
+  content: counter(artikel) ". ";
+}
+.page-form form>details>details {
+  counter-increment: par;
+  counter-reset: sec;
+}
+.page-form div+details {
+  margin-top: 10px;
+}
+.page-form form>details>details>summary::before {
+  content: counter(artikel) "." counter(par, lower-alpha) ". ";
+}
+
+.page-form form>details>details>details {
+  counter-increment: sec;
+}
+.page-form form>details>details>details>summary::before {
+  content: counter(artikel) "." counter(par, lower-alpha) "." counter(sec) ". ";
+}
+
+.page-form div.input {
+  /* border: solid 1px #eee; */
+  /* background-color: white; */
+  /* padding: 0 5px; */
+  display: flex;
+  flex-direction: row;
+  break-inside: avoid;
+  flex-wrap:wrap;
+  /* padding: 3px; */
+  /* margin: 5px 0; */
+}
+
+.page-form div.input>span.info[title]::after {
+  position: absolute;
+  display: inline-block;
+  text-align: center;
+  content: '?';
+  font-size: 0.8em;
+  left: -25px;
+  width: 16px;
+  line-height: 16px;
+  border: solid 1px gray;
+  /* background: white; */
+}
+
+
+.page-form div.input:focus-within {
+  /* background-color: red; */
+}
+.page-form div.input:required {
+  background-color: orange;
+}
+.page-form div.input input:focus {
+  border-color: blue;
+}
+.page-form div.input label.title {
+
+  /* color: #999; */
+  /* order: 1; */
+  font-size: 0.8em;
+  /* font-weight: bold; */
+  flex-basis: 200px;
+  /* padding: 0 5px; */
+}
+.page-form div.input label.ico {
+  /* padding: 0 5px; */
+  background-color: white;
+  /* order: 3; */
+}
+.page-form div.input input:required:placeholder-shown + label,
+.page-form div.input input:required:placeholder-shown {
+  background:rgba(255,255,200,0.3);
+}
+.page-form div.input input:required:placeholder-shown+label::after {
+  content:'R';
+}
+.page-form div.input input {
+  border:solid 1px transparent;
+  outline:none;
+  margin:0;
+  font: inherit;
+  /* order: 2; */
+}
+.page-form div.input input[type='checkbox'] {
+  flex-grow: 0;
+  width: 0;
+  /* display:none; */
+}
+.page-form div.input input[type='checkbox']+label {
+  flex-grow: 1;
+  border: solid 1px transparent;
+}
+.page-form div.input input[type='checkbox']+label::before {
+  content: 'NEE';
+}
+.page-form div.input input[type='checkbox']:checked+label::before {
+  content: 'JA';
+}
+.page-form div.input input[type='checkbox']:focus+label {
+  border-color: blue;
+}
+
+
+
+
+.page-form div.input input:invalid {
+  background-color: red;
+}
+
+/* /FORMS */
+
+section.page{
+  overflow: auto;
 }

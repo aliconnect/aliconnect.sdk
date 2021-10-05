@@ -1,0 +1,22 @@
+article li a{
+  text-decoration: none;
+  border-radius: 2px;
+  padding: .1em .2em;
+  margin: -.1em;
+  color: #43853d;
+}
+article li a:hover{
+  background-color: #43853d;
+  color:white;
+}
+article ul>li{
+  list-style: square outside;
+}
+section>header {
+  margin-top: 50px;
+}
+@media print {
+  nav,aside,button,#doc-header {
+    display:none;
+  }
+}
