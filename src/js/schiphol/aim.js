@@ -1,38 +1,76 @@
 eol = '\n';
-// console.warn('RUNING BETA');
+// console.warn('RUNING BETA 222');
 //console.log('sdk 1.0.1');
 // version 0.0.1 beta1
-function extend(selector, context) {
-  for (let [key, value] of Object.entries(context)) {
-    if (Array.isArray(value)) {
-      selector[key] = value;
-    } else if (typeof value === 'object') {
-      selector[key] = extend(selector[key] || {}, value);
-    } else {
-      selector[key] = value;
-    }
-  }
-  return selector;
-};
-function validSchemaName(schemaName){
-  if (!schemaName) throw 'invalid schemaname';
-  // TODO: Location illegal schema name
-  return String(schemaName)
-  .replace(/^\d|\.|\s|-|\(|\)|,/g,'')
-  .replace(/\bLocation\b/,'Loc')
-}
-function urlToId(href){
-  return btoa(href).replace(/[=]+aim/g,'');
-}
-function idToUrl(id){
-  return atob(id);
-}
 // Version 0.0.6
 (function(global, factory) { typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, global.aim = factory()); }(this, function (exports) {
-  const libUrl = 'https://aliconnect.nl/npm/@aliconnect/lib@0.0.0/dist';
   const self = this;
+  function aim(selector, context){
+    // console.error(1);
+    if (aim.Elem && selector instanceof aim.Elem) return selector;
+    if (!(this instanceof aim)) return new aim(...arguments);
+    // if (!selector) return new aim('aim');
+    if (selector){
+      if (self.Item && selector instanceof self.Item){
+        return selector;
+      }
+      this.selector = selector;
+    }
+    selector = selector || 'aim';
+    if (['string','number'].includes(typeof selector)){
+      if (aim.his.map.has(selector)){
+        selector = aim.his.map.get(selector);
+        if (context) aim(selector).extend(context);
+        return selector;
+      } else if (self.document) {
+        // selector = TAGNAMES.includes(selector) ? document.createElement(selector) : (document.getElementById(selector) || selector)
+        // const element = document.getElementById(selector);
+        // selector = element ? element : (aim.Elem && aim.Elem.tagnames.includes(selector) ? document.createElement(selector) : selector);
+        // console.log(7, selector);
+        selector = aim.Elem ? new aim.Elem(...arguments) : selector;
+        // console.log(6, selector);
+      }
+    }
+    // console.warn(5, selector, self.Element, selector instanceof self.Element);
+    // console.log(selector, selector instanceof self.Element, aim.Elem);
+    if (self.Element && selector instanceof self.Element) {
+      if (aim.his.map.has(selector.id)) {
+        return aim.his.map.get(selector.id);
+      }
+      if (aim.Elem) {
+        return new aim.Elem(selector);
+      }
+    }
+    if (aim.Elem && selector instanceof aim.Elem) {
+      if (selector.elem.id) {
+        aim.his.map.set(selector.elem.id, selector);
+      }
+      return selector;
+    }
+    // if(!(this instanceof aim)) return new aim(...arguments);
+    if (typeof selector === 'string'){
+      if (selector.match(/\w+\(\d+\)/)){
+        return Item.get(selector);
+      } else {
+        this.id(selector);
+        if (context) {
+          this.set(context);
+          return context;
+        }
+      }
+    // } else if (self.Item && selector instanceof Item) {
+    //   return selector;
+    } else if (typeof Window !== 'undefined' && selector instanceof Window) {
+      return this;
+    } else if (selector.ID || selector.LinkID || selector.tag) {
+      // //console.log(selector, selector.ID, selector.LinkID, selector.tag);
+      return Item.get(selector);
+    }
+    this.extend(context)
+  };
+  const $ = aim;
+  const libUrl = 'https://aliconnect.nl/npm/@aliconnect/lib@0.0.0/dist';
   // const Elem = self.elem ? self.elem.Elem : null;
-
   const dmsOrigin = 'https://aliconnect.nl';
   const dmsUrl = 'https://dms.aliconnect.nl';
   const AUTHORIZATION_URL = 'https://login.aliconnect.nl/oauth';
@@ -382,6 +420,31 @@ function idToUrl(id){
     }
     return argv;
   };
+  function extend(selector, context) {
+    for (let [key, value] of Object.entries(context)) {
+      if (Array.isArray(value)) {
+        selector[key] = value;
+      } else if (typeof value === 'object') {
+        selector[key] = extend(selector[key] || {}, value);
+      } else {
+        selector[key] = value;
+      }
+    }
+    return selector;
+  };
+  function validSchemaName(schemaName){
+    if (!schemaName) throw 'invalid schemaname';
+    // TODO: Location illegal schema name
+    return String(schemaName)
+    .replace(/^\d|\.|\s|-|\(|\)|,/g,'')
+    .replace(/\bLocation\b/,'Loc')
+  }
+  function urlToId(href){
+    return btoa(href).replace(/[=]+aim/g,'');
+  }
+  function idToUrl(id){
+    return atob(id);
+  }
   function createParam (param, splitter){
     var result = {};
     if (param) param.split(splitter || '&').forEach(function (val){
@@ -1266,69 +1329,6 @@ function idToUrl(id){
   });
   // const clients = new Map();
 
-  function aim(selector, context){
-    // console.error(1);
-    if (aim.Elem && selector instanceof aim.Elem) return selector;
-    if (!(this instanceof aim)) return new aim(...arguments);
-    // if (!selector) return new aim('aim');
-    if (selector){
-      if (self.Item && selector instanceof self.Item){
-        return selector;
-      }
-      this.selector = selector;
-    }
-    selector = selector || 'aim';
-    if (['string','number'].includes(typeof selector)){
-      if (aim.his.map.has(selector)){
-        selector = aim.his.map.get(selector);
-        if (context) aim(selector).extend(context);
-        return selector;
-      } else if (self.document) {
-        // selector = TAGNAMES.includes(selector) ? document.createElement(selector) : (document.getElementById(selector) || selector)
-        // const element = document.getElementById(selector);
-        // selector = element ? element : (aim.Elem && aim.Elem.tagnames.includes(selector) ? document.createElement(selector) : selector);
-        // console.log(7, selector);
-        selector = aim.Elem ? aim.Elem(...arguments) : selector;
-        // console.log(6, selector);
-      }
-    }
-    // console.warn(5, selector, self.Element, selector instanceof self.Element);
-    // console.log(selector, selector instanceof self.Element, aim.Elem);
-    if (self.Element && selector instanceof self.Element) {
-      if (aim.his.map.has(selector.id)) {
-        return aim.his.map.get(selector.id);
-      }
-      if (aim.Elem) {
-        return new aim.Elem(selector);
-      }
-    }
-    if (aim.Elem && selector instanceof aim.Elem) {
-      if (selector.elem.id) {
-        aim.his.map.set(selector.elem.id, selector);
-      }
-      return selector;
-    }
-    // if(!(this instanceof aim)) return new aim(...arguments);
-    if (typeof selector === 'string'){
-      if (selector.match(/\w+\(\d+\)/)){
-        return Item.get(selector);
-      } else {
-        this.id(selector);
-        if (context) {
-          this.set(context);
-          return context;
-        }
-      }
-    // } else if (self.Item && selector instanceof Item) {
-    //   return selector;
-    } else if (typeof Window !== 'undefined' && selector instanceof Window) {
-      return this;
-    } else if (selector.ID || selector.LinkID || selector.tag) {
-      // //console.log(selector, selector.ID, selector.LinkID, selector.tag);
-      return Item.get(selector);
-    }
-    this.extend(context)
-  };
 
   // const aim = aim;
   // self.aim = self.aim || aim;
