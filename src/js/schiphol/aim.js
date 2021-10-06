@@ -6738,152 +6738,6 @@ function idToUrl(id){
         //   setTimeout(getSystemAttributes, 5000);
         // })();
 
-        config.items1 = [
-          {
-            Parent: 'MONITOREN',
-            Tag: 'SYSTEEM',
-            name: 'TEST',
-            SystemId: 1,
-            ip: '127.0.0.0',
-            children:[
-              {
-                SystemId: 1,
-                name: `MEMORY_USED_SPACE`,
-                AttributeType: 'measurement_1',
-                title: `Status `,
-                children: [
-                  {
-                    SystemId: 1,
-                    High: 70,
-                    name: 'HOOG',
-                    title: 'Memory hoog',
-                    AttributeType: 'prewarning_1',
-                    Enumeration: 'No failure, Failure',
-                  },
-                ]
-              },
-              {
-                SystemId: 1,
-                name: `HDD_USED_SPACE`,
-                AttributeType: 'measurement_1',
-                title: `Status `,
-                children: [
-                  {
-                    SystemId: 1,
-                    High: 70,
-                    name: 'HOOG',
-                    title: 'HDD opslag hoog',
-                    AttributeType: 'prewarning_1',
-                    Enumeration: 'No failure, Failure',
-                  },
-                ]
-              },
-              {
-                SystemId: 1,
-                name: `TIME_SYNC`,
-                AttributeType: 'failure',
-                title: `Status `,
-                Enumeration: 'No failure, Failure',
-              },
-              {
-                SystemId: 1,
-                name: `WATCHDOG_ACSM`,
-                AttributeType: 'measurement_1',
-                title: `Status `,
-              },
-            ],
-          },
-          {
-            Parent: "MIN.RIO",
-            Tag: "CSHI-1",
-            SystemId: 252,
-          },
-          {
-            Device: "MODBUS",
-            IPAddress: "192.168.2.4",
-            PollInterval: 500,
-            ReadAddress: 191,
-            children: [
-              {
-                children: [
-                  {
-                    SystemId: 252,
-                    type: "UInt",
-                    name: "STATUS",
-                    title: "Status",
-                    AttributeType: "measurement_1",
-                    children: [
-                      {
-                        SystemId: 252,
-                        name: "STATUS.ERROR",
-                        Low: "0",
-                        title: "Status probleem",
-                        AttributeType: "prewarning_2",
-                        Enumeration: "No failure, Failure"
-                      },
-                    ]
-                  }
-                ]
-              },
-            ],
-          },
-        ]
-        config.items2 = [
-          {
-            Parent: "PW",
-            Tag: "PW-1",
-            SystemId: 252,
-          },
-          {
-            Device: "MODBUS",
-            IPAddress: "192.168.2.27",
-            PollInterval: 500,
-
-            children: [
-              {
-                SystemId: 252,
-                ReadAddress: 43,
-                type: "Float",
-                name: "THD_V_FASE_1",
-                title: "V Fase",
-                AttributeType: "measurement_1",
-              },
-                {
-                SystemId: 252,
-                ReadAddress: 49,
-                type: "Float",
-                name: "THD_A_FASE_1",
-                title: "A Fase",
-                AttributeType: "measurement_1",
-              },
-              {
-                SystemId: 252,
-                ReadAddress: 69,
-                type: "Float",
-                name: "COSPHI",
-                title: "CosPhi",
-                AttributeType: "measurement_1",
-              },
-              {
-                SystemId: 252,
-                ReadAddress: 801,
-                type: "Double",
-                name: "KWH",
-                title: "KwH",
-                AttributeType: "measurement_1",
-              },
-              {
-                SystemId: 252,
-                ReadAddress: 833,
-                type: "Double",
-                name: "KVAH",
-                title: "KvAh",
-                AttributeType: "measurement_1",
-              },
-            ],
-          },
-        ]
-
         Array.from(config.items).forEach(item => {
           if (item.Device === 'RIO') {
             config.items.push(
@@ -6901,7 +6755,7 @@ function idToUrl(id){
                         name: "RIO_CONTROLE",
                         Low: "0",
                         title: "Remote I/O In storing",
-                        AttributeType: "failure",
+                        AttributeType: "CriticalFailure",
                         Enumeration: "No failure, Failure"
                       }
                     ]
@@ -6924,7 +6778,7 @@ function idToUrl(id){
                     type: "Float",
                     name: "THD_V_FASE_1",
                     title: "V Fase",
-                    AttributeType: "measurement_1",
+                    AttributeType: "Measurement_4",
                   },
                     {
                     SystemId: item.SystemId,
@@ -6932,7 +6786,7 @@ function idToUrl(id){
                     type: "Float",
                     name: "THD_A_FASE_1",
                     title: "A Fase",
-                    AttributeType: "measurement_1",
+                    AttributeType: "Measurement_5",
                   },
                   {
                     SystemId: item.SystemId,
@@ -6940,7 +6794,7 @@ function idToUrl(id){
                     type: "Float",
                     name: "COSPHI",
                     title: "CosPhi",
-                    AttributeType: "measurement_1",
+                    AttributeType: "Measurement_3",
                   },
                   {
                     SystemId: item.SystemId,
@@ -6948,7 +6802,7 @@ function idToUrl(id){
                     type: "Double",
                     name: "KWH",
                     title: "KwH",
-                    AttributeType: "measurement_1",
+                    AttributeType: "Measurement_1",
                   },
                   {
                     SystemId: item.SystemId,
@@ -6956,7 +6810,7 @@ function idToUrl(id){
                     type: "Double",
                     name: "KVAH",
                     title: "KvAh",
-                    AttributeType: "measurement_1",
+                    AttributeType: "Measurement_2",
                   },
                 ],
               },
@@ -7066,7 +6920,6 @@ function idToUrl(id){
       }
     },
     attrSetValue(attribute, value, path = []) {
-
       const server = this;
       function has(name) {
         return (name in attribute) && attribute[name] !== null;
@@ -7085,14 +6938,10 @@ function idToUrl(id){
 
         // Omrekenen raw value naar value
         if (has('MaxEngValue') && has('MinEngValue') && has('MaxRawValue') && has('MinRawValue')) {
-          console.log(attribute.SystemId, attribute.name, value);
           value = Math.round(((Number(attribute.MaxEngValue) - Number(attribute.MinEngValue)) / (Number(attribute.MaxRawValue) - Number(attribute.MinRawValue)) * (value - Number(attribute.MinRawValue)) + Number(attribute.MinEngValue)) * 100) / 100;
-          // 16200
-          // 0.66 = int(66)/100;
         }
 
         // Binnenkomende waarde bewaren voor enum text
-        // if (attribute.type === 'Bool' || has('Ne')) {
         if (has('Ne')) {
           attribute.TextualValue = value;
         }
