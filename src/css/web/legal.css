@@ -1,0 +1,52 @@
+.doc-content {
+  font-family: sans-serif;
+}
+.doc-content h1,h2,h3 {
+  font-size: 1.2em;
+}
+.doc-content article {
+  counter-reset: h1;
+}
+.doc-content article h1::before {
+  counter-increment: h1;
+  counter-reset: art;
+  content: counter(h1) " ";
+}
+.doc-content article h2 {
+  counter-increment: h2;
+  counter-reset: art;
+}
+.doc-content article h2::before {
+  content: "Art. " counter(h2) " ";
+}
+.doc-content article ol {
+  padding:0;
+  list-style: none;
+}
+.doc-content article>ol {
+  margin-left:45px;
+}
+.doc-content article ol>li::before {
+  position: absolute;
+  left: -45px;
+}
+
+.doc-content.pdf article ol>li::before {
+  left: 0;
+}
+
+.doc-content article>ol>li {
+  counter-increment: art;
+  counter-reset: sub;
+}
+.doc-content article>ol>li::before {
+  content: counter(h2) "." counter(art) " ";
+}
+
+
+.doc-content article>ol>li>ol>li {
+  counter-increment: sub;
+}
+.doc-content article>ol>li>ol>li::before {
+  content: counter(sub, lower-alpha) ".";
+}

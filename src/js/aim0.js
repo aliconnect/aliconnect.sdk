@@ -5,6 +5,8 @@ eol = '\n';
 // Version 0.0.6
 (function(global, factory) { typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, global.aim = factory()); }(this, function (exports) {
 
+  alert(1);
+
   const self = this;
   function aim(selector, context){
     // console.error(1);
@@ -247,7 +249,6 @@ eol = '\n';
       $('div').append($('button').text('Gezien').on('click', e => elem.remove())),
     )
   }
-
 
 
   minimist = function (args, opts){
@@ -1397,6 +1398,7 @@ eol = '\n';
   // sessionStorage.clear();
 
 
+
   function replaceOutsideQuotes(codeString, callback, pre = '<span class=hl-string>', post = '</span>') {
     // const a = codeString.split(/((?<![\\])['"`])((?:.(?!(?<![\\])\1))*.?)\1/);
     const a = codeString.split(/(['"`])\1/);
@@ -1428,6 +1430,7 @@ eol = '\n';
             })
           },
           js(s) {
+            // console.error(s);
             return s
             .replace(/(.*?)(\/\/.*?\n|\/\*.*?\*\/|$)/gs, (s,codeString,cmt) => {
               return replaceOutsideQuotes(
@@ -1524,6 +1527,7 @@ eol = '\n';
         };
         s = s || '';
         const ident = (s.match(/^ +/)||[''])[0].length;
+        // console.log(s);
         s = s.split(/\n/).map(s => s.slice(ident)).join('\n').trim()
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -1547,6 +1551,9 @@ eol = '\n';
         return '                '.slice(0,ident);
       }
       const lines = [];
+
+      // console.log(s);
+
       s = s.replace(
         /<\!-- docIndex -->.*?<\!-- \/docIndex -->/s,
         p => `<!-- docIndex -->\n${
@@ -1558,150 +1565,158 @@ eol = '\n';
           .join("\n")
         }\n<!-- /docIndex -->`
       );
-      var identArray = [];
 
-      function setLevelTag(lineIdent, tag){
-        // console.log(lineIdent, tag);
-        var s = identArray.slice(lineIdent+1).map(t => `</${t}>`).reverse().join('');
-        identArray.length = lineIdent+1;
-        if (identArray[lineIdent]) {
-          if (identArray[lineIdent] !== tag) {
-            s += `</${identArray[lineIdent]}>`;
-          }
-        }
+      // console.log(s);
+
+      const arr = !s ? '' : s
+      .replace(/\r/gs ,'')
+      .split(/\n/);
+
+      let tag = '';
+      function setTag (p, par = '') {
         if (tag) {
-          if (tag !== identArray[lineIdent]) {
-            s += `<${tag}>`;
-          }
-          // console.log(tag,identArray[lineIdent]);
-        } else {
-
+          lines.push(`</${tag}>`);
         }
-        identArray[lineIdent]=tag;
-        // console.log(lineIdent, tag, s);
-        return s;
+        if (p) {
+          lines.push(`<${(p + ' ' + par).trim()}>`);
+        }
+        tag = p;
       }
 
-      let prevIdent;
-      var lineIdent=0;
-      // var prevIdent;
+      // console.error('JAAAAA');
 
-      s = s
-      .replace(/\r/g,'')
-      .replace(/(.*?)(```(.*?)\n(.*?)```|$)/gs, (s,md,s2,type,codeLines) => {
-        s = ('\n\n'+md)
-        .replace(/(^|\s)> (\[\!(\w+)\]\s|.*?)(.+?)(?=\n\n|$)/gs, (s,p1,p2,p3,p4) => `${p1}<BLOCKQUOTE${p3?` class="${p3.toLowerCase()}"`:``}>${(p4||'').replace(/(^|\s)> /gm, '')}</BLOCKQUOTE>`)
-        .replace(/(\n[^\n]+?)(\n\s*-+\s\|\s.*?\n)(.*?)(?=\n\n|$)/gs, (s,p1,p2,p3) => `<TABLE><THEAD><TR><TH>${p1.trim().replace(/\s\|\s/g, '</TH><TH>')}</TH></TR></THEAD><TBODY><TR><TD>${p3.trim().replace(/\s\|\s/g, '</TD><TD>').replace(/\n/g,'</TD></TR>\n<TR><TD>')}</TD></TR></TBODY></TABLE>`)
-        .split(/\n/)
-        .map(s => {
-          var p = '';
-          if (s) {
-            lineIdent = (s.match(/^ +/)||[''])[0].length;
-            if (s.trim().match(/^(\*|-|\d+\.) /)) {
-              const tag = s.trim().match(/^(\*|-) /) ? 'UL' : 'OL';
-              s = s.replace(/^\s*(\*|-|\d+\.) /, '<LI>');
-              if (lineIdent<identArray.length) {
-                p += identArray.slice(lineIdent+1).map(t => `\n</${t}>`).reverse().join('');
-                identArray.length = lineIdent+1;
-              }
-              if (identArray[lineIdent] !== tag) {
-                if (identArray[lineIdent]) {
-                  p += `\n</${identArray[lineIdent]}>`;
-                }
-                p += `<${tag}>`;
-              }
-              if (identArray[lineIdent+1] === 'LI') {
-                p += '</LI>';
-              }
-              identArray[lineIdent] = tag;
-              identArray[lineIdent+1] = 'LI';
-            } else {
-              if (lineIdent < prevIdent) {
-                // console.log(999, lineIdent,prevIdent);
-                p += identArray.slice(lineIdent).filter(Boolean).map(t => `</${t}>`).reverse().join('');
-                identArray.length = lineIdent;
-              }
-              if (s.match(/^#/)) {
-                s = s.replace(/^(#+) (.*)/, (s,p1,p2) => setLevelTag(0,'') + `<A class='anchor' title="${p2}" name="${s = toLink(p2)}"></A><H${p1.length} class="${s}"><A class="anchorref" href="#${s}"></A>${p2}</H${p1.length}>`)
-              } else if (!identArray[lineIdent]){
-                // console.log(lineIdent, identArray);
-                p += setLevelTag(lineIdent,'P');
+      for (var i=0;i<arr.length;i++) {
+        s = arr[i];
+        if (s || i === arr.length - 1 ) {
+          const lineIdent = (s.match(/^ +/)||[''])[0].length;
+          const match = s.trim().match(/^(\*|-|\d+\.) /);
+          (function unident() {
+            identOptions = identList[0];
+            if (identOptions) {
+              if (lineIdent < identOptions.ident || (lineIdent === identOptions.ident && !match)) {
+                setTag();
+                lines.push(`</li></${identOptions.tag}>`);
+                identList.shift();
+                unident();
+              } else if (identOptions.ident === lineIdent) {
+                setTag();
+                lines.push('</li>');
               }
             }
-            prevIdent = lineIdent;
-          } else {
-            if (identArray[identArray.length-1] === 'P') {
-              p+="</P><P>";
-            } else if (!lineIdent && identArray[lineIdent]) {
-              p += setLevelTag(lineIdent,'P');
-            } else {
-              identArray.push('P');
-              p+='<P>';
-            }
-            // console.log(999, lineIdent,prevIdent,identArray,identArray[identArray.length]);
+          })();
 
-            // s = setLevelTag(lineIdent,'');
+          if (s.match(/```/)) {
+            setTag();
+            var codeLines = [];
+            for (i++; i<arr.length; i++) {
+              if (arr[i].match(/```/)) {
+                let type = '';
+                // codeLines = code(codeLines.join('\n'));
+                // lines.push(
+                //   s.replace(/```/, '<pre><code>')
+                //   .replace(/<pre><code>(\w+)/, (s,p1) => `<div class="code-header row" language="${type = p1.toLowerCase()}"><span class="aco">${p1}</span></div><pre><code language="${p1.toLowerCase()}">`)
+                //   + code(codeLines.join('\n'), type)
+                //   + '</code></pre>'
+                // );
+                lines.push(
+                  s.replace(/```/, '<code class="block"><pre>')
+                  .replace(/<code class="block"><pre>(\w+)/, (s,p1) => `<code class="block" language="${type = p1.toLowerCase()}"><pre>`)
+                  + code(codeLines.join('\n'), type)
+                  + '</pre></code>'
+                );
+                break;
+              }
+              codeLines.push(arr[i]);
+            }
+            continue;
           }
-          s = p+s;
-          // console.log(s);
+          if (s.match(/.*? \| .*?/)) {
+            setTag();
+            lines.push(`<TABLE><THEAD><TR><TH>${s.replace(/ \| /g, '</TH><TH>')}</TR></TH></THEAD><TBODY>`);
+            for (i = i+2; i<arr.length; i++) {
+              if (arr[i].match(/.*? \| .*?/)) {
+                lines.push(`<TR><TD>${s.replace(/ \| /g, '</TD><TD>')}</TR></TD>`);
+              } else {
+                break;
+              }
+            }
+            lines.push('</TBODY></TABLE>');
+            continue;
+          }
           s = s
-          // .replace(/(^|\s|>)\*\*(\w|%|`)/g, '$1<B>$2')
-          // .replace(/(\w|%)\*\*(\s|,|$)(?=(?:[^`]*"[^"]*")*[^"]*\Z)/g, '$1</B>$2')
-          // .replace(/(\S)\*\*/g, '$1<B>')
-          // console.log(s);
-          return s
-          .replace(/(.*?)(`(.*?)`|$)/g, (s,p1,s1,p2) => `${
-            p1
-            .replace(/\*\*(.+?)\*\*/g, '<B>$1</B>')
-            .replace(/_(.+?)_/g, '<I>$1</I>')
-            // .replace(/(>|\n|\s|^)(\*\*|__)/g, '$1<B>')
-            // .replace(/(\*\*|__)(?=\s|,|\.|;|$)/g, '</B>')
-            // .replace(/(>|\n|\s|^)\*\*(\w|<|$)/g, '$1<B>$2')
-            // .replace(/(>|\n|\s|^|\w|:|;|,|\.)\*\*(\s|<|$|\n|,|;|.)/g, '$1</B>$2')
-
-            // .replace(/(^)\*\*(\w)/g, '$1<B>$2')
-            // .replace(/(\W)\*\*(\w)/g, '$1</B>$2')
-
-            // .replace(/(>|\n|\s|^)\*\*(\w|<|$)/g, '$1<B>$2')
-            // .replace(/(\S)\*\*([^\w]|$)/g, '$1</B>$2')
-
-            // .replace(/([^\w])_(\w)/g, '$1<I>$2')
-            // .replace(/(\w)_([^\w]|$)/g, '$1</I>$2')
-
-            .replace(/\[ \]/g, '&#9744;')
-            .replace(/\[v\]/g, '&#9745;')
-            .replace(/\[x\]/g, '&#9746;')
-            .replace(/~~(.*?)~~/g, '<DEL>$1</DEL>')
-            .replace(/~(.*?)~/g, '<U>$1</U>')
-
-            .replace(/\!\[(.*?)\]\((.*?)\)/g, '<IMG src="$2" alt="$1">')
-            .replace(/\[(.*?)\]\((.*?)\)/g, '<A href="$2">$1</A>')
-            // .replace(/(.*?)(?!\]\()(http.*?)(?=\s|\)|$)/g, '$1[$2]($2)')
-            // .replace(/(http.*?)(?=\s|\)|$)(?=(?:(?:[^"]*"){2})*[^"]*$)/g, '<A href="$1">$1</A>')
-            .replace(/  \n/g, '<BR>')
-            // .replace(/\n\n(.*)(?=\n\n)/gs, '<P>$1</P>')
-
-
-            .replace(/\^\^(.*?)\^\^/gs, '<MARK>$1</MARK>')
-            .replace(/:::(\w+)(.*?):::/gs, '<$1$2></$1>')
-          }${p2?`<CODE>${p2}</CODE>`:``}`)
-        })
-        // .filter(Boolean)
-        // .map(s => (s||'').trim())
-        .join('\n')
-        // .replace(/<P><\/P>/g, '')
-        // .replace(/(#+) (.*?)(?=\n)(.*)/gs, (s,p1,p2,t) => `<A class='anchor' title="${p2}" name="${s = toLink(p2)}"></A><H${p1.length} class="${s}"><A class="anchorref" href="#${s}"></A>${p2}</H${p1.length}><P>${t.replace(/\n\n/g, '</P><P>')}</P>`)
-        // .replace(/(^|\n\n)(.*?)(?=\n\n|$)/gs, (s,p1,p2) => `\n<P>${p2.trim().replace(/\n/g, '')}</P>`)
-        // .replace(/<P>(<A class='anchor'.*?<\/H1>)<\/P>/g, '$1')
-        // .trim()
-        // .replace(/<P><\/P>/g, '')
-
-        if (codeLines) {
-          s+= `<PRE class=block><CODE language="${type = type.toLowerCase()}">${code(codeLines, type).replace(/\n/g,'<br>')}</CODE></PRE>`;
+          .replace(/`(.+?)`/g, (s, p1) => `<CODE>${p1
+            .replace(/~/gs, '&#126;')
+            .replace(/\^/gs, '&#94;')
+            .replace(/\*/gs, '&#42;')
+            .replace(/_/gs, '&#95;')
+            .replace(/</gs, '&lt;')
+            .replace(/>/gs, '&gt;')
+          }</CODE>`)
+          .replace(/\*\*(.+?)\*\*/g, '<B>$1</B>')
+          .replace(/\*(.*?)\*/g, '<I>$1</I>')
+          .replace(/__(.*?)__/g, '<B>$1</B>')
+          .replace(/_(.*?)_(?<=\[).+?(?=\])(?<=\().+?(?=\))/g, '<I>$1</I>')
+          .replace(/~~(.*?)~~/g, '<DEL>$1</DEL>')
+          .replace(/~(.*?)~/g, '<U>$1</U>')
+          .replace(/\^\^(.*?)\^\^/g, '<MARK>$1</MARK>')
+          // .replace(/`(.+?)`/g, (s, p1) => `<CODE>${$.string.code(p1)}</CODE>`)
+          .trim();
+          if (match) {
+            const tag = s.trim().match(/^(\*|-) /) ? 'ul' : 'ol';
+            setTag();
+            if (identOptions && identOptions.tag !== tag && identOptions.ident == lineIdent) {
+              lines.push(`</li></${identOptions.tag}>`);
+              identList.shift();
+              identList.unshift({ident: lineIdent, tag: tag});
+              lines.push(`<${tag}>`);
+            } else if (!identOptions || identOptions.ident < lineIdent) {
+              identOptions = {ident: lineIdent, tag: tag};
+              identList.unshift(identOptions);
+              lines.push(`<${identOptions.tag}>`);
+            }
+            s = s.replace(/^\s*(\*|-|\d+\.) /, '<li>')
+          } else if (s.match(/^#/)) {
+            setTag();
+            s = s
+            .replace(/^# (.*?)$/gm, (s,p1) => `<A class='anchor' title="${p1}" name="${s = toLink(p1)}"></A><H1 class="${s}"><a class="anchorref" href="#${s}"></a> ${p1}</H1>`)
+            .replace(/^## (.*?)$/gm, (s,p1) => `<A class='anchor' title="${p1}" name="${s = toLink(p1)}" href="#${s}"></A><H2 class="${s}"><a class="anchorref" href="#${s}"></a>${p1}</H2>`)
+            .replace(/^### (.*?)$/gm, (s,p1) => `<A class='anchor' title="${p1}" name="${s = toLink(p1)}" href="#${s}"></A><H3 class="${s}"><a class="anchorref" href="#${s}"></a>${p1}</H3>`)
+            .replace(/^#### (.*?)$/gm, '<H4>$1</H4>')
+            .replace(/^##### (.*?)$/gm, '<H5>$1</H5>')
+            .replace(/^###### (.*?)$/gm, '<H6>$1</H6>')
+            .replace(/^####### (.*?)$/gm, '<H7>$1</H7>')
+          } else if (s.match(/^> /)) {
+            if (tag !== 'BLOCKQUOTE') {
+              s = s.replace(/^> (\[\!(\w+)\]|)/, (s, p1, type) => setTag('BLOCKQUOTE', type ? `class=${type.toLowerCase()}` : '') || '')
+            }
+            s = s.replace(/^> /,'')
+          } else if (!arr[i-1]) {
+            setTag('P');
+          } else if (tag !== 'P') {
+            setTag('P');
+          }
+          s = s
+          .trim()
+          .replace(/  $/gm, '<BR >')
+          .replace(/\[ \]/, '&#9744;')
+          .replace(/\[v\]/, '&#9745;')
+          .replace(/\[x\]/, '&#9745;')
+          .replace(/\!\[(.*?)\]\((.*?)\)(?=(?:(?:[^`]*`){2})*[^`]*$)/g, '<IMG src="$2" alt="$1">')
+          .replace(/\[(.*?)\]\((.*?)\)(?=\B)(?=(?:(?:[^`]*`){2})*[^`]*$)/g, '<A href="$2">$1</A>')
+          // .replace(/:::(\w+)(.*?):::/gs, '<PRE><$1$2></$1></PRE>')
+          .replace(/:::(\w+)(.*?):::/gs, '<$1$2></$1>')
+        } else {
+          setTag();
         }
-        return s
-      }) + setLevelTag(0,'');
-      console.log(s);
+        lines.push(s);
+      }
+      setTag();
+      s = lines
+      .join('\n')
+      ;
+
+      //.split(/\n\n/).map(s => s.trim()).map(s => s ? `<p>${s}</p>` : s).join('\n');
+      // console.log(s);
       return s;
     },
     isImg1(src) {
@@ -1712,7 +1727,6 @@ eol = '\n';
       return false;
     },
   };
-
 
   aim.prototype = {
     accessToken(){
@@ -3922,7 +3936,6 @@ eol = '\n';
       }
     }},
   });
-
 
 
   // Attribute = function (){};
@@ -7676,8 +7689,4 @@ eol = '\n';
 
   // console.log(aim);
   return aim;
-
-  alert(3);
-
-
 }));

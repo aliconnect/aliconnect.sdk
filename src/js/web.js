@@ -61,7 +61,7 @@ eol = '\n';
       }
     },
     om() {
-      om = new Om();
+      aim.om = new Om();
     },
     omd() {
       //   function childObject(object, schemaname) {
@@ -650,19 +650,98 @@ eol = '\n';
         let activeField;
         function postForm(e){
           activeField = document.activeElement.name;
+          const submit = e && e.submitter ? e.submitter.value : 'post';
           // console.log(e, document.activeElement.name);
 
+          const docBasePath = 'https://aliconnect.nl/aliconnect/aliconnect.sdk/wiki/';
+          function replaceFields(body,data){
+            (function replaceFields(data,path = []){
+              for (let [name,value] of Object.entries(data)) {
+                if (value && typeof value === 'object') replaceFields(value, path.concat(name));
+                else body = body.replace(new RegExp('{'+path.concat(name).join('-')+'}','g'), value);
+              }
+            })(data)
+            return body;
+          }
           // $().url(document.location.pathname + 'yaml')
+
+
+          function signDocument(name) {
+            return new Promise((success, fail) => {
+              fetch(docBasePath + name + '.md').then(res => res.text().then(body => {
+                body = replaceFields(body,data);
+                $(".aim-config").text('').append(
+                  $('article').append(
+                    aim.markdown().render(body),
+                    // $('canvas').style('background:white;height:150px;').paint(),
+                    $('div').append(
+                      // $('button').value('save').text('Opslaan').default(true),
+                      $('button').value('prev').text('Terug').on('click', e => start(data)),
+                      $('button').value('next').text('Verder').on('click', e => {
+                        const elem = document.querySelector(".aim-config");
+                        const canvas = document.querySelector("canvas");
+                        var image = new Image();
+                        image.src = canvas.toDataURL();
+                        canvas.parentElement.insertBefore(image, canvas);
+                        canvas.remove();
+                        // document.getElementById('image_for_crop').appendChild(image);
+                        fetch(document.location.pathname, {
+                          method: 'POST',
+                          body: JSON.stringify({
+                            client: {
+                              client_id: data.client.client_id,
+                            },
+                            savepdf: name,
+                            html: elem.innerHTML,
+                          }),
+                        }).then(res => {
+                          success();
+                          // fetch(docBasePath + 'Explore-Legal-Protocol-meldplicht-datalekken.md').then(res => res.text().then(body => {
+                          //   body = replaceFields(body,data);
+                          //   $(".aim-config").text('')
+                          //   .append(
+                          //     aim.markdown().render(body),
+
+
+                        });
+                        //
+                        // //
+                        // console.log($(".aim-config").elem.innerHTML);
+                      }),
+                    )
+                  )
+                ).query('canvas', elem => {
+                  elem.paint();
+                })
+              }));
+            })
+          }
+
+
           $().url(document.location.pathname)
           .accept('application/json')
           .query('response_type', 'config')
           .query('client_id', data.client.client_id)
           .query('client_secret', data.client.client_secret)
-          .post(JSON.stringify(data)).then(e => start(data = e.body))
+          .query('submitter', submit)
+          .post(JSON.stringify(data)).then(e => {
+            data = e.body;
+            if (submit === 'next') {
+              signDocument('Explore-Legal-Verwerkers-overeenkomst').then(e => {
+                signDocument('Explore-Legal-Protocol-meldplicht-datalekken').then(e => {
+                  signDocument('Explore-Legal-Verwerkingsregister').then(e => {
+                    start(data);
+                  })
+                })
+              })
+              return;
+            }
+            start(data);
+          })
           return false;
         }
         function start(){
-          $(document.body).text('').class('aim-config');
+          $(document.body).text('').class('aim-config doc-content');
           // var focusElement;
           // const config = e.body;
           sessionStorage.setItem('client_id', data.client.client_id || '');
@@ -809,7 +888,8 @@ eol = '\n';
           Object.entries(formDefinitions).filter(([key,cfg])=>key !== 'metaData').forEach(entry => build(...entry, []));
           // console.log(1, focusElement)
           formElem.append(
-            $('button').text('SUBMIT')
+            $('button').value('save').text('Opslaan').default(true),
+            $('button').value('next').text('Verder'),
           )
           const elems = Array.from(formElem.elem.elements);
           const activeElement = elems.find(el => el.required) || elems.find(el => el.name === activeField) || elems.find(el => !el.value) || elems[0];
@@ -1481,49 +1561,49 @@ eol = '\n';
         addChapters($('ul').parent(this.text('')), 1);
         // console.error(docelem.elem);
 
-        (document.body.onscroll = e => {
-          clearTimeout(to);
-          // console.log(e);
-          // if (!to) {
-          // const div = Math.abs(lastScrollTop - docelem.elem.scrollTop);
-          // clearTimeout(to);
-          to = setTimeout(() => {
-            // to = null;
-            console.log(elemTop);
-            // all.reverse().forEach(el => console.log(el.getBoundingClientRect().top));
-            const elem = findAll.find(el => el.getBoundingClientRect().top < elemTop) || topItem;
-            if (elem && elem.a) {
-              //
-              // return console.log('re', el);
-              // // if (div > 50) {
-              // lastScrollTop = document.body.scrollTop;
-              // let elem = findAll.find(elem => elem.getBoundingClientRect().top < elemTop) || topItem;
-              // console.log(findAll, elem);
-              // let elem = all.find(elem => elem.offsetParent );
-              // console.log(elem.innerText, elemTop, elem.getBoundingClientRect().top, elem.getBoundingClientRect().height, all.indexOf(elem));
-              // return;
-              // elem = all[all.indexOf(elem)-1];
-              allmenu.forEach(a => a.attr('open', '0').attr('select', null));
-              const path = [];
-              for (var p = elem.a.elem; p.tagName === 'A' && p.parentElement && p.parentElement.parentElement; p=p.parentElement.parentElement.parentElement.firstChild) {
-                p.setAttribute('select', '');
-                p.setAttribute('open', '1');
-                path.push(p);
-              }
-              $(elem.a.elem).scrollIntoView();
-              // if ($('navDoc')) {
-              //   $('navDoc').text('').append(...path.reverse().map(elem => ['/', $('a').text(elem.innerText)]))
-              // }
-              // elem.li.select();
-              // $()
-              // let elem = all.forEach(elem => //console.log(elem.getBoundingClientRect().top));
-              // //console.log(elem, elem.li);
-              // }
-
-            }
-          }, 500);
-          // }
-        })();
+        // (document.body.onscroll = e => {
+        //   clearTimeout(to);
+        //   // console.log(e);
+        //   // if (!to) {
+        //   // const div = Math.abs(lastScrollTop - docelem.elem.scrollTop);
+        //   // clearTimeout(to);
+        //   to = setTimeout(() => {
+        //     // to = null;
+        //     console.log(elemTop);
+        //     // all.reverse().forEach(el => console.log(el.getBoundingClientRect().top));
+        //     const elem = findAll.find(el => el.getBoundingClientRect().top < elemTop) || topItem;
+        //     if (elem && elem.a) {
+        //       //
+        //       // return console.log('re', el);
+        //       // // if (div > 50) {
+        //       // lastScrollTop = document.body.scrollTop;
+        //       // let elem = findAll.find(elem => elem.getBoundingClientRect().top < elemTop) || topItem;
+        //       // console.log(findAll, elem);
+        //       // let elem = all.find(elem => elem.offsetParent );
+        //       // console.log(elem.innerText, elemTop, elem.getBoundingClientRect().top, elem.getBoundingClientRect().height, all.indexOf(elem));
+        //       // return;
+        //       // elem = all[all.indexOf(elem)-1];
+        //       allmenu.forEach(a => a.attr('open', '0').attr('select', null));
+        //       const path = [];
+        //       for (var p = elem.a.elem; p.tagName === 'A' && p.parentElement && p.parentElement.parentElement; p=p.parentElement.parentElement.parentElement.firstChild) {
+        //         p.setAttribute('select', '');
+        //         p.setAttribute('open', '1');
+        //         path.push(p);
+        //       }
+        //       $(elem.a.elem).scrollIntoView();
+        //       // if ($('navDoc')) {
+        //       //   $('navDoc').text('').append(...path.reverse().map(elem => ['/', $('a').text(elem.innerText)]))
+        //       // }
+        //       // elem.li.select();
+        //       // $()
+        //       // let elem = all.forEach(elem => //console.log(elem.getBoundingClientRect().top));
+        //       // //console.log(elem, elem.li);
+        //       // }
+        //
+        //     }
+        //   }, 500);
+        //   // }
+        // })();
         // document.body.removeEventListener('scroll', docelem.onscroll);
         // document.body.addEventListener('scroll', docelem.onscroll);
         return this;
@@ -1532,9 +1612,6 @@ eol = '\n';
 
       }
 		},
-    querySelector(selector){
-      return this.elem.querySelector(selector);
-    },
     pageForm(config, data){
       let activeField;
       const properties = Object.entries(config.properties).map(([name,prop]) => Object({
@@ -6346,9 +6423,15 @@ eol = '\n';
       return this.attr(name, '');
     }
   }));
+  Object.defineProperties(Elem.prototype, {
+    query:{value(selector, fn){ fn($(this.elem.querySelector(selector))); return this;}},
+    querySelector:{value(){return $(this.elem.querySelector(...arguments))}},
+    querySelectorAll:{value(){return Array.from(this.elem.querySelectorAll(...arguments)).map($)}},
+  });
+
   [
     'focus',
-    'select'
+    'select',
   ].forEach(name => Object.defineProperty(Elem.prototype, name, {
     enumerable: false,
     value: function fn() {
@@ -8283,15 +8366,16 @@ eol = '\n';
     $().on('load', e => {
       // console.log(this);
       $(document.body).append(
-        om.navtop = $.his.elem.navtop = $('header').class('row top bar noselect np')
-        .append(
-          $.his.elem.menu = $('a').class('abtn icn menu').on('click', e => {
-            if ($.his.elem.menuList && $.his.elem.menuList.style()) {
-              $.his.elem.menuList.style('');
-            } else {
-              if ($.his.elem.menuList) $.his.elem.menuList.style('display:none;');
-              $(document.body).attr('tv', document.body.hasAttribute('tv') ? $(document.body).attr('tv')^1 : 0)
-            }
+        $('nav').append(
+          $('a').class('abtn icn menu').on('click', e => {
+            this.asideLeft.elem.style.left = 0;
+             // style(!this.asideLeft.style() ? "left:0;" : "");
+            // if ($.his.elem.menuList && $.his.elem.menuList.style()) {
+            //   $.his.elem.menuList.style('');
+            // } else {
+            //   if ($.his.elem.menuList) $.his.elem.menuList.style('display:none;');
+            //   $(document.body).attr('tv', document.body.hasAttribute('tv') ? $(document.body).attr('tv')^1 : 0)
+            // }
           }),
           $('a').class('title').id('toptitle').on('click', e => $.start() ),
           $('form').class('search row aco')
@@ -8322,11 +8406,14 @@ eol = '\n';
           ),
           $('a').class('abtn icn dark').dark(),
         ),
-        $('section').append(
-          $('section').class('atv col aco noselect np').css('max-width', $().storage('tree.width') || '200px')
-          // .contextmenu(this.menu)
+        // $('section').append(
+          this.asideLeft = $('aside').class('left noselect np')
+          .css('min-width', $().storage('tree.width') || '200px')
+          .on('click', e => {
+            this.asideLeft.elem.style.left = null;
+          })
           .append(
-            $('nav', 'row top btnbar np').append(
+            $('nav').class('row top btnbar np').append(
               $('button').class('abtn r popout').on('click', e => {
                 var url = document.location.origin;
                 // var url = 'about:blank';
@@ -8371,22 +8458,21 @@ eol = '\n';
               }),
               // $('button', 'abtn icn close'),
             ),
-            $('div')
-            // .id('om-navleft')
-            .class('col aco oa list'),
+            this.tv = $('article').class('tv list'),
           ),
+          // .contextmenu(this.menu)
           $('div').seperator(),
-          om.listElem = $('section').class('list'),
-          om.doc = $('section').class('doc row aco'),
+          this.lv = $('article').class('lv'),
+          $('article').class('dv'),
           $('div').seperator('right'),
-          om.page = $('section').class('page col aco printcol').css('max-width', $().storage('view.width') || '700px').append(
-            $('iframe').name('page').style('height: 100%;')
+          this.pv = $('article').class('pv').css('max-width', $().storage('view.width') || '700px').append(
+            // $('iframe').name('page').style('height: 100%;')
           ),
           $('section').id('preview'),
-          om.prompt = $('section').class('prompt').tabindex(-1).append(
+          $('aside').class('prompt').tabindex(-1).append(
             $('button').class('abtn abs close').attr('open', '').tabindex(-1).on('click', e => $().prompt(''))
           ),
-        ),
+        // ),
         $('footer').statusbar(),
       ).messagesPanel();
     });
@@ -8754,6 +8840,183 @@ eol = '\n';
         // <script src="https://accounts.google.com/gsi/client" async defer></script>
       }
     },
+    treeview(menu){
+      const tv = this.tv;
+      function menuItem(key, obj){
+        return $('details').append(
+          $('summary').append(
+            $('span').text(key).on('click', e => {
+              tv.querySelectorAll('div').forEach(el => el.attr('select', null));
+              e.target.setAttribute('select', '');
+              if (obj && obj.metaData && obj.metaData.l) {
+                e.preventDefault();
+                const url = obj.metaData.l.url;
+                const entries = Object.entries(obj.metaData.l);
+                entries.shift();
+                const search = '?'+entries.map(e => e.join('=')).join('&').replace(/ /g,'+');
+                console.log(search);
+                document.location.hash = `#?l=${aim.urlToId(url + search)}`;
+              } else {
+                // e.preventDefault();
+                e.stopPropagation();
+              }
+            })
+          )
+        ).append(
+          Object.entries(obj||{}).filter(e => e[0]!=='metaData').map(e => menuItem(...e))
+        )
+      }
+      tv.append(
+        Array.from(Object.entries(config.navleft)).map(e => menuItem(...e)),
+      )
+    },
+    listview(cols, rows, type = 'cols', filter, rowsVisible){
+      cols = this.cols = cols || this.cols;
+      rows = this.rows = rows || this.rows;
+      type = this.type = type || this.type;
+      rowsVisible = rowsVisible || rows;
+      console.log(cols,rows,type,rowsVisible);
+
+      const types = {
+        rows() {
+          return $('div').class('cards',type).append(
+            rowsVisible.map(row => $('div').append(
+              $('div').text(cols.filter(col => col.header === 1 && row[col.name]).map(col => row[col.name]).join(' ')),
+              $('div').text(cols.filter(col => col.header === 2 && row[col.name]).map(col => row[col.name]).join(' ')),
+              $('div').text(cols.filter(col => col.header === 3 && row[col.name]).map(col => row[col.name]).join(' ')),
+            ))
+          )
+        },
+        cols(){
+          return $('div').class('cards',type).append(
+            rowsVisible.map(row => $('div').append(
+              cols.filter(col => row[col.name]).map(col => {
+                if (col.schema) {
+                  return $('div').append($('a').text(row[col.name]).href(`#${col.schema}(${row[col.name]})`))
+                } else {
+                  return $('div').text(row[col.name])
+                }
+              }),
+            )),
+            ['','','','','','','','','','','','','','',].map(i => $('span').class('ghost')),
+          )
+        },
+        table() {
+          return $('table').class('products').append(
+            $('thead').append(
+              $('tr').append(
+                cols.map(col => $('th').text(col.title || col.name))
+              )
+            ),
+            $('tbody').append(
+              rowsVisible.map(row => $('tr').append(
+                cols.map(col => {
+                  if (col.schema) {
+                    return $('td').class(col.name).append(
+                      $('a').text(row[col.name]).href(`#${col.schema}(${row[col.name]})`)
+                    );
+                  }
+                  if (col.cell) {
+                    if (typeof col.cell !== 'function') {
+                      col.cell = new Function('col', 'row', col.cell);
+                    }
+                    return $('td').class(col.name).append(
+                      col.cell(col,row),
+                    );
+                    // const elem = $('td').text('CELL');
+                  }
+                  let inpElem;
+                  const elem = $('td').class(col.name).append(
+                    (function(){
+                      function span(){
+                        return $('span').text(row[col.name] || '')
+                      }
+                      return span();//col.cell ? col.cell(row) : span();
+                    })()
+                  ).on('click', e => {
+                    if (!col.readOnly) {
+                      // e.preventDefault();
+                      // e.stopPropagation();
+                      if (!elem.querySelector('input')) {
+                        $('input').parent(elem).value(row[col.name] || '')
+                        .on('change', e => {
+                          console.log(row);
+                          const value = row[col.name] = elem.querySelector('span').innerText = elem.querySelector('input').value;
+                          fetch('https://aliconnect.nl/abis/data', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                              request_type: requestType,
+                              id: row.id,
+                              name: col.name,
+                              value: value,
+                            }),
+                          }).then(async res => {
+                            console.log(await res.text());
+                          });
+                        })
+                        .on('blur', e => {
+                          elem.querySelector('input').remove();
+                        }).select();
+                      }
+                    }
+                  });
+                  return elem;
+                }),
+                // cols.map(col => $('td').text(row[col.name]))
+              ))
+            )
+          )
+
+        }
+      }
+
+      filter = filter || cols.filter(col => col.filter).map(col => Object({
+        name: col.name,
+        values: rowsVisible.map(row => row[col.name]).unique().sort().map(value => Object({
+          value: value,
+          rows: rowsVisible.filter(row => row[col.name] === value),
+        }))
+      }));
+
+      // const
+
+
+
+      this.lv.text('').append(
+        $('nav').append(
+          $('button').text('filter'),
+          $('span'),
+          $('button').text('view').append(
+            $('div').append(
+              ['rows','cols','table'].map(key => $('button').text(key).on('click', e => {
+                this.listview(cols, rows, key);
+              }))
+            ),
+          ),
+        ),
+        $('section').append(
+          $('aside').class('filter').append(
+            filter.map(col => {
+              const values = col.values.filter(val => val.rows.some(row => rowsVisible.includes(row)));
+              if(values.some(val => val.checked) || values.length>1) {
+                return $('details').open(1).append(
+                  $('summary').text(col.name),
+                  values.map(val => $('div').text(val.value).checked(val.checked).attr('cnt', val.rows.filter(row => rowsVisible.includes(row)).length).on('click', e => {
+                    val.checked ^= 1;
+                    col.checked = col.values.some(val => val.checked);
+                    rowsVisible = rows.filter(row => !filter.some(col => col.checked && col.values.filter(val => !val.checked).some(val => val.rows.includes(row))));
+                    this.listview(cols, rows, type, filter, rowsVisible);
+                  }))
+                );
+              }
+            })
+          ),
+          $('article').append(
+            types[type](),
+          ),
+        ),
+      )
+    }
   }
 
   function url_string(s) {

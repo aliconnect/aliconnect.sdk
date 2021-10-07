@@ -104,81 +104,8 @@ function listShow(body) {
   const select = listUrl.searchParams.get('$select').split(',');
   const cols = select.map(name => Object.assign({name: name}, schema.properties[name]));
   const rows = body.rows;
-  $('section.page').text('');
-  $('section.list').text('').append(
-    $('nav').append(
-      $('button').text('filter')
-    ),
-    $('section').append(
-      $('aside').append(
-        $('details').append(
-          $('summary').text('aa'),
-        )
-      ),
-      $('section').append(
-        $('table').class('products').append(
-          $('thead').append(
-            $('tr').append(
-              cols.map(col => $('th').text(col.title || col.name))
-            )
-          ),
-          $('tbody').append(
-            rows.map(row => $('tr').append(
-              cols.map(col => {
-                if (col.cell) {
-                  if (typeof col.cell !== 'function') {
-                    col.cell = new Function('col', 'row', col.cell);
-                  }
-                  return $('td').class(col.name).append(
-                    col.cell(col,row),
-                  );
-                  // const elem = $('td').text('CELL');
-                }
-                let inpElem;
-                const elem = $('td').class(col.name).append(
-                  (function(){
-                    function span(){
-                      return $('span').text(row[col.name] || '')
-                    }
-                    return span();//col.cell ? col.cell(row) : span();
-                  })()
-                ).on('click', e => {
-                  if (!col.readOnly) {
-                    // e.preventDefault();
-                    // e.stopPropagation();
-                    if (!elem.querySelector('input')) {
-                      $('input').parent(elem).value(row[col.name] || '')
-                      .on('change', e => {
-                        console.log(row);
-                        const value = row[col.name] = elem.querySelector('span').innerText = elem.querySelector('input').value;
-                        fetch('https://aliconnect.nl/abis/data', {
-                          method: 'POST',
-                          body: JSON.stringify({
-                            request_type: requestType,
-                            id: row.id,
-                            name: col.name,
-                            value: value,
-                          }),
-                        }).then(async res => {
-                          console.log(await res.text());
-                        });
-                      })
-                      .on('blur', e => {
-                        elem.querySelector('input').remove();
-                      }).select();
-                    }
-                  }
-                });
-                return elem;
-              }),
-              // cols.map(col => $('td').text(row[col.name]))
-            ))
-          )
-        )
-
-      ),
-    ),
-  )
+  $('article.pv').text('');
+  aim.om.listview(cols, rows);
 }
 
 
@@ -392,44 +319,6 @@ function Abis() {
         // })
         // : $('span').text(row[key] || '')
         // console.log(om);
-        return;
-
-
-        console.log(access_token);
-        $('list').text('').append(
-          $('frameset').attr('cols', '30%,70%').append(
-            $('frame').name('list').src('index.html'),
-            $('frame').name('page').src('index.html'),
-          )
-        );
-
-
-        return;
-        $('list').class('col').text('').append(
-          $('nav').class('top').append(
-            $('a').text('home').href(document.location.pathname),
-            orderFilters.map(f => $('a').text(f.title).href(orderUrl(f.filter))),
-            // $('button').text('orders-geprint').on('click', e => orders('orders-geprint')),
-            // $('button').text('openstaand').on('click', openstaand),
-            // $('button').text('logout').on('click', signOut),
-          ),
-          $('div').class('row').style('height:-webkit-calc(100% - 50px);').append(
-            $('div').class('aco').style('overflow:auto;').append(
-              $('table').append(
-                $('thead').append($('tr').append(cols.map(col => $('th').text(col.title)))),
-                $('tbody').append(
-                  rows.map(row => row.trElem = $('tr').append(
-                    cols.map(col => $('td').class(col.name).append(
-                      col.cell ? col.cell(row) : $('span').text(row[col.name] || ''),
-                    )),
-                  ))
-                ),
-              ),
-            ),
-            $('iframe').name('page').style('width:600px;height:100ve;'),
-          )
-        )
-        console.log(url.searchParams.get('klantId'));
       },
     }
     function orders(request_type){
@@ -505,7 +394,7 @@ function Abis() {
 }
 Abis.prototype = {
   home(){
-    om.navtop.append(
+    $('body>nav').append(
       $('a').text('home').href(document.location.pathname),
       // $('a').text('home').href(document.location.pathname),
       // $('button').text('orders-geprint').on('click', e => orders('orders-geprint')),
@@ -524,33 +413,7 @@ Abis.prototype = {
         )
       )
     }
-    function menuItem(key, obj){
-      return $('details').append(
-        $('summary').append(
-          $('div').text(key).on('click', e => {
-            document.querySelector('section.atv>div').querySelectorAll('div').forEach(el => el.removeAttribute('select'));
-            e.target.setAttribute('select', '');
-            if (obj && obj.metaData && obj.metaData.l) {
-              e.preventDefault();
-              const url = obj.metaData.l.url;
-              const entries = Object.entries(obj.metaData.l);
-              entries.shift();
-              const search = '?'+entries.map(e => e.join('=')).join('&').replace(/ /g,'+');
-              console.log(search);
-              document.location.hash = `#?l=${aim.urlToId(url + search)}`;
-            }
-          })
-        )
-      ).append(
-        Object.entries(obj||{}).filter(e => e[0]!=='metaData').map(e => menuItem(...e))
-      )
-    }
-    console.log(config.navleft);
-    $('section.atv>div').append(
-      $('ul').append(
-        Array.from(Object.entries(config.navleft)).map(e => menuItem(...e)),
-      )
-    )
+    aim.om.treeview(config.navleft);
   },
   async klant_pakbonnen(klantId) {
     dmsClient.api(listPath)

@@ -47,24 +47,6 @@ nav.top{
 table{
   border-collapse: collapse;
 }
-th{
-  text-align: left;
-}
-th,td{
-  white-space: nowrap;
-  border:solid 1px #ccc;
-  padding:0;
-}
-thead{
-  position: sticky;
-  top:0;
-  background-color:#ccc;
-  z-index: 1;
-}
-th,td {
-  vertical-align: top;
-  /* padding: 0 5px; */
-}
 nav.top {
   color:white;
 }

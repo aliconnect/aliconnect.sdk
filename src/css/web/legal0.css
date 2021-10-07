@@ -1,0 +1,23 @@
+.doc-content article ol {
+  padding:0;
+  list-style: none;
+}
+.doc-content article>ol>li {
+  counter-increment: art;
+  margin-left: 40px;
+  counter-reset: sub;
+}
+.doc-content article li::before {
+  text-indent: -40px;
+  float: left;
+}
+
+.doc-content article>ol>li::before {
+  content: counter(h2) "." counter(art) " ";
+}
+.doc-content article ol>li>ol>li {
+  counter-increment: sub;
+}
+.doc-content article ol>li>ol>li::before {
+  content: counter(sub, lower-alpha) ".";
+}

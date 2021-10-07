@@ -14,6 +14,13 @@ vertical-align: baseline
   position: relative;
   z-index: 0;
 }
+.row { display: flex; flex-flow: row; overflow: hidden; }
+.col { display: flex; flex-flow: column; }
+.col>* { flex: 0 0 auto; }
+.aco { flex: 1 1 auto; }
+
+
+
 html {
   --header-font-family: "Segoe UI Light";
   --bg: white;
@@ -460,31 +467,6 @@ input.check {
   color: inherit; font:inherit; opacity: 0.5;
 }
 
-.row {
-  display: -webkit-box;
-  display: -moz-box;
-  display: -ms-flexbox;
-  display: flex;
-  display: -webkit-flex;
-  flex-flow: row;
-  -webkit-flex-flow: row;
-}
-.col {
-  display: flex;
-  display: -webkit-flex;
-  flex-flow: column;
-  -webkit-flex-flow: column;
-}
-.col > * {
-  flex: 0 0 auto;
-  -webkit-flex: 0 0 auto;
-  -ms-flex: 0 0 auto;
-}
-.aco {
-  flex: 1 1 auto;
-  -webkit-flex: 1 1 auto;
-  -ms-flex: 1 1 auto;
-}
 
 
 .row.top.bar {
@@ -5235,4 +5217,7 @@ html{
 
 section.page{
   overflow: auto;
+}
+mark{
+  background:yellow;
 }
