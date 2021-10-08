@@ -1038,17 +1038,17 @@ eol = '\n';
           if (data.types.includes('Files')) {
             e.preventDefault();
             e.stopPropagation();
-            Array.from(data.files).filter(file => file.name.includes('.xls')).forEach(file => {
-              const fileConfig = config.import.xls[file.name];
-              if (fileConfig) {
+            Array.from(data.files).forEach(file => {
+              config.import.filter(fileConfig => fileConfig.filename === file.name).forEach(fileConfig => {
                 const reader = new FileReader();
                 reader.readAsBinaryString(file);
                 reader.onload = async e => {
                   const workbook = XLSX.read(e.target.result, { type: 'binary' });
-                  for (let tab of fileConfig) {
+                  for (let tab of fileConfig.tabs) {
                     tab.colRow = tab.colRow || 1;
-                    const sheet = workbook.Sheets[tab.name];
-                    for (var c=0; c<100; c++) {
+                    const sheet = workbook.Sheets[tab.tabname];
+                    console.log(sheet);
+                    for (var c=0; c<20; c++) {
                       var cell = sheet[XLSX.utils.encode_cell({c:c,r:tab.colRow-1})];
                       if (cell && cell.v) {
                         // console.log(String(cell.v))
@@ -1057,17 +1057,23 @@ eol = '\n';
                     }
                     const rows = tab.rows = [];
                     // console.log(tab.cols);
-                    const cols = tab.cols.filter(col => 'colIndex' in col).filter(col => col.name)
+                    const cols = tab.cols;//.filter(col => 'colIndex' in col).filter(col => col.name)
                     var [s,rowEnd] = sheet['!ref'].match(/:[A-Z]+(\d+)/);
                     var rowStart=tab.colRow;
                     const progressElem = $('progress.import').max(rowEnd).value(rowStart);
                     const infoElem = $('span.info');
                     console.log(rowStart,rowEnd, sheet['!ref']);
                     // return;
-
+                    const tbody = $('tbody').parent($('.table').append(
+                      $('thead').append(
+                        $('tr').append(
+                          cols.map(col => $('th').text(col.name))
+                        )
+                      )
+                    ));
 
                     for (var r = tab.colRow; r<=rowEnd; r++) {
-                      let row;
+                      let row = Object.fromEntries(cols.map(col => [col.name, col.value || null]));
                       cols.forEach(col => {
                         var cell = sheet[XLSX.utils.encode_cell({c:col.colIndex,r:r})];
                         if (cell) {
@@ -1075,19 +1081,21 @@ eol = '\n';
                           row[col.name] = String(cell.v).trim();
                         }
                       })
+
                       progressElem.value(r);
                       if (row) {
-                        tab.cols.filter(col => col.value).forEach(col => row[col.name] = col.value);
-                        // console.log(r, row);
-                        infoElem.text(row.host, row.schema, row.keyname);
-
-                        var res = await fetch('https://aliconnect.nl/import.php', {
-                          method: 'POST',
-                          body: JSON.stringify(row),
-                        }).then(res => res.text());
-                        // console.log(res);
-                        // return;
-                        // rows.push(row);
+                        // console.log(row);
+                        tbody.append($('tr').append(
+                          tab.cols.map(col => $('td').text(row[col.name]))
+                        ));
+                        if (0) {
+                          tab.cols.filter(col => col.value).forEach(col => row[col.name] = col.value);
+                          infoElem.text(row.host, row.schema, row.keyname);
+                          var res = await fetch('https://aliconnect.nl/import.php', {
+                            method: 'POST',
+                            body: JSON.stringify(row),
+                          }).then(res => res.text());
+                        }
                       } else {
                         infoElem.text('');
                       }
@@ -1105,8 +1113,7 @@ eol = '\n';
                   // console.log(res);
                   // return importGeneriek(workbook.Sheets.Generiek, file.name);
                 }
-
-              }
+              })
             })
           }
         });
@@ -8870,15 +8877,17 @@ eol = '\n';
         Array.from(Object.entries(config.navleft)).map(e => menuItem(...e)),
       )
     },
-    listview(cols, rows, type = 'cols', filter, rowsVisible){
+    listview(cols, rows, type, filter, rowsVisible){
       cols = this.cols = cols || this.cols;
       rows = this.rows = rows || this.rows;
-      type = this.type = type || this.type;
-      rowsVisible = rowsVisible || rows;
-      console.log(cols,rows,type,rowsVisible);
+      // type = this.type = type || this.type;
+      sessionStorage.setItem('listType', type = this.type = type || this.type || sessionStorage.getItem('listType') || 'rows');
+      rowsVisible = rowsVisible || rows || [];
+      const listview = this.listview;
+      // console.log(type, cols,rows,rowsVisible);
 
       const types = {
-        rows() {
+        rows: () => {
           return $('div').class('cards',type).append(
             rowsVisible.map(row => $('div').append(
               $('div').text(cols.filter(col => col.header === 1 && row[col.name]).map(col => row[col.name]).join(' ')),
@@ -8887,7 +8896,7 @@ eol = '\n';
             ))
           )
         },
-        cols(){
+        cols: () => {
           return $('div').class('cards',type).append(
             rowsVisible.map(row => $('div').append(
               cols.filter(col => row[col.name]).map(col => {
@@ -8901,11 +8910,20 @@ eol = '\n';
             ['','','','','','','','','','','','','','',].map(i => $('span').class('ghost')),
           )
         },
-        table() {
+        table: () => {
           return $('table').class('products').append(
             $('thead').append(
               $('tr').append(
-                cols.map(col => $('th').text(col.title || col.name))
+                cols.map(col => $('th').append(
+                  $('div').text(col.title || col.name).class(this.sortName === col.name ? 'sort' : '', this.sortDir ? 'asc' : '').on('click', e => {
+                    this.sortDir = this.sortName === col.name ? this.sortDir ^ 1 : 0;
+                    const sortFactor = 1-2*this.sortDir;
+                    // console.log(this.sortName, col.name, sortFactor, this.sortDir);
+                    this.sortName = col.name;
+                    rowsVisible.sort((a,b) => sortFactor * String(a[col.name]).localeCompare(String(b[col.name]), undefined, {numeric: true}));
+                    aim.om.listview(cols, rows, type, filter, rowsVisible);
+                  })
+                ))
               )
             ),
             $('tbody').append(
@@ -8926,10 +8944,10 @@ eol = '\n';
                     // const elem = $('td').text('CELL');
                   }
                   let inpElem;
-                  const elem = $('td').class(col.name).append(
+                  const elem = $('td').class(col.name).align(isNaN(row[col.name]) ? 'left' : 'right').append(
                     (function(){
                       function span(){
-                        return $('span').text(row[col.name] || '')
+                        return $('span').text(col.name in row ? row[col.name] : '')
                       }
                       return span();//col.cell ? col.cell(row) : span();
                     })()

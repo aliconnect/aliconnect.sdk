@@ -103,10 +103,23 @@ thead{
 }
 th{
   text-align: left;
-  padding: .5rem .5rem;
   white-space: nowrap;
   vertical-align: top;
+  border:none;
+  padding:0;
+}
+th>div{
+  padding: .5rem .5rem;
   border-bottom: solid 1px gray;
+}
+th>div.sort:after{
+  content: 'V';
+  display: inline-block;
+  float: right;
+  transform: rotate(180deg);
+}
+th>div.asc:after{
+  transform: rotate(0deg);
 }
 td{
   white-space: nowrap;

@@ -96,14 +96,17 @@ function orderChangeCell(col, row, isInput){
 }
 
 function listShow(body) {
-  const context = new URL(body.context);
+  // console.log(body);
+  const rows = body.rows;
+  const context = new URL(body['@context']);
   const requestType = context.searchParams.get('request_type');
   const schema = config.components.schemas[requestType];
   const docUrl = new URL(document.location);
   const listUrl = new URL(aim.idToUrl(docUrl.searchParams.get('l')), document.location);
-  const select = listUrl.searchParams.get('$select').split(',');
-  const cols = select.map(name => Object.assign({name: name}, schema.properties[name]));
-  const rows = body.rows;
+  const $select = listUrl.searchParams.get('$select');
+  const select = $select ? $select.split(',') : Object.keys(rows[0]);
+  // console.log(select);
+  const cols = select.map(name => Object.assign({name: name}, schema && schema.properties && schema.properties[name] ? schema.properties[name] : {title: name}));
   $('article.pv').text('');
   aim.om.listview(cols, rows);
 }
@@ -121,7 +124,7 @@ function Abis() {
       method: 'POST',
       body: configYaml,
     }).then(res => res.json());
-    console.log(config);
+    // console.log(config);
     // console.log('abis')
     const client_id = aim.config.client_id;
     const aimConfig = {
@@ -360,7 +363,7 @@ function Abis() {
 
     $(window).on('popstate', e => {
       const search = document.location.hash.substr(1) || document.location.search;
-      console.log('aaaa', search);
+      // console.log('aaaa', search);
       e.preventDefault();
       if (search) {
         const documentUrl = new URL(document.location);
@@ -373,7 +376,7 @@ function Abis() {
           window.history.replaceState('', '', documentUrl.href);
           const listUrl = new URL(listRef, document.location);
           const requestType = listUrl.searchParams.get('request_type')
-          console.log(111, requestType, listRef);
+          // console.log(111, requestType, listRef);
 
           // const proc = url.searchParams.get(''));
           dmsClient.api(listRef)
