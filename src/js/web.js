@@ -9,6 +9,7 @@ eol = '\n';
 
   const tagnames = ['a', 'abbr', 'address', 'area', 'article', 'aside', 'audio', 'b', 'base', 'bdi', 'bdo', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 'cite', 'code', 'col', 'colgroup', 'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html', 'i', 'iframe', 'frameset', 'frame', 'img', 'input', 'ins', 'kbd', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 'menu', 'meta', 'meter', 'nav', 'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'p', 'param', 'picture', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'section', 'select', 'slot', 'small', 'source', 'span', 'strong', 'style', 'sub', 'summary', 'sup', 'table', 'tbody', 'td', 'template', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track', 'u', 'ul', 'var', 'video', 'wbr', ];
 
+
   const libraries = {
     start() {
       // console.log('START');
@@ -920,25 +921,27 @@ eol = '\n';
       })
     },
     md(){
-      $().on('load', e => {
-        const data = JSON.parse(atob(document.querySelector('data').getAttribute('md')));
+      $().on('load', async e => {
+
+        // console.log(document.location.pathname);
+        const data = document.querySelector('data') ? JSON.parse(atob(document.querySelector('data').getAttribute('md'))) : {
+          md: await fetch(document.location.pathname === '/' ? '/page/Home.md' : '/page'+document.location.pathname+'.md').then(res => res.text()),
+        };
         let body = data.md;
         // console.log(body);
         const lastModified = '';
-        fetch('/_top.md').then(res => res.text().then(body => {
-          $("nav-top").text('').html(aim.markdown().render(body));
+        fetch('/page/top.md').then(res => res.text().then(body => {
+          $(".nav-top").text('').html(aim.markdown().render(body));
         }));
-        fetch('/_footer.md').then(res => res.text().then(body => {
-          $("footer").text('').html(aim.markdown().render(body));
+        fetch('/page/footer.md').then(res => res.text().then(body => {
+          $(".footer").text('').html(aim.markdown().render(body));
         }));
-        $("doc-header").text('').append(
+        $(".doc-header").text('').append(
           $('h1').text(document.title),
           // $('time').text('Laatst gewijzigd', lastModified.toLocaleDateString(), lastModified.toLocaleTimeString()),
         );
 
-
-
-        $("doc-content").text('').append(aim.markdown().render(body));//.renderCode(e.target.responseURL);
+        $(".doc-content").text('').append(aim.markdown().render(body));//.renderCode(e.target.responseURL);
         $("aside.right").index("section.doc-content");
 
         if (document.location.hash) {
@@ -959,7 +962,7 @@ eol = '\n';
                 }
               });
             })(config, []);
-            $("doc-content").text('').append(aim.markdown().render(body));//.renderCode(e.target.responseURL);
+            $(".doc-content").text('').append(aim.markdown().render(body));//.renderCode(e.target.responseURL);
           }
         }
         function mdSignin(el){
@@ -6620,6 +6623,244 @@ eol = '\n';
     }
   }));
 
+
+  function listview(cols, rows, type, filter, rowsVisible){
+    cols = this.cols = cols || this.cols;
+    rows = this.rows = rows || this.rows;
+    // type = this.type = type || this.type;
+    sessionStorage.setItem('listType', type = this.type = type || this.type || sessionStorage.getItem('listType') || 'rows');
+    rowsVisible = rowsVisible || rows || [];
+    // const listview = this.listview;
+    // console.log(type, cols,rows,rowsVisible);
+
+    const types = {
+      rows: () => {
+        return $('div').class('cards',type).append(
+          rowsVisible.map(row => $('div').append(
+            $('div').text(cols.filter(col => col.header === 1 && row[col.name]).map(col => row[col.name]).join(' ')),
+            $('div').text(cols.filter(col => col.header === 2 && row[col.name]).map(col => row[col.name]).join(' ')),
+            $('div').text(cols.filter(col => col.header === 3 && row[col.name]).map(col => row[col.name]).join(' ')),
+          ))
+        )
+      },
+      cols: () => {
+        return $('div').class('cards',type).append(
+          rowsVisible.map(row => $('div').append(
+            cols.filter(col => row[col.name]).map(col => {
+              if (col.schema) {
+                return $('div').append($('a').text(row[col.name]).href(`#${col.schema}(${row[col.name]})`))
+              } else {
+                return $('div').text(row[col.name])
+              }
+            }),
+          )),
+          ['','','','','','','','','','','','','','',].map(i => $('span').class('ghost')),
+        )
+      },
+      table: () => {
+        return $('table').class('products').append(
+          $('thead').append(
+            $('tr').append(
+              cols.map(col => $('th').append(
+                $('div').text(col.title || col.name).class(this.sortName === col.name ? 'sort' : '', this.sortDir ? 'asc' : '').on('click', e => {
+                  this.sortDir = this.sortName === col.name ? this.sortDir ^ 1 : 0;
+                  const sortFactor = 1-2*this.sortDir;
+                  // console.log(this.sortName, col.name, sortFactor, this.sortDir);
+                  this.sortName = col.name;
+                  rowsVisible.sort((a,b) => sortFactor * String(a[col.name]).localeCompare(String(b[col.name]), undefined, {numeric: true}));
+                  aim.om.listview(cols, rows, type, filter, rowsVisible);
+                })
+              ))
+            )
+          ),
+          $('tbody').append(
+            rowsVisible.map(row => $('tr').append(
+              cols.map(col => {
+                if (col.schema) {
+                  return $('td').class(col.name).append(
+                    $('a').text(row[col.name]).href(`#${col.schema}(${row[col.name]})`)
+                  );
+                }
+                if (col.cell) {
+                  if (typeof col.cell !== 'function') {
+                    col.cell = new Function('col', 'row', col.cell);
+                  }
+                  return $('td').class(col.name).append(
+                    col.cell(col,row),
+                  );
+                  // const elem = $('td').text('CELL');
+                }
+                let inpElem;
+                const elem = $('td').class(col.name).align(isNaN(row[col.name]) ? 'left' : 'right').append(
+                  (function(){
+                    function span(){
+                      return $('span').text(col.name in row ? row[col.name] : '')
+                    }
+                    return span();//col.cell ? col.cell(row) : span();
+                  })()
+                ).on('click', e => {
+                  if (!col.readOnly) {
+                    // e.preventDefault();
+                    // e.stopPropagation();
+                    if (!elem.querySelector('input')) {
+                      $('input').parent(elem).value(row[col.name] || '')
+                      .on('change', e => {
+                        console.log(row);
+                        const value = row[col.name] = elem.querySelector('span').innerText = elem.querySelector('input').value;
+                        fetch('https://aliconnect.nl/abis/data', {
+                          method: 'POST',
+                          body: JSON.stringify({
+                            request_type: requestType,
+                            id: row.id,
+                            name: col.name,
+                            value: value,
+                          }),
+                        }).then(async res => {
+                          console.log(await res.text());
+                        });
+                      })
+                      .on('blur', e => {
+                        elem.querySelector('input').remove();
+                      }).select();
+                    }
+                  }
+                });
+                return elem;
+              }),
+              // cols.map(col => $('td').text(row[col.name]))
+            ))
+          )
+        )
+
+      }
+    }
+
+    filter = filter || cols.filter(col => col.filter).map(col => Object({
+      name: col.name,
+      values: rowsVisible.map(row => row[col.name]).unique().sort().map(value => Object({
+        value: value,
+        rows: rowsVisible.filter(row => row[col.name] === value),
+      }))
+    }));
+
+    // const
+
+
+
+    $('body>main').text('').append(
+      $('nav').append(
+        $('button').text('filter'),
+        $('span'),
+        $('button').text('view').append(
+          $('div').append(
+            ['rows','cols','table'].map(key => $('button').text(key).on('click', e => {
+              listview(cols, rows, key);
+            }))
+          ),
+        ),
+      ),
+      $('section').append(
+        $('aside').class('filter').append(
+          filter.map(col => {
+            const values = col.values.filter(val => val.rows.some(row => rowsVisible.includes(row)));
+            if(values.some(val => val.checked) || values.length>1) {
+              return $('details').open(1).append(
+                $('summary').text(col.name),
+                values.map(val => $('div').text(val.value).checked(val.checked).attr('cnt', val.rows.filter(row => rowsVisible.includes(row)).length).on('click', e => {
+                  val.checked ^= 1;
+                  col.checked = col.values.some(val => val.checked);
+                  rowsVisible = rows.filter(row => !filter.some(col => col.checked && col.values.filter(val => !val.checked).some(val => val.rows.includes(row))));
+                  this.listview(cols, rows, type, filter, rowsVisible);
+                }))
+              );
+            }
+          })
+        ),
+        $('article').append(
+          types[type](),
+        ),
+      ),
+    )
+  }
+
+  aim.search = async function (el){
+    fetch('https://aliconnect.nl/abis/data?request_type=product&search='+el.value)
+    .then(response => response.json().then(data => {
+      console.log(data);
+      const cols = [
+        { name: 'productTitle', title: 'Titel'},
+        { name: 'supplier', title: 'Leverancier'},
+        { name: 'brand', title: 'brand'},
+        { name: 'productGroup', title: 'productGroup'},
+        { name: 'description', title: 'description'},
+        { name: 'ordercode', title: 'ordercode'},
+        { name: 'catalogPrice', title: 'catalogPrice'},
+        { name: 'salesPrice', title: 'salesPrice'},
+      ];
+
+      listview(cols, data.rows);
+      return;
+      const rows = data.rows;
+      show = {
+        table() {
+          cols = [
+            { name: 'productTitle', title: 'Titel'},
+            { name: 'supplier', title: 'Leverancier'},
+            { name: 'brand', title: 'brand'},
+            { name: 'productGroup', title: 'productGroup'},
+            { name: 'description', title: 'description'},
+            { name: 'ordercode', title: 'ordercode'},
+            { name: 'catalogPrice', title: 'catalogPrice'},
+            { name: 'salesPrice', title: 'salesPrice'},
+          ];
+          $('section.doc-content').text('').append(
+            $('table').class('products').append(
+              $('thead').append(
+                $('tr').append(
+                  cols.map(col => $('th').text(col.title || col.name))
+                )
+              ),
+              $('tbody').append(
+                rows.map(row => $('tr').append(
+                  cols.map(col => $('td').text(row[col.name]))
+                ))
+              )
+            )
+          )
+        },
+        list(){
+          $('section.doc-content').text('').append(
+            $('div').class('products').append(
+              rows.map(row => $('div').append(
+                $('div').text([row.supplier,row.brand,row.productTitle].join(' ')),
+                $('div').text([row.productGroup,row.description].join(' ')),
+                $('div').text([row.ordercode].join(' ')),
+                $('div').class('price').append(
+                  $('span').attr('catalogprice', Number(row.catalogPrice).toLocaleString('nl-NL', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })),
+                  $('span').attr('discount', (row.discount = ((row.catalogPrice - row.salesPrice) / row.catalogPrice)*100).toLocaleString('nl-NL', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  })),
+                  row.discount ?
+                  $('span').attr('salesprice', Number(row.salesPrice).toLocaleString('nl-NL', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })) : null,
+                ),
+              )
+            )
+          ))
+        },
+      }
+      $('aside.right').text('');
+      return show.list();
+      return show.table();
+    }))
+  }
+
   function Om() {
     const om = this;
     function construct(selector) {
@@ -8877,164 +9118,7 @@ eol = '\n';
         Array.from(Object.entries(config.navleft)).map(e => menuItem(...e)),
       )
     },
-    listview(cols, rows, type, filter, rowsVisible){
-      cols = this.cols = cols || this.cols;
-      rows = this.rows = rows || this.rows;
-      // type = this.type = type || this.type;
-      sessionStorage.setItem('listType', type = this.type = type || this.type || sessionStorage.getItem('listType') || 'rows');
-      rowsVisible = rowsVisible || rows || [];
-      const listview = this.listview;
-      // console.log(type, cols,rows,rowsVisible);
-
-      const types = {
-        rows: () => {
-          return $('div').class('cards',type).append(
-            rowsVisible.map(row => $('div').append(
-              $('div').text(cols.filter(col => col.header === 1 && row[col.name]).map(col => row[col.name]).join(' ')),
-              $('div').text(cols.filter(col => col.header === 2 && row[col.name]).map(col => row[col.name]).join(' ')),
-              $('div').text(cols.filter(col => col.header === 3 && row[col.name]).map(col => row[col.name]).join(' ')),
-            ))
-          )
-        },
-        cols: () => {
-          return $('div').class('cards',type).append(
-            rowsVisible.map(row => $('div').append(
-              cols.filter(col => row[col.name]).map(col => {
-                if (col.schema) {
-                  return $('div').append($('a').text(row[col.name]).href(`#${col.schema}(${row[col.name]})`))
-                } else {
-                  return $('div').text(row[col.name])
-                }
-              }),
-            )),
-            ['','','','','','','','','','','','','','',].map(i => $('span').class('ghost')),
-          )
-        },
-        table: () => {
-          return $('table').class('products').append(
-            $('thead').append(
-              $('tr').append(
-                cols.map(col => $('th').append(
-                  $('div').text(col.title || col.name).class(this.sortName === col.name ? 'sort' : '', this.sortDir ? 'asc' : '').on('click', e => {
-                    this.sortDir = this.sortName === col.name ? this.sortDir ^ 1 : 0;
-                    const sortFactor = 1-2*this.sortDir;
-                    // console.log(this.sortName, col.name, sortFactor, this.sortDir);
-                    this.sortName = col.name;
-                    rowsVisible.sort((a,b) => sortFactor * String(a[col.name]).localeCompare(String(b[col.name]), undefined, {numeric: true}));
-                    aim.om.listview(cols, rows, type, filter, rowsVisible);
-                  })
-                ))
-              )
-            ),
-            $('tbody').append(
-              rowsVisible.map(row => $('tr').append(
-                cols.map(col => {
-                  if (col.schema) {
-                    return $('td').class(col.name).append(
-                      $('a').text(row[col.name]).href(`#${col.schema}(${row[col.name]})`)
-                    );
-                  }
-                  if (col.cell) {
-                    if (typeof col.cell !== 'function') {
-                      col.cell = new Function('col', 'row', col.cell);
-                    }
-                    return $('td').class(col.name).append(
-                      col.cell(col,row),
-                    );
-                    // const elem = $('td').text('CELL');
-                  }
-                  let inpElem;
-                  const elem = $('td').class(col.name).align(isNaN(row[col.name]) ? 'left' : 'right').append(
-                    (function(){
-                      function span(){
-                        return $('span').text(col.name in row ? row[col.name] : '')
-                      }
-                      return span();//col.cell ? col.cell(row) : span();
-                    })()
-                  ).on('click', e => {
-                    if (!col.readOnly) {
-                      // e.preventDefault();
-                      // e.stopPropagation();
-                      if (!elem.querySelector('input')) {
-                        $('input').parent(elem).value(row[col.name] || '')
-                        .on('change', e => {
-                          console.log(row);
-                          const value = row[col.name] = elem.querySelector('span').innerText = elem.querySelector('input').value;
-                          fetch('https://aliconnect.nl/abis/data', {
-                            method: 'POST',
-                            body: JSON.stringify({
-                              request_type: requestType,
-                              id: row.id,
-                              name: col.name,
-                              value: value,
-                            }),
-                          }).then(async res => {
-                            console.log(await res.text());
-                          });
-                        })
-                        .on('blur', e => {
-                          elem.querySelector('input').remove();
-                        }).select();
-                      }
-                    }
-                  });
-                  return elem;
-                }),
-                // cols.map(col => $('td').text(row[col.name]))
-              ))
-            )
-          )
-
-        }
-      }
-
-      filter = filter || cols.filter(col => col.filter).map(col => Object({
-        name: col.name,
-        values: rowsVisible.map(row => row[col.name]).unique().sort().map(value => Object({
-          value: value,
-          rows: rowsVisible.filter(row => row[col.name] === value),
-        }))
-      }));
-
-      // const
-
-
-
-      this.lv.text('').append(
-        $('nav').append(
-          $('button').text('filter'),
-          $('span'),
-          $('button').text('view').append(
-            $('div').append(
-              ['rows','cols','table'].map(key => $('button').text(key).on('click', e => {
-                this.listview(cols, rows, key);
-              }))
-            ),
-          ),
-        ),
-        $('section').append(
-          $('aside').class('filter').append(
-            filter.map(col => {
-              const values = col.values.filter(val => val.rows.some(row => rowsVisible.includes(row)));
-              if(values.some(val => val.checked) || values.length>1) {
-                return $('details').open(1).append(
-                  $('summary').text(col.name),
-                  values.map(val => $('div').text(val.value).checked(val.checked).attr('cnt', val.rows.filter(row => rowsVisible.includes(row)).length).on('click', e => {
-                    val.checked ^= 1;
-                    col.checked = col.values.some(val => val.checked);
-                    rowsVisible = rows.filter(row => !filter.some(col => col.checked && col.values.filter(val => !val.checked).some(val => val.rows.includes(row))));
-                    this.listview(cols, rows, type, filter, rowsVisible);
-                  }))
-                );
-              }
-            })
-          ),
-          $('article').append(
-            types[type](),
-          ),
-        ),
-      )
-    }
+    listview,
   }
 
   function url_string(s) {

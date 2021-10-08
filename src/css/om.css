@@ -33,9 +33,6 @@ nav button {
   margin: 0;
 }
 
-
-
-
 body>nav {
   position: absolute; margin:auto; top: 0; left:0; right: 0;
   height: 48px;
