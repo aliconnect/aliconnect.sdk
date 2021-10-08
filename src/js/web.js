@@ -941,7 +941,7 @@ eol = '\n';
           // $('time').text('Laatst gewijzigd', lastModified.toLocaleDateString(), lastModified.toLocaleTimeString()),
         );
 
-        $(".doc-content").text('').append(aim.markdown().render(body));//.renderCode(e.target.responseURL);
+        $(".doc-content>article").text('').append(aim.markdown().render(body));//.renderCode(e.target.responseURL);
         $("aside.right").index("section.doc-content");
 
         if (document.location.hash) {
