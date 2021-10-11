@@ -568,12 +568,14 @@ class Aim {
     $this->request_path = $this->request_url['path'];
     $this->hostname = explode('.',$_SERVER['HTTP_HOST'])[0];
     $this->method = strToLower($_SERVER['REQUEST_METHOD']);
+    $this->config_path = $_SERVER['DOCUMENT_ROOT']."/../config";
+    $this->client_config_path = "$this->config_path/forms/aliconnect-config";
 
     $this->config = [];
     $this->secret = [];
-    $this->config = array_replace_recursive($this->config, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/config.yaml") ? yaml_parse_file($this->default_config_filename = $fname) : []);
-    $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/secret.yaml") ? yaml_parse_file($fname) : []);
-    $this->config = array_replace_recursive($this->config, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$_SERVER['HTTP_HOST'].".config.yaml") ? yaml_parse_file($fname) : []);
+    $this->config = array_replace_recursive($this->config, is_file($fname = "$this->config_path/config.yaml") ? yaml_parse_file($this->default_config_filename = $fname) : []);
+    $this->secret = array_replace_recursive($this->secret, is_file($fname = "$this->config_path/secret.yaml") ? yaml_parse_file($fname) : []);
+    $this->config = array_replace_recursive($this->config, is_file($fname = "$this->config_path/".$_SERVER['HTTP_HOST'].".config.yaml") ? yaml_parse_file($fname) : []);
 
     // $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$_SERVER['HTTP_HOST'].".secret.yaml") ? yaml_parse_file($fname) : []);
     $this->client_id = request('client_id', $_REQUEST) ?: request('client_id',$this->config);
@@ -599,7 +601,7 @@ class Aim {
       $jwt->validate($this->secret['client_secret']);
       if (!$jwt->valid) http_response(401);
     }
-    $this->config = array_replace_recursive($this->config, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/client/".$this->client_id.".config.yaml") ? yaml_parse_file($this->config_filename = $fname) : []);
+    $this->config = array_replace_recursive($this->config, is_file($fname = "$this->client_config_path/$this->client_id.config.yaml") ? yaml_parse_file($this->config_filename = $fname) : []);
     // debug($this->client_id, $this->config);
     // $fname = str_replace('.config.','.oas.',$fname);
     // if (!empty($this->config['client_secret'])) {
@@ -648,6 +650,8 @@ class Aim {
       if ($paths = $oas['paths']) {
         // debug($paths);
         $path_to_search = preg_replace('/\(.*?\)/', '()', $this->request_path);
+        // $path_to_search = preg_replace('/^\/api/', '', $path_to_search);
+        // die($path_to_search);
         $path_to_search = str_replace($this->base_path, '', $path_to_search);
         $path_to_search = strtolower($path_to_search);
         // debug($paths);

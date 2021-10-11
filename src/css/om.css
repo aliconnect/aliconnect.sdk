@@ -7,19 +7,19 @@ html,body{
   margin:0;
   padding:0;
 }
-body {
+/* body {
   position: fixed; top:0; bottom:0; left:0; right: 0;
   display: flex;
   padding-top: 48px;
   padding-bottom: 24px;
-}
-body, aside, article, section, footer, nav { display: flex; background: inherit; }
+} */
+aside, article, section, footer, nav { display: flex; background: inherit; }
 aside, article { flex-flow: column; overflow: auto; }
 aside, section, footer, nav { flex: 0 0 auto; }
 aside, section, footer { overflow: hidden; }
 article, section { flex: 1 1 auto; }
 body:empty, aside:empty, article:empty, section:empty, nav:empty, footer:empty { display: none; }
-nav { height: 36px; line-height: 36px; z-index: 1; background-color: var(--bg-trans); }
+/* nav { height: 36px; line-height: 36px; z-index: 1; background-color: var(--bg-trans); } */
 nav>span { margin-right: auto; }
 nav button {
   border: solid 2px transparent;
@@ -33,12 +33,12 @@ nav button {
   margin: 0;
 }
 
-body>nav {
+/* body>nav {
   position: absolute; margin:auto; top: 0; left:0; right: 0;
   height: 48px;
   line-height: 48px;
   background: blue;
-}
+} */
 body>footer {
   position: absolute; margin:auto; bottom: 0; left:0; right: 0;
   height: 24px;

@@ -1592,6 +1592,7 @@ eol = '\n';
         s = ('\n\n'+md)
         .replace(/(^|\s)> (\[\!(\w+)\]\s|.*?)(.+?)(?=\n\n|$)/gs, (s,p1,p2,p3,p4) => `${p1}<BLOCKQUOTE${p3?` class="${p3.toLowerCase()}"`:``}>${(p4||'').replace(/(^|\s)> /gm, '')}</BLOCKQUOTE>`)
         .replace(/(\n[^\n]+?)(\n\s*-+\s\|\s.*?\n)(.*?)(?=\n\n|$)/gs, (s,p1,p2,p3) => `<TABLE><THEAD><TR><TH>${p1.trim().replace(/\s\|\s/g, '</TH><TH>')}</TH></TR></THEAD><TBODY><TR><TD>${p3.trim().replace(/\s\|\s/g, '</TD><TD>').replace(/\n/g,'</TD></TR>\n<TR><TD>')}</TD></TR></TBODY></TABLE>`)
+        .trim()
         .split(/\n/)
         .map(s => {
           var p = '';
@@ -1702,7 +1703,9 @@ eol = '\n';
         return s
       }) + setLevelTag(0,'');
       // console.log(s);
-      return s;
+      return s
+      .replace(/<P><\/P>/g,'')
+      .trim();
     },
     isImg1(src) {
       return src.match(/jpg|png|bmp|jpeg|gif|bin/i)
@@ -7654,7 +7657,7 @@ eol = '\n';
     this.$ = aim;
     this.aim = aim;
     const currentScript = document.currentScript;
-    console.warn(currentScript.src);
+    // console.warn(currentScript.src);
     const scriptPath = currentScript.src.replace(/\/js\/.*/, '');
     [...currentScript.attributes].forEach(attribute => aim.extend({config: minimist(['--'+attribute.name.replace(/^--/, ''), attribute.value])}));
     (new URLSearchParams(document.location.search)).forEach((value,key)=>aim.extend({config: minimist([key,value])}));

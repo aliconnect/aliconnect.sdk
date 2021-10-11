@@ -59,6 +59,402 @@ eol = '\n';
         });
       }
     },
+    omd() {
+      //   function childObject(object, schemaname) {
+      //     // console.log(schemaname);
+      //     if (object) {
+      //       const obj = Object.fromEntries(Object.entries(object).filter(([name, obj]) => typeof obj !== 'object'));
+      //       obj.children = Object
+      //       .entries(object)
+      //       .filter(([name, obj]) => typeof obj === 'object')
+      //       .map(([name, obj]) => Item.get(Object.assign({
+      //         schema: schemaname,
+      //         name: name,
+      //         title: name.replace(/^\d+[-| ]/,'')
+      //       }, childObject(obj, schemaname))));
+      //       return obj;
+      //     }
+      //   }
+      //   $().on({
+      //     async load() {
+      //       ($().server = $().server || {}).url = $().server.url || ('//' + document.location.hostname.split('.')[0] + '.aliconnect.nl/api');
+      //       if (!$().client_id) {
+      //         console.warn($().server.url);
+      //         await $().url($().server.url+'/').get().then(e => $().extend(e.body)).catch(console.error);
+      //         console.warn(1, aimClient.api('/').toString());
+      //         // await $().url($().server.url+'/').get().then(e => console.log(JSON.stringify(JSON.parse(e.target.responseText),null,2).replace(/"(\w+)"(?=: )/gs,'$1'))).catch(console.error);
+      //       }
+      //       $(document.documentElement).class('app');
+      //       $(document.body).class('row aim om bg').id('body').append(
+      //         $.his.elem.navtop = $('header').id('navtop').class('row top bar noselect np').append(
+      //           $.his.elem.menu = $('a').class('abtn icn menu').on('click', e => {
+      //             if ($.his.elem.menuList && $.his.elem.menuList.style()) {
+      //               $.his.elem.menuList.style('');
+      //             } else {
+      //               if ($.his.elem.menuList) $.his.elem.menuList.style('display:none;');
+      //               $(document.body).attr('tv', document.body.hasAttribute('tv') ? $(document.body).attr('tv')^1 : 0)
+      //             }
+      //           }),
+      //           $('a').class('title').id('toptitle').on('click', e => $().start() ),
+      //           $('form').class('search row aco')
+      //           .on('submit', e => {
+      //             const value = $.searchValue = e.target.search.value;
+      //             var result = value
+      //             ? [...$.props.values()]
+      //             .filter(item => item instanceof Item)
+      //             .unique()
+      //             .filter(item => item.header0 && value.split(' ').every(value => [item.header0,item.name].join(' ').match(new RegExp(`\\b${value}\\b`, 'i'))))
+      //             : [];
+      //             $().list(result);
+      //             return false;
+      //           })
+      //           .append(
+      //             $('input').name('search').autocomplete('off').placeholder('zoeken'),
+      //             $('button').class('abtn icn search fr').title('Zoeken'),
+      //           ),
+      //           $('a').class('abtn icn dark').dark(),
+      //         ),
+      //         $('section').tree().id('tree').css('max-width', $().storage('tree.width') || '200px'),
+      //         // $('div').seperator(),
+      //         $('section').id('list').list(),
+      //         // $('div').seperator('right'),
+      //         $('section').id('view').class('col aco apv printcol').css('max-width', $().storage('view.width') || '600px'),
+      //         $('section').id('preview').class('col aco apv info'),
+      //         $('section').class('row aco doc').id('doc'),
+      //         $('section').class('prompt').id('prompt').tabindex(-1).append(
+      //           $('button').class('abtn abs close').attr('open', '').tabindex(-1).on('click', e => $().prompt(''))
+      //         ),
+      //         // $('section').id('section_main').class('row aco main section_main').append(
+      //         // ),
+      //         $('footer').statusbar(),
+      //       );
+      //       $(document.body).messagesPanel();
+      //       // console.log(document.location.hostname.split('.')[0]);
+      //       // console.warn($().server.url, $());
+      //       await $().translate();
+      //       // await $().getApi(document.location.origin+'/api/');
+      //       await $().login();
+      //       if (aimClient.sub) {
+      //         // await aimClient.api('/').get().then(e => $($()).extend(e.body));
+      //         // await $().url($().server.url+`/config/${aimClient.sub}/api.json`).get().then(e => $().extend(e.body));
+      //         if ('Notification' in window) {
+      //           var permission = Notification.permission;
+      //           // const notificationPermission = Notification.permission.toString();
+      //           // console.log('Notification', permission);
+      //           if (Notification.permission === 'default') {
+      //             $.his.elem.navtop.append(
+      //               $('a').class('abtn').text('Notifications').on('click', e => Notification.requestPermission())
+      //             )
+      //           }
+      //           // if (!['denied','granted'].includes(Notification.permission)) {
+      //           //   this.elemNavtop.append(
+      //           //     // $('a').class('abtn').test('Notifications').on('click', e => Notification.requestPermission())
+      //           //   )
+      //           // }
+      //         }
+      //         $.his.elem.navtop
+      //         .prompts(...$.const.prompt.menu.prompts)
+      //         .append(
+      //           $.his.elem.account = $('a').class('abtn account').caption('Account').href('#?prompt=account').draggable(),
+      //         );
+      //         if ($().menu) {
+      //           $().menuChildren = childObject($().menu).children;
+      //           $().tree(...$().menuChildren);
+      //         }
+      //         if ($.aud = await $(`/Company(${aimClient.aud})`).details()) {
+      //           $().tree($.aud)
+      //         }
+      //         if ($.user = await $(`/Contact(${aimClient.sub})`).details()) {
+      //           $().tree($.user);
+      //           await aimClient.api(`/`).query('request_type','visit').get().then(body => $.his.items = body);
+      //           $.his.elem.account.item($.user, 'accountElem');
+      //           $.user.emit('change');
+      //           if ($.user.data.mse_access_token) {
+      //             $()
+      //             .schemas('msaEvent', {
+      //               properties: {
+      //                 title: {
+      //                   get() {
+      //                     // console.log(this);
+      //                     return this.data.start ? `${this.data.start.dateTime} ${this.data.start.endTime}` : '';
+      //                   },
+      //                 },
+      //                 subject: {},
+      //                 summary: {
+      //                   get(){
+      //                     // console.log(this);
+      //                     return `${this.data.organizer.emailAddress.name} (${this.data.organizer.emailAddress.address})`;
+      //                   },
+      //                 },
+      //                 // "@odata.etag": {},
+      //                 // id: {},
+      //                 start: {},
+      //                 end: {},
+      //                 organizer: {}
+      //               }
+      //             })
+      //             .schemas('msaContact', {
+      //               // title() {
+      //               //   return this.combine('displayName');
+      //               // },
+      //               // subject() {
+      //               //   return this.combine('givenName,firstName,middleName,lastName,companyName');
+      //               // },
+      //               header: [
+      //                 ['DisplayName'],
+      //                 ['GivenName','FirstName','MiddleName','LastName','CompanyName'],
+      //                 [],
+      //               ],
+      //               // filterfieldnames: 'Surname,CompanyName',
+      //               properties: {
+      //                 // "@odata.etag": {},
+      //                 // id: {},
+      //                 // createdDateTime: {},
+      //                 // lastModifiedDateTime: {},
+      //                 // changeKey: {},
+      //                 // parentFolderId: {},
+      //                 // fileAs: {},
+      //                 // categories: {},
+      //                 DisplayName: {
+      //                   legend: 'Personalia',
+      //                 },
+      //                 Initials: {
+      //                 },
+      //                 GivenName: {
+      //                 },
+      //                 MiddleName: {
+      //                 },
+      //                 Surname: {
+      //                 },
+      //                 Title: {
+      //                 },
+      //                 nickName: {
+      //                 },
+      //                 // yomiGivenName: {},
+      //                 // yomiSurname: {},
+      //                 // yomiCompanyName: {},
+      //                 // imAddresses: {},
+      //                 companyName: {
+      //                   legend: 'Business',
+      //                 },
+      //                 department: {
+      //                 },
+      //                 officeLocation: {
+      //                 },
+      //                 profession: {
+      //                 },
+      //                 jobTitle: {
+      //                 },
+      //                 assistantName: {
+      //                 },
+      //                 manager: {
+      //                 },
+      //                 businessHomePage: {
+      //                 },
+      //                 emailAddresses: {
+      //                   legend: 'Contact',
+      //                 },
+      //                 mobilePhone: {
+      //                 },
+      //                 businessPhones: {
+      //                 },
+      //                 businessAddress: {
+      //                 },
+      //                 otherAddress: {
+      //                 },
+      //                 homePhones: {
+      //                   legend: 'Personal',
+      //                 },
+      //                 homeAddress: {
+      //                 },
+      //                 birthday: {
+      //                 },
+      //                 spouseName: {
+      //                 },
+      //                 children: {
+      //                 },
+      //                 generation: {
+      //                 },
+      //                 personalNotes: {
+      //                 },
+      //               }
+      //             })
+      //             .schemas('msaMessage', {
+      //               title() {
+      //                 return this.data.from ? (this.data.from.emailAddress.name ? this.data.from.emailAddress.name : this.data.from.emailAddress.address) : '';
+      //               },
+      //               subject() {
+      //                 return this.data.subject;
+      //               },
+      //               bodyPreview() {
+      //                 return this.data.bodyPreview;
+      //               },
+      //               properties: {
+      //                 // "@odata.etag": {},
+      //                 // createdDateTime: {},
+      //                 // lastModifiedDateTime: {},
+      //                 // id: {},
+      //                 // changeKey: {},
+      //                 // hasAttachments: {},
+      //                 // isDeliveryReceiptRequested: {},
+      //                 // isReadReceiptRequested: {},
+      //                 // isRead: {},
+      //                 // isDraft: {},
+      //                 // flag: {},
+      //                 // bodyPreview: {},
+      //                 // parentFolderId: {},
+      //                 // conversationId: {},
+      //                 // conversationIndex: {},
+      //                 // internetMessageId: {},
+      //                 // receivedDateTime: {},
+      //                 // sentDateTime: {},
+      //                 // importance: {},
+      //                 // inferenceClassification: {},
+      //                 // from: {},
+      //                 // sender: {},
+      //                 // toRecipients: {},
+      //                 // ccRecipients: {},
+      //                 // bccRecipients: {},
+      //                 // replyTo: {},
+      //                 // webLink: {},
+      //                 // categories: {},
+      //                 subject: {},
+      //                 body: {},
+      //               }
+      //             })
+      //             .schemas('msaNotebook', {
+      //               properties: {
+      //                 title: {
+      //                   get: 'displayName',
+      //                 },
+      //                 summary: {
+      //                   get() {
+      //                     return `${this.data.lastModifiedDateTime} ${this.data.lastModifiedBy.user.displayName}`
+      //                   },
+      //                 },
+      //                 // createdDateTime: {},
+      //                 // createdBy: {},
+      //                 // lastModifiedDateTime: {},
+      //                 // lastModifiedBy: {},
+      //                 // id: {},
+      //                 isDefault: {},
+      //                 isShared: {},
+      //                 self: {},
+      //                 displayName: {},
+      //                 userRole: {},
+      //                 sectionsUrl: {},
+      //                 sectionGroupsUrl: {},
+      //                 links: {}
+      //               }
+      //             });
+      //             $().tree(...childObject({
+      //               Outlook: {
+      //                 Contacts: {
+      //                   onclick: e => $().msa().getContacts(),
+      //                 },
+      //                 Events: {
+      //                   onclick: e => $().msa().getEvents(),
+      //                 },
+      //                 Messages: {
+      //                   onclick: e => $().msa().getMessages(),
+      //                 },
+      //                 Notes: {
+      //                   onclick: e => $().msa().getNotes(),
+      //                 },
+      //               }
+      //             }).children);
+      //           }
+      //         }
+      //         // $().url('https://aliconnect.nl/api/').query('request_type', 'build_doc').get().then(e => {
+      //         //   console.log('DOCBUILD', e.body);
+      //         //   $($).extend(e.body);
+      //         //   $().tree(...childObject($.docs, 'Chapter').children);
+      //         // });
+      //       } else {
+      //         $.his.elem.navtop
+      //         .append(
+      //           $('a').class('abtn login').text('Aanmelden').href($().loginUrl().query('prompt', 'login').toString()),
+      //         );
+      //         // $(document.documentElement).class('site');
+      //         //
+      //         // $('navtop').append(
+      //         //   $.his.elem.menu = $('a').class('abtn icn menu').on('click', e => {
+      //         //     if ($.his.elem.menuList && $.his.elem.menuList.style()) {
+      //         //       $.his.elem.menuList.style('');
+      //         //     } else {
+      //         //       if ($.his.elem.menuList) $.his.elem.menuList.style('display:none;');
+      //         //     }
+      //         //   }),
+      //         //   $('a').class('title').href('/').id('toptitle'),
+      //         //   $('form').class('search row aco'),
+      //         //   $('a').class('abtn icn dark').dark(),
+      //         //   $.his.elem.account = $('a').class('abtn account').caption('Account').href('#?prompt=account').draggable(),
+      //         // );
+      //         //
+      //         // $('section_main').append(
+      //         //   $('section').id('list').list(),
+      //         //   $('div').seperator('right'),
+      //         //   $('section').id('view').class('col aco apv printcol').css('max-width', $().storage('view.width') || '600px'),
+      //         //   $('section').id('preview').class('col aco apv info'),
+      //         //   $('section').class('row aco doc').id('doc'),
+      //         //   $('section').class('prompt').id('prompt').append(
+      //         //     $('button').class('abtn abs close').attr('open', '').on('click', e => $().prompt(''))
+      //         //   ),
+      //         // );
+      //         //
+      //       }
+      //       // if ($().schemas()) {
+      //       //   const itemItem = $().schemas().get('Item');
+      //       //   if (itemItem) {
+      //       //     itemItem.HasChildren = true;
+      //       //     [...$().schemas().values()].forEach(item => {
+      //       //       if (item !== itemItem) {
+      //       //         if (!item.Master || !item.Master.LinkID) {
+      //       //           $(item).Master = { LinkID: itemItem.ID };
+      //       //         }
+      //       //         // console.log(item.name, item.SrcID, item.MasterID);
+      //       //         if (!item.SrcID || item.SrcID !== item.MasterID) {
+      //       //           $(item).Src = { LinkID: item.MasterID };
+      //       //         }
+      //       //       }
+      //       //     });
+      //       //     $().tree($().schemas().get('Item'));
+      //       //   }
+      //       //   if ($().schemas().has('Equipment')) {
+      //       //     aimClient.api(`/Equipment`).select($.config.listAttributes).top(10000).filter('keyID IS NOT NULL').get()
+      //       //   }
+      //       // }
+      //       if ($().aud) {
+      //         // console.log($().aud, $({tag: `Company(${$().aud})`}));
+      //         $.his.elem.menu.showMenuTop($({tag: `Company(${$().aud})`}));
+      //       }
+      //       if ($().info) {
+      //         $('toptitle').text(document.title = $().info.title).title([$().info.description,$().info.version,$().info.lastModifiedDateTime].join(' '));
+      //       }
+      //       // console.log(document.location.application_path);
+      //       $().application_path = $().application_path || '/';
+      //       // var url = new URL(document.location);
+      //       // $().pageHome = $().pageHome || '//' + document.location.hostname.replace(/([\w\.-]+)\.github\.io/, 'github.com/$1/$1.github.io') + '/wiki/Home';
+      //       $().ref = $().ref || {};
+      //       $().ref.home = $().ref.home || '//aliconnect.nl/sdk/wiki/Home';
+      //       console.log($().ref.home);
+      //
+      //       if (!document.location.search) {
+      //
+      //         $().execQuery('l', $().ref.home, true );
+      //         // $().execQuery('l', document.location.origin);
+      //       }
+      //       // if (document.location.pathname === $().application_path && !document.location.search) {
+      //       //   window.history.replaceState('page', 'PAGINA', '?p='+($().ref && $().ref.home ? $().ref.home : document.location.origin));
+      //       //   // $(window).emit('popstate');
+      //       // }
+      //       // $(document.body).cookieWarning();
+      //       function response(e) {
+      //         console.log(e.target.responseText);
+      //       }
+      //     },
+      //   });
+    },
     loadclient() {
       // console.log('AA');
       $().on({
@@ -210,7 +606,9 @@ eol = '\n';
       $(document.body).append(
         $('nav').append($('div').append()),
         $('main').append(
-          $('div').class('col pv'),
+          $('section').class('doc-content').append(
+            $('form'),
+          ),
         ),
       );
       console.log('FORMS', 'https://aliconnect.nl/aliconnect/config?path='+document.location.href);
@@ -421,7 +819,7 @@ eol = '\n';
                 $('div').class('input').append(
                   $('span').class('info').title(metaData.description),
                   $('label').class('title').text(metaData.title || key),
-                  $('input').id('input'+inputId)
+                  $('input').id('input'+inputId).class('aco')
                   .name(name)
                   .value(dataObj === null ? metaData.defaultValue || '' : dataObj)
                   .type(types[typeof dataObj])
@@ -494,9 +892,8 @@ eol = '\n';
         // $('.doc-content').text('');
         sessionStorage.setItem('client_id', data.client.client_id || '');
         sessionStorage.setItem('client_secret', data.client.client_secret || '');
-        const formElem = $('form').autocomplete("off").parent('.col.pv').on('submit', postForm);
+        const formElem = $('form').autocomplete("off").parent(document.body).on('submit', postForm);
         var contentElem = formElem;
-
         let inputId=0;
         function build(data, parent, config){
           // const metaData = cfg.metaData || { title: isNaN(key) ? key : Number(key)+1 };
@@ -524,7 +921,7 @@ eol = '\n';
             parent.append(
               $('div').class('input').append(
                 $('label').class('title').text(metaData.title || nameToTitle(key)),
-                $('input').id('input'+inputId)
+                $('input').id('input'+inputId).class('aco')
                 .name(name)
                 .value(data[key])
                 .type(metaData.type || types[typeof property.value])
@@ -553,7 +950,7 @@ eol = '\n';
             );
           });
         };
-        build(data,formElem,formDefinitions);
+        build(data,$('.doc-content>form'),formDefinitions);
         console.log(formDefinitions);
         formElem.append(
           $('button').value('save').text('Opslaan').default(true),
@@ -681,14 +1078,16 @@ eol = '\n';
     async page(){
       const searchParams = new URLSearchParams(document.location.search);
       $(document.body).append(
-        $('nav').append($('article').append(
-          $('form').append(
-            $('input').name('search').append(
+        $('nav').append(
+          $('div').append(
+            $('form').append(
+              $('input').name('search').append(
+              )
             )
           )
-        )),
-        $('header').append($('article')),
-        $('main').append($('article').append(
+        ),
+        $('header').append($('div')),
+        $('main').append(
           $('aside').class('left'),
           $('section').class('doc-content').append(
             $('nav').class('doc-nav'),
@@ -696,8 +1095,8 @@ eol = '\n';
             $('article'),
           ),
           $('aside').class('right'),
-        )),
-        $('footer').append($('article')),
+        ),
+        $('footer').append($('div')),
       );
       if (searchParams.get('search')) {
         search(searchParams.get('search'));
@@ -707,7 +1106,6 @@ eol = '\n';
       }
     },
     async om() {
-      document.querySelector('html').className += 'app';
       $(document.body).append(
         $('nav').append(
           $('a').class('abtn icn menu').on('click', e => {
@@ -750,7 +1148,7 @@ eol = '\n';
           $('a').class('abtn icn dark').dark(),
         ),
         $('main').append(
-          $('div').class('col tv left noselect np')
+          $('aside').class('left noselect np')
           .css('min-width', $().storage('tree.width') || '200px')
           .on('click', e => {
             this.asideLeft.elem.style.left = null;
@@ -801,18 +1199,18 @@ eol = '\n';
               }),
               // $('button', 'abtn icn close'),
             ),
-            $('div').class('list'),
+            this.tv = $('article').class('tv list'),
           ),
           // .contextmenu(this.menu)
           $('div').seperator(),
-          $('div').class('col lv'),
-          $('div').class('col dv'),
+          $('article').class('lv'),
+          $('article').class('dv'),
           $('div').seperator('right'),
-          $('div').class('col pv').css('max-width', $().storage('view.width') || '700px').append(
+          $('article').class('pv').css('max-width', $().storage('view.width') || '700px').append(
             // $('iframe').name('page').style('height: 100%;')
           ),
-          // $('div').id('preview'),
-          $('div').class('prompt').tabindex(-1).append(
+          $('section').id('preview'),
+          $('aside').class('prompt').tabindex(-1).append(
             $('button').class('abtn abs close').attr('open', '').tabindex(-1).on('click', e => $().prompt(''))
           ),
         ),
@@ -830,12 +1228,12 @@ eol = '\n';
       const lastModified = '';
       fetch('/page/top.md').then(res => res.text().then(body => {
         // console.log(body,aim.markdown().render(body));
-        $("body>nav>article").text('').html(aim.markdown().render(body));
+        $("body>nav>div").text('').html(aim.markdown().render(body));
       }));
       fetch('/page/footer.md').then(res => res.text().then(body => {
-        $("body>footer>article").text('').html(aim.markdown().render(body));
+        $("body>footer>div").text('').html(aim.markdown().render(body));
       }));
-      $("body>header>article").text('').append(
+      $("body>header>div").text('').append(
         $('h1').text(document.title),
         // $('time').text('Laatst gewijzigd', lastModified.toLocaleDateString(), lastModified.toLocaleTimeString()),
       );
@@ -944,6 +1342,7 @@ eol = '\n';
         // console.log(href);
         return $('a').text(title).href(href);
       }
+
       function page(schemaname, id){
         schema = config.components.schemas[schemaname];
         console.log('page', schema, id);
@@ -955,6 +1354,7 @@ eol = '\n';
         });
 
       }
+
       function pageLink(title, schema, id){
       //   var schema = config.components.schemas[request_type];
       //   var href = `https://aliconnect.nl/abis/data?request_type=${request_type}&$select=${schema.select}&$filter=${filter}`;
@@ -969,6 +1369,7 @@ eol = '\n';
           page(schema, id);
         });
       }
+
       function link(title, href){
         // aim.idToUrl(url.searchParams.get('l'));
         return $('a').text(title).href(href)
@@ -983,6 +1384,7 @@ eol = '\n';
           return `#?l=${aim.urlToId(href)}`;
         }
       }
+
       function orderChangeCell(col, row, isInput){
         if (isInput) {
           return $('input').text(col.title || col.name).on('change', e=>{
@@ -1013,6 +1415,7 @@ eol = '\n';
           });
         })
       }
+
       function listShow(body) {
         // console.log(body);
         const rows = body.rows;
@@ -1025,7 +1428,7 @@ eol = '\n';
         const select = $select ? $select.split(',') : Object.keys(rows[0]);
         // console.log(select);
         const cols = select.map(name => Object.assign({name: name}, schema && schema.properties && schema.properties[name] ? schema.properties[name] : {title: name}));
-        $('.col.pv').text('');
+        $('article.pv').text('');
         aim.om.listview(cols, rows);
       }
 
@@ -1205,6 +1608,7 @@ eol = '\n';
         },
       }
 
+
       function Abis() {
         abis = this;
         // console.log(config);
@@ -1301,7 +1705,7 @@ eol = '\n';
             }
           }
           // console.warn(e.target);
-        }).emit('popstate')
+        })
         // $(window).on('hashchange', e => {
         //   e.preventDefault();
         // })
@@ -6984,7 +7388,7 @@ eol = '\n';
 
 
 
-    $('.col.lv').text('').append(
+    $('article.lv').text('').append(
       $('nav').append(
         $('button').text('filter'),
         $('span'),
@@ -6996,7 +7400,7 @@ eol = '\n';
           ),
         ),
       ),
-      $('div').append(
+      $('section').append(
         $('aside').class('filter').append(
           filter.map(col => {
             const values = col.values.filter(val => val.rows.some(row => rowsVisible.includes(row)));
@@ -7013,7 +7417,7 @@ eol = '\n';
             }
           })
         ),
-        $('div').append(
+        $('article').append(
           types[type](),
         ),
       ),
@@ -9204,7 +9608,7 @@ eol = '\n';
         return $('details').open(1).append(
           $('summary').append(
             $('span').text(key).on('click', e => {
-              $('.col.tv>div').querySelectorAll('div').forEach(el => el.attr('select', null));
+              tv.querySelectorAll('div').forEach(el => el.attr('select', null));
               e.target.setAttribute('select', '');
               if (obj && obj.metaData && obj.metaData.l) {
                 e.preventDefault();
@@ -9224,7 +9628,7 @@ eol = '\n';
           Object.entries(obj||{}).filter(e => e[0]!=='metaData').map(e => menuItem(...e))
         )
       }
-      $('.col.tv>div').append(
+      $('article.tv').append(
         Array.from(Object.entries(config.navleft)).map(e => menuItem(...e)),
       )
     },
@@ -11280,6 +11684,7 @@ eol = '\n';
   window.addEventListener('load', async function webLoad(e) {
     var firstFolder = document.location.pathname.match(/(\w+)\//);
     if (firstFolder && libraries[firstFolder[1]]) {
+      document.querySelector('html').className += firstFolder[1];
       libraries[firstFolder[1]]();
     } else {
       if (currentScript.attributes.libraries) {

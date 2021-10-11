@@ -113,9 +113,6 @@ function listShow(body) {
 
 
 function Abis() {
-
-
-
   abis = this;
   $().on('load', async e => {
     const configYaml = await fetch('../config/config.yaml').then(res => res.text());
