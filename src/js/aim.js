@@ -1,9 +1,5 @@
-eol = '\n';
-// console.warn('RUNING BETA 222');
-//console.log('sdk 1.0.1');
-// version 0.0.1 beta1
-// Version 0.0.6
 (function(global, factory) { typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, global.aim = factory()); }(this, function (exports) {
+  eol = '\n';
 
   const self = this;
   function aim(selector, context){
@@ -247,8 +243,6 @@ eol = '\n';
       $('div').append($('button').text('Gezien').on('click', e => elem.remove())),
     )
   }
-
-
 
   minimist = function (args, opts){
     if (!opts) opts = {};
@@ -1704,7 +1698,7 @@ eol = '\n';
       }) + setLevelTag(0,'');
       // console.log(s);
       return s
-      .replace(/<P><\/P>/g,'')
+      .replace(/<P>\s*<\/P>/g,'')
       .trim();
     },
     isImg1(src) {
@@ -2092,10 +2086,8 @@ eol = '\n';
         await selector.dispatchEvent(e);
       } else {
         if (selector.eventListeners && selector.eventListeners.has(type)){
-          const eventListener = selector.eventListeners.get(type);
-          for (const i in eventListener){
-            // console.debug('EMIT', type, eventListener[i]);
-            await eventListener[i](context || {});
+          for (const eventListener of selector.eventListeners.get(type)){
+            await eventListener(context || {});
           }
         }
       }
@@ -2122,7 +2114,8 @@ eol = '\n';
       }
       return data;
     },
-  }
+  };
+
 
   Object.defineProperties(aim.prototype, {
     eventHandle: { value: null, },
@@ -2193,54 +2186,11 @@ eol = '\n';
         // this.execUrl(url.hash.substr(1));
       }
       // //console.log(url.searchParams.get('l'));
-      if (url.searchParams.get('l')) {// && url.searchParams.get('l') !== aim.url.searchParams.get('l')) {
-        documentUrl.searchParams.set('l', url.searchParams.get('l'));
-
-        const listUrl = idToUrl(url.searchParams.get('l'));
-        const hostname = new URL(listUrl).hostname;
-        const client = Client.clients.get(hostname);
-        if (client) {
-          client.api(listUrl).get().then(async body => {
-            const items = body.value || body.Children || await body.children;
-            console.warn('BODY', body.value, body.Children, items);
-            aim().list(items);
-          });
-        } else {
-          aim('list').load(refurl.href);
-        }
-        //
-        //
-        // url.get().then(e => //console.log(e))
-        // return;
-        // var documentUrl = new URL(document.location);
-        // // url.searchParams.forEach((value, key) => //console.log(key, value));
-        // url.searchParams.forEach((value, key) => documentUrl.searchParams.set(key, value));
-        // documentUrl.hash = '';
-        // // self.history.replaceState('page', '', documentUrl.href.replace(/%2F/g, '/'));
-        //
-        //
-        //
-        // // self.history.replaceState('page', '', url.href.replace(/%2F/g, '/'));
-        // currentUrl.searchParams.set('l', url.searchParams.get('l'));
-        // var refurl = new URL(idToUrl(url.searchParams.get('l')), document.location);
-        // // console.warn('refurl', refurl.pathname);
-        //
-        // if (refurl.hostname.match(/^dms\./)) {
-        //   refurl.pathname += '/children';
-        //   dmsClient.api(refurl.href)
-        //   .filter('FinishDateTime eq NULL')
-        //   .select(aim.config.listAttributes)
-        //   .get().then(async body => {
-        //     console.error(body)
-        //     if (body){
-        //       const items = body.value || body.Children || await body.children;
-        //       aim().list(items);
-        //     }
-        //   });
-        // } else {
-        //   return aim('list').load(refurl.href);
-        // }
-      }
+      // if (url.searchParams.get('l')) {// && url.searchParams.get('l') !== aim.url.searchParams.get('l')) {
+      //   documentUrl.searchParams.set('l', url.searchParams.get('l'));
+      //
+      //   const listUrl = idToUrl(url.searchParams.get('l'));
+      // }
       if (url.searchParams.get('v') && url.searchParams.get('v') !== documentUrl.searchParams.get('v')) {
         documentUrl.searchParams.set('v', url.searchParams.get('v'));
         if (url.searchParams.get('v')) {
@@ -3405,20 +3355,24 @@ eol = '\n';
     // }
   });
 
+
+  aim.clients = new Map();
+  function initWithMiddleware(options, config) {
+    return new Client(options, config);
+  }
   function Client (options, config) {
-    Client.clients = Client.clients || new Map();
-    // //console.log('aim', config);
+    console.log('Client', options, config);
 
     this.config = config;
     this.options = options;
     // this.client_id = config.client_id;
-    // Client.clients.push(this);
+    // aim.clients.push(this);
     config.servers = config.servers || [{url: aim.config.url}];
     // console.warn(config.servers, aim.config.url);
     Array.from(config.servers).forEach(server => aimClient.servers.set(server.url, this));
     this.url = config.servers[0].url;
     this.hostname = new URL(this.url).hostname;
-    Client.clients.set(this.hostname, this);
+    aim.clients.set(this.hostname, this);
 
 
     // this.hostname = this.url.match(/\/\/(.*?)\//)[1];
@@ -3470,15 +3424,9 @@ eol = '\n';
     // this.server = servers[0] || {};
     // console.debug(`Client ${selector} = ${context.info ? context.info.title : ''}`);
   };
-  // Client.clients = [];
-  // Client.client = new Map();
-
-  Object.defineProperties(Client, {
-    // clients: {value: new Map},
-    initWithMiddleware: { value: function (options, config) {
-      return new Client(options, config);
-    }, },
-  });
+  Object.assign(Client, {
+    initWithMiddleware,
+  })
   Client.prototype = {
     headers: {},
     loadConfig() {
@@ -4119,7 +4067,7 @@ eol = '\n';
       const url = this.data['@id'];
       //console.log(6666, url + selector);
       const hostname = new URL(url).hostname;
-      const client = Client.clients.get(hostname);
+      const client = aim.clients.get(hostname);
       return client.api(url + selector)
     }},
     attr: {
@@ -7231,6 +7179,41 @@ eol = '\n';
     },
   }
 
+  function Api(url, options = {}) {
+    this.options = options;
+    const headers = this.options.headers = this.options.headers || {};
+    headers.accept = headers.accept || 'application/json';
+    this.url = new URL('https://aliconnect.nl/api'+url);
+  }
+  Api.prototype = {
+    query(selector, context){
+      if (typeof selector === 'object') Object.entries(selector).forEach(entry => this.query(...entry))
+      else this.url.searchParams.set(selector, context);
+      return this;
+    },
+    headers(selector, context){
+      if (typeof selector === 'object') Object.entries(selector).forEach(entry => this.headers(...entry))
+      else this.options.headers[selector] = context;
+      return this;
+    },
+    get(){
+      return this.fetch();
+    },
+    post(data){
+      this.input(data);
+      this.options.method = 'POST';
+      return this.fetch();
+    },
+    input(data){
+      this.options.body = JSON.stringify(data);
+      return this;
+    },
+    fetch(){
+      // console.log(this.url.toString(), this.options);
+      return fetch(this.url, this.options);
+    },
+  }
+
   Object.assign(aim, {
     Client,
     Dist,
@@ -7254,6 +7237,9 @@ eol = '\n';
     urlToId,
     idToUrl,
     extend,
+    api(url, options){
+      return new Api(url, options);
+    },
     his: new His,
     log: () => {
       if (self.document && document.getElementById('console')) {

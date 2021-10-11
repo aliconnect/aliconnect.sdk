@@ -1,13 +1,16 @@
-// Version 0.0.6
-// console.log('elem 111');
-eol = '\n';
 (function (){
 
   function toLink(s){
     return s.replace(/\(|\)|\[|\]|,|\.|\=|\{|\}/g,'').replace(/ /g,'-').toLowerCase();
   }
+  function nameToTitle(key){
+    return isNaN(key) ? key.replace(/^\w/, s => s.toUpperCase()).replace(/-|_/g, ' ').replace(/([a-z])([A-Z])/g, (s,p1,p2) => `${p1} ${p2.toLowerCase()}`) : String(Number(key)+1)
+  }
 
+  eol = '\n';
   const tagnames = ['a', 'abbr', 'address', 'area', 'article', 'aside', 'audio', 'b', 'base', 'bdi', 'bdo', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 'cite', 'code', 'col', 'colgroup', 'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html', 'i', 'iframe', 'frameset', 'frame', 'img', 'input', 'ins', 'kbd', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 'menu', 'meta', 'meter', 'nav', 'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'p', 'param', 'picture', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'section', 'select', 'slot', 'small', 'source', 'span', 'strong', 'style', 'sub', 'summary', 'sup', 'table', 'tbody', 'td', 'template', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track', 'u', 'ul', 'var', 'video', 'wbr', ];
+
+  var config = {};
   const libraries = {
     start() {
       // console.log('START');
@@ -213,12 +216,12 @@ eol = '\n';
           $('div').class('col pv'),
         ),
       );
-      console.log('FORMS', 'https://aliconnect.nl/aliconnect/config?path='+document.location.href);
-      const formDefinitions = await fetch('https://aliconnect.nl/aliconnect/config?path='+document.location.href).then(res => res.json());
-      console.log(formDefinitions);
+      // console.log('FORMS', 'https://aliconnect.nl/api/aliconnect/config?path='+document.location.href);
+      // const formDefinitions = await fetch(aim.url('/aliconnect/config',{query:{path:document.location.href}}).then(res => res.json());
+      const formDefinitions = await aim.api('/aliconnect/config').query('path', document.location.href).get().then(res => res.json());
+      // console.log(1111, formDefinitions);
       let data = {
         info: {
-          name: '',
           title: '',
           contact: {
             email: '',
@@ -227,12 +230,14 @@ eol = '\n';
           // description: 'sdfas',
         },
         client: {
-          client_id: $.config.client_id || sessionStorage.getItem('client_id') || '',
-          client_secret: $.config.client_secret || sessionStorage.getItem('client_secret') || '',
+          name: '',
+          client_id: sessionStorage.getItem('client_id') || '',
+          client_secret: sessionStorage.getItem('client_secret') || '',
         }
       };
       // sessionStorage.clear();
       let activeField;
+      const formElem = $('form').autocomplete("off").parent('.pv').on('submit', postForm);
       function postForm(e){
         activeField = document.activeElement.name;
         const submit = e && e.submitter ? e.submitter.value : 'post';
@@ -250,60 +255,42 @@ eol = '\n';
           return new Promise((success, fail) => {
             fetch(docBasePath + name + '.md').then(res => res.text().then(body => {
               body = replaceFields(body,data);
-              $(".aim-config").text('').append(
-                $('article').append(
-                  aim.markdown().render(body),
-                  // $('canvas').style('background:white;height:150px;').paint(),
-                  $('div').append(
-                    // $('button').value('save').text('Opslaan').default(true),
-                    $('button').value('prev').text('Terug').on('click', e => start(data)),
-                    $('button').value('next').text('Verder').on('click', e => {
-                      const elem = document.querySelector(".aim-config");
-                      const canvas = document.querySelector("canvas");
-                      var image = new Image();
-                      image.src = canvas.toDataURL();
-                      canvas.parentElement.insertBefore(image, canvas);
-                      canvas.remove();
-                      // document.getElementById('image_for_crop').appendChild(image);
-                      fetch(document.location.pathname, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                          client: {
-                            client_id: data.client.client_id,
-                          },
-                          savepdf: name,
-                          html: elem.innerHTML,
-                        }),
-                      }).then(res => {
-                        success();
-                        // fetch(docBasePath + 'Explore-Legal-Protocol-meldplicht-datalekken.md').then(res => res.text().then(body => {
-                        //   body = replaceFields(body,data);
-                        //   $(".aim-config").text('')
-                        //   .append(
-                        //     aim.markdown().render(body),
-
-
-                      });
-                      //
-                      // //
-                      // console.log($(".aim-config").elem.innerHTML);
-                    }),
-                  )
+              formElem.text('').html(aim.markdown().render(body)).append(
+                $('div').append(
+                  // $('button').value('save').text('Opslaan').default(true),
+                  $('button').type('button').value('prev').text('Terug').on('click', e => start(data)),
+                  $('button').type('button').value('next').text('Verder').on('click', e => {
+                    const elem = formElem.elem;//document.querySelector(".pv");
+                    const canvas = document.querySelector("canvas");
+                    var image = new Image();
+                    image.src = canvas.toDataURL();
+                    canvas.parentElement.insertBefore(image, canvas);
+                    canvas.remove();
+                    // console.log(elem.innerHTML);
+                    // document.getElementById('image_for_crop').appendChild(image);
+                    aim.api('/aliconnect/config').query('path', document.location.href).post({
+                      client: { client_id: data.client.client_id, },
+                      savepdf: name,
+                      html: elem.innerHTML,
+                    })
+                    .then(success);
+                    // return console.log(res);
+                  }),
                 )
-              ).query('canvas', elem => {
-                elem.paint();
-              })
+              ).query('canvas', elem => elem.paint())
             }));
           })
         }
-        $().url('https://aliconnect.nl/aliconnect/config?path='+document.location.href)
-        .accept('application/json')
+        // console.log(data);
+        // return false;
+        aim.api('/aliconnect/config')
+        .query('path', document.location.href)
         .query('response_type', 'config')
         .query('client_id', data.client.client_id)
         .query('client_secret', data.client.client_secret)
         .query('submitter', submit)
-        .post(JSON.stringify(data)).then(e => {
-          data = e.body;
+        .post(data).then(e => e.json().then(body => {
+          data = body;
           if (submit === 'next') {
             signDocument('Explore-Legal-Verwerkers-overeenkomst').then(e => {
               signDocument('Explore-Legal-Protocol-meldplicht-datalekken').then(e => {
@@ -315,10 +302,10 @@ eol = '\n';
             return;
           }
           start(data);
-        })
+        }))
         return false;
       }
-      function start(){
+      function __start(){
         $(document.body).text('').class('aim-config doc-content');
         // var focusElement;
         // const config = e.body;
@@ -488,74 +475,11 @@ eol = '\n';
         // focusElement.elem.focus();
       }
       function start(){
-        function nameToTitle(key){
-          return isNaN(key) ? key.replace(/^\w/, s => s.toUpperCase()).replace(/-|_/g, ' ').replace(/([a-z])([A-Z])/g, (s,p1,p2) => `${p1} ${p2.toLowerCase()}`) : String(Number(key)+1)
-        }
-        // $('.doc-content').text('');
         sessionStorage.setItem('client_id', data.client.client_id || '');
         sessionStorage.setItem('client_secret', data.client.client_secret || '');
-        const formElem = $('form').autocomplete("off").parent('.col.pv').on('submit', postForm);
         var contentElem = formElem;
-
-        let inputId=0;
-        function build(data, parent, config){
-          // const metaData = cfg.metaData || { title: isNaN(key) ? key : Number(key)+1 };
-          // var dataObj = data;
-          // console.log(config);
-          const types = {
-            boolean: 'checkbox',
-            number: 'number',
-            string: 'text',
-            object: 'object',
-          }
-          Object.entries(data).forEach(([key,value]) => config[key] = config[key] || (
-            typeof value === 'object' ? Object.fromEntries(Object.entries(value).map(([key,value]) => [key,typeof value === 'object' ? {} : ''])) : {metaData:{type:typeof value}}
-          ));
-          const configEntries = Object.entries(config);
-          const properties = configEntries.filter(
-            ([key,property]) => property.metaData &&
-            Object.keys(property).length === 1 &&
-            (property.metaData.type = property.metaData.type || types[property.value ? typeof property.value : 'string']) &&
-            ['text','number','string','boolean'].includes(property.metaData.type || 'text')
-          )
-          const children = configEntries.filter(entry => entry[0] !== 'metaData' && !properties.includes(entry));
-          properties.forEach(([key,property]) => {
-            const metaData = config && config[key] && config[key].metaData ? config[key].metaData : {};
-            parent.append(
-              $('div').class('input').append(
-                $('label').class('title').text(metaData.title || nameToTitle(key)),
-                $('input').id('input'+inputId)
-                .name(name)
-                .value(data[key])
-                .type(metaData.type || types[typeof property.value])
-                // .autofocus(name === activeField ? '' : null)
-                // .required(metaData.required || dataObj === null ? '' : null)
-                // .placeholder(placeholder)
-                // .pattern(metaData.pattern)
-                .on('change', e => {
-                  let obj = data;
-                  path.forEach(key => obj = obj[key] = obj[key] || {});
-                  obj[key] = e.target.value;
-                }),
-                // $('label').class('caption').for('input'+inputId),
-                // $('label').class('ico').for('input'+inputId),
-              )
-            )
-          })
-          children.forEach(([key,value]) => {
-            const metaData = value.metaData = value.metaData || {
-              title: nameToTitle(key)
-            }
-            build(
-              data[key] || {},
-              $('details').parent(parent).append($('summary').text(metaData.title)),
-              value || {}
-            );
-          });
-        };
-        build(data,formElem,formDefinitions);
-        console.log(formDefinitions);
-        formElem.append(
+        inputId=0;
+        formElem.text('').buildForm(data,formDefinitions).append(
           $('button').value('save').text('Opslaan').default(true),
           $('button').value('next').text('Verder'),
         )
@@ -679,7 +603,6 @@ eol = '\n';
       });
     },
     async page(){
-      const searchParams = new URLSearchParams(document.location.search);
       $(document.body).append(
         $('nav').append($('article').append(
           $('form').append(
@@ -690,20 +613,35 @@ eol = '\n';
         $('header').append($('article')),
         $('main').append($('article').append(
           $('aside').class('left'),
-          $('section').class('doc-content').append(
-            $('nav').class('doc-nav'),
-            $('header').class('doc-header'),
-            $('article'),
-          ),
+          $('section').class('pv doc-content')
+          // .append(
+          //   $('nav').class('doc-nav'),
+          //   $('header').class('doc-header'),
+          //   $('article'),
+          // )
+          ,
+          $('div').class('lv'),
           $('aside').class('right'),
         )),
         $('footer').append($('article')),
       );
+      fetch('/page/top.md').then(res => res.text().then(body => {
+        // console.log(body,aim.markdown().render(body));
+        $("body>nav>article").html(aim.markdown().render(body));
+      }));
+      fetch('/page/footer.md').then(res => res.text().then(body => {
+        $("body>footer>article").text('').html(aim.markdown().render(body));
+      }));
+      const searchParams = new URLSearchParams(document.location.search);
       if (searchParams.get('search')) {
         search(searchParams.get('search'));
-      } else {
-        // console.log('a');
-        await this.md();
+      } else if (!searchParams.get('id')) {
+        const data = document.querySelector('data') ? JSON.parse(atob(document.querySelector('data').getAttribute('md'))) : {
+        md: await fetch(document.location.pathname === '/' ? '/page/Home.md' : '/page'+document.location.pathname+'.md').then(res => res.text()),
+      };
+        let body = data.md;
+        $(".pv").text('').html(aim.markdown().render(body));
+        $("aside.right").index(".pv");
       }
     },
     async om() {
@@ -723,6 +661,8 @@ eol = '\n';
           $('a').class('title').id('toptitle').on('click', e => $.start() ),
           $('form').class('search row aco')
           .on('submit', e => {
+            document.location.hash = '?$search='+e.target.search.value;
+            return false;
             e.preventDefault();
             const url = new URL(document.location);
             const listRef = url.searchParams.get('l');
@@ -753,7 +693,7 @@ eol = '\n';
           $('div').class('col tv left noselect np')
           .css('min-width', $().storage('tree.width') || '200px')
           .on('click', e => {
-            this.asideLeft.elem.style.left = null;
+            // this.asideLeft.elem.style.left = null;
           })
           .append(
             $('nav').class('btnbar np').append(
@@ -801,7 +741,7 @@ eol = '\n';
               }),
               // $('button', 'abtn icn close'),
             ),
-            $('div').class('list'),
+            $('div').class('oa list'),
           ),
           // .contextmenu(this.menu)
           $('div').seperator(),
@@ -819,6 +759,19 @@ eol = '\n';
         $('footer').statusbar(),
       ).messagesPanel();
       aim.om = new Om();
+      // $(window).on('popstate', e => {
+      //   console.log(aim.searchParams);
+      //   const searchParams = new URLSearchParams(document.location.search);
+      //   const names = [
+      //     { name: 'id', onchange: value => value ? page(atob(value)) : $('.pv').text('') },
+      //   ];
+      //   names.forEach(par => {
+      //     if (!aim.searchParams || aim.searchParams.get(par.name) !== searchParams.get(par.name)) {
+      //       par.onchange(searchParams.get(par.name));
+      //     }
+      //   })
+      //   aim.searchParams = searchParams;
+      // })
     },
     async md(){
       // console.log(document.location.pathname);
@@ -828,13 +781,6 @@ eol = '\n';
       let body = data.md;
       // console.log(body);
       const lastModified = '';
-      fetch('/page/top.md').then(res => res.text().then(body => {
-        // console.log(body,aim.markdown().render(body));
-        $("body>nav>article").text('').html(aim.markdown().render(body));
-      }));
-      fetch('/page/footer.md').then(res => res.text().then(body => {
-        $("body>footer>article").text('').html(aim.markdown().render(body));
-      }));
       $("body>header>article").text('').append(
         $('h1').text(document.title),
         // $('time').text('Laatst gewijzigd', lastModified.toLocaleDateString(), lastModified.toLocaleTimeString()),
@@ -908,7 +854,8 @@ eol = '\n';
         if (e.target && e.target.hasAttribute('open')) {
           e.target.setAttribute('open', e.target.getAttribute('open') ^1)
         }
-      }).on('popstate', e => {
+      })
+      .on('popstate', e => {
         if (document.location.hash) {
           const el = document.querySelector(`a[name="${document.location.hash.substr(1)}"]`);
           if (el) el.scrollIntoView(true);
@@ -920,6 +867,7 @@ eol = '\n';
 
     },
     async abis(){
+      aim.readOnly = false;
       await libraries.om();
       function signOut() {
         aimClient.logout().catch(console.error).then(e => {
@@ -927,14 +875,9 @@ eol = '\n';
           document.location.reload();
         });
       }
-
-      const apiUrl = 'https://aliconnect.nl';
-      const listPath = '/abis/data';
-      let access_token;
-
       function listLink(title, request_type, filter){
         var schema = config.components.schemas[request_type];
-        var href = `https://aliconnect.nl/abis/data?request_type=${request_type}&$select=${schema.select}&$filter=${filter}`;
+        var href = `https://aliconnect.nl/api/abis/data?request_type=${request_type}&$select=${schema.select}&$filter=${filter}`;
         href = href.replace(/ /g,'+');
         // var href = $().url(href).query(options).toString();
         // console.log(href);
@@ -946,9 +889,11 @@ eol = '\n';
       }
       function page(schemaname, id){
         schema = config.components.schemas[schemaname];
-        console.log('page', schema, id);
-        fetch(`https://aliconnect.nl/abis/data?request_type=${schemaname}&id=${id}`)
-        .then(async res => {
+        // console.log('page', schema, id);
+        aim.api('/abis/data').query({
+          request_type: schemaName,
+          id: id,
+        }).get().then(async res => {
           const data = await res.json();
           console.log(data);
           $('section.page').pageForm(schema, data);
@@ -983,58 +928,14 @@ eol = '\n';
           return `#?l=${aim.urlToId(href)}`;
         }
       }
-      function orderChangeCell(col, row, isInput){
-        if (isInput) {
-          return $('input').text(col.title || col.name).on('change', e=>{
-            fetch('https://aliconnect.nl/abis/data', {
-              method: 'POST',
-              body: JSON.stringify({
-                request_type: 'order',
-                id: row.id,
-                name: col.name,
-                value: e.target.value,
-              }),
-            }).then(async res => {
-              console.log(await res.text());
-            });
-          })
-        }
-        return $('button').text(col.title || col.name).on('click', e=>{
-          fetch('https://aliconnect.nl/abis/data', {
-            method: 'POST',
-            body: JSON.stringify({
-              request_type: 'order',
-              id: row.id,
-              name: col.name,
-              value: new Date.toISOString(),
-            }),
-          }).then(async res => {
-            console.log(await res.text());
-          });
-        })
-      }
-      function listShow(body) {
-        // console.log(body);
-        const rows = body.rows;
-        const context = new URL(body['@context']);
-        const requestType = context.searchParams.get('request_type');
-        const schema = config.components.schemas[requestType];
-        const docUrl = new URL(document.location);
-        const listUrl = new URL(aim.idToUrl(docUrl.searchParams.get('l')), document.location);
-        const $select = listUrl.searchParams.get('$select');
-        const select = $select ? $select.split(',') : Object.keys(rows[0]);
-        // console.log(select);
-        const cols = select.map(name => Object.assign({name: name}, schema && schema.properties && schema.properties[name] ? schema.properties[name] : {title: name}));
-        $('.col.pv').text('');
-        aim.om.listview(cols, rows);
-      }
 
-      const configYaml = await fetch('../config/config.yaml').then(res => res.text());
-      // console.log(configYaml);
-      config = await fetch('https://aliconnect.nl/yaml.php', {
-        method: 'POST',
-        body: configYaml,
-      }).then(res => res.json());
+      // const configYaml = await fetch('../config/config.yaml').then(res => res.text());
+      // // console.log(configYaml);
+      // config = await fetch('https://aliconnect.nl/yaml.php', {
+      //   method: 'POST',
+      //   body: configYaml,
+      // }).then(res => res.json());
+
       const client_id = aim.config.client_id;
       const aimConfig = {
         client_id: client_id,
@@ -1045,9 +946,8 @@ eol = '\n';
       const aimRequest = {
         scopes: aimConfig.scope.split(' '),
       };
-      await $().url(apiUrl + '/abis/signin').input(aimConfig).post().then(e => {
-        aimClient.storage.setItem('accessToken', e.body.access_token);
-      });
+      const access_token = await aim.api('/abis/signin').input(aimConfig).post().then(e => e.text());
+      aimClient.storage.setItem('accessToken', access_token);
 
       const authProvider = {
         getAccessToken: async () => {
@@ -1083,7 +983,7 @@ eol = '\n';
         servers: [{url: 'https://aliconnect.nl'}],
       };
       const dmsClient = aim.Client.initWithMiddleware({authProvider}, dmsConfig);
-      dmsConfig = await dmsClient.loadConfig();
+      // dmsConfig = await dmsClient.loadConfig();
       const url = new URL(document.location);
       const showlist = {
         async products(data) {
@@ -1205,6 +1105,7 @@ eol = '\n';
         },
       }
 
+      // return;
       function Abis() {
         abis = this;
         // console.log(config);
@@ -1276,36 +1177,36 @@ eol = '\n';
         // console.log(dmsConfig);
         abis[url.searchParams.get('request_type') || 'home']();
 
-        $(window).on('popstate', e => {
-          const search = document.location.hash.substr(1) || document.location.search;
-          // console.log('aaaa', search);
-          e.preventDefault();
-          if (search) {
-            const documentUrl = new URL(document.location);
-            const url = new URL(search, document.location.origin);
-            if (url.searchParams.has('l')) {
-              const listRef = aim.idToUrl(url.searchParams.get('l'));
-              // console.log(111, listRef);
-              documentUrl.searchParams.set('l', url.searchParams.get('l'));
-              documentUrl.hash = '';
-              window.history.replaceState('', '', documentUrl.href);
-              const listUrl = new URL(listRef, document.location);
-              const requestType = listUrl.searchParams.get('request_type')
-              // console.log(111, requestType, listRef);
-
-              // const proc = url.searchParams.get(''));
-              dmsClient.api(listRef)
-              // .query('request_type', 'klant_pakbonnen')
-              // .query('klantId', url.searchParams.get('klantId'))
-              .get().then(body => listShow(body))
-            }
-          }
-          // console.warn(e.target);
-        }).emit('popstate')
-        // $(window).on('hashchange', e => {
+        // $(window).on('popstate', e => {
+        //   const search = document.location.hash.substr(1) || document.location.search;
+        //   // console.log('aaaa', search);
         //   e.preventDefault();
-        // })
-        // }
+        //   if (search) {
+        //     const documentUrl = new URL(document.location);
+        //     const url = new URL(search, document.location.origin);
+        //     if (url.searchParams.has('l')) {
+        //       const listRef = aim.idToUrl(url.searchParams.get('l'));
+        //       // console.log(111, listRef);
+        //       documentUrl.searchParams.set('l', url.searchParams.get('l'));
+        //       documentUrl.hash = '';
+        //       window.history.replaceState('', '', documentUrl.href);
+        //       const listUrl = new URL(listRef, document.location);
+        //       const requestType = listUrl.searchParams.get('request_type')
+        //       // console.log(111, requestType, listRef);
+        //
+        //       // const proc = url.searchParams.get(''));
+        //       dmsClient.api(listRef)
+        //       // .query('request_type', 'klant_pakbonnen')
+        //       // .query('klantId', url.searchParams.get('klantId'))
+        //       .get().then(body => listShow(body))
+        //     }
+        //   }
+        //   // console.warn(e.target);
+        // }).emit('popstate')
+        // // $(window).on('hashchange', e => {
+        // //   e.preventDefault();
+        // // })
+        // // }
 
 
       }
@@ -1347,10 +1248,479 @@ eol = '\n';
       }
 
       new Abis;
-
-
     },
   };
+  aim.orderChangeCell = function(col, row, isInput){
+        if (isInput) {
+          return $('input').text(col.title || col.name).on('change', e=>{
+            aim.api('/abis/data').input({
+              request_type: 'order',
+              id: row.id,
+              name: col.name,
+              value: e.target.value,
+            }).post().then(async res => {
+              console.log(await res.text());
+            });
+          })
+        }
+        return $('button').text(col.title || col.name).on('click', e=>{
+          aim.api('/abis/data').input({
+            request_type: 'order',
+            id: row.id,
+            name: col.name,
+            value: new Date.toISOString(),
+          }).post().then(async res => {
+            console.log(await res.text());
+          });
+        })
+      };
+  function listShow(body) {
+    // console.log(222, body.rows);
+    $('.lv').text('');
+    if (body.rows && body.rows.length) {
+      // console.log(body);
+      const rows = body.rows;
+      const context = new URL(body['@context']);
+      const requestType = context.searchParams.get('request_type');
+      const schema = config.components.schemas[requestType];
+      const docUrl = new URL(document.location);
+      const listUrl = new URL(aim.idToUrl(docUrl.searchParams.get('l')), document.location);
+      const $select = listUrl.searchParams.get('$select') || '';
+      const select = $select ? $select.split(',') : Object.keys(rows[0]);
+      // console.log(select);
+      const cols = select.map(name => Object.assign({name: name}, schema && schema.properties && schema.properties[name] ? schema.properties[name] : {title: name}));
+
+      aim.om.listview(cols, rows);
+    }
+  }
+  function listview(cols, rows, type, filter, rowsVisible){
+    cols = this.cols = cols || this.cols;
+    rows = this.rows = rows || this.rows;
+    // type = this.type = type || this.type;
+    sessionStorage.setItem('listType', type = this.type = type || this.type || sessionStorage.getItem('listType') || 'cols');
+    rowsVisible = rowsVisible || rows || [];
+    // const listview = this.listview;
+    console.log(type, rowsVisible);
+
+    function valueTag(col,row){
+      if (col.schema) {
+        return $('a').text(row[col.name]).href(`#${col.schema}(${row[col.name]})`)
+      }
+      if (col.cell) {
+        if (typeof col.cell !== 'function') {
+          col.cell = new Function('col', 'row', col.cell);
+        }
+        return col.cell(col,row);
+      }
+      return $('span').text(row[col.name])
+      // let inpElem;
+      // const elem = $('td').class(col.name).align(isNaN(row[col.name]) ? 'left' : 'right').append(
+      //   (function(){
+      //     function span(){
+      //       return $('span').text(col.name in row ? row[col.name] : '')
+      //     }
+      //     return span();//col.cell ? col.cell(row) : span();
+      //   })()
+      // ).on('click', e => {
+      //   if (!col.readOnly) {
+      //     // e.preventDefault();
+      //     // e.stopPropagation();
+      //     if (!elem.querySelector('input')) {
+      //       $('input').parent(elem).value(row[col.name] || '')
+      //       .on('change', e => {
+      //         console.log(row);
+      //         const value = row[col.name] = elem.querySelector('span').innerText = elem.querySelector('input').value;
+      //         fetch('https://aliconnect.nl/abis/data', {
+      //           method: 'POST',
+      //           body: JSON.stringify({
+      //             request_type: requestType,
+      //             id: row.id,
+      //             name: col.name,
+      //             value: value,
+      //           }),
+      //         }).then(async res => {
+      //           console.log(await res.text());
+      //         });
+      //       })
+      //       .on('blur', e => {
+      //         elem.querySelector('input').remove();
+      //       }).select();
+      //     }
+      //   }
+      // });
+      // return elem;
+    }
+    function labelTag(col,row){
+      return $('label').text(col.title || col.name)
+    }
+    const types = {
+      cols: () => {
+        console.log(rowsVisible);
+        return $('div').class('cards',type).append(
+          rowsVisible.map(row => $('div').attr(row).append(
+            cols.filter(col => row[col.name] || col.cell).map(
+              col => $('div').class(col.name).append(
+                labelTag(col,row),
+                valueTag(col,row),
+              )
+            ),
+            // {
+            //   if (col.type) {
+            //     return $('input').type(col.type).min(0).class(col.name).value(row[col.name] || '')
+            //   }
+            //   if (row[col.name]) {
+            //     return $('div').append(labelTag(col,row),valueTag(col,row))
+            //   }
+            // }),
+          ).on('click', e => {
+                console.log('click')
+                const url = new URL(document.location);
+                const ref = `${row.schemaName}(${row.id})`;
+                document.location.hash = `#?id=${btoa(ref)}`;
+                // url.searchParams.set('id', btoa(ref));
+                // window.history.pushState('page', '',  url.href);
+                // page(ref);
+              })),
+          ['','','','','','','','','','','','','','',].map(i => $('span').class('ghost')),
+        )
+      },
+      rows: () => {
+        return $('div').class('cards',type).append(
+          rowsVisible.map(row => $('div').append(
+            $('div').text(cols.filter(col => col.header === 1 && row[col.name]).map(col => row[col.name]).join(' ')),
+            $('div').text(cols.filter(col => col.header === 2 && row[col.name]).map(col => row[col.name]).join(' ')),
+            $('div').text(cols.filter(col => col.header === 3 && row[col.name]).map(col => row[col.name]).join(' ')),
+          ))
+        )
+      },
+      table: () => {
+        return $('table').class('products').append(
+          $('thead').append(
+            $('tr').append(
+              cols.map(col => $('th').append(
+                $('div').text(col.title || col.name).class(this.sortName === col.name ? 'sort' : '', this.sortDir ? 'asc' : '').on('click', e => {
+                  this.sortDir = this.sortName === col.name ? this.sortDir ^ 1 : 0;
+                  const sortFactor = 1-2*this.sortDir;
+                  // console.log(this.sortName, col.name, sortFactor, this.sortDir);
+                  this.sortName = col.name;
+                  rowsVisible.sort((a,b) => sortFactor * String(a[col.name]).localeCompare(String(b[col.name]), undefined, {numeric: true}));
+                  aim.om.listview(cols, rows, type, filter, rowsVisible);
+                })
+              ))
+            )
+          ),
+          $('tbody').append(
+            rowsVisible.map(row => $('tr').append(
+              cols.map(col => $('td').class(col.name).append(valueTag(col,row))),
+            ))
+          )
+        )
+      }
+    }
+
+    filter = filter || cols.filter(col => col.filter).map(col => Object({
+      name: col.name,
+      values: rowsVisible.map(row => row[col.name]).unique().sort().map(value => Object({
+        value: value,
+        rows: rowsVisible.filter(row => row[col.name] === value),
+      }))
+    }));
+
+    // const
+
+
+
+    $('.lv').text('').append(
+      $('nav').append(
+        $('button').text('filter'),
+        $('span'),
+        $('button').text('view').append(
+          $('div').append(
+            ['rows','cols','table'].map(key => $('button').text(key).on('click', e => {
+              listview(cols, rows, key);
+            }))
+          ),
+        ),
+      ),
+      $('div').append(
+        $('aside').class('oa filter').append(
+          filter.map(col => {
+            const values = col.values.filter(val => val.rows.some(row => rowsVisible.includes(row)));
+            if(values.some(val => val.checked) || values.length>1) {
+              return $('details').open(0).append(
+                $('summary').text(col.name),
+                values.map(val => $('div').text(val.value).checked(val.checked).attr('cnt', val.rows.filter(row => rowsVisible.includes(row)).length).on('click', e => {
+                  val.checked ^= 1;
+                  col.checked = col.values.some(val => val.checked);
+                  rowsVisible = rows.filter(row => !filter.some(col => col.checked && col.values.filter(val => !val.checked).some(val => val.rows.includes(row))));
+                  listview(cols, rows, type, filter, rowsVisible);
+                }))
+              );
+            }
+          })
+        ),
+        $('div').class('oa').append(
+          types[type](),
+        ),
+      ),
+    )
+  }
+  async function search(search){
+    console.log('SEARCH', search)
+    await aim.api('/abis/data').query({
+      request_type: 'product',
+      $search: search,
+    }).get().then(response => response.json().then(data => {
+      console.log(data);
+      // return;
+      // sessionStorage.setItem('lv-data', JSON.stringify(data));
+      const cols = [
+        { name: 'productTitle', title: 'Titel'},
+        { name: 'supplier', title: 'Leverancier', filter: true},
+        { name: 'brand', title: 'brand', filter: true},
+        // { name: 'productGroup', title: 'productGroup'},
+        // { name: 'description', title: 'description'},
+        { name: 'ordercode', title: 'ordercode'},
+        { name: 'salesPrice', title: 'salesPrice'},
+        { name: 'catalogPrice', title: 'catalogPrice'},
+        { name: 'orderQuantity', title: 'Bestellen', cell: () => $('input').type('number').on('click', e => e.stopPropagation() )},
+      ];
+      const args = [
+        {name: 'Korrel', regexp: /P\d+/ },
+        // {name: 'diameter', values: [ '150mm', '50mm' ] },
+        // {name: 'type', values: [ 'abralon' ] },
+        // {name: 'verpakking', values: [ 'tube' ] },
+        // {name: 'Afmeting', regexp: /(\d+\s*?x\s*?\d+\s*?x\s*?\d+|\d+\s*?x\s*?\d+|\d+)(mm|cm|m|mtr)/ },
+        {name: 'Afmeting', regexp: /(\d+(mm|cm|m|mtr)?\s*?x\s*?\d+\s*?x\s*?\d+|\d+\s*?x\s*?\d+|\d+)(mm|cm|m|mtr)/ },
+      ];
+      var match;
+      data.rows.forEach(row => {
+        if (row.description) {
+
+          for (let arg of args) {
+            if (match = row.productTitle.match(arg.regexp)) {
+              // console.log(match);
+              arg.col = arg.col || cols.push({
+                name: arg.name, filter: true,
+              })
+              row[arg.name] = match[0];
+              // row.productTitle = row.productTitle.replace(arg.regexp, '');
+            }
+            // for (let value of arg.values) {
+            //   const regexp = new RegExp(`${value}`);
+            //   if (row.description.match(regexp)) {
+            //     row.description = row.description.replace(regexp, '');
+            //     arg.col = arg.col || cols.push({
+            //       name: arg.name, filter: true,
+            //     })
+            //     row[arg.name] = value;
+            //   }
+            // }
+          }
+          // if (match = row.description.match(/\d+x\d+mm/)) {
+          //   console.log(match);
+          //   args.afm = args.afm || cols.push({
+          //     name: 'Afmeting', filter: true,
+          //   })
+          //   row.Afmeting = match[0];
+          //   row.description = row.description.replace(match[0], '');
+          // }
+
+        }
+      });
+      // $('.pv').text('');
+      $('aside.right').text('');
+      $('aside.left').text('');
+      listview(cols, data.rows);
+    }))
+  }
+  function page(ref){
+    inputId = 0;
+    const [s,schemaName,id] = ref.match(/(\w+)\((\d+)\)/);
+    // console.log(schemaName,id);
+    aim.api('/abis/data').query({
+      request_type: schemaName,
+      id: id,
+    }).get().then(response => response.json().then(body => {
+      console.log(body);
+      const schema = config.components.schemas[body.schemaName];
+      const data = {};
+      const cfg = {};
+      var legend = body.schemaName;
+      // console.log(schema.properties);
+      Object.entries(schema.properties).forEach(([name, metaData]) => {
+        metaData = metaData || {};
+        legend = metaData.legend = metaData.legend || legend;
+        // console.log(legend,name)
+        cfg[legend] = cfg[legend] || {};
+        cfg[legend][name] = {metaData};
+        data[legend] = data[legend] || {};
+        data[legend][name] = body[name];
+      });
+      console.log(111, data, cfg);
+      // return;
+      $('.pv').text('').append(
+        $('nav').append(
+
+        ),
+        $('form').class('oa').buildForm(data, cfg),
+        // (
+        //
+        // $('div').append(
+        //   Object.entries(schema.properties)
+        //   .filter(([name, property]) => aim.readOnly === false || data[name])
+        //   .map(([name, property]) => $('div').class('attr').append(
+        //     $('label').text(property.title || name),
+        //     $(aim.readOnly === false ? 'input' : 'span').text(data[name]).value(data[name] || ''),
+        //   ))
+        // )
+      )
+      console.log(1, data);
+      return;
+      // sessionStorage.setItem('lv-data', JSON.stringify(data));
+      const cols = [
+        { name: 'productTitle', title: 'Titel'},
+        { name: 'supplier', title: 'Leverancier', filter: true},
+        { name: 'brand', title: 'brand', filter: true},
+        // { name: 'productGroup', title: 'productGroup'},
+        // { name: 'description', title: 'description'},
+        { name: 'ordercode', title: 'ordercode'},
+        { name: 'salesPrice', title: 'salesPrice'},
+        { name: 'catalogPrice', title: 'catalogPrice'},
+        { name: 'orderQuantity', title: 'Bestellen', type: 'number'},
+      ];
+      const args = [
+        {name: 'Korrel', regexp: /P\d+/ },
+        // {name: 'diameter', values: [ '150mm', '50mm' ] },
+        // {name: 'type', values: [ 'abralon' ] },
+        // {name: 'verpakking', values: [ 'tube' ] },
+        // {name: 'Afmeting', regexp: /(\d+\s*?x\s*?\d+\s*?x\s*?\d+|\d+\s*?x\s*?\d+|\d+)(mm|cm|m|mtr)/ },
+        {name: 'Afmeting', regexp: /(\d+(mm|cm|m|mtr)?\s*?x\s*?\d+\s*?x\s*?\d+|\d+\s*?x\s*?\d+|\d+)(mm|cm|m|mtr)/ },
+      ];
+      var match;
+      data.rows.forEach(row => {
+        if (row.description) {
+
+          for (let arg of args) {
+            if (match = row.productTitle.match(arg.regexp)) {
+              // console.log(match);
+              arg.col = arg.col || cols.push({
+                name: arg.name, filter: true,
+              })
+              row[arg.name] = match[0];
+              // row.productTitle = row.productTitle.replace(arg.regexp, '');
+            }
+            // for (let value of arg.values) {
+            //   const regexp = new RegExp(`${value}`);
+            //   if (row.description.match(regexp)) {
+            //     row.description = row.description.replace(regexp, '');
+            //     arg.col = arg.col || cols.push({
+            //       name: arg.name, filter: true,
+            //     })
+            //     row[arg.name] = value;
+            //   }
+            // }
+          }
+          // if (match = row.description.match(/\d+x\d+mm/)) {
+          //   console.log(match);
+          //   args.afm = args.afm || cols.push({
+          //     name: 'Afmeting', filter: true,
+          //   })
+          //   row.Afmeting = match[0];
+          //   row.description = row.description.replace(match[0], '');
+          // }
+
+        }
+      });
+      $('.pv').text('');
+      listview(cols, data.rows);
+    }))
+  }
+  function buildForm(data, config){
+    // const metaData = cfg.metaData || { title: isNaN(key) ? key : Number(key)+1 };
+    // var dataObj = data;
+    const types = {
+      boolean: 'checkbox',
+      number: 'number',
+      string: 'text',
+      object: 'object',
+    };
+    (function buildForm(parent, obj, config, path = []) {
+      if (obj) {
+        Object.entries(obj).forEach(([key,value]) => {
+          if (!config[key]) {
+            if (value && typeof value === 'object') {
+              // console.log(value);
+              config[key] = Object.fromEntries(
+                Object.entries(value).map(([key,value]) => {
+                  return [key, typeof value === 'object' ? {} : ''];
+                })
+              )
+            } else {
+              config[key] = {metaData:{type:typeof value}};
+            }
+          }
+        });
+      }
+      const configEntries = Object.entries(config);
+      const properties = configEntries.filter(
+        ([key,property]) => property.metaData &&
+        Object.keys(property).length === 1 &&
+        (property.metaData.type = property.metaData.type || types[property.value ? typeof property.value : 'string']) &&
+        ['text','number','string','boolean'].includes(property.metaData.type || 'text')
+      )
+      const children = configEntries.filter(entry => entry[0] !== 'metaData' && !properties.includes(entry));
+
+      // console.log(111, properties);
+      properties.forEach(([key,property]) => {
+        const metaData = config && config[key] && config[key].metaData ? config[key].metaData : {};
+        parent.append(
+          $('div').class('attr').append(
+            $('label').class('title').text(metaData.title || nameToTitle(key)),
+            aim.readOnly === false
+            ? $('input').id('input'+inputId)
+            .name(name)
+            .value(obj[key])
+            .type(metaData.type || types[typeof property.value])
+            // .autofocus(name === activeField ? '' : null)
+            // .required(metaData.required || dataObj === null ? '' : null)
+            // .placeholder(placeholder)
+            // .pattern(metaData.pattern)
+            .on('change', e => {
+              let obj = data;
+              // console.log(data);
+              path.forEach(key => obj = obj[key] = obj[key] || {});
+              obj[key] = e.target.value;
+            })
+            // $('label').class('caption').for('input'+inputId),
+            // $('label').class('ico').for('input'+inputId),
+            : $('span').text(obj[key]),
+          )
+        )
+      })
+      children.forEach(([key,value]) => {
+        const metaData = value.metaData = value.metaData || {
+          title: nameToTitle(key)
+        }
+        // console.log(key, localStorage.getItem(key+'Open'));
+        buildForm(
+          $('details')
+          .parent(parent)
+          .open(localStorage.getItem(key+'Open'))
+          .on('toggle', e => localStorage.setItem(key+'Open', e.target.open ? 1 : ''))
+          .append(
+            $('summary').text(metaData.title)
+          ),
+          obj[key] || {},
+          value || {},
+          path.concat(key),
+        );
+      });
+    })(this, data, config);
+    return this;
+  };
+
+  var inputId;
 
   Paint = function (canvas, options) {
     setTimeout(()=>{
@@ -1691,6 +2061,7 @@ eol = '\n';
     }
   };
   Elem.prototype = {
+    buildForm,
     append(){
 			this.elem = this.elem || document.body;
       // const args = [].concat(...arguments);
@@ -6851,239 +7222,6 @@ eol = '\n';
     }
   }));
 
-
-  function listview(cols, rows, type, filter, rowsVisible){
-    cols = this.cols = cols || this.cols;
-    rows = this.rows = rows || this.rows;
-    // type = this.type = type || this.type;
-    sessionStorage.setItem('listType', type = this.type = type || this.type || sessionStorage.getItem('listType') || 'rows');
-    rowsVisible = rowsVisible || rows || [];
-    // const listview = this.listview;
-    // console.log(type, cols,rows,rowsVisible);
-
-    const types = {
-      rows: () => {
-        return $('div').class('cards',type).append(
-          rowsVisible.map(row => $('div').append(
-            $('div').text(cols.filter(col => col.header === 1 && row[col.name]).map(col => row[col.name]).join(' ')),
-            $('div').text(cols.filter(col => col.header === 2 && row[col.name]).map(col => row[col.name]).join(' ')),
-            $('div').text(cols.filter(col => col.header === 3 && row[col.name]).map(col => row[col.name]).join(' ')),
-          ))
-        )
-      },
-      cols: () => {
-        return $('div').class('cards',type).append(
-          rowsVisible.map(row => $('div').attr(row).append(
-            cols
-            // .filter(col => row[col.name])
-            .map(col => {
-              if (col.type) {
-                return $('input').type(col.type).min(0).class(col.name).value(row[col.name] || '')
-              }
-              if (row[col.name]) {
-                if (col.schema) {
-                  return $('div').append(
-                    $('a').text(row[col.name]).href(`#${col.schema}(${row[col.name]})`)
-                  )
-                } else {
-                  return $('div').class(col.name).text(row[col.name])
-                }
-              }
-            }),
-          )),
-          ['','','','','','','','','','','','','','',].map(i => $('span').class('ghost')),
-        )
-      },
-      table: () => {
-        return $('table').class('products').append(
-          $('thead').append(
-            $('tr').append(
-              cols.map(col => $('th').append(
-                $('div').text(col.title || col.name).class(this.sortName === col.name ? 'sort' : '', this.sortDir ? 'asc' : '').on('click', e => {
-                  this.sortDir = this.sortName === col.name ? this.sortDir ^ 1 : 0;
-                  const sortFactor = 1-2*this.sortDir;
-                  // console.log(this.sortName, col.name, sortFactor, this.sortDir);
-                  this.sortName = col.name;
-                  rowsVisible.sort((a,b) => sortFactor * String(a[col.name]).localeCompare(String(b[col.name]), undefined, {numeric: true}));
-                  aim.om.listview(cols, rows, type, filter, rowsVisible);
-                })
-              ))
-            )
-          ),
-          $('tbody').append(
-            rowsVisible.map(row => $('tr').append(
-              cols.map(col => {
-                if (col.schema) {
-                  return $('td').class(col.name).append(
-                    $('a').text(row[col.name]).href(`#${col.schema}(${row[col.name]})`)
-                  );
-                }
-                if (col.cell) {
-                  if (typeof col.cell !== 'function') {
-                    col.cell = new Function('col', 'row', col.cell);
-                  }
-                  return $('td').class(col.name).append(
-                    col.cell(col,row),
-                  );
-                  // const elem = $('td').text('CELL');
-                }
-                let inpElem;
-                const elem = $('td').class(col.name).align(isNaN(row[col.name]) ? 'left' : 'right').append(
-                  (function(){
-                    function span(){
-                      return $('span').text(col.name in row ? row[col.name] : '')
-                    }
-                    return span();//col.cell ? col.cell(row) : span();
-                  })()
-                ).on('click', e => {
-                  if (!col.readOnly) {
-                    // e.preventDefault();
-                    // e.stopPropagation();
-                    if (!elem.querySelector('input')) {
-                      $('input').parent(elem).value(row[col.name] || '')
-                      .on('change', e => {
-                        console.log(row);
-                        const value = row[col.name] = elem.querySelector('span').innerText = elem.querySelector('input').value;
-                        fetch('https://aliconnect.nl/abis/data', {
-                          method: 'POST',
-                          body: JSON.stringify({
-                            request_type: requestType,
-                            id: row.id,
-                            name: col.name,
-                            value: value,
-                          }),
-                        }).then(async res => {
-                          console.log(await res.text());
-                        });
-                      })
-                      .on('blur', e => {
-                        elem.querySelector('input').remove();
-                      }).select();
-                    }
-                  }
-                });
-                return elem;
-              }),
-              // cols.map(col => $('td').text(row[col.name]))
-            ))
-          )
-        )
-
-      }
-    }
-
-    filter = filter || cols.filter(col => col.filter).map(col => Object({
-      name: col.name,
-      values: rowsVisible.map(row => row[col.name]).unique().sort().map(value => Object({
-        value: value,
-        rows: rowsVisible.filter(row => row[col.name] === value),
-      }))
-    }));
-
-    // const
-
-
-
-    $('.col.lv').text('').append(
-      $('nav').append(
-        $('button').text('filter'),
-        $('span'),
-        $('button').text('view').append(
-          $('div').append(
-            ['rows','cols','table'].map(key => $('button').text(key).on('click', e => {
-              listview(cols, rows, key);
-            }))
-          ),
-        ),
-      ),
-      $('div').append(
-        $('aside').class('filter').append(
-          filter.map(col => {
-            const values = col.values.filter(val => val.rows.some(row => rowsVisible.includes(row)));
-            if(values.some(val => val.checked) || values.length>1) {
-              return $('details').open(0).append(
-                $('summary').text(col.name),
-                values.map(val => $('div').text(val.value).checked(val.checked).attr('cnt', val.rows.filter(row => rowsVisible.includes(row)).length).on('click', e => {
-                  val.checked ^= 1;
-                  col.checked = col.values.some(val => val.checked);
-                  rowsVisible = rows.filter(row => !filter.some(col => col.checked && col.values.filter(val => !val.checked).some(val => val.rows.includes(row))));
-                  listview(cols, rows, type, filter, rowsVisible);
-                }))
-              );
-            }
-          })
-        ),
-        $('div').append(
-          types[type](),
-        ),
-      ),
-    )
-  }
-  function search(search){
-    fetch('https://aliconnect.nl/abis/data?request_type=product&search='+search)
-    .then(response => response.json().then(data => {
-      console.log(data);
-      const cols = [
-        { name: 'productTitle', title: 'Titel'},
-        { name: 'supplier', title: 'Leverancier', filter: true},
-        { name: 'brand', title: 'brand', filter: true},
-        // { name: 'productGroup', title: 'productGroup'},
-        // { name: 'description', title: 'description'},
-        { name: 'ordercode', title: 'ordercode'},
-        { name: 'salesPrice', title: 'salesPrice'},
-        { name: 'catalogPrice', title: 'catalogPrice'},
-        { name: 'orderQuantity', title: 'Bestellen', type: 'number'},
-      ];
-      const args = [
-        {name: 'Korrel', regexp: /P\d+/ },
-        // {name: 'diameter', values: [ '150mm', '50mm' ] },
-        // {name: 'type', values: [ 'abralon' ] },
-        // {name: 'verpakking', values: [ 'tube' ] },
-        // {name: 'Afmeting', regexp: /(\d+\s*?x\s*?\d+\s*?x\s*?\d+|\d+\s*?x\s*?\d+|\d+)(mm|cm|m|mtr)/ },
-        {name: 'Afmeting', regexp: /(\d+(mm|cm|m|mtr)?\s*?x\s*?\d+\s*?x\s*?\d+|\d+\s*?x\s*?\d+|\d+)(mm|cm|m|mtr)/ },
-      ];
-      var match;
-      data.rows.forEach(row => {
-        if (row.description) {
-
-          for (let arg of args) {
-            if (match = row.productTitle.match(arg.regexp)) {
-              // console.log(match);
-              arg.col = arg.col || cols.push({
-                name: arg.name, filter: true,
-              })
-              row[arg.name] = match[0];
-              // row.productTitle = row.productTitle.replace(arg.regexp, '');
-            }
-            // for (let value of arg.values) {
-            //   const regexp = new RegExp(`${value}`);
-            //   if (row.description.match(regexp)) {
-            //     row.description = row.description.replace(regexp, '');
-            //     arg.col = arg.col || cols.push({
-            //       name: arg.name, filter: true,
-            //     })
-            //     row[arg.name] = value;
-            //   }
-            // }
-          }
-          // if (match = row.description.match(/\d+x\d+mm/)) {
-          //   console.log(match);
-          //   args.afm = args.afm || cols.push({
-          //     name: 'Afmeting', filter: true,
-          //   })
-          //   row.Afmeting = match[0];
-          //   row.description = row.description.replace(match[0], '');
-          // }
-
-        }
-      })
-      $('body>main').text('').append(
-        $('article').class('lv'),
-      )
-      listview(cols, data.rows);
-    }))
-  }
-
   function Om() {
     const om = this;
     function construct(selector) {
@@ -10699,11 +10837,6 @@ eol = '\n';
         // if (!$.his.clickPath.includes($)) $.his.clickPath.push($);
       })
       .on('paste', e => handleData($.clipboard.itemFocussed, e))
-      .on('popstate', e => {
-        console.log('POPSTATE', document.location.href);
-        e.preventDefault();
-        $().execUrl(document.location.href, true);
-      })
       .on('resize', e => {
         if ($.mainPopup) {
           $.mainPopup.close();
@@ -11067,6 +11200,8 @@ eol = '\n';
       // })
     }},
   });
+
+
   Object.defineProperties(aim.prototype, {
     prompt: {value: function (selector, context) {
       return aim.prompt(selector, context);
@@ -11276,11 +11411,20 @@ eol = '\n';
   [...currentScript.attributes].forEach(attribute => $.extend({config: minimist(['--'+attribute.name.replace(/^--/, ''), attribute.value])}));
   (new URLSearchParams(document.location.search)).forEach((value,key)=>$.extend({config: minimist([key,value])}));
 
-
+  config = {};
+  aim.searchParams = new URLSearchParams(document.location.search);
   window.addEventListener('load', async function webLoad(e) {
+    if (aim.config.client_id) {
+      config = await aim.api('/aliconnect/config').query({
+        path: 'https://aliconnect.nl/forms/config',
+        response_type: 'data',
+        client_id: aim.config.client_id,
+      }).get().then(res => res.json());
+      // console.log(111, config);
+    }
     var firstFolder = document.location.pathname.match(/(\w+)\//);
     if (firstFolder && libraries[firstFolder[1]]) {
-      libraries[firstFolder[1]]();
+      await libraries[firstFolder[1]]();
     } else {
       if (currentScript.attributes.libraries) {
         for (lib of currentScript.attributes.libraries.value.split(',')) {
@@ -11288,12 +11432,68 @@ eol = '\n';
         }
       }
     }
-    $().emit('load').then(function emitLoad(e) {
-      $().emit('ready').then(function emitReady(e) {
-        $(window).emit('popstate');
-        $(window).emit('focus');
-      });
-    })
+    await $().emit('load');
+    await $().emit('ready');
+    function seturl(e){
+      console.log('seturl', e.type, document.location.hash, document.location.search);
+      const docsearchParams = new URLSearchParams(document.location.search);
+      const searchParams = new URLSearchParams(document.location.hash ? document.location.hash.substr(1) : document.location.search);
+      // console.log('POPSTATE 1', searchParams, aim.searchParams);
+      searchParams.forEach((value,key) => docsearchParams.set(key,value));
+      // console.log(aim.searchParams.get('l'), searchParams.get('l'));
+
+      if (docsearchParams.get('l') || docsearchParams.get('id')) {
+        if (docsearchParams.get('l')) {
+          if (searchParams.get('l') || searchParams.get('$search')) {
+            const listUrl = new URL(aim.idToUrl(docsearchParams.get('l')));
+            listUrl.searchParams.set('$search', docsearchParams.get('$search') || '');
+            docsearchParams.set('l', aim.urlToId(listUrl));
+            const hostname = new URL(listUrl).hostname;
+            const client = aim.clients.get(hostname);
+            if (client) {
+              client.api(listUrl.href).get().then(async body => {
+                console.log(1, listUrl.href, body);
+                // const items = body.value || body.Children || await body.children;
+                listShow(body);
+                // aim().list(items);
+              });
+            } else {
+              // aim('list').load(refurl.href);
+            }
+          } else if (!docsearchParams.get('l')) {
+            $('.lv').text('');
+          }
+        }
+        if (searchParams.get('id')) {
+          page(atob(searchParams.get('id')));
+        } else if (!docsearchParams.get('id')) {
+
+        }
+      } else {
+        // const pathname = document.location.pathname.substr(1) || 'Home';
+
+
+      }
+      console.log(aim.searchParams);
+      if (aim.searchParams) {
+        console.log(aim.searchParams.get('id'), docsearchParams.get('id'));
+        if (aim.searchParams.get('id') && !docsearchParams.get('id')) {
+          $('.pv').text('');
+        }
+      }
+      aim.searchParams = docsearchParams;
+
+      if (e.type === 'hashchange') {
+        window.history.replaceState('','','?' + docsearchParams.toString());
+      }
+      // window.history.replaceState('','','?' + searchParams.toString());
+      // e.preventDefault();
+      // $().execUrl(document.location.href, true);
+    }
+    $(window).on('popstate', seturl)
+    $(window).on('hashchange', seturl)
+    await $(window).emit('popstate');
+    await $(window).emit('focus');
   })
 
 })();

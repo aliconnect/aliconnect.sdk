@@ -555,6 +555,19 @@ class Aim {
     }
     return $this->oas = $api;
   }
+
+
+  public function get_client_config() {
+    if (is_file($this->config_filename = $fname = "$this->client_config_path/$this->client_id.yaml")) {
+      $this->config = array_replace_recursive($this->config, yaml_parse_file($fname));
+      if ($name = request('name', $this->config['client'])) {
+        if (is_file($fname = "$this->client_config_path/$name.yaml")) {
+          $this->config = array_replace_recursive($this->config,yaml_parse_file($fname));
+        }
+      }
+    }
+  }
+
   public function __construct() {
     // debug(getcwd());
 
@@ -569,16 +582,15 @@ class Aim {
     $this->hostname = explode('.',$_SERVER['HTTP_HOST'])[0];
     $this->method = strToLower($_SERVER['REQUEST_METHOD']);
     $this->config_path = $_SERVER['DOCUMENT_ROOT']."/../config";
-    $this->client_config_path = "$this->config_path/forms/aliconnect-config";
+    $this->client_config_path = "$this->config_path/aliconnect.nl/forms/config";
 
     $this->config = [];
     $this->secret = [];
     $this->config = array_replace_recursive($this->config, is_file($fname = "$this->config_path/config.yaml") ? yaml_parse_file($this->default_config_filename = $fname) : []);
     $this->secret = array_replace_recursive($this->secret, is_file($fname = "$this->config_path/secret.yaml") ? yaml_parse_file($fname) : []);
-    $this->config = array_replace_recursive($this->config, is_file($fname = "$this->config_path/".$_SERVER['HTTP_HOST'].".config.yaml") ? yaml_parse_file($fname) : []);
-
+    $this->config = array_replace_recursive($this->config, is_file($fname = "$this->client_config_path/$_SERVER[HTTP_HOST].yaml") ? yaml_parse_file($fname) : []);
     // $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$_SERVER['HTTP_HOST'].".secret.yaml") ? yaml_parse_file($fname) : []);
-    $this->client_id = request('client_id', $_REQUEST) ?: request('client_id',$this->config);
+    $this->client_id = request('client_id', $_REQUEST) ?: request('client_id',$this->config['client']);
     // debug($this->client_id, $this->config);
     header("Access-Control-Allow-Headers: Authorization");
     $headers = $this->headers = getallheaders();
@@ -597,12 +609,14 @@ class Aim {
       $jwt->decode($this->access_token);
       $payload = request('payload', $jwt);
       $this->client_id = $payload['client_id'];
-      $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$this->client_id.".secret.yaml") ? yaml_parse_file($fname) : []);
-      $jwt->validate($this->secret['client_secret']);
+      $this->get_client_config();
+      // $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$this->client_id.".secret.yaml") ? yaml_parse_file($fname) : []);
+      $jwt->validate(request('client_secret', $this->config['client']));
       if (!$jwt->valid) http_response(401);
+    } else {
+      $this->get_client_config();
     }
-    $this->config = array_replace_recursive($this->config, is_file($fname = "$this->client_config_path/$this->client_id.config.yaml") ? yaml_parse_file($this->config_filename = $fname) : []);
-    // debug($this->client_id, $this->config);
+    // debug(12, $this->client_id, $this->config_filename, $this->config);
     // $fname = str_replace('.config.','.oas.',$fname);
     // if (!empty($this->config['client_secret'])) {
     //   $this->config['client_secret'] = null;
@@ -638,7 +652,7 @@ class Aim {
     foreach ($paths as $path) {
       foreach([".md", "home.md", "index.md", "readme.md"] as $filename) {
         if (is_file($fname = $_SERVER['DOCUMENT_ROOT'].$path.$filename)) {
-          readfile(__DIR__.'/../html/md.html');
+          readfile($_SERVER['DOCUMENT_ROOT'].'/index.html');
           $data = base64_encode(json_encode(["md"=>file_get_contents($fname)]));
           echo "<data md='$data'></data>";
           die();
@@ -646,13 +660,14 @@ class Aim {
       }
     }
     $scopes = explode(' ', $this->access['scope']);
+    // debug($this->request_path,$this->base_path);
+    // $api_path = preg_replace('/^\/api/', '', $this->request_path);
     if ($oas = $this->oas) {
       if ($paths = $oas['paths']) {
         // debug($paths);
         $path_to_search = preg_replace('/\(.*?\)/', '()', $this->request_path);
-        // $path_to_search = preg_replace('/^\/api/', '', $path_to_search);
-        // die($path_to_search);
         $path_to_search = str_replace($this->base_path, '', $path_to_search);
+        // die($path_to_search);
         $path_to_search = strtolower($path_to_search);
         // debug($paths);
         foreach ($paths as $path_name => $path) {
@@ -740,6 +755,7 @@ class Aim {
         }
       }
       // debug($path_to_search, $this->oas);
+
     }
   }
   // public function __construct1() {
