@@ -509,7 +509,7 @@
       // const configYaml = await fetch('../config/import.yaml').then(res => res.text());
       const config = await fetch('https://aliconnect.nl/yaml.php', {
         method: 'POST',
-        body: await fetch('../config/import.yaml').then(res => res.text()),
+        body: await fetch('import.yaml').then(res => res.text()),
       }).then(res => res.json());
       console.log(1, config);
       // return;
@@ -532,8 +532,10 @@
                 for (let tab of fileConfig.tabs) {
                   tab.colRow = tab.colRow || 1;
                   const sheet = workbook.Sheets[tab.tabname];
-                  console.log(sheet);
-                  for (var c=0; c<20; c++) {
+                  var [s,colEnd,rowEnd] = sheet['!ref'].match(/:([A-Z]+)(\d+)/);
+                  colEnd = XLSX.utils.decode_col(colEnd);
+                  console.log(sheet, rowStart,colEnd,rowEnd, sheet['!ref']);
+                  for (var c=0; c<=colEnd; c++) {
                     var cell = sheet[XLSX.utils.encode_cell({c:c,r:tab.colRow-1})];
                     if (cell && cell.v) {
                       // console.log(String(cell.v))
@@ -543,11 +545,9 @@
                   const rows = tab.rows = [];
                   // console.log(tab.cols);
                   const cols = tab.cols;//.filter(col => 'colIndex' in col).filter(col => col.name)
-                  var [s,rowEnd] = sheet['!ref'].match(/:[A-Z]+(\d+)/);
                   var rowStart=tab.colRow;
-                  const progressElem = $('progress.import').max(rowEnd).value(rowStart);
+                  const progressElem = $('progress.import').max(rowEnd).value(tab.colRow);
                   const infoElem = $('span.info');
-                  console.log(rowStart,rowEnd, sheet['!ref']);
                   // return;
                   const tbody = $('tbody').parent($('.table').append(
                     $('thead').append(
@@ -558,29 +558,34 @@
                   ));
 
                   for (var r = tab.colRow; r<=rowEnd; r++) {
+                    progressElem.value(r);
                     let row = Object.fromEntries(cols.map(col => [col.name, col.value || null]));
                     cols.forEach(col => {
                       var cell = sheet[XLSX.utils.encode_cell({c:col.colIndex,r:r})];
+                      // if (col.name === 'catalogPrice') console.log(col.name, cell)
                       if (cell) {
                         row = row || {};
                         row[col.name] = String(cell.v).trim();
                       }
                     })
 
-                    progressElem.value(r);
-                    if (row) {
-                      // console.log(row);
+                    row.orderCode = row.orderCode || [row.manufacturer,row.artNr].join('.');
+
+                    if (row && row.orderCode) {
+                      infoElem.text(`${r} van ${rowEnd}, ${row.supplier}, ${row.orderCode}, ${row.description}`);
+                      // console.log(r);
                       tbody.append($('tr').append(
                         tab.cols.map(col => $('td').text(row[col.name]))
                       ));
-                      if (0) {
+                      if (1) {
                         tab.cols.filter(col => col.value).forEach(col => row[col.name] = col.value);
-                        infoElem.text(row.host, row.schema, row.keyname);
-                        var res = await fetch('https://aliconnect.nl/import.php', {
+                        // infoElem.text(row.host, row.schema, row.keyname);
+                        var res = await fetch('import.php', {
                           method: 'POST',
                           body: JSON.stringify(row),
                         }).then(res => res.text());
                       }
+                      // return;
                     } else {
                       infoElem.text('');
                     }
@@ -1302,7 +1307,7 @@
     sessionStorage.setItem('listType', type = this.type = type || this.type || sessionStorage.getItem('listType') || 'cols');
     rowsVisible = rowsVisible || rows || [];
     // const listview = this.listview;
-    console.log(type, rowsVisible);
+    // console.log(type, rowsVisible);
 
     function valueTag(col,row){
       if (col.schema) {
@@ -1357,9 +1362,9 @@
     }
     const types = {
       cols: () => {
-        console.log(rowsVisible);
+        // console.log(rowsVisible);
         return $('div').class('cards',type).append(
-          rowsVisible.map(row => $('div').attr(row).append(
+          rowsVisible.map(row => $('div').attr(row||{}).append(
             cols.filter(col => row[col.name] || col.cell).map(
               col => $('div').class(col.name).append(
                 labelTag(col,row),
@@ -1413,7 +1418,7 @@
           ),
           $('tbody').append(
             rowsVisible.map(row => $('tr').append(
-              cols.map(col => $('td').class(col.name).append(valueTag(col,row))),
+              cols.map(col => $('td').class(col.name).style(isNaN(row[col.name]) ? '' : 'text-align:right;').append(valueTag(col,row))),
             ))
           )
         )
@@ -1461,7 +1466,7 @@
             }
           })
         ),
-        $('div').class('oa').append(
+        $('div').class('oa', type).append(
           types[type](),
         ),
       ),
@@ -1544,7 +1549,7 @@
       request_type: schemaName,
       id: id,
     }).get().then(response => response.json().then(body => {
-      console.log(body);
+      // console.log(body);
       const schema = config.components.schemas[body.schemaName];
       const data = {};
       const cfg = {};
@@ -1559,7 +1564,7 @@
         data[legend] = data[legend] || {};
         data[legend][name] = body[name];
       });
-      console.log(111, data, cfg);
+      // console.log(111, data, cfg);
       // return;
       $('.pv').text('').append(
         $('nav').append(
@@ -1577,65 +1582,65 @@
         //   ))
         // )
       )
-      console.log(1, data);
-      return;
-      // sessionStorage.setItem('lv-data', JSON.stringify(data));
-      const cols = [
-        { name: 'productTitle', title: 'Titel'},
-        { name: 'supplier', title: 'Leverancier', filter: true},
-        { name: 'brand', title: 'brand', filter: true},
-        // { name: 'productGroup', title: 'productGroup'},
-        // { name: 'description', title: 'description'},
-        { name: 'ordercode', title: 'ordercode'},
-        { name: 'salesPrice', title: 'salesPrice'},
-        { name: 'catalogPrice', title: 'catalogPrice'},
-        { name: 'orderQuantity', title: 'Bestellen', type: 'number'},
-      ];
-      const args = [
-        {name: 'Korrel', regexp: /P\d+/ },
-        // {name: 'diameter', values: [ '150mm', '50mm' ] },
-        // {name: 'type', values: [ 'abralon' ] },
-        // {name: 'verpakking', values: [ 'tube' ] },
-        // {name: 'Afmeting', regexp: /(\d+\s*?x\s*?\d+\s*?x\s*?\d+|\d+\s*?x\s*?\d+|\d+)(mm|cm|m|mtr)/ },
-        {name: 'Afmeting', regexp: /(\d+(mm|cm|m|mtr)?\s*?x\s*?\d+\s*?x\s*?\d+|\d+\s*?x\s*?\d+|\d+)(mm|cm|m|mtr)/ },
-      ];
-      var match;
-      data.rows.forEach(row => {
-        if (row.description) {
-
-          for (let arg of args) {
-            if (match = row.productTitle.match(arg.regexp)) {
-              // console.log(match);
-              arg.col = arg.col || cols.push({
-                name: arg.name, filter: true,
-              })
-              row[arg.name] = match[0];
-              // row.productTitle = row.productTitle.replace(arg.regexp, '');
-            }
-            // for (let value of arg.values) {
-            //   const regexp = new RegExp(`${value}`);
-            //   if (row.description.match(regexp)) {
-            //     row.description = row.description.replace(regexp, '');
-            //     arg.col = arg.col || cols.push({
-            //       name: arg.name, filter: true,
-            //     })
-            //     row[arg.name] = value;
-            //   }
-            // }
-          }
-          // if (match = row.description.match(/\d+x\d+mm/)) {
-          //   console.log(match);
-          //   args.afm = args.afm || cols.push({
-          //     name: 'Afmeting', filter: true,
-          //   })
-          //   row.Afmeting = match[0];
-          //   row.description = row.description.replace(match[0], '');
-          // }
-
-        }
-      });
-      $('.pv').text('');
-      listview(cols, data.rows);
+      // console.log(1, data);
+      // return;
+      // // sessionStorage.setItem('lv-data', JSON.stringify(data));
+      // const cols = [
+      //   { name: 'productTitle', title: 'Titel'},
+      //   { name: 'supplier', title: 'Leverancier', filter: true},
+      //   { name: 'brand', title: 'brand', filter: true},
+      //   // { name: 'productGroup', title: 'productGroup'},
+      //   // { name: 'description', title: 'description'},
+      //   { name: 'ordercode', title: 'ordercode'},
+      //   { name: 'salesPrice', title: 'salesPrice'},
+      //   { name: 'catalogPrice', title: 'catalogPrice'},
+      //   { name: 'orderQuantity', title: 'Bestellen', type: 'number'},
+      // ];
+      // const args = [
+      //   {name: 'Korrel', regexp: /P\d+/ },
+      //   // {name: 'diameter', values: [ '150mm', '50mm' ] },
+      //   // {name: 'type', values: [ 'abralon' ] },
+      //   // {name: 'verpakking', values: [ 'tube' ] },
+      //   // {name: 'Afmeting', regexp: /(\d+\s*?x\s*?\d+\s*?x\s*?\d+|\d+\s*?x\s*?\d+|\d+)(mm|cm|m|mtr)/ },
+      //   {name: 'Afmeting', regexp: /(\d+(mm|cm|m|mtr)?\s*?x\s*?\d+\s*?x\s*?\d+|\d+\s*?x\s*?\d+|\d+)(mm|cm|m|mtr)/ },
+      // ];
+      // var match;
+      // data.rows.forEach(row => {
+      //   if (row.description) {
+      //
+      //     for (let arg of args) {
+      //       if (match = row.productTitle.match(arg.regexp)) {
+      //         // console.log(match);
+      //         arg.col = arg.col || cols.push({
+      //           name: arg.name, filter: true,
+      //         })
+      //         row[arg.name] = match[0];
+      //         // row.productTitle = row.productTitle.replace(arg.regexp, '');
+      //       }
+      //       // for (let value of arg.values) {
+      //       //   const regexp = new RegExp(`${value}`);
+      //       //   if (row.description.match(regexp)) {
+      //       //     row.description = row.description.replace(regexp, '');
+      //       //     arg.col = arg.col || cols.push({
+      //       //       name: arg.name, filter: true,
+      //       //     })
+      //       //     row[arg.name] = value;
+      //       //   }
+      //       // }
+      //     }
+      //     // if (match = row.description.match(/\d+x\d+mm/)) {
+      //     //   console.log(match);
+      //     //   args.afm = args.afm || cols.push({
+      //     //     name: 'Afmeting', filter: true,
+      //     //   })
+      //     //   row.Afmeting = match[0];
+      //     //   row.description = row.description.replace(match[0], '');
+      //     // }
+      //
+      //   }
+      // });
+      // $('.pv').text('');
+      // listview(cols, data.rows);
     }))
   }
   function buildForm(data, config){
@@ -2431,7 +2436,7 @@
           // } else if (selector in this.elem) {
           //   this.elem[selector] = context;
           } else {
-            this.elem.setAttribute(selector, [].concat(context).join(' '))
+            this.elem.setAttribute(selector.replace(/ |%/g, ''), [].concat(context).join(' '))
           }
         }
       }
@@ -11439,7 +11444,7 @@
     await $().emit('load');
     await $().emit('ready');
     function seturl(e){
-      console.log('seturl', e.type, document.location.hash, document.location.search);
+      // console.log('seturl', e.type, document.location.hash, document.location.search);
       const docsearchParams = new URLSearchParams(document.location.search);
       const searchParams = new URLSearchParams(document.location.hash ? document.location.hash.substr(1) : document.location.search);
       // console.log('POPSTATE 1', searchParams, aim.searchParams);
@@ -11450,13 +11455,15 @@
         if (docsearchParams.get('l')) {
           if (searchParams.get('l') || searchParams.get('$search')) {
             const listUrl = new URL(aim.idToUrl(docsearchParams.get('l')));
-            listUrl.searchParams.set('$search', docsearchParams.get('$search') || '');
+            if (docsearchParams.get('$search')) {
+              listUrl.searchParams.set('$search', docsearchParams.get('$search'));
+            }
             docsearchParams.set('l', aim.urlToId(listUrl));
             const hostname = new URL(listUrl).hostname;
             const client = aim.clients.get(hostname);
             if (client) {
               client.api(listUrl.href).get().then(async body => {
-                console.log(1, listUrl.href, body);
+                // console.log(1, listUrl.href, body);
                 // const items = body.value || body.Children || await body.children;
                 listShow(body);
                 // aim().list(items);
@@ -11478,9 +11485,9 @@
 
 
       }
-      console.log(aim.searchParams);
+      // console.log(aim.searchParams);
       if (aim.searchParams) {
-        console.log(aim.searchParams.get('id'), docsearchParams.get('id'));
+        // console.log(aim.searchParams.get('id'), docsearchParams.get('id'));
         if (aim.searchParams.get('id') && !docsearchParams.get('id')) {
           $('.pv').text('');
         }
