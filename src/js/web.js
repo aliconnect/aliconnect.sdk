@@ -210,6 +210,7 @@
 
     },
     async forms(){
+      aim.readOnly = false;
       $(document.body).append(
         $('nav').append($('div').append()),
         $('main').append(
@@ -645,6 +646,7 @@
       }
     },
     async om() {
+      aim.readOnly = false;
       document.querySelector('html').className += 'app';
       $(document.body).append(
         $('nav').append(
