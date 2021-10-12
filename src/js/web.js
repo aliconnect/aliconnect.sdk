@@ -1674,7 +1674,9 @@
       const children = configEntries.filter(entry => entry[0] !== 'metaData' && !properties.includes(entry));
 
       // console.log(111, properties);
-      properties.forEach(([key,property]) => {
+      properties
+      .filter(([key,property]) => aim.readOnly === false || obj[key])
+      .forEach(([key,property]) => {
         const metaData = config && config[key] && config[key].metaData ? config[key].metaData : {};
         parent.append(
           $('div').class('attr').append(
