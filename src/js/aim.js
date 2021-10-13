@@ -7281,7 +7281,7 @@
       return this;
     },
     fetch(){
-      // console.log(this.url.toString(), this.options);
+      console.log(this.url.toString(), this.options);
       return fetch(this.url, this.options);
     },
   }

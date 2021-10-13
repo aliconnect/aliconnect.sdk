@@ -589,7 +589,7 @@ class Aim {
     $this->config = array_replace_recursive($this->config, is_file($fname = "$this->config_path/config.yaml") ? yaml_parse_file($this->default_config_filename = $fname) : []);
     $this->secret = array_replace_recursive($this->secret, is_file($fname = "$this->config_path/secret.yaml") ? yaml_parse_file($fname) : []);
     $this->config = array_replace_recursive($this->config, is_file($fname = "$this->client_config_path/$_SERVER[HTTP_HOST].yaml") ? yaml_parse_file($fname) : []);
-    // $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$_SERVER['HTTP_HOST'].".secret.yaml") ? yaml_parse_file($fname) : []);
+    $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$_SERVER['HTTP_HOST'].".secret.yaml") ? yaml_parse_file($fname) : []);
     $this->client_id = request('client_id', $_REQUEST) ?: request('client_id',$this->config['client']);
     // debug($this->client_id, $this->config);
     header("Access-Control-Allow-Headers: Authorization");

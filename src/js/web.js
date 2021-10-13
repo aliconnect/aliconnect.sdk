@@ -608,6 +608,134 @@
         }
       });
     },
+    async import0(){
+      // const configYaml = await fetch('../config/import.yaml').then(res => res.text());
+      const config = await fetch('https://aliconnect.nl/yaml.php', {
+        method: 'POST',
+        body: await fetch('import.yaml').then(res => res.text()),
+      }).then(res => res.json());
+      console.log(1, config);
+      // return;
+
+      window.addEventListener('dragover', e => {
+        e.preventDefault();
+      })
+      window.addEventListener('drop', e => {
+        $('.table').text('');
+        e.preventDefault();
+        const data = e.dataTransfer || e.clipboardData;
+        if (data.types.includes('Files')) {
+          e.preventDefault();
+          e.stopPropagation();
+          Array.from(data.files).forEach(file => {
+            config.import.filter(fileConfig => fileConfig.filename === file.name).forEach(fileConfig => {
+              const reader = new FileReader();
+              reader.readAsBinaryString(file);
+              reader.onload = async e => {
+                const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                for (let tab of fileConfig.tabs) {
+                  tab.colRow = tab.colRow || 1;
+                  const sheet = workbook.Sheets[tab.tabname];
+                  const toprow = [];
+                  var [s,colEnd,rowEnd] = sheet['!ref'].match(/:([A-Z]+)(\d+)/);
+                  colEnd = XLSX.utils.decode_col(colEnd);
+                  function rowvalue(r,c){
+                    var cell = sheet[XLSX.utils.encode_cell({c:c,r:r-1})];
+                    if (cell) return cell.v;
+                  }
+                  for (var c=0; c<=colEnd; c++) {
+                    toprow[c] = rowvalue(tab.colRow,c);
+                  }
+                  const cols = [];
+                  for (var name in tab.cols) {
+                    cols[toprow.indexOf(tab.cols[name])] = name;
+                  }
+                  const progressElem = $('progress.import').max(rowEnd).value(tab.colRow);
+                  const infoElem = $('span.info');
+                  const rowStart = tab.colRow;
+                  const tbody = $('tbody').parent($('.table').append(
+                    $('thead').append(
+                      $('tr').append(
+                        cols.map(col => $('th').text(col))
+                      )
+                    )
+                  ));
+                  for (var r = tab.colRow+1; r<=rowEnd; r++) {
+                    progressElem.value(r);
+                    let row;
+                    cols.forEach((name,c) => {
+                      const value = rowvalue(r, c);
+                      if (value !== undefined) {
+                        row = row || tab.data || {};
+                        row[name] = value;
+                      }
+                    });
+                    if (row && row.orderCode) {
+                      // console.log(r,row);
+                      infoElem.text(rowEnd, r, row.supplier, row.orderCode);
+                      var data = await fetch('import.php', {method: 'POST', body: JSON.stringify(row)}).then(res => res.json());
+                      var update = Object.fromEntries(cols.filter(Boolean).map(col => [col, data[col] != row[col] ? row[col] : null]));
+                      // console.log(cols.map(col => data[col] != row[col]))
+                      if (!Array.isArray(data) && cols.some(col => data[col] != row[col])) {
+                        var elem = $('tr').parent(tbody).append(
+                          cols.map((col,i) => $('td').class(update[col] ? 'update' : '').text(row[col])),
+                        );
+                        elem.elem.scrollIntoView();
+                      }
+                    }
+
+
+                    //
+                    //
+                    // let row = Object.fromEntries(cols.map(col => [col.name, col.value || null]));
+                    // cols.forEach(col => {
+                    //   var cell = sheet[XLSX.utils.encode_cell({c:col.colIndex,r:r})];
+                    //   // if (col.name === 'catalogPrice') console.log(col.name, cell)
+                    //   if (cell) {
+                    //     row = row || {};
+                    //     row[col.name] = String(cell.v).trim();
+                    //   }
+                    // })
+                    //
+                    // row.orderCode = row.orderCode || [row.manufacturer,row.artNr].join('.');
+                    //
+                    // if (row && row.orderCode) {
+                    //   infoElem.text(`${r} van ${rowEnd}, ${row.supplier}, ${row.orderCode}, ${row.description}`);
+                    //   // console.log(r);
+                    //   tbody.append($('tr').append(
+                    //     tab.cols.map(col => $('td').text(row[col.name]))
+                    //   ));
+                    //   if (1) {
+                    //     tab.cols.filter(col => col.value).forEach(col => row[col.name] = col.value);
+                    //     // infoElem.text(row.host, row.schema, row.keyname);
+                    //     var res = await fetch('import.php', {
+                    //       method: 'POST',
+                    //       body: JSON.stringify(row),
+                    //     }).then(res => res.text());
+                    //   }
+                    //   // return;
+                    // } else {
+                    //   infoElem.text('');
+                    // }
+                  };
+                }
+                // console.log(fileConfig);
+                // for (let row of rows)
+                // const res = await fetch('https://aliconnect.nl/import.php', {
+                //   method: 'POST',
+                //   body: JSON.stringify({
+                //     filename: file.name,
+                //     sheets: fileConfig
+                //   }),
+                // }).then(res => res.text());
+                // console.log(res);
+                // return importGeneriek(workbook.Sheets.Generiek, file.name);
+              }
+            })
+          })
+        }
+      });
+    },
     async page(){
       $(document.body).append(
         $('nav').append($('article').append(
@@ -1303,6 +1431,10 @@
   function listview(cols, rows, type, filter, rowsVisible){
     cols = this.cols = cols || this.cols;
     rows = this.rows = rows || this.rows;
+    if (!rowsVisible) {
+      rows = rows.map(row => row.data ? Object.assign(row,JSON.parse(row.data)) : row)
+    }
+    console.log(cols,rows);
     // type = this.type = type || this.type;
     sessionStorage.setItem('listType', type = this.type = type || this.type || sessionStorage.getItem('listType') || 'cols');
     rowsVisible = rowsVisible || rows || [];
@@ -1362,12 +1494,16 @@
     }
     const types = {
       cols: () => {
-        // console.log(rowsVisible);
         return $('div').class('cards',type).append(
-          rowsVisible.map(row => $('div').attr(row||{}).append(
-            cols.filter(col => row[col.name] || col.cell).map(
+          rowsVisible.map(row => $('div')
+          // .attr(row||{})
+          .append(
+            row.pictureLowResUrl ? $('img').src(row.pictureLowResUrl) : null,
+            config.components.schemas[row.schemaName].cols
+            .filter(col => col.header)
+            .map(
               col => $('div').class(col.name).append(
-                labelTag(col,row),
+                // labelTag(col,row),
                 valueTag(col,row),
               )
             ),
@@ -9371,6 +9507,8 @@
           Object.entries(obj||{}).filter(e => e[0]!=='metaData').map(e => menuItem(...e))
         )
       }
+
+      console.log(config);
       $('.col.tv>div').append(
         Array.from(Object.entries(config.navleft)).map(e => menuItem(...e)),
       )
@@ -11429,7 +11567,8 @@
         response_type: 'data',
         client_id: aim.config.client_id,
       }).get().then(res => res.json());
-      // console.log(111, config);
+      Object.entries(config.components.schemas).forEach(([schemaName, schema]) => schema.cols = Object.entries(schema.properties||{}).map(([name,prop]) => Object.assign({name: name}, prop)));
+      console.log(111, config, aim.config.client_id);
     }
     var firstFolder = document.location.pathname.match(/(\w+)\//);
     if (firstFolder && libraries[firstFolder[1]]) {

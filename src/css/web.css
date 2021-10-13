@@ -279,6 +279,9 @@ tbody, td, tfoot, th, thead, tr {
 .lv .cards{
   display: flex;
 }
+.lv .cards label::after {
+  content: ": ";
+}
 
 .lv .cards.rows {
   flex-direction: column;
@@ -298,9 +301,10 @@ tbody, td, tfoot, th, thead, tr {
   padding:10px;
   border: solid 1px var(--trans2);
   overflow: hidden;
-  /* display: flex; */
-  /* flex-direction: column; */
+  display: flex;
+  flex-direction: column;
   padding-bottom: 30px
+
 }
 .lv .cards.cols>div:hover{
   box-shadow: inset 0px 0px 10px 3px var(--trans1);
@@ -355,8 +359,6 @@ tbody, td, tfoot, th, thead, tr {
   text-align: right;
   font-weight: bold;
 }
-
-
 .lv .cards.cols div>div {
   display: flex;
 }
@@ -365,10 +367,12 @@ tbody, td, tfoot, th, thead, tr {
   color: var(--trans8);
   flex-basis: 80px;
 }
-.lv .cards label::after {
-  content: ": ";
+.lv .cards.cols img{
+  height: 160px;
+  object-fit: cover;
+  object-position: center;
+  background-color: white;
 }
-
 
 div.prompt {
   position:absolute;
