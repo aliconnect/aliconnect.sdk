@@ -1582,6 +1582,7 @@
 
       s = s
       .replace(/\r/g,'')
+      .replace(/  \n/g, '<BR>')
       .replace(/(.*?)(```(.*?)\n(.*?)```|$)/gs, (s,md,s2,type,codeLines) => {
         s = ('\n\n'+md)
         .replace(/(^|\s)> (\[\!(\w+)\]\s|.*?)(.+?)(?=\n\n|$)/gs, (s,p1,p2,p3,p4) => `${p1}<BLOCKQUOTE${p3?` class="${p3.toLowerCase()}"`:``}>${(p4||'').replace(/(^|\s)> /gm, '')}</BLOCKQUOTE>`)
@@ -1645,6 +1646,7 @@
           // .replace(/(\S)\*\*/g, '$1<B>')
           // console.log(s);
           return s
+          .replace(/  \n/g, '<BR>')
           .replace(/(.*?)(`(.*?)`|$)/g, (s,p1,s1,p2) => `${
             p1
             .replace(/\*\*(.+?)\*\*/g, '<B>$1</B>')
@@ -1673,7 +1675,6 @@
             .replace(/\[(.*?)\]\((.*?)\)/g, '<A href="$2">$1</A>')
             // .replace(/(.*?)(?!\]\()(http.*?)(?=\s|\)|$)/g, '$1[$2]($2)')
             // .replace(/(http.*?)(?=\s|\)|$)(?=(?:(?:[^"]*"){2})*[^"]*$)/g, '<A href="$1">$1</A>')
-            .replace(/  \n/g, '<BR>')
             // .replace(/\n\n(.*)(?=\n\n)/gs, '<P>$1</P>')
 
 
