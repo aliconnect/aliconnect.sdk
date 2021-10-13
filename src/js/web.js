@@ -1432,9 +1432,23 @@
     cols = this.cols = cols || this.cols;
     rows = this.rows = rows || this.rows;
     if (!rowsVisible) {
-      rows = rows.map(row => row.data ? Object.assign(row,JSON.parse(row.data)) : row)
+      rows = rows.map(row => row.data ? Object.assign(row,JSON.parse(row.data)) : row);
+      // var locrows = rows.filter(row => 'geolocatie' in row && !row.geolocatie);
+      // if (locrows.length) {
+      //   (async function(){
+      //     for (let row of locrows) {
+      //       var res = await fetch('https://aliconnect.nl/maps/api/geocode/json?address=' + [
+      //         row.businessAddressStreet,
+      //         row.businessAddressPostalCode,
+      //         row.businessAddressCity,
+      //       ].join('+')).then(res => res.json());
+      //       console.log([res]);
+      //     }
+      //   })()
+      // }
+      // console.log(locrows);
     }
-    console.log(cols,rows);
+    // console.log(cols,rows);
     // type = this.type = type || this.type;
     sessionStorage.setItem('listType', type = this.type = type || this.type || sessionStorage.getItem('listType') || 'cols');
     rowsVisible = rowsVisible || rows || [];
@@ -4959,7 +4973,6 @@
                 // console.log(address, formElement);
   							$().url('https://maps.googleapis.com/maps/api/geocode/json').query({
   								address: address,
-  								key: 'AIzaSyAKNir6jia2uSgmEoLFvrbcMztx-ao_Oys',
   							}).get().then(e => {
   								let compnames = {
   									route: prefix + 'Street',
@@ -11567,7 +11580,9 @@
         response_type: 'data',
         client_id: aim.config.client_id,
       }).get().then(res => res.json());
-      Object.entries(config.components.schemas).forEach(([schemaName, schema]) => schema.cols = Object.entries(schema.properties||{}).map(([name,prop]) => Object.assign({name: name}, prop)));
+      if (config && config.components && config.components.schemas) {
+        Object.entries(config.components.schemas).forEach(([schemaName, schema]) => schema.cols = Object.entries(schema.properties||{}).map(([name,prop]) => Object.assign({name: name}, prop)));
+      }
       console.log(111, config, aim.config.client_id);
     }
     var firstFolder = document.location.pathname.match(/(\w+)\//);
