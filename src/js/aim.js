@@ -6678,11 +6678,14 @@
           `IF OBJECT_ID('his.attr') IS NULL
           BEGIN
           CREATE TABLE [his].[attr](
-            [ts] [timestamp] NULL,
-            [id] [bigint] NULL,
-            [name] [varchar](50) NULL,
-            [value] [varchar](max) NULL,
-            [modifiedDateTime] [datetime] NULL CONSTRAINT [DF_attr_modifiedDateTime]  DEFAULT (getdate())
+          	[ts] [timestamp] NULL,
+          	[id] [bigint] NULL,
+          	[name] [varchar](50) NULL,
+          	[value] [varchar](max) NULL,
+          	[modifiedDateTime] [datetime] NULL,
+          	[parent] [varchar](500) NULL,
+          	[attributeType] [varchar](50) NULL,
+          	[title] [varchar](500) NULL
           ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
           END`
         );
@@ -6799,14 +6802,25 @@
   }
   Server.prototype = {
     query(sql) {
-      return new Promise((succes,fail) => {
-        if (sql) this.requests.push([sql,succes,fail]);
-        else this.sqlBusy = false;
+      return new Promise((resolve, reject) => {
+        if (sql) {
+          this.requests.push([sql,resolve, reject]);
+        } else {
+          this.sqlBusy = false;
+        }
         if (!this.sqlBusy && this.requests.length) {
           this.sqlBusy = true;
-          [sql,succes,fail] = this.requests.shift();
+          [sql, resolve, reject] = this.requests.shift();
           const rows = [];
-          const request = new this.tedious.Request(sql, err => err ? fail(err) : succes(rows) || this.query());
+          const request = new this.tedious.Request(sql, err => {
+            if (err) {
+              err.query = sql;
+              reject(err);
+            } else {
+              resolve(rows);
+              this.query();
+            }
+          });
           request.on('row', columns => rows.push(Object.fromEntries(columns.map(col => [col.metadata.colName, col.value]))));
           this.conn.execSql(request);
         }
@@ -6841,6 +6855,11 @@
           value = Math.round(((Number(attribute.MaxEngValue) - Number(attribute.MinEngValue)) / (Number(attribute.MaxRawValue) - Number(attribute.MinRawValue)) * (value - Number(attribute.MinRawValue)) + Number(attribute.MinEngValue)) * 100) / 100;
         }
 
+        // Binnenkomende waarde bewaren voor enum text
+        if (has('Ne')) {
+          attribute.TextualValue = value;
+        }
+
         // Low High
         const low = Number(attribute.Low || 0);
         const high = Number(attribute.High || 0);
@@ -6868,8 +6887,6 @@
           value = value == attribute.Eq ? 1 : 0;
         }
         if (has('Ne')) {
-          // Binnenkomende waarde bewaren voor enum text
-          attribute.TextualValue = value;
           value = value != attribute.Ne ? 1 : 0;
         }
 
@@ -6877,7 +6894,7 @@
         curValue = Number(attribute.value || 0);
         // Hysteresis
         const hyst = Number(attribute.Hysteresis || 0);
-        if (value < curValue - hyst || value > curValue + hyst) {
+        if (value < curValue - hyst || value > curValue + hyst || !('value' in attribute)) {
 
           // console.log(1, attribute.name, attribute.SystemId);
           // if (attribute.systemId)
@@ -6895,7 +6912,7 @@
               attribute.title,
               attribute.AttributeType,
             ];
-            this.query(`INSERT his.attr(id,name,value,parent,title,AttributeType) VALUES('${values.join("','")}')`);
+            this.query(`INSERT his.attr(id,name,value,parent,title,AttributeType) VALUES('${values.join("','")}')`).catch((err,sql) => console.error('attrSetValue', err));
             server.attributes.emit('changeValue', attribute);
           }
 
@@ -6950,11 +6967,15 @@
         const net = require('net');
         const jsmodbus = require('jsmodbus');
         modbusDevices.forEach((item, i) => {
-          let readAddress = item.ReadAddress || 0;
-          const devices = item.children;
-          let readLength = devices.length;
+          // let readAddress = item.ReadAddress || 0;
+          // const devices = item.children;
+          // let readLength = 0;
+          // devices.forEach(d => {
+          //   readLength += d.children.length;
+          //   readLength += d.children.filter(c => ['Float'].includes(c.type)).length;
+          // })
           const attributes = initAttributes(item);
-          console.log('MODBUS', item.IPAddress);
+          // console.log(attributes);
           function setSate(state){
             attributes.forEach(attr => server.attrSet(attr, 'state', state));
           }
@@ -6964,41 +6985,92 @@
             setSate('connecting');
             socket.connect({ host: item.IPAddress, port: item.Port || 502 });
           }
+
+          const types = {
+            D: { title: "Digital", bitLength: 1 },
+            Bool: { title: "Boolean", bitLength: 1 },
+            SByte: { title: "Signed Byte", bitLength: 8, signed: 1 },
+            UByte: { title: "Unsigned Byte", bitLength: 8 },
+            SInt: { title: "Signed Integer", bitLength: 16, signed: 1 },
+            UInt: { title: "Unsigned Integer", bitLength: 16, dec:0 },
+            SDInt: { title: "Signed Double Integer", bitLength: 32, signed: 1 },
+            UDInt: { title: "Unsigned Double Integer", bitLength: 32 },
+            Float: { title: "Float", bitLength: 32, signed: 1, exponent: 8, dec: 2 },
+            Double: { title: "Double", bitLength: 64, signed: 1, exponent: 11, dec: 2 },
+          };
+
+          function bitTo (typename, s) {
+          	var s = s.match(/.{1,16}/g).reverse().join('');
+          	var type = types[typename], arr = s.replace(/ /g, '').split(''), sign = type.signed ? (Number(arr.shift()) ? -1 : 1) : 1;
+          	if (!type.exponent) return parseInt(arr.join(''), 2) * sign;
+          	var mantissa = 0, exponent = parseInt(exp = arr.splice(0, type.exponent).join(''), 2) - (Math.pow(2, type.exponent - 1) - 1);
+          	arr.unshift(1);
+          	arr.forEach(function (val, i) { if (Number(val)) mantissa += Math.pow(2, -i); });
+          	return sign * mantissa * Math.pow(2, exponent);
+          };
+
           socket.on('connect', e => {
             setSate('connected');
-            // console.log('MODBUS', item.IPAddress, 'CONNECTED');
-            (function readData() {
-              client.readInputRegisters(readAddress, readLength).then(resp => {
-                var readArray = resp.response._body._valuesAsArray;
-                // console.log('MODBUS', item.IPAddress, 'READ', readArray);
-                devices.forEach((device,i) => {
-                  if (device && device.children) {
-                    const readValue = readArray[i];
-                    const bitString = ('0000000000000000' + readValue.toString(2)).substr(-16);
+            console.log('MODBUS', item.IPAddress, 'CONNECTED');
+            // function readRegister(readAddress, readLength) {
+            //   return new Promise((succes, reject) => {
+            //     client.readInputRegisters(readAddress, readLength)
+            //     .then(resp => {
+            //       succes(resp);
+            //     })
+            //   })
+            // }
+            (async function readData() {
+              let readAddress = item.readAddress || item.ReadAddress || 0;
+              for (let device of item.children) {
+                if (device) {
+                  readAddress = device.readAddress || device.ReadAddress || readAddress;
+                  device.type = device.type || device.Type || 'UInt';
+                  const bitPos = device.bitPos || device.BitPos || 0;
+                  const type = types[device.type];
+                  const bitLength = type.bitLength;
+                  const readLength = Math.ceil(bitLength/16);
+                  // console.log(item.IPAddress, child.name, readAddress, readLength);
+                  // continue;
+
+                  await client.readInputRegisters(readAddress, readLength).then(resp => {
+                    // const bitArray = [];
+                    const byteArray = resp.response._body._valuesAsArray;
+                    const bitString = byteArray.reverse().map(b => ('0000000000000000' + b.toString(2)).substr(-16)).join('');
                     const bitArray = bitString.split('').reverse();
-                    device.children.forEach((child,i) => {
+                    const childBitString = bitString.substr(bitString.length - bitLength - bitPos, bitLength)
+                    let readValue = bitTo(device.type, device.bitString = bitString.substr(bitString.length - bitLength - bitPos, bitLength));
+                    if (device.SystemId && device.name && device.AttributeType) {
+                      if (type.dec) readValue = Math.round ( readValue * 10**type.dec ) / 10**type.dec || 0;
+                      server.attrSetValue(device, readValue);
+                    }
+                    const children = device.children || [];
+                    children.forEach((child,i) => {
                       if (child && child.type) {
-                        // console.log(child.type, i, bitArray[i], bitArray, readValue);
+                        // console.log('aaa', item.IPAddress, device.readAddress, device.ReadAddress, child.type, readValue, byteArray, readAddress, readLength);
                         switch(child.type) {
                           case 'UInt': return server.attrSetValue(child, readValue);
                           case 'Bool': return server.attrSetValue(child, bitArray[i]);
                         }
                       }
                     })
-                  }
-                });
-                setTimeout(readData, item.PollInterval);
-              }).catch(err => {
-                // console.log('read error', item.IPAddress, readAddress, readLength);
-                attributes.forEach(attr => server.attrSet(attr, 'state', 'error'));
-                setTimeout(connect, 2000);
-              })
+                  })
+                  .catch(err => {
+                    console.log('modbus read error', item.IPAddress);
+                    attributes.forEach(attr => server.attrSet(attr, 'state', 'error'));
+                    setTimeout(connect, 20000);
+                  })
+
+                }
+                readAddress++;
+              }
+              setTimeout(readData, item.PollInterval = 10000);
             })();
           }).on('disconnect', e => {
             setSate('disconnect');
-            console.error('disconnect');
+            console.error('modbus disconnect');
           }).on('error', e => {
-            console.error('error', item.parent, item.name, item.id );
+            console.error('modbus error', item.state, item.IPAddress);
             setSate('error');
             setTimeout(connect, 5000);
           });
@@ -7030,7 +7102,7 @@
                 }, 5000);
               } else {
                 itemSetState(item, 'connected');
-                children.forEach((child,i) => attrSetValue(child, varbinds[i] && varbinds[i].value));
+                children.forEach((child,i) => server.attrSetValue(child, varbinds[i] && varbinds[i].value));
                 setTimeout(read, item.PollInterval);
               }
             })
