@@ -78,6 +78,11 @@ body {
   display:flex;
   flex-direction: column;
 }
+body>div {
+  display: flex;
+}
+
+
 @media only screen {
   input,body {
     background-color: var(--bg);
@@ -126,9 +131,6 @@ nav button:not(:hover)>div{
   display: none;
 }
 
-body>* {
-  display: flex;
-}
 body>*>article {
   flex:0 1 1200px;
   margin:auto;
@@ -204,7 +206,7 @@ main>.tv>div {
   flex-direction: column;
 }
 .lv>div>div {
-  display: flex;
+  /* display: flex; */
   flex: 1 0 0;
 }
 .lv>div>div.table {
@@ -294,7 +296,8 @@ tbody, td, tfoot, th, thead, tr {
   flex-wrap: wrap;
 }
 .lv .cards.cols>* {
-  flex: 1 0 250px;
+  flex: 1 0 300px;
+  min-width: 200px;
   margin: 1px;
 }
 .lv .cards.cols>div {
@@ -303,22 +306,75 @@ tbody, td, tfoot, th, thead, tr {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding-bottom: 30px
+  /* padding-bottom: 30px */
 
 }
 .lv .cards.cols>div:hover{
   box-shadow: inset 0px 0px 10px 3px var(--trans1);
 }
-.lv .cards.cols div.catalogPrice>label {
-  display:none;
-}
-.lv .cards.cols div.catalogPrice{
-  float:left;
+
+.cards.cols>div .discount {
+  display: inline-block;
   position: absolute;
-  bottom: 5px;
-  left: 10px;
-  font-weight: bold;
+  top: 10px;
+  right: -30px;
+  transform: rotate(45deg);
+  background: orange;
+  color:black;
+  z-index: 1;
 }
+.cards.cols>div .discount::before {
+  text-align: center;
+  width: 100px;
+  line-height: 20px;
+  content: '-' attr(value) '%';
+}
+.price{
+  white-space: nowrap;
+  /* display:flex; */
+  margin-top: auto;
+  padding-top: 20px;
+  line-height: 20px;
+}
+.price>div::before {
+  content: '€ ' attr(listprice);
+  font-size: 0.8em;
+  color: var(--trans8);
+  margin-right: 10px;
+  text-decoration: line-through;
+}
+.price>div::after {
+  /* content: '- € ' attr(discount) ' ' attr(discountperc) '% (€ ' attr(fatprice) ' incl. btw)'; */
+  content: '(€ ' attr(fatprice) ' incl. btw)';
+  font-weight: normal;
+  font-size: 0.8em;
+  margin-left: 10px;
+  color: var(--trans8);
+}
+.price>div>span::before {
+  content: '€ ';
+  font-size: 0.8em;
+  font-weight: normal;
+}
+.price>div>span{
+    font-weight: bold;
+}
+.price>input{
+  width:80px;
+  margin-left: auto;
+  border: solid 1px var(--trans3);
+  outline: none;
+  font-weight: bold;
+  text-align: right;
+}
+
+
+div.artcode {
+  font-size: 0.8em;
+  color: var(--trans8);
+}
+
+
 .lv .cards.cols div.salesPrice{
   position: absolute;
   bottom: 5px;
@@ -344,6 +400,7 @@ tbody, td, tfoot, th, thead, tr {
   transform: rotate(45deg);
   background: orange;
 }
+
 .lv .cards.cols div.orderQuantity{
   position: absolute;
   bottom: 5px;
@@ -369,7 +426,7 @@ tbody, td, tfoot, th, thead, tr {
 }
 .lv .cards.cols img{
   height: 160px;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
   background-color: white;
 }
@@ -802,4 +859,25 @@ progress[color]::-webkit-progress-value {
 }
 .abtn::after {
   content: attr(caption);
+}
+
+aside.filter {
+  flex: 0 0 200px;
+}
+aside.filter div {
+  cursor: pointer;
+}
+aside.filter div[cnt]::after{
+  content: attr(cnt);
+  float: right;
+}
+aside.filter div::before {
+  content:'☐'
+}
+aside.filter div[checked]::before {
+  content:'☑'
+}
+aside.filter details>div {
+  margin-left:20px;
+  font-size: 0.8em;
 }

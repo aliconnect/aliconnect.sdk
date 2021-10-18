@@ -5438,15 +5438,15 @@ mark{
 }
 
 
+article.lv>section{
+  display: flex;
+}
 aside.filter {
   min-width:150px;
   position: sticky;
   overflow: auto;
   top: calc(48px + 36px);
   height: calc(100vh - 48px - 36px);
-}
-article.lv>section{
-  display: flex;
 }
 aside.filter div {
   cursor: pointer;

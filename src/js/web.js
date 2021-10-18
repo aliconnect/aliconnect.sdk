@@ -616,24 +616,28 @@
       }).then(res => res.json());
       console.log(1, config);
       // return;
-
       window.addEventListener('dragover', e => {
         e.preventDefault();
       })
-      window.addEventListener('drop', e => {
+      window.addEventListener('drop', async e => {
         $('.table').text('');
         e.preventDefault();
         const data = e.dataTransfer || e.clipboardData;
         if (data.types.includes('Files')) {
           e.preventDefault();
           e.stopPropagation();
-          Array.from(data.files).forEach(file => {
+          const files = data.files;
+          const product = await fetch('../product.json').then( response => response.json() );
+          console.log(files, product);
+          Array.from(files).forEach(file => {
             config.import.filter(fileConfig => fileConfig.filename === file.name).forEach(fileConfig => {
               const reader = new FileReader();
               reader.readAsBinaryString(file);
               reader.onload = async e => {
                 const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                console.log(fileConfig.tabs);
                 for (let tab of fileConfig.tabs) {
+                  const prefixArtcode = tab.artcode || '';
                   tab.colRow = tab.colRow || 1;
                   const sheet = workbook.Sheets[tab.tabname];
                   const toprow = [];
@@ -670,18 +674,24 @@
                         row[name] = value;
                       }
                     });
-                    if (row && row.orderCode) {
+                    if (row && row.ordercode && row.artcode) {
+                      // console.log(row.artcode, row);
+                      row.artcode = prefixArtcode + row.artcode;
                       // console.log(r,row);
-                      infoElem.text(rowEnd, r, row.supplier, row.orderCode);
-                      var data = await fetch('import.php', {method: 'POST', body: JSON.stringify(row)}).then(res => res.json());
-                      var update = Object.fromEntries(cols.filter(Boolean).map(col => [col, data[col] != row[col] ? row[col] : null]));
-                      // console.log(cols.map(col => data[col] != row[col]))
-                      if (!Array.isArray(data) && cols.some(col => data[col] != row[col])) {
-                        var elem = $('tr').parent(tbody).append(
-                          cols.map((col,i) => $('td').class(update[col] ? 'update' : '').text(row[col])),
-                        );
-                        elem.elem.scrollIntoView();
-                      }
+                      infoElem.text(rowEnd, r, row.artcode, row.supplier, row.ordercode);
+                      var prod = product.find(prod => prod.artcode === row.artcode);
+                      if (!prod) product.push(prod = {});
+                      Object.assign(prod, row, prod);
+                      prod.schemaName = 'supplierproduct';
+                      // var data = await fetch('import.php', {method: 'POST', body: JSON.stringify(row)}).then(res => res.json());
+                      // var update = Object.fromEntries(cols.filter(Boolean).map(col => [col, data[col] != row[col] ? row[col] : null]));
+                      // // console.log(cols.map(col => data[col] != row[col]))
+                      // if (!Array.isArray(data) && cols.some(col => data[col] != row[col])) {
+                      //   var elem = $('tr').parent(tbody).append(
+                      //     cols.map((col,i) => $('td').class(update[col] ? 'update' : '').text(row[col])),
+                      //   );
+                      //   elem.elem.scrollIntoView();
+                      // }
                     }
 
 
@@ -719,6 +729,16 @@
                     // }
                   };
                 }
+                console.log(product);
+                await fetch("/import.php?data=product", {
+                  method: 'POST', // *GET, POST, PUT, DELETE, etc.
+                  mode: 'cors', // no-cors, *cors, same-origin
+                  cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+                  credentials: 'same-origin', // include, *same-origin, omit
+                  redirect: 'follow', // manual, *follow, error
+                  referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+                  body: JSON.stringify(product, null, 2) // body data type must match "Content-Type" header
+                })
                 // console.log(fileConfig);
                 // for (let row of rows)
                 // const res = await fetch('https://aliconnect.nl/import.php', {
@@ -1429,32 +1449,29 @@
     }
   }
   function listview(cols, rows, type, filter, rowsVisible){
-    cols = this.cols = cols || this.cols;
+    // cols = this.cols = cols || this.cols;
     rows = this.rows = rows || this.rows;
     if (!rowsVisible) {
       rows = rows.map(row => row.data ? Object.assign(row,JSON.parse(row.data)) : row);
-      // var locrows = rows.filter(row => 'geolocatie' in row && !row.geolocatie);
-      // if (locrows.length) {
-      //   (async function(){
-      //     for (let row of locrows) {
-      //       var res = await fetch('https://aliconnect.nl/maps/api/geocode/json?address=' + [
-      //         row.businessAddressStreet,
-      //         row.businessAddressPostalCode,
-      //         row.businessAddressCity,
-      //       ].join('+')).then(res => res.json());
-      //       console.log([res]);
-      //     }
-      //   })()
-      // }
-      // console.log(locrows);
+      filter = {}
+      rows.forEach(row => {
+        const cols = config.components.schemas[row.schemaName].cols.filter(col => col.filter);
+        cols.forEach(col => {
+          if (col.name in row) {
+            const value = row[col.name];
+            const filtercol = filter[col.name] = filter[col.name] || { name: col.name, values: {} };
+            const valuerow = filtercol.values[value] = filtercol.values[value] || { value: value, rows: []};
+            valuerow.rows.push(row);
+          }
+        })
+      })
+      filter = Object.values(filter);
+      filter.forEach(attribute => attribute.values = Object.values(attribute.values).sort((a,b) => a.value.localeCompare(b.value)));
+      filter = filter.filter(attribute => attribute.values.length>1 && attribute.values.some(value => value.rows.length>1))
+
     }
-    // console.log(cols,rows);
-    // type = this.type = type || this.type;
     sessionStorage.setItem('listType', type = this.type = type || this.type || sessionStorage.getItem('listType') || 'cols');
     rowsVisible = rowsVisible || rows || [];
-    // const listview = this.listview;
-    // console.log(type, rowsVisible);
-
     function valueTag(col,row){
       if (col.schema) {
         return $('a').text(row[col.name]).href(`#${col.schema}(${row[col.name]})`)
@@ -1509,27 +1526,9 @@
     const types = {
       cols: () => {
         return $('div').class('cards',type).append(
-          rowsVisible.map(row => $('div')
-          // .attr(row||{})
-          .append(
-            row.pictureLowResUrl ? $('img').src(row.pictureLowResUrl) : null,
-            config.components.schemas[row.schemaName].cols
-            .filter(col => col.header)
-            .map(
-              col => $('div').class(col.name).append(
-                // labelTag(col,row),
-                valueTag(col,row),
-              )
-            ),
-            // {
-            //   if (col.type) {
-            //     return $('input').type(col.type).min(0).class(col.name).value(row[col.name] || '')
-            //   }
-            //   if (row[col.name]) {
-            //     return $('div').append(labelTag(col,row),valueTag(col,row))
-            //   }
-            // }),
-          ).on('click', e => {
+          rowsVisible.map(row => {
+            const div = $('div').on('click', e => {
+              if (row.id) {
                 console.log('click')
                 const url = new URL(document.location);
                 const ref = `${row.schemaName}(${row.id})`;
@@ -1537,7 +1536,30 @@
                 // url.searchParams.set('id', btoa(ref));
                 // window.history.pushState('page', '',  url.href);
                 // page(ref);
-              })),
+              }
+            });
+
+            // .attr(row||{})
+            return div.append(
+              row.images ? $('img').src(row.images[0]) : null,
+              config.components.schemas[row.schemaName].cols
+              .filter(col => col.header)
+              .map(
+                col => aim.om[col.name] ? aim.om[col.name](row, div) : $('div').class(col.name).append(
+                  // labelTag(col,row),
+                  valueTag(col,row),
+                )
+              ),
+              // {
+              //   if (col.type) {
+              //     return $('input').type(col.type).min(0).class(col.name).value(row[col.name] || '')
+              //   }
+              //   if (row[col.name]) {
+              //     return $('div').append(labelTag(col,row),valueTag(col,row))
+              //   }
+              // }),
+            );
+          }),
           ['','','','','','','','','','','','','','',].map(i => $('span').class('ghost')),
         )
       },
@@ -1575,18 +1597,6 @@
       }
     }
 
-    filter = filter || cols.filter(col => col.filter).map(col => Object({
-      name: col.name,
-      values: rowsVisible.map(row => row[col.name]).unique().sort().map(value => Object({
-        value: value,
-        rows: rowsVisible.filter(row => row[col.name] === value),
-      }))
-    }));
-
-    // const
-
-
-
     $('.lv').text('').append(
       $('nav').append(
         $('button').text('filter'),
@@ -1604,12 +1614,21 @@
           filter.map(col => {
             const values = col.values.filter(val => val.rows.some(row => rowsVisible.includes(row)));
             if(values.some(val => val.checked) || values.length>1) {
-              return $('details').open(0).append(
+              return $('details').open(values.some(val => val.checked)).append(
                 $('summary').text(col.name),
-                values.map(val => $('div').text(val.value).checked(val.checked).attr('cnt', val.rows.filter(row => rowsVisible.includes(row)).length).on('click', e => {
+                values
+                .filter(val => val.value)
+                .map(
+                  val => $('div')
+                  .text(val.value)
+                  .checked(val.checked)
+                  .attr('cnt', val.rows.filter(row => rowsVisible.includes(row)).length)
+                  .on('click', e => {
                   val.checked ^= 1;
                   col.checked = col.values.some(val => val.checked);
-                  rowsVisible = rows.filter(row => !filter.some(col => col.checked && col.values.filter(val => !val.checked).some(val => val.rows.includes(row))));
+                  rowsVisible = rows.filter(
+                    row => !filter.some(col => col.checked && (!(col.name in row) || col.values.filter(val => !val.checked).some( val => val.rows.includes(row) )) )
+                  );
                   listview(cols, rows, type, filter, rowsVisible);
                 }))
               );
