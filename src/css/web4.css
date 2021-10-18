@@ -59,7 +59,6 @@ html {
   --reserved: purple;
   --events: darkred;
   --string: var(--red);
-  --shadow: 0px 0px 5px 0px #000000;
 }
 html[dark='1'] {
   --bg: #111;
@@ -83,7 +82,6 @@ body>div {
   display: flex;
 }
 
-
 @media only screen {
   input,body {
     background-color: var(--bg);
@@ -98,79 +96,12 @@ body>div {
   top:0;bottom:0;left:0;right:0;
 }
 
-.abtn {
-  font: inherit;
-  line-height: inherit;
-  box-sizing: content-box;
-  flex-shrink: 0;
-  color: inherit;
-  border: none;
-  background: transparent no-repeat center center none;
-  white-space: nowrap;
-  border-radius: 0;
-  outline: none;
-  text-align: center;
-  cursor: pointer;
-  padding: 0;
-  padding: 0 5px;
-  direction: ltr;
-}
-.abtn::before {
-  font-family: 'AliconnectIcon';
-  display: inline-block;
-  line-height: inherit;
-  height: 100%;
-  text-align: center;
-  font-style: normal;
-  min-height:26px;
-  min-width: 36px;
-  min-width: 26px;
-  vertical-align: top;
-  white-space: nowrap;
-  direction: ltr;
-}
-.abtn::after {
-  content: attr(caption);
-}
-
 nav {
-  --border: solid 1px rgba(140,140,140,0.8);
-  --border: solid 1px white;
-  --bg-button-hover: var(--trans5);
   display:flex;
   z-index: 1;
   background-color: var(--bg-trans);
 }
-nav form {
-  line-height: 36px;
-  padding: 5px 0;
-}
-nav form input {
-  border: none;
-  border-left: var(--border);
-  border-top: var(--border);
-  border-bottom: var(--border);
-  border-top-left-radius: 20px;
-  border-bottom-left-radius: 20px;
-  outline: none;
-  font: inherit;
-  background-color: var(--trans1);
-  color: inherit;
-  padding: 0 20px;
-  margin: 0;
-}
-nav form input+.abtn {
-  border-right: var(--border);
-  border-top: var(--border);
-  border-bottom: var(--border);
-  border-top-right-radius: 20px;
-  border-bottom-right-radius: 20px;
-}
-
-::placeholder {
-  color: inherit; font:inherit; opacity: 0.5;
-}
-
+nav>span { margin-right: auto; }
 nav button {
   border: solid 2px transparent;
   font: inherit;
@@ -181,35 +112,28 @@ nav button {
   color: inherit;
   padding: 0 20px;
   margin: 0;
+}
+nav button {
   text-align: left;
   padding: 0 10px;
 }
-nav button:hover {
-  background-color: var(--bg-button-hover);
-}
 nav button>div{
-  background-color: var(--bg);
-  color: var(--fg);
+  background: var(--bg);
   position: absolute;
   white-space: nowrap;
   right:0;
   text-align: left;
   display: flex;
   flex-direction: column;
-  -webkit-box-shadow: var(--shadow);
-  box-shadow: var(--shadow);
 }
 nav button:not(:hover)>div{
   display: none;
 }
 
+
 body>*>article {
   flex:0 1 1200px;
   margin:auto;
-  display: flex;
-}
-
-body>header{
   display: flex;
 }
 
@@ -325,12 +249,6 @@ aside.right li>:first-child[open='1'], main>aside.right li[selected]>:first-chil
   border-color:var(--trans);
 }
 
-a.anchor {
-  display: block;
-  position: relative;
-  top: -58px;
-  visibility: hidden;
-}
 h1,h2,h3 {
   margin: 10px 0;
   padding:0;
@@ -345,11 +263,26 @@ h2 {
   font-size: 1.3 em;
 }
 
+nav>article ul {
+  list-style: none;
+}
+nav>article>ul {
+  display: flex;
+  margin: 0 0 0 auto;
+}
+nav>article>ul>li>ul {
+  position: absolute;
+  right: 0;
+  text-align: right;
+}
+nav>article>ul>li:not(:hover)>ul {
+  display: none;
+}
+
 body>nav {
   flex: 0 0 48px;
   line-height:48px;
   background:var(--basebg);
-  color: white;
   position: sticky;
   top: 0;
   z-index:2;
@@ -1015,6 +948,41 @@ progress[color]::-webkit-progress-value {
   /* box-shadow: inset -20px 0px 20px -5px var(--trans3); */
 }
 
+.abtn {
+  font: inherit;
+  line-height: inherit;
+  box-sizing: content-box;
+  flex-shrink: 0;
+  color: inherit;
+  border: none;
+  background: transparent no-repeat center center none;
+  white-space: nowrap;
+  border-radius: 0;
+  outline: none;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  padding: 0 5px;
+  direction: ltr;
+}
+.abtn::before {
+  font-family: 'AliconnectIcon';
+  display: inline-block;
+  line-height: inherit;
+  height: 100%;
+  text-align: center;
+  font-style: normal;
+  min-height:26px;
+  min-width: 36px;
+  min-width: 26px;
+  vertical-align: top;
+  white-space: nowrap;
+  direction: ltr;
+}
+.abtn::after {
+  content: attr(caption);
+}
+
 aside.filter {
   flex: 0 0 200px;
 }
@@ -1065,25 +1033,4 @@ pre code {
   background-color: transparent;
   /* border-radius: 0; */
   border: none;
-}
-
-aside.filter {
-  flex: 0 0 200px;
-}
-aside.filter div {
-  cursor: pointer;
-}
-aside.filter div[cnt]::after{
-  content: attr(cnt);
-  float: right;
-}
-aside.filter div::before {
-  content:'☐'
-}
-aside.filter div[checked]::before {
-  content:'☑'
-}
-aside.filter details>div {
-  margin-left:20px;
-  font-size: 0.8em;
 }

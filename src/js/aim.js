@@ -1534,12 +1534,6 @@
       if (type) {
         return code(s, type);
       }
-      let identList = [];
-      let identOptions = null;
-      let html = [];
-      function istr(ident) {
-        return '                '.slice(0,ident);
-      }
       const lines = [];
       s = s.replace(
         /<\!-- docIndex -->.*?<\!-- \/docIndex -->/s,
@@ -1553,153 +1547,84 @@
         }\n<!-- /docIndex -->`
       );
       var identArray = [];
-
-      function setLevelTag(lineIdent, tag){
-        // console.log(lineIdent, tag);
-        var s = identArray.slice(lineIdent+1).map(t => `</${t}>`).reverse().join('');
-        identArray.length = lineIdent+1;
-        if (identArray[lineIdent]) {
-          if (identArray[lineIdent] !== tag) {
-            s += `</${identArray[lineIdent]}>`;
-          }
-        }
-        if (tag) {
-          if (tag !== identArray[lineIdent]) {
-            s += `<${tag}>`;
-          }
-          // console.log(tag,identArray[lineIdent]);
-        } else {
-
-        }
-        identArray[lineIdent]=tag;
-        // console.log(lineIdent, tag, s);
-        return s;
-      }
-
-      let prevIdent;
       var lineIdent=0;
-      // var prevIdent;
-
+      function closetag(lineIdent){
+        const tags = identArray.slice(lineIdent).reverse();
+        identArray.length = lineIdent;
+        return tags.filter(Boolean).map(t => `</${t}>`).join('')
+      }
+      function opentag(tag,lineIdent){
+        return `<${identArray[lineIdent] = tag}>`
+      }
       s = s
       .replace(/\r/g,'')
       .replace(/  \n/g, '<BR>')
       .replace(/(.*?)(```(.*?)\n(.*?)```|$)/gs, (s,md,s2,type,codeLines) => {
         s = ('\n\n'+md)
-        .replace(/(^|\s)> (\[\!(\w+)\]\s|.*?)(.+?)(?=\n\n|$)/gs, (s,p1,p2,p3,p4) => `${p1}<BLOCKQUOTE${p3?` class="${p3.toLowerCase()}"`:``}>${(p4||'').replace(/(^|\s)> /gm, '')}</BLOCKQUOTE>`)
+        .replace(/(^|\s)> (\[\!(\w+)\]\s|.*?)(.+?)(?=\n\n|$)/gs, (s,p1,p2,p3,p4) => `${p1}<BLOCKQUOTE${p3?` class="${p3.toLowerCase()}"`:``}>${(p4||'').replace(/(^|\s)> /gm, ' ')}</BLOCKQUOTE>`)
         .replace(/(\n[^\n]+?)(\n\s*-+\s\|\s.*?\n)(.*?)(?=\n\n|$)/gs, (s,p1,p2,p3) => `<TABLE><THEAD><TR><TH>${p1.trim().replace(/\s\|\s/g, '</TH><TH>')}</TH></TR></THEAD><TBODY><TR><TD>${p3.trim().replace(/\s\|\s/g, '</TD><TD>').replace(/\n/g,'</TD></TR>\n<TR><TD>')}</TD></TR></TBODY></TABLE>`)
         .trim()
         .split(/\n/)
-        .map(s => {
+        .map((s,i,lines) => {
           var p = '';
           if (s) {
+            const prevLineIdent = lineIdent;
             lineIdent = (s.match(/^ +/)||[''])[0].length;
+            if (lineIdent<prevLineIdent) {
+              p+=closetag(prevLineIdent);
+            }
             if (s.trim().match(/^(\*|-|\d+\.) /)) {
+              if (identArray[identArray.length-1] === 'P') {
+                p+=closetag(identArray.length-1);
+              }
+              p+=closetag(lineIdent+1);
               const tag = s.trim().match(/^(\*|-) /) ? 'UL' : 'OL';
-              s = s.replace(/^\s*(\*|-|\d+\.) /, '<LI>');
-              if (lineIdent<identArray.length) {
-                p += identArray.slice(lineIdent+1).map(t => `\n</${t}>`).reverse().join('');
-                identArray.length = lineIdent+1;
-              }
               if (identArray[lineIdent] !== tag) {
-                if (identArray[lineIdent]) {
-                  p += `\n</${identArray[lineIdent]}>`;
+                p+=closetag(lineIdent);
+                p+=opentag(tag,lineIdent);
+              }
+              p+=opentag('LI',lineIdent+1);
+              s = s.replace(/^\s*(\*|-|\d+\.) /, '');
+            } else if (s.match(/^#/)) {
+              s = s.replace(/^(#+) (.*)/, (s,p1,p2) => closetag(0) + `<A class='anchor' title="${p2}" name="${s = toLink(p2)}"></A><H${p1.length} class="${s}"><A class="anchorref" href="#${s}"></A>${p2}</H${p1.length}>`)
+            } else {
+              if (!lines[i-1]) {
+                if (identArray[identArray.length-1] === 'P') {
+                  p+=closetag(identArray.length-1);
                 }
-                p += `<${tag}>`;
-              }
-              if (identArray[lineIdent+1] === 'LI') {
-                p += '</LI>';
-              }
-              identArray[lineIdent] = tag;
-              identArray[lineIdent+1] = 'LI';
-            } else {
-              if (lineIdent < prevIdent) {
-                // console.log(999, lineIdent,prevIdent);
-                p += identArray.slice(lineIdent).filter(Boolean).map(t => `</${t}>`).reverse().join('');
-                identArray.length = lineIdent;
-              }
-              if (s.match(/^#/)) {
-                s = s.replace(/^(#+) (.*)/, (s,p1,p2) => setLevelTag(0,'') + `<A class='anchor' title="${p2}" name="${s = toLink(p2)}"></A><H${p1.length} class="${s}"><A class="anchorref" href="#${s}"></A>${p2}</H${p1.length}>`)
-              } else if (!identArray[lineIdent]){
-                // console.log(lineIdent, identArray);
-                p += setLevelTag(lineIdent,'P');
+                p+=opentag('P',identArray.length);
               }
             }
-            prevIdent = lineIdent;
-          } else {
-            if (identArray[identArray.length-1] === 'P') {
-              p+="</P><P>";
-            } else if (!lineIdent && identArray[lineIdent]) {
-              p += setLevelTag(lineIdent,'P');
-            } else {
-              identArray.push('P');
-              p+='<P>';
-            }
-            // console.log(999, lineIdent,prevIdent,identArray,identArray[identArray.length]);
-
-            // s = setLevelTag(lineIdent,'');
           }
-          s = p+s;
-          // console.log(s);
-          s = s
-          // .replace(/(^|\s|>)\*\*(\w|%|`)/g, '$1<B>$2')
-          // .replace(/(\w|%)\*\*(\s|,|$)(?=(?:[^`]*"[^"]*")*[^"]*\Z)/g, '$1</B>$2')
-          // .replace(/(\S)\*\*/g, '$1<B>')
-          // console.log(s);
+          s = p + s.trim();
           return s
           .replace(/  \n/g, '<BR>')
           .replace(/(.*?)(`(.*?)`|$)/g, (s,p1,s1,p2) => `${
             p1
             .replace(/\*\*(.+?)\*\*/g, '<B>$1</B>')
+            .replace(/__(.+?)__/g, '<B>$1</B>')
             .replace(/_(.+?)_/g, '<I>$1</I>')
-            // .replace(/(>|\n|\s|^)(\*\*|__)/g, '$1<B>')
-            // .replace(/(\*\*|__)(?=\s|,|\.|;|$)/g, '</B>')
-            // .replace(/(>|\n|\s|^)\*\*(\w|<|$)/g, '$1<B>$2')
-            // .replace(/(>|\n|\s|^|\w|:|;|,|\.)\*\*(\s|<|$|\n|,|;|.)/g, '$1</B>$2')
-
-            // .replace(/(^)\*\*(\w)/g, '$1<B>$2')
-            // .replace(/(\W)\*\*(\w)/g, '$1</B>$2')
-
-            // .replace(/(>|\n|\s|^)\*\*(\w|<|$)/g, '$1<B>$2')
-            // .replace(/(\S)\*\*([^\w]|$)/g, '$1</B>$2')
-
-            // .replace(/([^\w])_(\w)/g, '$1<I>$2')
-            // .replace(/(\w)_([^\w]|$)/g, '$1</I>$2')
-
+            .replace(/\*(.+?)\*/g, '<I>$1</I>')
             .replace(/\[ \]/g, '&#9744;')
             .replace(/\[v\]/g, '&#9745;')
             .replace(/\[x\]/g, '&#9746;')
             .replace(/~~(.*?)~~/g, '<DEL>$1</DEL>')
             .replace(/~(.*?)~/g, '<U>$1</U>')
-
             .replace(/\!\[(.*?)\]\((.*?)\)/g, '<IMG src="$2" alt="$1">')
             .replace(/\[(.*?)\]\((.*?)\)/g, '<A href="$2">$1</A>')
-            // .replace(/(.*?)(?!\]\()(http.*?)(?=\s|\)|$)/g, '$1[$2]($2)')
-            // .replace(/(http.*?)(?=\s|\)|$)(?=(?:(?:[^"]*"){2})*[^"]*$)/g, '<A href="$1">$1</A>')
-            // .replace(/\n\n(.*)(?=\n\n)/gs, '<P>$1</P>')
-
-
             .replace(/\^\^(.*?)\^\^/gs, '<MARK>$1</MARK>')
             .replace(/:::(\w+)(.*?):::/gs, '<$1$2></$1>')
-          }${p2?`<CODE>${p2}</CODE>`:``}`)
+          }${p2?`<CODE>${code(p2)}</CODE>`:``}`)
         })
-        // .filter(Boolean)
-        // .map(s => (s||'').trim())
-        .join('\n')
-        // .replace(/<P><\/P>/g, '')
-        // .replace(/(#+) (.*?)(?=\n)(.*)/gs, (s,p1,p2,t) => `<A class='anchor' title="${p2}" name="${s = toLink(p2)}"></A><H${p1.length} class="${s}"><A class="anchorref" href="#${s}"></A>${p2}</H${p1.length}><P>${t.replace(/\n\n/g, '</P><P>')}</P>`)
-        // .replace(/(^|\n\n)(.*?)(?=\n\n|$)/gs, (s,p1,p2) => `\n<P>${p2.trim().replace(/\n/g, '')}</P>`)
-        // .replace(/<P>(<A class='anchor'.*?<\/H1>)<\/P>/g, '$1')
-        // .trim()
-        // .replace(/<P><\/P>/g, '')
-
+        .join('\n') + closetag(0);
         if (codeLines) {
-          s+= `<PRE class=block><CODE language="${type = type.toLowerCase()}">${code(codeLines, type).replace(/\n/g,'<br>')}</CODE></PRE>`;
+          s+= `<PRE><CODE language="${type = type.toLowerCase()}">${code(codeLines, type).replace(/\n/g,'<br>')}</CODE></PRE>`;
         }
         return s
-      }) + setLevelTag(0,'');
+      });
       // console.log(s);
       return s
-      .replace(/<P>\s*<\/P>/g,'')
+      .replace(/<P>[\s|\n]*<\/P>/gs,'')
       .trim();
     },
     isImg1(src) {

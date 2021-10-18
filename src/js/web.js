@@ -759,10 +759,32 @@
     async page(){
       $(document.body).append(
         $('nav').append($('article').append(
+          $('button').class('abtn menu'),
           $('form').append(
-            $('input').name('search').append(
+            $('input').name('search').placeholder('Zoeken'),
+            $('button').class('abtn search'),
+          ),
+          $('span').class('pagemenu'),
+          $('button').class('abtn shop'),
+          $('button').class('abtn account').append(
+            $('div').append(
+              $('button').text('aanmelden').on('click', e => {
+                $('.pv').text('').append(
+                  $('form').append(
+                    $('div').append(
+                      $('label').text('Gebruikersnaam'),
+                      $('input').name('accountname'),
+                    ),
+                    $('div').append(
+                      $('label').text('Wachtwoord'),
+                      $('input').type('password').name('password'),
+                    ),
+
+                  )
+                )
+              })
             )
-          )
+          ),
         )),
         $('header').append($('article')),
         $('main').append($('article').append(
@@ -778,15 +800,18 @@
           $('aside').class('right'),
         )),
         $('footer').append($('article')),
-      );
+      ).on('scroll', e => sessionStorage.setItem('scrollY', window.scrollY));
+      fetch('/page/menu.md').then(res => res.text().then(body => {
+        $("button.menu").html(aim.markdown().render(body));
+      }));
       fetch('/page/top.md').then(res => res.text().then(body => {
-        // console.log(body,aim.markdown().render(body));
-        $("body>nav>article").html(aim.markdown().render(body));
+        $(".pagemenu").html(aim.markdown().render(body));
       }));
       fetch('/page/footer.md').then(res => res.text().then(body => {
         $("body>footer>article").text('').html(aim.markdown().render(body));
       }));
       const searchParams = new URLSearchParams(document.location.search);
+      // return;
       if (searchParams.get('search')) {
         search(searchParams.get('search'));
       } else if (!searchParams.get('id')) {
@@ -794,8 +819,11 @@
         md: await fetch(document.location.pathname === '/' ? '/page/Home.md' : '/page'+document.location.pathname+'.md').then(res => res.text()),
       };
         let body = data.md;
-        $(".pv").text('').html(aim.markdown().render(body));
-        $("aside.right").index(".pv");
+        $('.pv').text('')
+        // .attr('contenteditable','')
+        .html(aim.markdown().render(body));
+        $('aside.right').index('.pv');
+        window.scroll(0,sessionStorage.getItem('scrollY'));
       }
     },
     async om() {
@@ -911,7 +939,18 @@
             $('button').class('abtn abs close').attr('open', '').tabindex(-1).on('click', e => $().prompt(''))
           ),
         ),
-        $('footer').statusbar(),
+        $('footer').append(
+          $('span').class('ws'),
+          $('span').class('aliconnector'),
+          $('span').class('http'),
+          $('span').class('is_chekced'),
+          $('span').class('clipboard'),
+          $('span').class('pos'),
+          $('span').class('source'),
+          $('span').class('target'),
+          $('span').class('main aco'),
+          $('progress'),
+        ),
       ).messagesPanel();
       aim.om = new Om();
       // $(window).on('popstate', e => {
@@ -1403,6 +1442,9 @@
       }
 
       new Abis;
+
+
+
     },
   };
   aim.orderChangeCell = function(col, row, isInput){
@@ -6857,13 +6899,14 @@
     //   },
     // },
 
-    statusbar: { value: function () {
-      $.his.elem.statusbar = this.class('row statusbar np').append(
-        ['ws','aliconnector','http','is_checked','clipboard','pos','source','target','main'].map(name => this[name] = $('span').class(name)),
-      );
-      this.progress = $('progress').parent(this.main.class('aco'));
-      return this;
-    },},
+    // statusbar: { value: function () {
+    //   $.his.elem.statusbar = this.class('row statusbar np').append(
+    //     ['ws','aliconnector','http','is_checked','clipboard','pos','source','target','main']
+    //     .map(name => this[name] = $('span').class(name)),
+    //   );
+    //   this.progress = $('progress').parent(this.main.class('aco'));
+    //   return this;
+    // },},
     setProperty: { value: function (selector, context) {
       this.elem.style.setProperty('--'+selector, context);
       return this;
@@ -11222,16 +11265,17 @@
       const docs = [];
       const pdfDoc = await PDFDocument.create();
 
-      const links = Array.from(elem.getElementsByTagName('A')).filter(a => a.href && a.href.match(/\.pdf$/));
+      const links = Array.from(elem.querySelectorAll('a')).filter(a => a.href && a.href.match(/\.pdf$/));
       let i=1;
-      Array.from(elem.getElementsByTagName('A')).filter(a => a.href && a.href.match(/\.pdf$/)).forEach(a => {
+      Array.from(elem.querySelectorAll('a')).filter(a => a.href && a.href.match(/\.pdf$/)).forEach(a => {
         a.className = 'productie-link';
         if (producties[a.href]) {
           a.text = producties[a.href].link;
         } else {
           producties.push(producties[a.href] = {
             text: a.innerText,
-            link: a.innerText = `productie ${i}, ${a.innerText.toLowerCase()}`,
+            // link: a.innerText = `productie ${i}, ${a.innerText.toLowerCase()}`,
+            link: a.innerText = `productie ${i}`,
             href: a.href,
             i: i++,
           });
@@ -11239,7 +11283,7 @@
       })
 
       await (async function(){
-        const pdfBytes = await fetch('http://localhost/api/Aim/Pdf', {
+        const pdfBytes = await fetch('https://aliconnect.nl/api/Aim/Pdf', {
           method: 'POST', // *GET, POST, PUT, DELETE, etc.
           // mode: 'cors', // no-cors, *cors, same-origin
           // cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
@@ -11252,7 +11296,7 @@
           // redirect: 'follow', // manual, *follow, error
           referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
           // body: JSON.stringify(data), // body data type must match "Content-Type" header
-          body: document.getElementById('doc-content').innerHTML, // body data type must match "Content-Type" header
+          body: document.querySelector('.doc-content').innerHTML, // body data type must match "Content-Type" header
         }).then((res) => res.arrayBuffer());
         const pdfLoad = await PDFDocument.load(pdfBytes);
         const pages = pdfLoad.getPages();
