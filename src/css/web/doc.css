@@ -55,7 +55,6 @@ body>footer{
   /* right:0; */
 }
 .doc-content a.anchor {
-  position: absolute;
   display:inline-block;
   top:-40px;
 }

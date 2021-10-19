@@ -83,7 +83,6 @@ body>div {
   display: flex;
 }
 
-
 @media only screen {
   input,body {
     background-color: var(--bg);
@@ -102,14 +101,14 @@ body>div {
   font: inherit;
   line-height: inherit;
   box-sizing: content-box;
-  flex-shrink: 0;
+  /* flex-shrink: 0; */
   color: inherit;
   border: none;
   background: transparent no-repeat center center none;
   white-space: nowrap;
   border-radius: 0;
   outline: none;
-  text-align: center;
+  /* text-align: center; */
   cursor: pointer;
   padding: 0;
   padding: 0 5px;
@@ -201,6 +200,108 @@ nav button>div{
 }
 nav button:not(:hover)>div{
   display: none;
+}
+nav a{
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+nav .pagemenu {
+  margin-left: auto;
+}
+nav ul {
+  list-style: none;
+  padding: 0;
+}
+nav li {
+  padding: 0 10px;
+  white-space: nowrap;
+}
+nav .menu>ul>li:hover,
+nav .pagemenu>ul>li>ul>li:hover,
+nav .pagemenu>ul>li:hover {
+  background-color: var(--bg-button-hover);
+  cursor: pointer;
+}
+nav .pagemenu>ul {
+  display: flex;
+  margin: 0 0 0 auto;
+}
+nav .pagemenu>ul>li>ul {
+  position: absolute;
+  right: 0;
+  text-align: right;
+  background-color: var(--bg);
+  color: var(--fg);
+  -webkit-box-shadow: var(--shadow);
+  box-shadow: var(--shadow);
+}
+nav .pagemenu>ul>li:not(:hover)>ul {
+  display: none;
+}
+
+
+nav .menu {
+  /* flex: 0 0 36px; */
+  position: static;
+  /* text-align: center; */
+}
+/* nav .menu::before {
+  content:'...';
+} */
+nav .menu:not(:hover)>ul {
+  display: none;
+}
+
+nav .menu>ul {
+  position: absolute;
+  margin: auto;
+  padding: 0;
+  left:0;
+  right:0;
+  width:100%;
+  background-color: var(--bg);
+  color: var(--fg);
+  -webkit-box-shadow: var(--shadow);
+  box-shadow: var(--shadow);
+}
+nav .menu>ul>li {
+  position: static;
+  /* max-width: 200px; */
+}
+nav .menu>ul>li>ul {
+  position: absolute;
+  top: 0;
+  min-height: 100%;
+  margin: auto;
+  left: 200px;
+  right: 0;
+  padding: 10px;
+  background-color: var(--bg);
+  color: var(--fg);
+  column-width: 200px;
+  -webkit-box-shadow: var(--shadow);
+  box-shadow: var(--shadow);
+}
+nav .menu>ul>li:not(:hover)>ul {
+  display: none;
+}
+nav .menu>ul>li>ul li {
+  padding: 0;
+}
+nav .menu>ul>li>ul li a:hover {
+  text-decoration: underline;
+}
+nav .menu>ul>li>ul>li {
+  font-weight: bold;
+  line-height: normal;
+  break-inside: avoid;
+
+}
+nav .menu>ul>li>ul>li>ul {
+  font-weight: normal;
+  padding:0;
+  right: 0;
 }
 
 body>*>article {
@@ -373,6 +474,7 @@ body>footer{
 }
 .col>nav {
   flex: 0 0 36px;
+  line-height: 36px
 }
 main>.tv>div {
   flex: 1 0 0;
@@ -382,6 +484,10 @@ main>.tv>div {
   flex: 1 0 auto;
   width: 0;
 }
+.lv nav .filter {
+  margin-right: auto;
+}
+
 .lv>div {
   display:flex;
   flex: 1 0 0;
@@ -490,14 +596,18 @@ tbody, td, tfoot, th, thead, tr {
   margin: 1px;
 }
 .lv .cards.cols>div {
-  padding:10px;
+  padding: 10px;
   border: solid 1px var(--trans2);
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  white-space: pre-wrap;
+  /* display: flex; */
+  /* flex-direction: column; */
   /* padding-bottom: 30px */
 
 }
+/* .lv .cards.cols>div span:not(:empty) {
+  padding-right: 5px;
+} */
 .lv .cards.cols>div:hover{
   box-shadow: inset 0px 0px 10px 3px var(--trans1);
 }
@@ -525,7 +635,7 @@ tbody, td, tfoot, th, thead, tr {
   padding-top: 20px;
   line-height: 20px;
 }
-.price>div::before {
+.price>div[discountperc]::before {
   content: '€ ' attr(listprice);
   font-size: 0.8em;
   color: var(--trans8);
@@ -555,6 +665,10 @@ tbody, td, tfoot, th, thead, tr {
   outline: none;
   font-weight: bold;
   text-align: right;
+}
+
+.cards .geolocatie {
+  display: none;
 }
 
 
@@ -1065,25 +1179,4 @@ pre code {
   background-color: transparent;
   /* border-radius: 0; */
   border: none;
-}
-
-aside.filter {
-  flex: 0 0 200px;
-}
-aside.filter div {
-  cursor: pointer;
-}
-aside.filter div[cnt]::after{
-  content: attr(cnt);
-  float: right;
-}
-aside.filter div::before {
-  content:'☐'
-}
-aside.filter div[checked]::before {
-  content:'☑'
-}
-aside.filter details>div {
-  margin-left:20px;
-  font-size: 0.8em;
 }

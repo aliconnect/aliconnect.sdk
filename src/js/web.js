@@ -1490,30 +1490,227 @@
       aim.om.listview(cols, rows);
     }
   }
-  function listview(cols, rows, type, filter, rowsVisible){
+  function listview(cols, rows, type, filter){
     // cols = this.cols = cols || this.cols;
     rows = this.rows = rows || this.rows;
-    if (!rowsVisible) {
-      rows = rows.map(row => row.data ? Object.assign(row,JSON.parse(row.data)) : row);
-      filter = {}
-      rows.forEach(row => {
-        const cols = config.components.schemas[row.schemaName].cols.filter(col => col.filter);
-        cols.forEach(col => {
-          if (col.name in row) {
-            const value = row[col.name];
-            const filtercol = filter[col.name] = filter[col.name] || { name: col.name, values: {} };
-            const valuerow = filtercol.values[value] = filtercol.values[value] || { value: value, rows: []};
-            valuerow.rows.push(row);
-          }
-        })
-      })
-      filter = Object.values(filter);
-      filter.forEach(attribute => attribute.values = Object.values(attribute.values).sort((a,b) => a.value.localeCompare(b.value)));
-      filter = filter.filter(attribute => attribute.values.length>1 && attribute.values.some(value => value.rows.length>1))
+    rows = rows.map(row => row.data ? Object.assign(row,JSON.parse(row.data)) : row);
+    filter = {}
+    const types = {
+      cols: () => {
+        return $('div').class('cards',type).append(
+          rowsVisible.map(row => {
+            const div = $('div').on('click', e => {
+              if (row.id) {
+                console.log('click')
+                const url = new URL(document.location);
+                const ref = `${row.schemaName}(${row.id})`;
+                document.location.hash = `#?id=${btoa(ref)}`;
+                // url.searchParams.set('id', btoa(ref));
+                // window.history.pushState('page', '',  url.href);
+                // page(ref);
+              }
+            });
 
+            // .attr(row||{})
+            return div.append(
+              row.images ? $('img').src(row.images[0]) : null,
+              config.components.schemas[row.schemaName].cols
+              .filter(col => col.header)
+              .map(col => aim.om[col.name] ? aim.om[col.name](row, div) : valueTag(col,row).class(col.name)),
+              // {
+              //   if (col.type) {
+              //     return $('input').type(col.type).min(0).class(col.name).value(row[col.name] || '')
+              //   }
+              //   if (row[col.name]) {
+              //     return $('div').append(labelTag(col,row),valueTag(col,row))
+              //   }
+              // }),
+            );
+          }),
+          ['','','','','','','','','','','','','','',].map(i => $('span').class('ghost')),
+        )
+      },
+      rows: () => {
+        return $('div').class('cards',type).append(
+          rowsVisible.map(row => $('div').append(
+            $('div').text(cols.filter(col => col.header === 1 && row[col.name]).map(col => row[col.name]).join(' ')),
+            $('div').text(cols.filter(col => col.header === 2 && row[col.name]).map(col => row[col.name]).join(' ')),
+            $('div').text(cols.filter(col => col.header === 3 && row[col.name]).map(col => row[col.name]).join(' ')),
+          ))
+        )
+      },
+      table: () => {
+        return $('table').class('products').append(
+          $('thead').append(
+            $('tr').append(
+              cols.map(col => $('th').append(
+                $('div').text(col.title || col.name).class(this.sortName === col.name ? 'sort' : '', this.sortDir ? 'asc' : '').on('click', e => {
+                  this.sortDir = this.sortName === col.name ? this.sortDir ^ 1 : 0;
+                  const sortFactor = 1-2*this.sortDir;
+                  // console.log(this.sortName, col.name, sortFactor, this.sortDir);
+                  this.sortName = col.name;
+                  rowsVisible.sort((a,b) => sortFactor * String(a[col.name]).localeCompare(String(b[col.name]), undefined, {numeric: true}));
+                  aim.om.listview(cols, rows, type, filter, rowsVisible);
+                })
+              ))
+            )
+          ),
+          $('tbody').append(
+            rowsVisible.map(row => $('tr').append(
+              cols.map(col => $('td').class(col.name).style(isNaN(row[col.name]) ? '' : 'text-align:right;').append(valueTag(col,row))),
+            ))
+          )
+        )
+      },
+    };
+    rows.forEach(row => {
+      const cols = config.components.schemas[row.schemaName].cols.filter(col => col.filter);
+      cols.forEach(col => {
+        if (col.name in row) {
+          const value = row[col.name];
+          const filtercol = filter[col.name] = filter[col.name] || { name: col.name, values: {} };
+          const valuerow = filtercol.values[value] = filtercol.values[value] || { value: value, rows: []};
+          valuerow.rows.push(row);
+        }
+      })
+    })
+    let rowsVisible = rows || [];
+    if (rows.some(row => row.geolocatie)) {
+      types.map = () => {
+        const mapelem = $('div').class('googlemap').css('width:100%;height:100%;');
+        aim.maps().then(maps => {
+          console.log(config);
+          const mapOptions = {
+            zoom: 10,
+            center: { lat: 51, lng: 6 },//new maps.LatLng(51,6),
+            mapTypeId: maps.MapTypeId.ROADMAP,
+            // mapId: 'cb830478947dbf25',
+            // styles: [
+            //   {
+            //     "featureType": "all",
+            //     "stylers": [
+            //       { "color": "#C0C0C0" }
+            //     ]
+            //   },
+            //   {
+            //     "featureType": "road.arterial",
+            //     "elementType": "geometry",
+            //     "stylers": [
+            //       { "color": "#CCFFFF" }
+            //     ]
+            //   },
+            //   {
+            //     "featureType": "landscape",
+            //     "elementType": "labels",
+            //     "stylers": [
+            //       { "visibility": "off" }
+            //     ]
+            //   }
+            // ],
+            // https://mapstyle.withgoogle.com/
+            // styles: [
+            //   {
+            //     "featureType": "poi",
+            //     "stylers": [
+            //       {
+            //         "visibility": "off"
+            //       }
+            //     ]
+            //   }
+            // ],
+            styles: config.maps.styles,
+          };
+          console.log(mapOptions.styles);
+          const map = new maps.Map(mapelem.elem, mapOptions);
+          var bounds = new maps.LatLngBounds();
+          // const dataItems = rowsVisible.filter(row => row.geolocatie);
+          // if (dataItems.length) {
+          //   dataItems.forEach(item => item.value = Object.values(item.data.data).reduce((a,b) => a+b));
+          //   const maxValue = dataItems.map(item => item.value).reduce((a,b) => Math.max(a,b));
+          //   console.log(maxValue);
+          //   dataItems.forEach(item => item.scale = 1 + 2 / maxValue * item.value);
+          // }
+          // this.itemsVisible.filter(item => item.data.colorid && item.schema.colorid).forEach(item => item.color = item.schema.colorid[item.data.colorid] || item.schema.colorid.default);
+          rowsVisible.filter(row => row.geolocatie).forEach(row => {
+            const loc = row.geolocatie.split(',');
+            const marker = new maps.Marker({
+              position: {
+                lat: Number(loc[0]),
+                lng: Number(loc[1]),
+              },
+              map: map,
+              // item: item,
+              zIndex: Number(1),
+              title: [row.header0,row.header1,row.header2].join('\n'),
+              // icon: getCircle((row.state && row.state.value && row.fields.state.options && row.fields.state.options[row.fields.state.value]) ? row.fields.state.options[row.fields.state.value].color : 'red')
+              icon: {
+                //url: document.location.protocol+'//developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png',
+                //// This marker is 20 pixels wide by 32 pixels high.
+                //size: new google.maps.Size(20, 32),
+                //// The origin for this image is (0, 0).
+                //origin: new google.maps.Point(0, 0),
+                //// The anchor for this image is the base of the flagpole at (0, 32).
+                //anchor: new google.maps.Point(0, 32)
+                path: maps.SymbolPath.CIRCLE,
+                fillColor: 'red',
+                fillOpacity: .6,
+                fillOpacity: 1,
+                scale: 10, //Math.pow(2, magnitude) / 2,
+                strokeColor: 'white',
+                strokeWeight: .5
+              },
+              icon: {
+                // path: "M24-28.3c-.2-13.3-7.9-18.5-8.3-18.7l-1.2-.8-1.2.8c-2 1.4-4.1 2-6.1 2-3.4 0-5.8-1.9-5.9-1.9l-1.3-1.1-1.3 1.1c-.1.1-2.5 1.9-5.9 1.9-2.1 0-4.1-.7-6.1-2l-1.2-.8-1.2.8c-.8.6-8 5.9-8.2 18.7-.2 1.1 2.9 22.2 23.9 28.3 22.9-6.7 24.1-26.9 24-28.3z",
+                // path: "M146.667,0C94.903,0,52.946,41.957,52.946,93.721c0,22.322,7.849,42.789,20.891,58.878 c4.204,5.178,11.237,13.331,14.903,18.906c21.109,32.069,48.19,78.643,56.082,116.864c1.354,6.527,2.986,6.641,4.743,0.212 c5.629-20.609,20.228-65.639,50.377-112.757c3.595-5.619,10.884-13.483,15.409-18.379c6.554-7.098,12.009-15.224,16.154-24.084 c5.651-12.086,8.882-25.466,8.882-39.629C240.387,41.962,198.43,0,146.667,0z M146.667,144.358 c-28.892,0-52.313-23.421-52.313-52.313c0-28.887,23.421-52.307,52.313-52.307s52.313,23.421,52.313,52.307 C198.98,120.938,175.559,144.358,146.667,144.358z",
+                // path: "M24-8c0 4.4-3.6 8-8 8h-32c-4.4 0-8-3.6-8-8v-32c0-4.4 3.6-8 8-8h32c4.4 0 8 3.6 8 8v32z",
+                // path: "M10.453 14.016l6.563-6.609-1.406-1.406-5.156 5.203-2.063-2.109-1.406 1.406zM12 2.016q2.906 0 4.945 2.039t2.039 4.945q0 1.453-0.727 3.328t-1.758 3.516-2.039 3.070-1.711 2.273l-0.75 0.797q-0.281-0.328-0.75-0.867t-1.688-2.156-2.133-3.141-1.664-3.445-0.75-3.375q0-2.906 2.039-4.945t4.945-2.039z",
+                path: "M0-48c-9.8 0-17.7 7.8-17.7 17.4 0 15.5 17.7 30.6 17.7 30.6s17.7-15.4 17.7-30.6c0-9.6-7.9-17.4-17.7-17.4z",
+                scale: (row.scale || 100)/200,
+                fillColor: [
+                  'black',
+                  'green',
+                  'green',
+                  'green',
+                  'yellow',
+                  'yellow',
+                  'yellow',
+                  'orange',
+                  'orange',
+                  'orange',
+                  'red',
+                  'red',
+                  'red',
+                ][row.color],
+                fillOpacity: 0.6,
+                strokeWeight: 1,
+                // strokeColor: 'white',
+                strokeColor: 'black',
+                rotation: 0,
+                anchor: new maps.Point(15, 30),
+              },
+              //icon: (row.state) ? 'icon/' + row.state.value + '.png' : null,
+            });
+            // console.log(marker);
+            marker.addListener('click', e => $('view').show(item));
+            bounds.extend(marker.getPosition());
+          });
+          // if (bounds) {
+          map.fitBounds(bounds);
+          // //console.log(google.maps);
+          if (maps.e) {
+            maps.e.addListenerOnce(map, 'bounds_changed', function () {
+              this.setZoom(Math.min(15, this.getZoom()));
+            });
+          }
+        });
+        return mapelem;
+      }
     }
+    filter = Object.values(filter);
+    filter.forEach(attribute => attribute.values = Object.values(attribute.values).sort((a,b) => String(a.value||'').localeCompare(String(b.value||''))));
+    filter = filter.filter(attribute => attribute.values.length>1 && attribute.values.some(value => value.rows.length>1))
+
     sessionStorage.setItem('listType', type = this.type = type || this.type || sessionStorage.getItem('listType') || 'cols');
-    rowsVisible = rowsVisible || rows || [];
     function valueTag(col,row){
       if (col.schema) {
         return $('a').text(row[col.name]).href(`#${col.schema}(${row[col.name]})`)
@@ -1565,123 +1762,50 @@
     function labelTag(col,row){
       return $('label').text(col.title || col.name)
     }
-    const types = {
-      cols: () => {
-        return $('div').class('cards',type).append(
-          rowsVisible.map(row => {
-            const div = $('div').on('click', e => {
-              if (row.id) {
-                console.log('click')
-                const url = new URL(document.location);
-                const ref = `${row.schemaName}(${row.id})`;
-                document.location.hash = `#?id=${btoa(ref)}`;
-                // url.searchParams.set('id', btoa(ref));
-                // window.history.pushState('page', '',  url.href);
-                // page(ref);
+
+    (function buildlist() {
+      $('.lv').text('').append(
+        $('nav').append(
+          $('button').class('abtn filter'),
+          $('button').class('abtn view').append(
+            $('div').append(
+              Object.keys(types).map(key => $('button').text(key).on('click', e => buildlist(type = key)))
+            ),
+          ),
+        ),
+        $('div').append(
+          $('aside').class('oa filter').append(
+            filter.map(col => {
+              const values = col.values.filter(val => val.rows.some(row => rowsVisible.includes(row)));
+              if(values.some(val => val.checked) || values.length>1) {
+                return $('details').open(values.some(val => val.checked)).append(
+                  $('summary').text(col.name),
+                  values
+                  .filter(val => val.value)
+                  .map(
+                    val => $('div')
+                    .text(val.value)
+                    .checked(val.checked)
+                    .attr('cnt', val.rows.filter(row => rowsVisible.includes(row)).length)
+                    .on('click', e => {
+                      val.checked ^= 1;
+                      col.checked = col.values.some(val => val.checked);
+                      rowsVisible = rows.filter(
+                        row => !filter.some(col => col.checked && (!(col.name in row) || col.values.filter(val => !val.checked).some( val => val.rows.includes(row) )) )
+                      );
+                      buildlist();
+                    })
+                  )
+                );
               }
-            });
-
-            // .attr(row||{})
-            return div.append(
-              row.images ? $('img').src(row.images[0]) : null,
-              config.components.schemas[row.schemaName].cols
-              .filter(col => col.header)
-              .map(
-                col => aim.om[col.name] ? aim.om[col.name](row, div) : $('div').class(col.name).append(
-                  // labelTag(col,row),
-                  valueTag(col,row),
-                )
-              ),
-              // {
-              //   if (col.type) {
-              //     return $('input').type(col.type).min(0).class(col.name).value(row[col.name] || '')
-              //   }
-              //   if (row[col.name]) {
-              //     return $('div').append(labelTag(col,row),valueTag(col,row))
-              //   }
-              // }),
-            );
-          }),
-          ['','','','','','','','','','','','','','',].map(i => $('span').class('ghost')),
-        )
-      },
-      rows: () => {
-        return $('div').class('cards',type).append(
-          rowsVisible.map(row => $('div').append(
-            $('div').text(cols.filter(col => col.header === 1 && row[col.name]).map(col => row[col.name]).join(' ')),
-            $('div').text(cols.filter(col => col.header === 2 && row[col.name]).map(col => row[col.name]).join(' ')),
-            $('div').text(cols.filter(col => col.header === 3 && row[col.name]).map(col => row[col.name]).join(' ')),
-          ))
-        )
-      },
-      table: () => {
-        return $('table').class('products').append(
-          $('thead').append(
-            $('tr').append(
-              cols.map(col => $('th').append(
-                $('div').text(col.title || col.name).class(this.sortName === col.name ? 'sort' : '', this.sortDir ? 'asc' : '').on('click', e => {
-                  this.sortDir = this.sortName === col.name ? this.sortDir ^ 1 : 0;
-                  const sortFactor = 1-2*this.sortDir;
-                  // console.log(this.sortName, col.name, sortFactor, this.sortDir);
-                  this.sortName = col.name;
-                  rowsVisible.sort((a,b) => sortFactor * String(a[col.name]).localeCompare(String(b[col.name]), undefined, {numeric: true}));
-                  aim.om.listview(cols, rows, type, filter, rowsVisible);
-                })
-              ))
-            )
+            })
           ),
-          $('tbody').append(
-            rowsVisible.map(row => $('tr').append(
-              cols.map(col => $('td').class(col.name).style(isNaN(row[col.name]) ? '' : 'text-align:right;').append(valueTag(col,row))),
-            ))
-          )
-        )
-      }
-    }
-
-    $('.lv').text('').append(
-      $('nav').append(
-        $('button').text('filter'),
-        $('span'),
-        $('button').text('view').append(
-          $('div').append(
-            ['rows','cols','table'].map(key => $('button').text(key).on('click', e => {
-              listview(cols, rows, key);
-            }))
+          $('div').class('oa', type).append(
+            types[type] ? types[type]() : types.cols(),
           ),
         ),
-      ),
-      $('div').append(
-        $('aside').class('oa filter').append(
-          filter.map(col => {
-            const values = col.values.filter(val => val.rows.some(row => rowsVisible.includes(row)));
-            if(values.some(val => val.checked) || values.length>1) {
-              return $('details').open(values.some(val => val.checked)).append(
-                $('summary').text(col.name),
-                values
-                .filter(val => val.value)
-                .map(
-                  val => $('div')
-                  .text(val.value)
-                  .checked(val.checked)
-                  .attr('cnt', val.rows.filter(row => rowsVisible.includes(row)).length)
-                  .on('click', e => {
-                  val.checked ^= 1;
-                  col.checked = col.values.some(val => val.checked);
-                  rowsVisible = rows.filter(
-                    row => !filter.some(col => col.checked && (!(col.name in row) || col.values.filter(val => !val.checked).some( val => val.rows.includes(row) )) )
-                  );
-                  listview(cols, rows, type, filter, rowsVisible);
-                }))
-              );
-            }
-          })
-        ),
-        $('div').class('oa', type).append(
-          types[type](),
-        ),
-      ),
-    )
+      )
+    })()
   }
   async function search(search){
     console.log('SEARCH', search)
@@ -8670,7 +8794,9 @@
         map.fitBounds(bounds);
         // //console.log(google.maps);
         if (maps.e) {
-          maps.e.addListenerOnce(map, 'bounds_changed', function () { this.setZoom(Math.min(15, this.getZoom())); });
+          maps.e.addListenerOnce(map, 'bounds_changed', function () {
+            this.setZoom(Math.min(15, this.getZoom()));
+          });
         }
         // }
       },
@@ -11637,16 +11763,23 @@
   config = {};
   aim.searchParams = new URLSearchParams(document.location.search);
   window.addEventListener('load', async function webLoad(e) {
+    // console.warn('START')
     if (aim.config.client_id) {
       config = await aim.api('/aliconnect/config').query({
         path: 'https://aliconnect.nl/forms/config',
         response_type: 'data',
         client_id: aim.config.client_id,
       }).get().then(res => res.json());
+      // console.log(config);
+      // config = JSON.parse(config);
+      // console.log(JSON.parse(config));
+
+
       if (config && config.components && config.components.schemas) {
         Object.entries(config.components.schemas).forEach(([schemaName, schema]) => schema.cols = Object.entries(schema.properties||{}).map(([name,prop]) => Object.assign({name: name}, prop)));
       }
-      console.log(111, config, aim.config.client_id);
+      // console.log(111, config, aim.config.client_id);
+      // return;
     }
     var firstFolder = document.location.pathname.match(/(\w+)\//);
     if (firstFolder && libraries[firstFolder[1]]) {

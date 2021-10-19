@@ -7182,6 +7182,7 @@
     const headers = this.options.headers = this.options.headers || {};
     headers.accept = headers.accept || 'application/json';
     this.url = new URL('https://aliconnect.nl/api'+url);
+    console.log(this.url);
   }
   Api.prototype = {
     query(selector, context){
@@ -7249,6 +7250,15 @@
       }
       return arguments;
     },
+    maps: () => new Promise((resolve) => {
+      if (this.google) resolve (this.google.maps);
+      else {
+        $('script').parent(document.head)
+        .src('https://maps.googleapis.com/maps/api/js?key=AIzaSyBTEmA53gbOJT2Hlhx_n2m2qc_zqI9ABII&libraries=places')
+        .on('load', e => resolve(self.google.maps))
+      }
+    }),
+
   })
   Object.defineProperties(aim, {
     InteractionRequiredAuthError: { value: function () { } },
@@ -7595,14 +7605,6 @@
     } },
     // his: { value: new His() },
     // importScript: { value: importScript, },
-    maps: { value: function maps () {
-      return aim.promise( 'maps', resolve => {
-        if (self.google) resolve (self.google.maps);
-        else aim('script').parent(document.head)
-        .attr('src', 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAKNir6jia2uSgmEoLFvrbcMztx-ao_Oys&libraries=places')
-        .on('load', e => resolve (self.google.maps))
-      });
-    },},
     object: { value: {
       isFile(ofile) {
         return (ofile.type || '').indexOf('image') != -1 || aim.string.isImgSrc(ofile.src)
@@ -7664,7 +7666,7 @@
   // console.log(aim);
   return aim;
 
-  alert(3);
+  // alert(3);
 
 
 }));
