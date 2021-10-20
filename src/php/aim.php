@@ -22,7 +22,7 @@ sqlsrv_configure('ClientBufferMaxKBSize', 180240);
 // use function http_response_code;
 
 
-use Aliconnect\Server\Account;
+use Aliconnect\Account;
 use Aliconnect\Mailer;
 use Aliconnect\Jwt;
 // use Aliconnect\Item;
@@ -589,6 +589,9 @@ class Aim {
     $this->config = array_replace_recursive($this->config, is_file($fname = "$this->config_path/config.yaml") ? yaml_parse_file($this->default_config_filename = $fname) : []);
     $this->secret = array_replace_recursive($this->secret, is_file($fname = "$this->config_path/secret.yaml") ? yaml_parse_file($fname) : []);
     $this->config = array_replace_recursive($this->config, is_file($fname = "$this->client_config_path/$_SERVER[HTTP_HOST].yaml") ? yaml_parse_file($fname) : []);
+    // $hostname = explode('.', $_SERVER['HTTP_HOST'])[0];
+    // $this->config = array_replace_recursive($this->config, is_file($fname = "$this->client_config_path/$hostname.yaml") ? yaml_parse_file($fname) : []);
+    // debug($this->config);
     $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$_SERVER['HTTP_HOST'].".secret.yaml") ? yaml_parse_file($fname) : []);
     $this->client_id = request('client_id', $_REQUEST) ?: request('client_id',$this->config['client']);
     // debug($this->client_id, $this->config);
@@ -1114,10 +1117,10 @@ class Aim {
         }
       }
       if (function_exists('yaml_parse_file')) {
-        if (is_file($fname = __DIR__.'/../translations/'.$this->lang.'.yaml')) {
+        if (is_file($fname = $_SERVER['DOCUMENT_ROOT'].'/../translations/'.$this->lang.'.yaml')) {
           $this->translate_lbrary = yaml_parse_file($fname);
         } else {
-          $this->translate_lbrary = yaml_parse_file(__DIR__.'/../translations/nl.yaml');
+          $this->translate_lbrary = yaml_parse_file($_SERVER['DOCUMENT_ROOT'].'/../translations/nl.yaml');
           $arr_values = array_chunk(array_values($translate), 100);
           $arr_keys = array_chunk(array_keys($translate), 100);
           $this->translate_lbrary = [];
@@ -1195,11 +1198,9 @@ class Aim {
       die();
     }
   }
-
-
-
 }
 
+function aim() { return $GLOBALS['aim']; }
 function aiminfo(){
   ?><html xmlns="http://www.w3.org/1999/xhtml"><head>
     <style type="text/css">
@@ -1268,8 +1269,6 @@ function get_real_user_ip($default = NULL, $filter_options = 12582912) {
     return $_SERVER['HTTP_CLIENT_IP'] = $ip?$ip:$default;
   }
 
-function aim() { return $GLOBALS['aim']; }
-
 function request($selector, $context = null, $required = false) {
   $context = $context ? (array)$context : $_REQUEST;
   if (isset($context[$selector])) {
@@ -1278,10 +1277,6 @@ function request($selector, $context = null, $required = false) {
   if ($required) {
     http_response(400, "Missing requested parameter `$selector`");
   }
-}
-
-function http_response_post($arr) {
-  http_response(200, array_replace($_POST, $arr));
 }
 function http_response($code = 200, $body = null, $errors = null) {
   // if (!class_exists('\Aliconnect')) return;
@@ -1609,6 +1604,9 @@ function http_response($code = 200, $body = null, $errors = null) {
   }
   die($body);
 }
+function http_response_post($arr) {
+  http_response(200, array_replace($_POST, $arr));
+}
 function debug() {
   // throw new Exception('a');
   // $t = round(microtime(true)*1000-__startTime);
@@ -1681,30 +1679,15 @@ function get_security_scope($security, $scopes) {
   }
   return [];
 }
-function GetRealUserIp($default = NULL, $filter_options = 12582912) {
-  $HTTP_X_FORWARDED_FOR = isset($_SERVER) && isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : getenv('HTTP_X_FORWARDED_FOR');
-  $HTTP_CLIENT_IP = isset($_SERVER) && isset($_SERVER['HTTP_CLIENT_IP']) ? $_SERVER['HTTP_CLIENT_IP'] : getenv('HTTP_CLIENT_IP');
-  $HTTP_CF_CONNECTING_IP = isset($_SERVER) && isset($_SERVER['HTTP_CF_CONNECTING_IP']) ? $_SERVER['HTTP_CF_CONNECTING_IP'] : getenv('HTTP_CF_CONNECTING_IP');
-  $REMOTE_ADDR = isset($_SERVER)?$_SERVER['REMOTE_ADDR']:getenv('REMOTE_ADDR');
-
-  $all_ips = explode(",", "$HTTP_X_FORWARDED_FOR,$HTTP_CLIENT_IP,$HTTP_CF_CONNECTING_IP,$REMOTE_ADDR");
-  foreach ($all_ips as $ip) {
-    if ($ip = filter_var($ip, FILTER_VALIDATE_IP, $filter_options))
-    break;
-  }
-  return $_SERVER['HTTP_CLIENT_IP'] = $ip?$ip:$default;
-}
 
 function json_parse_file($fname) {
   return json_decode(file_get_contents($fname), true);
 }
-
 register_shutdown_function(function () {
   if (isset($GLOBALS['aim'])) {
     $GLOBALS['aim']->shutdown();
   }
 });
-
 function aim_id($id){
   return (int)strtok($id,'-');
 }
@@ -1713,6 +1696,4 @@ function aim_uid($id){
   $id = array_slice($id, -5, 5, true);
   return implode('-', $id);
 }
-
 new Aim();
-// http_response(404);

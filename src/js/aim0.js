@@ -2043,6 +2043,7 @@
     },
   };
 
+
   Object.defineProperties(aim.prototype, {
     eventHandle: { value: null, },
     elements:{
@@ -2735,272 +2736,332 @@
       console.error(err);
     }
   };
-  function clientAttr(options) {
-    return aim().url(dmsUrl).query({
-      request_type: 'client_attr',
-      client_id: this.clientId,
-      client_secret: this.clientSecret,
-    }).post(options).then(e => {
-      //console.log(e.target.responseText);
-    })
-  }
-  function getAccount() {
-    return Object.fromEntries(
-      [
-        'accountname',
-        'unique_name',
-        'prefered_username',
-        'name',
-        'email',
-        'family_name',
-        'given_name',
-        'middle_name',
-        'nickname',
-        'phone_number',
-      ]
-      .filter(name => this.account.idToken[name])
-      .map(name => [name,this.account.idToken[name]])
-    );
-  }
-  function store(name, value) {
-    if (value) {
-      this.storage.setItem(`aim.${name}`, value);
-      this.storage.setItem(`aim.${this.clientId}.${name}`, value);
-    } else {
-      this.storage.removeItem(`aim.${name}`);
-      this.storage.removeItem(`aim.${this.clientId}.${name}`);
-    }
-  }
-  function setIdToken(id_token) {
-    this.store('id_token', id_token);
-    this.account = new Account(id_token);
-  }
-  function setAccessToken(id_token) {
-    this.store('access_token', id_token);
-  }
-  function getAccessToken(options){
-    return aim.promise('getAccessToken', resolve => {
-      if (options){
-        aim().url(AUTHORIZATION_TOKEN_URL).post(Object.assign({
-          grant_type: 'authorization_code',
-          // code: options.code, // default, overide by params
-          client_id: this.config.auth.client_id,
-          // 'client_secret' => Aimthis->client_secret,
-          access_type: 'offline', // only if access to client data is needed when user is not logged in
-        }, options)).then(e => {
-          this.setIdToken(e.body.id_token);
-          this.setAccessToken(e.body.access_token);
-          this.store('refresh_token', e.body.refresh_token);
-          // this.account = new Account(e.body.id_token);
-          resolve(this.access_token);
-        })
-      } else {
-        resolve(this.access_token);
-      }
-    });
-  }
-  function login(options){
-    return aim.promise('Login', async (resolve, fail) => {
-      // //console.log('LOGIN', options);
-      // return;
+  // Account.prototype = {
+  //   // getSecret() {
+  //   //   //console.log(111111, this.id_token);
+  //   //   return aim().url('https://aliconnect.nl/api/').query('request_type', 'account_secret').headers('Authorization', 'Bearer ' + this.id_token).get();
+  //   // },
+  // };
 
-      if (options !== undefined){
-        let state = Math.ceil(Math.random() * 99999);
-        //console.log(99999, options);
-        options = {
-          // scope: 'name+email+phone_number',
-          response_type: 'code',
-          client_id: this.config.auth.client_id = this.config.auth.client_id || this.config.auth.clientId,
-          redirect_uri: this.config.auth.redirect_uri = this.config.auth.redirect_uri || this.config.auth.redirectUri || this.config.redirect_uri || this.config.redirectUri,
-          state: state,
-          prompt: 'consent',
-          scope: options.scope || options.scopes.join(' ') || '',
-          // socket_id: aim.WebsocketClient.socket_id,
-        };
-        const url = aim().url(this.config.auth.url).query(options).toString();
-        //console.log(url, this.config);
-        if (document.location.protocol === 'file:'){
-          options.socket_id = this.ws.socket_id;
-          this.loginWindow = self.open(
-            url,
-            'login',
-            `top=${10},left=${10},width=400,height=500,resizable=0,menubar=0,status=0,titlebar=0`
-          );
+  function Application () {}
+  Object.defineProperties(Application.prototype, {
+    // getClient(src) {
+    //   src = new URL(src, this.config.url ? this.config.url : document.location).href;
+    //   // //console.log(src, this.config.url, this.servers.length);
+    //   for (let [url, client] of this.servers.entries()) {
+    //     if (src.match(url)) return client;
+    //   }
+    //   return this.clients[0];
+    // },
+    // constructor() {
+    //   //console.log('constructor WEB');
+    // },
+    // test() {
+    //   //console.log('TEST');
+    // },
+    // api(src) {
+    //   const url = new URL(src, document.location);
+    //   const srcPathname = url.pathname.replace(/\(.*?\)/, '()');
+    //   for (var client of this.clients) {
+    //     console.error(src, client.hostname);
+    //     for (let [pathname,path] of Object.entries(client.config.paths)) {
+    //       if (pathname.replace(/\(.*?\)/, '()') === srcPathname) {
+    //         return client.api(src);
+    //       }
+    //     }
+    //   }
+    //   return client.api(src);
+    //   // console.error(000, client);
+    //   //
+    //   // return new Promise((callback, fail) => {
+    //   //   fail('NOT FOUND');
+    //   // })
+    //   // //console.log(11111, pathname,path);
+    //   //
+    //   // console.error(url.pathname);
+    //   // for (let client of this.clients) {
+    //   //
+    //   //   // //console.log(client, client.config.servers);
+    //   //   // client.config.servers = Array.from(client.config.servers);
+    //   //   for (let [i,server] of Object.entries(client.config.servers)) {
+    //   //     // //console.log(i,server);
+    //   //     if (src.match(server.url) || !src.match(/^http/)) {
+    //   //       return client.api(src);
+    //   //     }
+    //   //   }
+    //   // }
+    // },
+    clientAttr:{value:function(options) {
+      return aim().url(dmsUrl).query({
+        request_type: 'client_attr',
+        client_id: this.clientId,
+        client_secret: this.clientSecret,
+      }).post(options).then(e => {
+        //console.log(e.target.responseText);
+      })
+    }},
+    getAccount:{value:function() {
+      return Object.fromEntries(
+        [
+          'accountname',
+          'unique_name',
+          'prefered_username',
+          'name',
+          'email',
+          'family_name',
+          'given_name',
+          'middle_name',
+          'nickname',
+          'phone_number',
+        ]
+        .filter(name => this.account.idToken[name])
+        .map(name => [name,this.account.idToken[name]])
+      );
+    }},
+    store:{value:function(name, value) {
+      if (value) {
+        this.storage.setItem(`aim.${name}`, value);
+        this.storage.setItem(`aim.${this.clientId}.${name}`, value);
+      } else {
+        this.storage.removeItem(`aim.${name}`);
+        this.storage.removeItem(`aim.${this.clientId}.${name}`);
+      }
+    }},
+    setIdToken:{value:function(id_token) {
+      this.store('id_token', id_token);
+      this.account = new Account(id_token);
+    }},
+    setAccessToken:{value:function(id_token) {
+      this.store('access_token', id_token);
+    }},
+    getAccessToken:{value:function(options){
+      return aim.promise('getAccessToken', resolve => {
+        if (options){
+          aim().url(AUTHORIZATION_TOKEN_URL).post(Object.assign({
+            grant_type: 'authorization_code',
+            // code: options.code, // default, overide by params
+            client_id: this.config.auth.client_id,
+            // 'client_secret' => Aimthis->client_secret,
+            access_type: 'offline', // only if access to client data is needed when user is not logged in
+          }, options)).then(e => {
+            this.setIdToken(e.body.id_token);
+            this.setAccessToken(e.body.access_token);
+            this.store('refresh_token', e.body.refresh_token);
+            // this.account = new Account(e.body.id_token);
+            resolve(this.access_token);
+          })
         } else {
-          aim.clipboard.reload(url);
+          resolve(this.access_token);
         }
-      }
-      this.init();
+      });
+    }},
+    login:{value:function(options){
+      return aim.promise('Login', async (resolve, fail) => {
+        // //console.log('LOGIN', options);
+        // return;
 
-      self.addEventListener('focus', e => {
-        if (this.access_token) {
-          // //console.log('JE BENT INGELOGT, DUS CONTROLEREN OF TOKEN NOG OK IS ALS HET EEN INLOG TOKEN IS');
-          const access = this.access;
-          // als een nonce aanwezig is dan is het een inlog token.
-          // controleer of token nog actief is, c.q. gebruiker is ingelogt
-          if (access.nonce) {
-            aim().url(AUTHORIZATION_URL).headers('Authorization', 'Bearer ' + this.access_token).post({
-              request_type: 'access_token_verification',
-              // access_token: aimClient.access_token,
-            }).then(e => {
-              if (e.target.status !== 200) {
-                aim().logout();
-              }
-            });
+        if (options !== undefined){
+          let state = Math.ceil(Math.random() * 99999);
+          //console.log(99999, options);
+          options = {
+            // scope: 'name+email+phone_number',
+            response_type: 'code',
+            client_id: this.config.auth.client_id = this.config.auth.client_id || this.config.auth.clientId,
+            redirect_uri: this.config.auth.redirect_uri = this.config.auth.redirect_uri || this.config.auth.redirectUri || this.config.redirect_uri || this.config.redirectUri,
+            state: state,
+            prompt: 'consent',
+            scope: options.scope || options.scopes.join(' ') || '',
+            // socket_id: aim.WebsocketClient.socket_id,
+          };
+          const url = aim().url(this.config.auth.url).query(options).toString();
+          //console.log(url, this.config);
+          if (document.location.protocol === 'file:'){
+            options.socket_id = this.ws.socket_id;
+            this.loginWindow = self.open(
+              url,
+              'login',
+              `top=${10},left=${10},width=400,height=500,resizable=0,menubar=0,status=0,titlebar=0`
+            );
+          } else {
+            aim.clipboard.reload(url);
           }
-          // //console.log(aimClient);
         }
+        this.init();
+
+        self.addEventListener('focus', e => {
+          if (this.access_token) {
+            // //console.log('JE BENT INGELOGT, DUS CONTROLEREN OF TOKEN NOG OK IS ALS HET EEN INLOG TOKEN IS');
+            const access = this.access;
+            // als een nonce aanwezig is dan is het een inlog token.
+            // controleer of token nog actief is, c.q. gebruiker is ingelogt
+            if (access.nonce) {
+              aim().url(AUTHORIZATION_URL).headers('Authorization', 'Bearer ' + this.access_token).post({
+                request_type: 'access_token_verification',
+                // access_token: aimClient.access_token,
+              }).then(e => {
+                if (e.target.status !== 200) {
+                  aim().logout();
+                }
+              });
+            }
+            // //console.log(aimClient);
+          }
+        });
+
+        // //console.log(this);
+        if (this.account) {
+          resolve(this.account);
+        } else {
+          fail('no login');
+        }
+
+        // let previousIdToken = aim.auth.id_token;
+        // let previousAccessToken = aim.auth.access_token;
+        // aim.auth.init();
+        // if (aim.auth.id_token && previousIdToken !== aim.auth.id_token){
+        // 	aim().emit('login');
+        // }
       });
-
-      // //console.log(this);
-      if (this.account) {
-        resolve(this.account);
-      } else {
-        fail('no login');
+    }},
+    setConfig:{value:function(config){
+      aim.extend(this.config, config);
+      if (this.config.components && this.config.components.schemas) {
+        aim().schemas(this.config.components.schemas);
       }
-
-      // let previousIdToken = aim.auth.id_token;
-      // let previousAccessToken = aim.auth.access_token;
-      // aim.auth.init();
-      // if (aim.auth.id_token && previousIdToken !== aim.auth.id_token){
-      // 	aim().emit('login');
-      // }
-    });
-  }
-  function setConfig(config){
-    aim.extend(this.config, config);
-    if (this.config.components && this.config.components.schemas) {
-      aim().schemas(this.config.components.schemas);
-    }
-  }
-  function logout(options){
-    return new Promise((resolve, reject) => {
-      // //console.log(sessionStorage('aim.id_token'));
-      if (this.storage.getItem('aim.id_token')) {
-        this.storage.removeItem('aim.id_token');
-        this.storage.removeItem('aim.refresh_token');
-        this.storage.removeItem('aim.access_token');
-        return resolve();
-        // aim.clipboard.reload();
-        aim.clipboard.reload(aim().url(AUTHORIZATION_URL).query({
-          prompt: 'logout',
-          client_id: aim().client_id || '',
-          redirect_uri: document.location.origin + document.location.pathname,
-        }).toString());
-      } else {
-        return resolve();
-        const searchParams = new URLSearchParams(document.location.href);
-        if (searchParams.get('redirect_uri')) {
-          document.location.href = searchParams.get('redirect_uri');
+    }},
+    // login() {
+    //   return this.authProvider.login(...arguments);
+    // },
+    logout:{value:function(options){
+      return new Promise((resolve, reject) => {
+        // //console.log(sessionStorage('aim.id_token'));
+        if (this.storage.getItem('aim.id_token')) {
+          this.storage.removeItem('aim.id_token');
+          this.storage.removeItem('aim.refresh_token');
+          this.storage.removeItem('aim.access_token');
+          return resolve();
+          // aim.clipboard.reload();
+          aim.clipboard.reload(aim().url(AUTHORIZATION_URL).query({
+            prompt: 'logout',
+            client_id: aim().client_id || '',
+            redirect_uri: document.location.origin + document.location.pathname,
+          }).toString());
+        } else {
+          return resolve();
+          const searchParams = new URLSearchParams(document.location.href);
+          if (searchParams.get('redirect_uri')) {
+            document.location.href = searchParams.get('redirect_uri');
+          }
+        }
+      })
+    }},
+    refreshToken:{value:function(){
+      return console.error('refreshToken');
+      if (this.refreshTokenHandle) return;
+      //console.log(aim.Client);
+      this.refreshTokenHandle = new aim.Client('https://login.aliconnect.nl/token/').post({
+        grant_type: 'refresh_token',
+        refresh_token: aim.his.cookie.refresh_token,
+        client_id: aim().client_id,
+        // 'redirect_uri' => self::Aimredirect_uri,
+        // 'client_secret' => Aimthis->client_secret,
+      }).then(e => {
+        // console.debug('REFR TOKEN',e);
+        this.refreshTokenHandle = null;
+        // var token = e.body.access_token;
+        // var access = JSON.parse(atob(token.split('.')[1]));
+        // var time = new Date().getTime()/1000;
+        // var expires_in = Math.round(access.exp - time);
+        // console.error('RRRRRRRRRRRRefreshToken', expires_in, access);
+        // aim.his.cookie = {
+        // 	access_token: e.body.access_token
+        // };
+        // var token = aim.auth.access_token = aim.his.cookie.access_token || aim.his.cookie.id_token;
+        // var access = JSON.parse(atob(token.split('.')[1]));
+        // var time = new Date().getTime()/1000;
+        // var expires_in = Math.round(access.exp - time);
+        // console.error('RRRRRRRRRRRRefreshToken', expires_in, access);
+        //
+        return;
+        aim.his.cookie = {
+          access_token: e.body.access_token
+        };
+        aim.auth.init();
+        // aim.auth.refreshToken = () => {console.debug('NOOOO');};
+        // updateAccessToken();
+      });
+    }},
+    token:{value:function(token, clientSecret){
+      if (token){
+        const time = new Date().getTime() / 1000;
+        const access = JSON.parse(atob(token.split('.')[1]));
+        return {
+          token: token,
+          access: access,
+          time: time,
+          expires_in: Math.round(access.exp - time),
+          isValid: access.exp > time || true,
         }
       }
-    })
-  }
-  function refreshToken(){
-    return console.error('refreshToken');
-    if (this.refreshTokenHandle) return;
-    //console.log(aim.Client);
-    this.refreshTokenHandle = new aim.Client('https://login.aliconnect.nl/token/').post({
-      grant_type: 'refresh_token',
-      refresh_token: aim.his.cookie.refresh_token,
-      client_id: aim().client_id,
-      // 'redirect_uri' => self::Aimredirect_uri,
-      // 'client_secret' => Aimthis->client_secret,
-    }).then(e => {
-      // console.debug('REFR TOKEN',e);
-      this.refreshTokenHandle = null;
-      // var token = e.body.access_token;
-      // var access = JSON.parse(atob(token.split('.')[1]));
-      // var time = new Date().getTime()/1000;
-      // var expires_in = Math.round(access.exp - time);
-      // console.error('RRRRRRRRRRRRefreshToken', expires_in, access);
-      // aim.his.cookie = {
-      // 	access_token: e.body.access_token
-      // };
-      // var token = aim.auth.access_token = aim.his.cookie.access_token || aim.his.cookie.id_token;
-      // var access = JSON.parse(atob(token.split('.')[1]));
-      // var time = new Date().getTime()/1000;
-      // var expires_in = Math.round(access.exp - time);
-      // console.error('RRRRRRRRRRRRefreshToken', expires_in, access);
-      //
+    }},
+    trackLocalSession:{value:function(){
       return;
-      aim.his.cookie = {
-        access_token: e.body.access_token
-      };
-      aim.auth.init();
-      // aim.auth.refreshToken = () => {console.debug('NOOOO');};
-      // updateAccessToken();
-    });
-  }
-  function token(token, clientSecret){
-    if (token){
-      const time = new Date().getTime() / 1000;
-      const access = JSON.parse(atob(token.split('.')[1]));
-      return {
-        token: token,
-        access: access,
-        time: time,
-        expires_in: Math.round(access.exp - time),
-        isValid: access.exp > time || true,
+      clearTimeout(arguments.callee.timeout);
+      const cookie = aim.his.cookie;
+      // console.debug (`trackLocalSession`);
+      if (!cookie.id_token && auth.id_token > ''){
+        return this.logout();
+      } else if (cookie.id_token > '' && !auth.id_token){
+        // return client.login();
       }
-    }
-  }
-  function trackLocalSession(){
-    return;
-    clearTimeout(arguments.callee.timeout);
-    const cookie = aim.his.cookie;
-    // console.debug (`trackLocalSession`);
-    if (!cookie.id_token && auth.id_token > ''){
-      return this.logout();
-    } else if (cookie.id_token > '' && !auth.id_token){
-      // return client.login();
-    }
-    arguments.callee.timeout = setTimeout(arguments.callee, aim.config.trackLocalSessionTime);
-  }
-  function trackSession(){
-    return;
-    // console.error (`trackSession`, aim.auth.id.iss, arguments.callee.timeout);
-    if (arguments.callee.httpRequest) return;
-    clearTimeout(arguments.callee.timeout);
-    self.removeEventListener('focus', arguments.callee);
-    self.addEventListener('focus', arguments.callee);
-    // aim.auth.id.iss = 'login.aliconnect.nl/api/oauth';
-    // alert(1);
-    arguments.callee.timeout = setTimeout(arguments.callee, aim.config.trackSessionTime);
-    arguments.callee.httpRequest = aim().url(authorizationUrl)
-    .query('request_type', 'check_access_token')
-    .headers('Authorization', 'Bearer ' + auth.id_token)
-    .get()
-    .then(e => {
-      console.warn('trackSession', e.target);
-      arguments.callee.httpRequest = null;
-      // console.debug(aim.auth.id.nonce, e.target.status, e.target.responseText);
-      if (e.target.status !== 200){
-        self.removeEventListener('focus', arguments.callee);
-        // return aim.auth.logout();
-      }
-    });
-  }
-  function getAccountByUsername(name) {
-    // //console.log(name);
-    return this.account;
-  }
-  function acquireTokenSilent(silentRequest) {
-    /**
-    silentRequest.scopes
-    silentRequest.account (aimClient.getAccountByUsername(account))
-    */
-    return aim.promise('acquireTokenSilent', async (resolve, fail) => {
-      // check token exppired, if yes get new token.
-      // //console.log(this);
-      resolve({
-        accessToken: this.storage.getItem(`aim.${this.clientId}.access_token`),
+      arguments.callee.timeout = setTimeout(arguments.callee, aim.config.trackLocalSessionTime);
+    }},
+    trackSession:{value:function(){
+      return;
+      // console.error (`trackSession`, aim.auth.id.iss, arguments.callee.timeout);
+      if (arguments.callee.httpRequest) return;
+      clearTimeout(arguments.callee.timeout);
+      self.removeEventListener('focus', arguments.callee);
+      self.addEventListener('focus', arguments.callee);
+      // aim.auth.id.iss = 'login.aliconnect.nl/api/oauth';
+      // alert(1);
+      arguments.callee.timeout = setTimeout(arguments.callee, aim.config.trackSessionTime);
+      arguments.callee.httpRequest = aim().url(authorizationUrl)
+      .query('request_type', 'check_access_token')
+      .headers('Authorization', 'Bearer ' + auth.id_token)
+      .get()
+      .then(e => {
+        console.warn('trackSession', e.target);
+        arguments.callee.httpRequest = null;
+        // console.debug(aim.auth.id.nonce, e.target.status, e.target.responseText);
+        if (e.target.status !== 200){
+          self.removeEventListener('focus', arguments.callee);
+          // return aim.auth.logout();
+        }
       });
-    })
-  }
-  function acquireTokenPopup(aimRequest) {
-    return this.loginPopup(aimRequest);
-  }
+    }},
+    getAccountByUsername:{value:function(name) {
+      // //console.log(name);
+      return this.account;
+    }},
+    acquireTokenSilent:{value:function(silentRequest) {
+      /**
+      silentRequest.scopes
+      silentRequest.account (aimClient.getAccountByUsername(account))
+      */
+      return aim.promise('acquireTokenSilent', async (resolve, fail) => {
+        // check token exppired, if yes get new token.
+        // //console.log(this);
+        resolve({
+          accessToken: this.storage.getItem(`aim.${this.clientId}.access_token`),
+        });
+      })
+    }},
+    acquireTokenPopup:{value:function(aimRequest) {
+      return this.loginPopup(aimRequest);
+    }},
+  });
+
 
   function loginPopup (options) {
     return aim.promise('LoginPopup', async (resolve, reject) => {
@@ -3033,7 +3094,6 @@
           const url = new URL(event.data.url, document.location);
           if (url.searchParams.has('token')) {
             const access_token = url.searchParams.get('token');
-            console.log(this);
             this.store('access_token', access_token);
             const access = JSON.parse(atob((access_token).split('.')[1]));
             aim().url('https://login.aliconnect.nl/token')
@@ -3134,7 +3194,6 @@
     // }
     aim.his.items = {};
   };
-
   async function init () {
     // //console.log('INIT');
     const url = new URL(document.location);
@@ -3182,12 +3241,11 @@
     // aim().storage(this.key+'AuthProvider',this.auth)
     return this;
   }
-  UserAgentApplication.prototype = {
+  UserAgentApplication.prototype = new Application;
+  Object.assign(UserAgentApplication.prototype, {
     init,
     loginPopup,
-    logout,
-    store,
-  }
+  })
 
   aim.clients = new Map();
   function initWithMiddleware(options, config) {
@@ -3706,6 +3764,15 @@
       }
     }},
   });
+
+
+
+  // Attribute = function (){};
+  // Object.defineProperties(Attribute.prototype, {
+  //   ja: {
+  //     value: function () {},
+  //   }
+  // })
 
   Item = function () {};
   Object.defineProperties(Item, {
@@ -5545,6 +5612,7 @@
     this.clients = new Map();
     // return this.connect(...arguments)
   }
+
   function EventManager() {}
   Object.defineProperties(EventManager.prototype, {
     _events: {value: {}},
@@ -6015,6 +6083,7 @@
     }
     return parent;
   };
+
   function Server(config) {
     // console.log(config.paths);
     const server = this;
@@ -7553,5 +7622,16 @@
     atob = require('atob');
   }
 
+  // //console.log(this.document);
+
+  // if (!self.document) {
+  //   return module.exports = aim;
+  // }
+
+  // console.log(aim);
   return aim;
+
+  // alert(3);
+
+
 }));

@@ -757,6 +757,10 @@
       });
     },
     async page(){
+      if (sessionStorage.getItem('clientId')) {
+        await aim.api('/abis/data').query({request_type: 'clientproduct', $filter: 'clientId EQ ' + sessionStorage.getItem('clientId')}).get().then(response => response.json().then(data => aim.clientproduct = data.rows))
+        console.log(aim.clientproduct.map(r => r.artId).join(','))
+      }
       $(document.body).append(
         $('nav').append($('article').append(
           $('button').class('abtn menu'),
@@ -765,10 +769,36 @@
             $('button').class('abtn search'),
           ),
           $('span').class('pagemenu'),
-          $('button').class('abtn shop'),
-          $('button').class('abtn account').append(
+          $('button').class('abtn account').text(sessionStorage.getItem('clientId') || 'Account').append(
             $('div').append(
-              $('button').text('aanmelden').on('click', e => {
+              sessionStorage.getItem('clientId')
+              ? [
+                $('button').text('Overzicht').on('click', e => {
+                  aim.api('/abis/data').query({request_type: 'client_overview', clientId: sessionStorage.getItem('clientId')}).get().then(response => response.json().then(data => {
+                    $('.doc-content').text('').append(
+                      $('form').append(
+                        $('details').open(1).append(
+                          $('summary').text('Algemeen'),
+                          $('div').append(
+                            $('label').text('businessAddressStreet'),
+                            $('input').value(data.client.businessAddressStreet),
+                          ),
+                          $('div').append(
+                            $('label').text('businessAddressPostalCode'),
+                            $('input').value(data.client.businessAddressPostalCode),
+                          ),
+
+                        ),
+                      )
+                    )
+                  }))
+                }),
+                $('button').text('Boodschappenlijst').on('click', e => {
+                  aim.api('/abis/data').query({request_type: 'article',$filter: `artId IN (${aim.clientproduct.map(r => r.artId).join(',')})`}).get().then(response => response.json().then(data => listview(data.rows)))
+                }),
+                $('button').text('Uitloggen'),
+              ]
+              : $('button').text('aanmelden').on('click', e => {
                 $('.pv').text('').append(
                   $('form').append(
                     $('div').append(
@@ -785,6 +815,7 @@
               })
             )
           ),
+          $('button').class('abtn shop'),
         )),
         $('header').append($('article')),
         $('main').append($('article').append(
@@ -810,6 +841,8 @@
       fetch('/page/footer.md').then(res => res.text().then(body => {
         $("body>footer>article").text('').html(aim.markdown().render(body));
       }));
+
+
       const searchParams = new URLSearchParams(document.location.search);
       // return;
       if (searchParams.get('search')) {
@@ -828,7 +861,70 @@
     },
     async om() {
       aim.readOnly = false;
-      document.querySelector('html').className += 'app';
+      const client_id = aim.config.client_id;
+      const aimConfig = {
+        client_id: client_id,
+        scope: 'openid profile name email admin.write abisingen.write',
+      };
+      const aimClient = new aim.UserAgentApplication(aimConfig);
+      // aimClient.storage.clear();
+
+      const aimRequest = {
+        scopes: aimConfig.scope.split(' '),
+      };
+      // const access_token = await aim.api('/abis/signin').input(aimConfig).post().then(e => e.text());
+      // aimClient.storage.setItem('accessToken', access_token);
+
+      const aimAccount = aimClient.storage.getItem('aimAccount') ? JSON.parse(aimClient.storage.getItem('aimAccount')) : null;
+      const authProvider = {
+        getAccessToken: async () => {
+          return aimClient.storage.getItem('accessToken');
+          let account = aimClient.storage.getItem('aimAccount');
+          if (!account){
+            throw new Error(
+              'User account missing from session. Please sign out and sign in again.'
+            );
+          }
+          try {
+            // First, attempt to get the token silently
+            const silentRequest = {
+              scopes: aimRequest.scopes,
+              account: aimClient.getAccountByUsername(account)
+            };
+            const silentResult = await aimClient.acquireTokenSilent(silentRequest);
+            return silentResult.accessToken;
+          } catch (silentError) {
+            // If silent requests fails with InteractionRequiredAuthError,
+            // attempt to get the token interactively
+            if (silentError instanceof aim.InteractionRequiredAuthError) {
+              const interactiveResult = await aimClient.acquireTokenPopup(aimRequest);
+              return interactiveResult.accessToken;
+            } else {
+              throw silentError;
+            }
+          }
+        }
+      };
+      let dmsConfig = {
+        client_id: client_id,
+        servers: [{url: 'https://aliconnect.nl'}],
+      };
+      const dmsClient = aim.Client.initWithMiddleware({authProvider}, dmsConfig);
+      // dmsConfig = await dmsClient.loadConfig();
+
+      function signOut() {
+        aimClient.storage.removeItem('aimAccount');
+        aimClient.logout().catch(console.error).then(e => document.location.reload());
+      }
+      function signIn() {
+        aimClient.loginPopup(aimRequest).then(authResult => {
+          aimClient.storage.setItem('aimAccount', authResult.account.username);
+          document.location.reload();
+        })
+      }
+
+
+      $(document.documentElement).class('app');
       $(document.body).append(
         $('nav').append(
           $('a').class('abtn icn menu').on('click', e => {
@@ -870,7 +966,18 @@
             $('input').name('search').autocomplete('off').placeholder('zoeken'),
             $('button').class('abtn icn search fr').title('Zoeken'),
           ),
-          $('a').class('abtn icn dark').dark(),
+          $('button').class('abtn dark').dark(),//on('click', e => $(document.documentElement).attr('dark', aim.dark ^= 1)),
+          $('button').class('abtn account').text(aimAccount ? aimAccount.sub : '').append(
+            $('div').append(
+              aimAccount
+              ? [
+                $('button').text('afmelden').on('click', signOut),
+              ]
+              : [
+                $('button').text('aanmelden').on('click', signIn),
+              ]
+            )
+          ),
         ),
         $('main').append(
           $('div').class('col tv left noselect np')
@@ -935,9 +1042,10 @@
             // $('iframe').name('page').style('height: 100%;')
           ),
           // $('div').id('preview'),
-          $('div').class('prompt').tabindex(-1).append(
-            $('button').class('abtn abs close').attr('open', '').tabindex(-1).on('click', e => $().prompt(''))
-          ),
+          $('div').class('prompt'),
+          // $('div').class('prompt').tabindex(-1).append(
+          //   $('button').class('abtn abs close').attr('open', '').tabindex(-1).on('click', e => aim.prompt(''))
+          // ),
         ),
         $('footer').append(
           $('span').class('ws'),
@@ -952,7 +1060,9 @@
           $('progress'),
         ),
       ).messagesPanel();
+
       aim.om = new Om();
+
       // $(window).on('popstate', e => {
       //   console.log(aim.searchParams);
       //   const searchParams = new URLSearchParams(document.location.search);
@@ -1062,13 +1172,8 @@
     },
     async abis(){
       aim.readOnly = false;
+
       await libraries.om();
-      function signOut() {
-        aimClient.logout().catch(console.error).then(e => {
-          aimClient.storage.removeItem('aimAccount');
-          document.location.reload();
-        });
-      }
       function listLink(title, request_type, filter){
         var schema = config.components.schemas[request_type];
         var href = `https://aliconnect.nl/api/abis/data?request_type=${request_type}&$select=${schema.select}&$filter=${filter}`;
@@ -1129,55 +1234,9 @@
       //   method: 'POST',
       //   body: configYaml,
       // }).then(res => res.json());
+      console.log(1,aim.config.client_id);
 
-      const client_id = aim.config.client_id;
-      const aimConfig = {
-        client_id: client_id,
-        scope: 'openid profile name email admin.write abisingen.write',
-      };
-      const aimClient = new aim.UserAgentApplication(aimConfig);
-      const aimAccount = JSON.parse(aimClient.storage.getItem('aimAccount'));
-      const aimRequest = {
-        scopes: aimConfig.scope.split(' '),
-      };
-      const access_token = await aim.api('/abis/signin').input(aimConfig).post().then(e => e.text());
-      aimClient.storage.setItem('accessToken', access_token);
 
-      const authProvider = {
-        getAccessToken: async () => {
-          return aimClient.storage.getItem('accessToken');
-          let account = aimClient.storage.getItem('aimAccount');
-          if (!account){
-            throw new Error(
-              'User account missing from session. Please sign out and sign in again.'
-            );
-          }
-          try {
-            // First, attempt to get the token silently
-            const silentRequest = {
-              scopes: aimRequest.scopes,
-              account: aimClient.getAccountByUsername(account)
-            };
-            const silentResult = await aimClient.acquireTokenSilent(silentRequest);
-            return silentResult.accessToken;
-          } catch (silentError) {
-            // If silent requests fails with InteractionRequiredAuthError,
-            // attempt to get the token interactively
-            if (silentError instanceof aim.InteractionRequiredAuthError) {
-              const interactiveResult = await aimClient.acquireTokenPopup(aimRequest);
-              return interactiveResult.accessToken;
-            } else {
-              throw silentError;
-            }
-          }
-        }
-      };
-      let dmsConfig = {
-        client_id: client_id,
-        servers: [{url: 'https://aliconnect.nl'}],
-      };
-      const dmsClient = aim.Client.initWithMiddleware({authProvider}, dmsConfig);
-      // dmsConfig = await dmsClient.loadConfig();
       const url = new URL(document.location);
       const showlist = {
         async products(data) {
@@ -1487,10 +1546,11 @@
       // console.log(select);
       const cols = select.map(name => Object.assign({name: name}, schema && schema.properties && schema.properties[name] ? schema.properties[name] : {title: name}));
 
-      aim.om.listview(cols, rows);
+      aim.om.listview(rows);
     }
   }
-  function listview(cols, rows, type, filter){
+  function listview(rows, type, filter){
+    // console.log(rows);
     // cols = this.cols = cols || this.cols;
     rows = this.rows = rows || this.rows;
     rows = rows.map(row => row.data ? Object.assign(row,JSON.parse(row.data)) : row);
@@ -1516,7 +1576,7 @@
               row.images ? $('img').src(row.images[0]) : null,
               config.components.schemas[row.schemaName].cols
               .filter(col => col.header)
-              .map(col => aim.om[col.name] ? aim.om[col.name](row, div) : valueTag(col,row).class(col.name)),
+              .map(col => aim[col.name] ? aim[col.name](row, div) : valueTag(col,row).class(col.name)),
               // {
               //   if (col.type) {
               //     return $('input').type(col.type).min(0).class(col.name).value(row[col.name] || '')
@@ -1550,7 +1610,7 @@
                   // console.log(this.sortName, col.name, sortFactor, this.sortDir);
                   this.sortName = col.name;
                   rowsVisible.sort((a,b) => sortFactor * String(a[col.name]).localeCompare(String(b[col.name]), undefined, {numeric: true}));
-                  aim.om.listview(cols, rows, type, filter, rowsVisible);
+                  aim.om.listview(rows, type, filter, rowsVisible);
                 })
               ))
             )
@@ -1568,7 +1628,7 @@
       cols.forEach(col => {
         if (col.name in row) {
           const value = row[col.name];
-          const filtercol = filter[col.name] = filter[col.name] || { name: col.name, values: {} };
+          const filtercol = filter[col.name] = filter[col.name] || { name: col.name, title: col.title || col.name.replace(/^\w/, s => s.toUpperCase()), values: {} };
           const valuerow = filtercol.values[value] = filtercol.values[value] || { value: value, rows: []};
           valuerow.rows.push(row);
         }
@@ -1707,7 +1767,7 @@
       }
     }
     filter = Object.values(filter);
-    filter.forEach(attribute => attribute.values = Object.values(attribute.values).sort((a,b) => String(a.value||'').localeCompare(String(b.value||''))));
+    filter.forEach(attribute => attribute.values = Object.values(attribute.values).sort((a,b) => String(a.value||'').localeCompare(String(b.value||''), undefined, {numeric: true})));
     filter = filter.filter(attribute => attribute.values.length>1 && attribute.values.some(value => value.rows.length>1))
 
     sessionStorage.setItem('listType', type = this.type = type || this.type || sessionStorage.getItem('listType') || 'cols');
@@ -1764,9 +1824,11 @@
     }
 
     (function buildlist() {
-      $('.lv').text('').append(
+      const checkedFilters = filter.filter(col => col.checked);
+      // console.log(filter,checkedFilters);
+      $('.lv').attr('hidefilter', aim.showfilter).text('').append(
         $('nav').append(
-          $('button').class('abtn filter'),
+          $('button').class('abtn filter').on('click', e => $('.lv').attr('hidefilter', aim.showfilter ^= 1)),
           $('button').class('abtn view').append(
             $('div').append(
               Object.keys(types).map(key => $('button').text(key).on('click', e => buildlist(type = key)))
@@ -1775,26 +1837,42 @@
         ),
         $('div').append(
           $('aside').class('oa filter').append(
-            filter.map(col => {
-              const values = col.values.filter(val => val.rows.some(row => rowsVisible.includes(row)));
+            filter.filter(col => col.checked).map(col => $('div').append(
+              $('span').text(col.title + ': '),
+              $('b').text(col.values.filter(val => val.checked).map(val => val.value).join(', ')),
+            )),
+
+            filter
+            .filter(col => col.checked || col.values.some(val => val.rows.some(row => rowsVisible.includes(row))))
+            .map(col => {
+              const colRowsVisible = rows.filter(row => !filter.some(c => c !== col && c.checked && c.values.some(val => !val.checked && val.rows.find(r => r === row))))
+              // console.log(col.name, colRowsVisible)
+              const values = col.values;//.filter(val => val.rows.some(row => rowsVisible.includes(row)));
               if(values.some(val => val.checked) || values.length>1) {
-                return $('details').open(values.some(val => val.checked)).append(
-                  $('summary').text(col.name),
+                return $('div')
+                // .open(values.some(val => val.checked))
+                .open(1)
+                .attr('more', col.more)
+                .append(
+                  $('legend').text(col.title),
+                  // $('div').class('more').text('more'),
                   values
-                  .filter(val => val.value)
-                  .map(
-                    val => $('div')
-                    .text(val.value)
-                    .checked(val.checked)
-                    .attr('cnt', val.rows.filter(row => rowsVisible.includes(row)).length)
-                    .on('click', e => {
-                      val.checked ^= 1;
-                      col.checked = col.values.some(val => val.checked);
-                      rowsVisible = rows.filter(
-                        row => !filter.some(col => col.checked && (!(col.name in row) || col.values.filter(val => !val.checked).some( val => val.rows.includes(row) )) )
-                      );
-                      buildlist();
-                    })
+                  .filter(val => val.value !== null)
+                  .filter(val => val.rows.filter(row => colRowsVisible.includes(row)).length).map(
+                    (val,i) => [
+                      i == 5 ? $('div').class('more').on('click', e => e.target.parentElement.setAttribute('more', col.more ^= 1)) : null,
+                      $('div').text(val.value)
+                      .checked(val.checked)
+                      .attr('cnt', val.rows.filter(row => colRowsVisible.includes(row)).length)
+                      .on('click', e => {
+                        val.checked ^= 1;
+                        col.checked = col.values.some(val => val.checked);
+                        rowsVisible = rows.filter(
+                          row => !filter.some(col => col.checked && (!(col.name in row) || col.values.filter(val => !val.checked).some( val => val.rows.includes(row) )) )
+                        );
+                        buildlist();
+                      })
+                    ]
                   )
                 );
               }
@@ -1807,13 +1885,32 @@
       )
     })()
   }
-  async function search(search){
-    console.log('SEARCH', search)
-    await aim.api('/abis/data').query({
-      request_type: 'product',
-      $search: search,
-    }).get().then(response => response.json().then(data => {
-      console.log(data);
+  function search(search){
+    // console.log('SEARCH', search)
+    aim.api('/abis/data').query({request_type: 'article',$search: search}).get().then(response => response.json().then(data => {
+      // console.log(1,data);
+      data.rows.forEach(row => {
+        if (aim.clientproduct) Object.assign(row, aim.clientproduct.find(p => p.artId === row.artId));
+        const title = [
+          row.brand,
+          row.artSupplier,
+          row.partTitle || row.artTitle,
+          (row.partContent || '') + (row.partContentUnit || ''),
+          // row.partContentUnit,
+          row.packUnit,
+          row.packQuantity ? row.packQuantity + 'st': null,
+          row.partCode || row.artOrderCode,
+        ].filter(Boolean).join(', ');
+        Object.assign(row, {
+          catalogPrice: row.packListPrice || row.artListPrice,
+          title: title,
+          afmeting: (( title.match(/((([\d|\.|,]+?)\s*?(mm|cm|m)\s*?x\s*|)?(([\d|\.|,]+?)\s*?(mm|cm|m)\s*?x\s*|)?([\d|\.|,]+?)\s*?(mm|cm|m))/) || [] )[1] || '').replace(/\s/g,'').toLowerCase(),
+          gaten: (( title.match(/(\d+)\s*?(?=gaten|gaat)/i) || [] )[1] || ''),
+          korrel: (( title.match(/\b(P\d+)\b/i) || [] )[1] || ''),
+        });
+      });
+
+      return listview(data.rows);
       // return;
       // sessionStorage.setItem('lv-data', JSON.stringify(data));
       const cols = [
@@ -1873,7 +1970,7 @@
       // $('.pv').text('');
       $('aside.right').text('');
       $('aside.left').text('');
-      listview(cols, data.rows);
+      listview(data.rows);
     }))
   }
   function page(ref){
@@ -1899,11 +1996,14 @@
         data[legend] = data[legend] || {};
         data[legend][name] = body[name];
       });
-      // console.log(111, data, cfg);
+      // console.log(111, data, body, cfg);
       // return;
       $('.pv').text('').append(
         $('nav').append(
-
+          $('button').text('select').on('click', e => {
+            sessionStorage.setItem('clientId', body.id);
+            document.location.href = '/';
+          })
         ),
         $('form').class('oa').buildForm(data, cfg),
         // (
@@ -2431,7 +2531,7 @@
         checked: 1,
       }]));
       properties.expire_time = {format: 'number', value: 3600};
-      const form = $().promptform($().url(AUTHORIZATION_URL).query('socket_id', socket_id), this.elem, arguments.callee.name, {
+      const form = aim.promptform($().url(AUTHORIZATION_URL).query('socket_id', socket_id), this.elem, arguments.callee.name, {
         properties: properties,
         btns: {
           deny: { name: 'accept', value:'deny', type:'button' },
@@ -2746,6 +2846,14 @@
       //   $('h1').text('JAaa'),
       // )
 
+    },
+    dark(){
+      $(document.documentElement).attr('dark', sessionStorage.getItem('dark'));
+      this.on('click', e => {
+        sessionStorage.setItem('dark', sessionStorage.getItem('dark') ^1 );
+        $(document.documentElement).attr('dark', sessionStorage.getItem('dark'));
+      });
+      return this;
     }
   }
   Object.defineProperties(Elem.prototype, {
@@ -3033,20 +3141,6 @@
 			}
 			return this;
 		}},
-    dark: { value: function () {
-      if ($().storage('dark') === null) {
-        setTimeout(() => {
-          const h = new Date().getHours();
-          $(document.documentElement).attr('dark', h >= 20 || h <= 7 ? 1 : 0)
-        }, 5000);
-      } else {
-        $(document.documentElement).attr('dark', $().storage('dark'));
-      }
-      if (this.elem.tagName === 'A') {
-        this.on('click', e => $(document.documentElement).attr('dark', $().storage('dark', $().storage('dark')^1).storage('dark')));
-      }
-      return this;
-    }},
     displayvalue: { value: function (selector) {
       if (this.elem.item) {
         this.text(this.elem.item.displayvalue(selector));
@@ -6062,16 +6156,14 @@
 		},},
     qr: { value: function (selector, context) {
       const elem = this.elem;
-      (async function(){
-        if (!window.QRCode) {
-          await importScript(scriptPath + '/js/qrcode.js');
-        }
+      const src = scriptPath.replace(/src/, 'dist') + '/js/qrcode.js';
+      importScript(src).then(e => {
         new QRCode(elem, selector);
         if (elem.tagName === 'IMG') {
           elem.src = elem.firstChild.toDataURL("image/png");
           elem.firstChild.remove();
         }
-      })();
+      });
       return this;
 		},},
     remove: { value: function (selector) {
@@ -6707,7 +6799,7 @@
                 // $('li').class('row').append(
                 //   $('a').class('aco abtn share').text('share').href('#?prompt=share'),
                 // ),
-                $('li').class('abtn share').text('share').on('click', e => e.stopPropagation()).on('click', e => $().prompt('share_item')),
+                $('li').class('abtn share').text('share').on('click', e => e.stopPropagation()).on('click', e => aim.prompt('share_item')),
                 $('li').class('abtn read').text('readonly').attr('disabled', '').on('click', e => e.stopPropagation()),
                 $('li').class('abtn public').text('public').on('click', e => this.scope = 'private').on('click', e => e.stopPropagation()),
                 $('li').class('abtn private').text('private').on('click', e => this.scope = 'public').on('click', e => e.stopPropagation()),
@@ -10204,13 +10296,161 @@
   //   $.extend({config:config});
   // })()
 
+
+  function importScript(src) {
+    return new Promise((resolve, reject) => {
+      function loaded(e) {
+        e.target.loading = false;
+        for (let [key,value] of Object.entries(e.target)) {
+          if (typeof value === 'function') {
+            Elem.prototype[key] = value;
+          }
+        }
+        resolve();
+      }
+      for (let script of [...document.getElementsByTagName('SCRIPT')]) {
+        if (script.getAttribute('src') === src) {
+          return script.loading ? $(script).on('load', loaded) : resolve();
+        }
+      }
+      var el = $('script').src(src).parent(document.head).on('load', loaded);
+      el.elem.loading = true;
+    });
+  }
+  function prompt(selector, context) {
+    console.warn('PROMPT', selector, context);
+    if (selector instanceof Object) {
+      return Object.assign(prompts, selector);
+    } else if (context) {
+      return prompts[selector] = context;
+    }
+    const is = $('.prompt') || $('section').parent(document.body).class('prompt').append(
+      $('button').class('abtn abs close').attr('open', '').on('click', e => aim.prompt(''))
+    );
+    const currentSelector = is.attr('open');
+    const keys = Object.keys(prompts);
+    is.attr('open', selector ? selector : null);
+    if (prompts[selector]) {
+      const url = new URL(document.location);
+      url.searchParams.set('prompt', selector);
+      window.history.replaceState('page', '', url.href);
+      const prompt = prompts[selector];
+      context = prompts[selector];
+      const promptElem = promptElems[selector] = promptElems[selector] || $('div').parent(is).class('col', selector).on('open', typeof context === 'function' ? context : function () {
+        this.is.text('').append(
+          $('h1').ttext(selector),
+          $('form').class('col')
+          .properties(context.properties)
+          .btns(context.btns),
+        )
+      });
+      const index = keys.indexOf(selector);
+      Object.values(promptElems).forEach(elem => elem.attr('pos', ''));
+      var currentIndex = 0;
+      if (currentSelector) {
+        var currentIndex = keys.indexOf(currentSelector);
+        promptElems[currentSelector].attr('pos', currentIndex < index ? 'l' : 'r');
+      }
+      if (promptElem && promptElem.attr) {
+        promptElem.attr('pos', currentIndex > index ? 'l' : 'r');
+        clearTimeout(this.promptTimeout);
+        promptElem.emit('open');
+        this.promptTimeout = setTimeout(() => promptElem.attr('pos', 'm'),10);
+        return promptElem;
+      }
+    }
+    return this;
+  }
+  function promptform(url, prompt, title = '', options = {}){
+    options.description = options.description || aim.his.translate.get('prompt-'+title+'-description') || '';
+    title = aim.his.translate.get('prompt-'+title+'-title') || title;
+    console.log([title, options.description]);
+    options.properties = options.properties || {};
+    // Object.entries(aim.sessionPost).forEach(([key,value])=>Object.assign(options.properties[key] = options.properties[key] || {type:'hidden'}, {value: value, checked: ''}));
+    aim.sessionPost = aim.sessionPost || {};
+    //console.log('aim.sessionPost', aim.sessionPost);
+    Object.entries(aim.sessionPost).forEach(([selector,value])=>Object.assign(selector = (options.properties[selector] = options.properties[selector] || {type:'hidden'}), {value: selector.value || value, checked: ''}));
+    return prompt.form = aim('form').parent(prompt.is.text('')).class('col aco').append(
+      aim('h1').ttext(title),
+      prompt.div = aim('div').md(options.description),
+    )
+    .properties(options.properties)
+    .append(options.append)
+    .btns(options.btns)
+    .on('submit', e => url.query(document.location.search).post(e).then(e => {
+      console.log(e.body);
+
+      self.sessionStorage.setItem('post', JSON.stringify(aim.sessionPost = e.body));
+      // return;
+      // return console.log('aim.sessionPost', aim.sessionPost);
+      if (aim.sessionPost.id_token) {
+        localStorage.setItem('id_token', aim.sessionPost.id_token);
+        aim().send({ to: { nonce: aim.sessionPost.nonce }, id_token: aim.sessionPost.id_token });
+      }
+      if (aim.sessionPost.url) {
+        if (aim.messageHandler) {
+          console.log(aim.sessionPost.url);
+          aim.messageHandler.source.postMessage({url: aim.sessionPost.url}, aim.messageHandler.origin);
+          // self.close();
+          return;
+        }
+        document.location.href = aim.sessionPost.url;
+      }
+
+
+      if (aim.sessionPost.prompt) prompt = aim.prompt(aim.sessionPost.prompt);
+      if (aim.sessionPost.msg && prompt && prompt.div) {
+        prompt.div.text('').html(aim.sessionPost.msg);
+      }
+      if (aim.sessionPost.socket_id) {
+        return aim().send({to:{sid:aim.sessionPost.socket_id}, body:aim.sessionPost});
+      }
+      // return;
+      // // //console.log(e.target.responseText);
+      // if (!e.body) return;
+      // aim.sessionPost = e.body;
+      // aim.responseProperties = Object.fromEntries(Object.entries(aim.sessionPost).map(([key,value])=>[key,{format:'hidden',value:value}]));
+      //
+      // // //console.log('aim.sessionPost', aim.sessionPost);
+      // [...document.getElementsByClassName('AccountName')].forEach((element)=>{
+      //   element.innerText = aim.sessionPost.AccountName;
+      // });
+      // if (e.body.msg) {
+      //   e.target.formElement.messageElement.innerHTML = e.body.msg;
+      //   //console.log(e.target.formElement.messageElement);
+      // } else if (e.body.socket_id) {
+      //   //console.log('socket_id', e.body);
+      //   // return;
+      //   aim.WebsocketClient.request({
+      //     to: { sid: e.body.socket_id },
+      //     body: e.body,
+      //   });
+      //   self.close();
+      // } else if (e.body.url) {
+      //   // return //console.error(e.body.url);
+      //   // if ()
+      //
+      //   document.location.href = e.body.url;
+      // } else {
+      //   //console.log(e.body);
+      //   // document.location.href = '/api/oauth' + document.location.search;
+      // }
+    }).catch(err => {
+      console.error(err, prompt, prompt.div);
+      if (err.error && prompt && prompt.div) {
+        prompt.div.text('').html(err.error.message);
+      }
+    }))
+  }
+
+
   Object.assign(aim, {
     Clipboard,
     Popup,
     ScriptLoader,
     Om,
-    // Listview,
     Elem,
+    attr: new Attr,
     checkPath: (e) => {
       let elem;
       if (elem = e.path.find(elem => elem.item)) {
@@ -10362,36 +10602,7 @@
       return href;
       // return href.toLowerCase();
     },
-    importScript: (src) => {
-      // console.log('importScript', src);
-      // src = new URL(src, document.location).href;
-      return $.promise('script', (resolve, reject) => {
-        // console.log(2, 'SCRIPT', src);
-        function loaded(e) {
-          e.target.loading = false;
-          for (let [key,value] of Object.entries(e.target)) {
-            if (typeof value === 'function') {
-              Elem.prototype[key] = value;
-            }
-          }
-          resolve();
-        }
-        for (let script of [...document.getElementsByTagName('SCRIPT')]) {
-          if (script.getAttribute('src') === src) {
-            // console.log(3, 'SCRIPT', src);
-            if (script.loading) {
-              // console.log(4, 'SCRIPT', src);
-              return $(script).on('load', loaded);
-            }
-            // console.log(4, 'SCRIPT', src);
-            return resolve();
-          }
-        }
-        var el = $('script').src(src).parent(document.head).on('load', loaded);
-        el.elem.loading = true;
-        // console.log('SCRIPT', el);
-      });
-    },
+    importScript,
     linkify: (inputText) => {
         var replacedText, replacePattern1, replacePattern2, replacePattern3;
 
@@ -10409,6 +10620,7 @@
 
         return replacedText;
     },
+    listview,
     loadStoredCss: () => {
       const css = JSON.parse(localStorage.getItem('css')) || {};
       for (let [id, param] of Object.entries(css)) {
@@ -10445,10 +10657,12 @@
         e.clickEvent = $.his.clickEvent;
       }
     },
+    prompt,
+    promptform,
+    search,
     urlString: (s = '') => {
       return s.replace(/%2F/g, '/');
     },
-    attr: new Attr,
   });
 
   // console.log(1, this.global);
@@ -10790,7 +11004,7 @@
       .on('keydown', e => {
         switch (e.keyPressed) {
           case 'F1': {
-            $().prompt('help');
+            aim.prompt('help');
             e.preventDefault();
             return;
           }
@@ -10812,7 +11026,7 @@
               $.imageSlider.close();
             }
             if (new URLSearchParams(document.location.search).has('prompt')) {
-              $().prompt('');
+              aim.prompt('');
             }
             if (document.activeElement === $.elMsgTextarea) {
               contentEditableEnd($.elMsgTextarea.blur());
@@ -11308,52 +11522,6 @@
         // aimClient.api.setactivestate('offline');
       });
     } },
-    prompt: {value: function prompt(selector, context) {
-      console.warn('PROMPT', selector, context);
-      if (selector instanceof Object) {
-        return Object.assign(prompts, selector);
-      } else if (context) {
-        return prompts[selector] = context;
-      }
-      const is = $.his.map.has('prompt')
-      ? $('prompt')
-      : $('section').parent(document.body).class('prompt').id('prompt').append(
-        $('button').class('abtn abs close').attr('open', '').on('click', e => $().prompt(''))
-      );
-      const currentSelector = is.attr('open');
-      const keys = Object.keys(prompts);
-      is.attr('open', selector ? selector : null);
-      if (prompts[selector]) {
-        const url = new URL(document.location);
-        url.searchParams.set('prompt', selector);
-        window.history.replaceState('page', '', url.href);
-        const prompt = prompts[selector];
-        context = prompts[selector];
-        const promptElem = promptElems[selector] = promptElems[selector] || $('div').parent(is).class('col', selector).on('open', typeof context === 'function' ? context : function () {
-          this.is.text('').append(
-            $('h1').ttext(selector),
-            $('form').class('col')
-            .properties(context.properties)
-            .btns(context.btns),
-          )
-        });
-        const index = keys.indexOf(selector);
-        Object.values(promptElems).forEach(elem => elem.attr('pos', ''));
-        var currentIndex = 0;
-        if (currentSelector) {
-          var currentIndex = keys.indexOf(currentSelector);
-          promptElems[currentSelector].attr('pos', currentIndex < index ? 'l' : 'r');
-        }
-        if (promptElem && promptElem.attr) {
-          promptElem.attr('pos', currentIndex > index ? 'l' : 'r');
-          clearTimeout(this.promptTimeout);
-          promptElem.emit('open');
-          this.promptTimeout = setTimeout(() => promptElem.attr('pos', 'm'),10);
-          return promptElem;
-        }
-      }
-      return this;
-    }},
     producties: {value: async function(elem){
 
       // console.log('producties');
@@ -11551,93 +11719,6 @@
   });
 
 
-  Object.defineProperties(aim.prototype, {
-    prompt: {value: function (selector, context) {
-      return aim.prompt(selector, context);
-    },},
-    promptform: {value: function (url, prompt, title = '', options = {}){
-      options.description = options.description || aim.his.translate.get('prompt-'+title+'-description') || '';
-      title = aim.his.translate.get('prompt-'+title+'-title') || title;
-      console.log([title, options.description]);
-      options.properties = options.properties || {};
-      // Object.entries(aim.sessionPost).forEach(([key,value])=>Object.assign(options.properties[key] = options.properties[key] || {type:'hidden'}, {value: value, checked: ''}));
-      aim.sessionPost = aim.sessionPost || {};
-      //console.log('aim.sessionPost', aim.sessionPost);
-      Object.entries(aim.sessionPost).forEach(([selector,value])=>Object.assign(selector = (options.properties[selector] = options.properties[selector] || {type:'hidden'}), {value: selector.value || value, checked: ''}));
-      return prompt.form = aim('form').parent(prompt.is.text('')).class('col aco').append(
-        aim('h1').ttext(title),
-        prompt.div = aim('div').md(options.description),
-      )
-      .properties(options.properties)
-      .append(options.append)
-      .btns(options.btns)
-      .on('submit', e => url.query(document.location.search).post(e).then(e => {
-        console.log(e.body);
-
-        self.sessionStorage.setItem('post', JSON.stringify(aim.sessionPost = e.body));
-        // return;
-        // return console.log('aim.sessionPost', aim.sessionPost);
-        if (aim.sessionPost.id_token) {
-          localStorage.setItem('id_token', aim.sessionPost.id_token);
-          aim().send({ to: { nonce: aim.sessionPost.nonce }, id_token: aim.sessionPost.id_token });
-        }
-        if (aim.sessionPost.url) {
-          if (aim.messageHandler) {
-            aim.messageHandler.source.postMessage({
-              url: aim.sessionPost.url,
-            }, aim.messageHandler.origin);
-            self.close();
-            return;
-          }
-          document.location.href = aim.sessionPost.url;
-        }
-
-
-        if (aim.sessionPost.prompt) prompt = aim().prompt(aim.sessionPost.prompt);
-        if (aim.sessionPost.msg && prompt && prompt.div) {
-          prompt.div.text('').html(aim.sessionPost.msg);
-        }
-        if (aim.sessionPost.socket_id) {
-          return aim().send({to:{sid:aim.sessionPost.socket_id}, body:aim.sessionPost});
-        }
-        // return;
-        // // //console.log(e.target.responseText);
-        // if (!e.body) return;
-        // aim.sessionPost = e.body;
-        // aim.responseProperties = Object.fromEntries(Object.entries(aim.sessionPost).map(([key,value])=>[key,{format:'hidden',value:value}]));
-        //
-        // // //console.log('aim.sessionPost', aim.sessionPost);
-        // [...document.getElementsByClassName('AccountName')].forEach((element)=>{
-        //   element.innerText = aim.sessionPost.AccountName;
-        // });
-        // if (e.body.msg) {
-        //   e.target.formElement.messageElement.innerHTML = e.body.msg;
-        //   //console.log(e.target.formElement.messageElement);
-        // } else if (e.body.socket_id) {
-        //   //console.log('socket_id', e.body);
-        //   // return;
-        //   aim.WebsocketClient.request({
-        //     to: { sid: e.body.socket_id },
-        //     body: e.body,
-        //   });
-        //   self.close();
-        // } else if (e.body.url) {
-        //   // return //console.error(e.body.url);
-        //   // if ()
-        //
-        //   document.location.href = e.body.url;
-        // } else {
-        //   //console.log(e.body);
-        //   // document.location.href = '/api/oauth' + document.location.search;
-        // }
-      }).catch(err => {
-        console.error(err, prompt, prompt.div);
-        if (err.error && prompt && prompt.div) {
-          prompt.div.text('').html(err.error.message);
-        }
-      }))
-    },},
-  });
   $.his.openItems = localStorage.getItem('openItems');
   let localAttr = localStorage.getItem('attr');
   $.localAttr = localAttr = localAttr ? JSON.parse(localAttr) : {};
@@ -11763,14 +11844,14 @@
   config = {};
   aim.searchParams = new URLSearchParams(document.location.search);
   window.addEventListener('load', async function webLoad(e) {
-    // console.warn('START')
-    if (aim.config.client_id) {
+    // if (aim.config.client_id) {
       config = await aim.api('/aliconnect/config').query({
         path: 'https://aliconnect.nl/forms/config',
         response_type: 'data',
+        hostname: document.location.hostname,
         client_id: aim.config.client_id,
       }).get().then(res => res.json());
-      // console.log(config);
+      console.log(1, config, config.client);
       // config = JSON.parse(config);
       // console.log(JSON.parse(config));
 
@@ -11780,7 +11861,11 @@
       }
       // console.log(111, config, aim.config.client_id);
       // return;
-    }
+    // }
+    Object.assign(aim.config, config);
+    aim.config.client_id = aim.config.client_id || aim.config.client.client_id;
+    console.warn('START', aim.config)
+
     var firstFolder = document.location.pathname.match(/(\w+)\//);
     if (firstFolder && libraries[firstFolder[1]]) {
       await libraries[firstFolder[1]]();
@@ -11794,11 +11879,12 @@
     await $().emit('load');
     await $().emit('ready');
     function seturl(e){
-      // console.log('seturl', e.type, document.location.hash, document.location.search);
       const docsearchParams = new URLSearchParams(document.location.search);
       const searchParams = new URLSearchParams(document.location.hash ? document.location.hash.substr(1) : document.location.search);
       // console.log('POPSTATE 1', searchParams, aim.searchParams);
+      // console.log('seturl', searchParams);
       searchParams.forEach((value,key) => docsearchParams.set(key,value));
+      searchParams.forEach((value,key) => aim[key] ? aim[key](value) : null);
       // console.log(aim.searchParams.get('l'), searchParams.get('l'));
 
       if (docsearchParams.get('l') || docsearchParams.get('id')) {
@@ -11811,9 +11897,10 @@
             docsearchParams.set('l', aim.urlToId(listUrl));
             const hostname = new URL(listUrl).hostname;
             const client = aim.clients.get(hostname);
+            console.log(client);
             if (client) {
               client.api(listUrl.href).get().then(async body => {
-                // console.log(1, listUrl.href, body);
+                console.log(1, listUrl.href, body);
                 // const items = body.value || body.Children || await body.children;
                 listShow(body);
                 // aim().list(items);
