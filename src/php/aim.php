@@ -53,58 +53,208 @@ class Aim {
   // private $oas;
   // public static $options;
   // public static $root;
-  public function method_get() {
-  }
-  public function method_post() {
-  }
-  public function method_patch() {
-  }
-  public function method_delete() {
-  }
-  public function mail_message_to($to, $chapter, $options = []) {
-    $mail_messages = $this->mail_messages;
-    if (empty($mail_messages[$to])) {
-      $mail_messages[$to] = [
-        'to'=> $to,
-        'bcc'=> 'max.van.kampen@alicon.nl',
-        'chapters'=> [],
-        // 'send'=> 1,
-      ];
+  public function __construct() {
+    // debug(getcwd());
+
+
+    $GLOBALS['aim'] = $this;
+
+    $this->origin = $_SERVER['HTTP_ORIGIN'];
+    $this->context = $this->origin.$_SERVER['REQUEST_URI'];
+    $this->base_path = dirname(parse_url($_SERVER['SCRIPT_NAME'])['path']);
+    $this->request_url = parse_url($_SERVER['REQUEST_URI']);
+    $this->request_path = $this->request_url['path'];
+    $this->hostname = explode('.',$_SERVER['HTTP_HOST'])[0];
+    $this->method = strToLower($_SERVER['REQUEST_METHOD']);
+    $this->config_path = $_SERVER['DOCUMENT_ROOT']."/../config";
+    $this->client_config_path = "$this->config_path/aliconnect.nl/forms/config";
+
+    $this->config = [];
+    $this->secret = [];
+    $this->config = array_replace_recursive($this->config, is_file($fname = "$this->config_path/config.yaml") ? yaml_parse_file($this->default_config_filename = $fname) : []);
+    $this->secret = array_replace_recursive($this->secret, is_file($fname = "$this->config_path/secret.yaml") ? yaml_parse_file($fname) : []);
+    $this->config = array_replace_recursive($this->config, is_file($fname = "$this->client_config_path/$_SERVER[HTTP_HOST].yaml") ? yaml_parse_file($fname) : []);
+    // $hostname = explode('.', $_SERVER['HTTP_HOST'])[0];
+    // $this->config = array_replace_recursive($this->config, is_file($fname = "$this->client_config_path/$hostname.yaml") ? yaml_parse_file($fname) : []);
+    // debug($this->config);
+    $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$_SERVER['HTTP_HOST'].".secret.yaml") ? yaml_parse_file($fname) : []);
+    $this->client_id = request('client_id', $_REQUEST) ?: request('client_id',$this->config['client']);
+    // debug($this->client_id, $this->config);
+    header("Access-Control-Allow-Headers: Authorization");
+    $headers = $this->headers = getallheaders();
+    $this->access = [
+      'client_id'=> $this->client_id,
+      'scope'=> 'guest.read',
+    ];
+    $this->access_token = request('access_token', $_GET);
+    if ($authorization = request('Authorization', $headers)) {
+      $this->access_token = explode(' ', $authorization);
+      $this->access_token = request(1, $this->access_token, true);
+      // debug($this->access_token);
     }
-    $mail_messages[$to]['chapters'][] = $chapter;
-    $mail_messages[$to] = array_merge_recursive($mail_messages[$to], $options);
-    $this->mail_messages = $mail_messages;
-    return $this;
+    if ($this->access_token) {
+      $jwt = new jwt();
+      $jwt->decode($this->access_token);
+      $payload = request('payload', $jwt);
+      $this->client_id = $payload['client_id'];
+      $this->get_client_config();
+      // $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$this->client_id.".secret.yaml") ? yaml_parse_file($fname) : []);
+      $jwt->validate(request('client_secret', $this->config['client']));
+      if (!$jwt->valid) http_response(401);
+    } else {
+      $this->get_client_config();
+    }
+    // debug(12, $this->client_id, $this->config_filename, $this->config);
+    // $fname = str_replace('.config.','.oas.',$fname);
+    // if (!empty($this->config['client_secret'])) {
+    //   $this->config['client_secret'] = null;
+    //   yaml_emit_file($fname, $this->config);
+    //   yaml_emit_file($fname, $this->oas  = $this->oas($this->config));
+    // } else if (!is_file($fname)) {
+    //   yaml_emit_file($fname, $this->oas  = $this->oas($this->config));
+    // } else {
+    //   $this->oas = yaml_parse_file($fname);
+    // }
+    $this->oas  = $this->oas($this->config);
+    // debug($this->config);
+    // $this->oas = $this->oas($this->config);
+
+    // debug($this->oas);
+    // debug(1);
+
+
+    // debug($this->config);
+
+    // debug(3, $this->client_id, $this->config);
+
+    // debug(1);
   }
-  public function shutdown() {
-    if ($mail_messages = request('mail_messages', $this)) {
-      foreach ($mail_messages as $to => $mail) {
-        $this->mail($mail);
+  public function api(){
+    // aiminfo();
+    $method = $this->method;
+    $paths = [
+      "/$this->hostname/$this->hostname.github.io$this->request_path",
+      "/$this->hostname$this->request_path",
+      $this->request_path,
+    ];
+    foreach ($paths as $path) {
+      foreach([".md", "home.md", "index.md", "readme.md"] as $filename) {
+        if (is_file($fname = $_SERVER['DOCUMENT_ROOT'].$path.$filename)) {
+          readfile($_SERVER['DOCUMENT_ROOT'].'/index.html');
+          $data = base64_encode(json_encode(["md"=>file_get_contents($fname)]));
+          echo "<data md='$data'></data>";
+          die();
+        }
       }
     }
-  }
-  public function mail ($param = []) {
-    if (!isset($param['send'])) {
-      // debug($param);
-      $mailer = new Mailer;
-      $mailer->send($param);
-      return $mailer;
-    } else if ($param['send'] === 1) {
-      unset($param['send']);
-      self::sql_query(
-        "INSERT INTO mail.dt (data) VALUES (%s);",
-        json_encode($param)
-      );
-    } else if ($param['send'] === 0) {
+    $scopes = explode(' ', $this->access['scope']);
+    // debug($this->request_path,$this->base_path);
+    // $api_path = preg_replace('/^\/api/', '', $this->request_path);
+    if ($oas = $this->oas) {
+      if ($paths = $oas['paths']) {
+        // debug($paths);
+        $path_to_search = preg_replace('/\(.*?\)/', '()', $this->request_path);
+        $path_to_search = str_replace($this->base_path, '', $path_to_search);
+        // die($path_to_search);
+        $path_to_search = strtolower($path_to_search);
+        // debug($paths);
+        foreach ($paths as $path_name => $path) {
+          // echo strtolower(preg_replace('/\(.*?\)/', '()', $path_name));
+          if (strtolower(preg_replace('/\(.*?\)/', '()', $path_name)) === $path_to_search) {
+            if (!$path_method = request($method, $path)) {
+              http_response(400, 'Method not found');
+            }
+
+            // $path = (array)$path;
+            // http_response(200, isset($path[$request_method]));
+            // $path_method = request($method, $path);
+            // http_response(400);
+            // $path_method_security = request('security', $path_method);
+
+            // http_response(200, 'JA');
+            $operationId = request('operationId', $path_method) ?: str_replace("/","\\",$path_name);
+
+            http_response(200, (new $operationId)->$method());
+            // debug($operationId, class_exists($path_name));
+            // // : $path_method['operationId'];
+            //
+            //
+            //
+            // // $this->debug($operationId, class_exists($operationId), function_exists($operationId));
+            //
+            // foreach ($path_method_security as $security) {
+            //   $aliconnect_auth = request('aliconnect_auth', $security);
+            //   // $this->debug($aliconnect_auth, $this->scopes);
+            //   // check_argument(array_intersect($aliconnect_auth, $scopes), 406, 'Not correct scope');
+            //
+            //   debug();
+            //
+            //   // $this->debug("$operationId\\$request_method", function_exists("$operationId\\$request_method"));
+            //
+            //   // debug($operationId);
+            //   if (function_exists($operationId)) {
+            //     $res = $operationId($_REQUEST);
+            //   }
+            //   else if (function_exists("$operationId\\$request_method")) {
+            //     $operationId = "$operationId\\$request_method";
+            //     $res = $operationId($_REQUEST);
+            //   }
+            //   else if (method_exists($operationId, $request_method)) {
+            //     $res = (new $operationId())->$request_method($_REQUEST);
+            //   }
+            //   else {
+            //     $path_matcher = $path_name;
+            //     $path_matcher = preg_replace([
+            //       '/\//',
+            //       '/\(/',
+            //       '/\)/',
+            //       '/\{.*?\}/'
+            //     ], [
+            //       '\/',
+            //       '\(',
+            //       '\)',
+            //       '(.*?)'
+            //     ], $path_matcher);
+            //
+            //     preg_match("/$path_matcher/", $this->pathname, $match);
+            //     array_shift($match);
+            //     $parameters = [];
+            //     if (isset($path_method['parameters'])) {
+            //       foreach ($path_method['parameters'] as $i => $parameter) {
+            //         $name = $parameter['name'];
+            //         if ($parameter['in'] === 'query') {
+            //           if (isset($_GET[$name])) {
+            //             $parameters[$name] = $_GET[$name];
+            //           } else if (!empty($parameter['required'])) {
+            //             self::http_response(400, "parameter $name required");
+            //           }
+            //         } else if ($parameter['in'] === 'path') {
+            //           $parameters[$name] = $match[$i];
+            //         }
+            //       }
+            //     }
+            //     $res = eval_operation($operationId, $parameters);
+            //   }
+            //   // debug(1, $res);
+            //   self::http_response(200, $res);
+            // }
+            // self::http_response(403, 'No aliconnect_auth scope');
+          }
+        }
+      }
+      // debug($path_to_search, $this->oas);
+
     }
   }
-  public function secret($client_id) {
-    $root = explode('\\vendor\\',__DIR__)[0];
-    $secret = yaml_parse_file($root.'/config/secret.yaml');
-    if (is_file($fname = $root."/config/$client_id.secret.json")) {
-      $secret = array_replace_recursive($secret,json_parse_file($fname));
-    }
-    return $secret;
+  public function attr($id, $name, $value = null, $options = []) {
+    $options = array_replace([
+      'item_id'=> $id,
+      'name'=> $name,
+      'value'=> $value,
+      // "host_id"=> $this->access_token['client_id'],
+      // "user_Id"=> $this->access_token['sub'],
+    ], $options);
+    $this->sql_exec("item.attr", $options);
   }
   public function access() {
     header("Access-Control-Allow-Headers: Authorization");
@@ -129,6 +279,36 @@ class Aim {
     // if ($jwt->expired) $this->http_response(401);
     return $payload;
   }
+  public function account($options){
+    return new Account($options);
+  }
+  public function context(){
+    return ($_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://').$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
+  }
+  public function init() {
+    $this->mail_messages = [];
+    $this->root = explode('\\vendor\\',__DIR__)[0];
+    $this->secret = $this->secret ?: yaml_parse_file($_SERVER['DOCUMENT_ROOT']."/../config/secret.yaml");
+    if (is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/$this->client_id.secret.json")) {
+      $this->secret = array_replace_recursive($this->secret,json_parse_file($fname));
+    }
+
+    $this->request_url = parse_url($_SERVER['REQUEST_URI']);
+    $this->pathname = $this->request_url['path'];
+
+    $access = $this->access();
+    $this->client_id = request('client_id', $access) ?: request('client_id', $_GET) ?: 'c9b05c80-4d2b-46c1-abfb-0464854dbd9a';
+
+    $this->account_id = request('account_id', $access);
+    $this->scope = request('scope', $access, true);
+    $this->scopes = explode(' ', $this->scope);
+
+    $this->config = $this->init_config($this->client_id);
+    $this->api = $this->init_api($this->config, $this->scopes);
+    // $this->http_response(200, $this->api);
+    // aim()->http_response(200, $this->api['paths']);
+    $this->handle_api_call($this->pathname, $this->scopes);
+  }
   public function init_config($client_id = null) {
     $httphost = request('HTTP_HOST', $_SERVER);
     $this->config = yaml_parse_file($this->root."/config/basic.yaml");
@@ -143,6 +323,228 @@ class Aim {
     }
     // debug($this->config);
     return $this->config;
+  }
+  public function get_client_config() {
+    if (is_file($this->config_filename = $fname = "$this->client_config_path/$this->client_id.yaml")) {
+      $this->config = array_replace_recursive($this->config, yaml_parse_file($fname));
+      if ($name = request('name', $this->config['client'])) {
+        if (is_file($fname = "$this->client_config_path/$name.yaml")) {
+          $this->config = array_replace_recursive($this->config,yaml_parse_file($fname));
+        }
+      }
+    }
+  }
+  public function get_scopes() {
+    $client_id = request('client_id', $this);
+    if (isset($_REQUEST['account_id'])) {
+      $account_id = request('account_id', $this);
+      return $this->get_granted_scopes($client_id, $account_id);
+    }
+    return [];
+  }
+  public function get_granted_scopes($client_id, $account_id) {
+    // debug($client_id, $account_id);
+    $res = $this->sql_query('SELECT value FROM attribute.dv WHERE nameId=2174 AND itemId=item.getId(%s) AND hostId=item.getId(%s)', [
+      $account_id,
+      $client_id
+    ]);
+    $scopes = [];
+    while ($row = sqlsrv_fetch_object($res)) {
+      $scopes = array_merge($scopes, explode(" ",$row->value));
+    }
+    return array_values(array_unique($scopes));
+  }
+  public function handle_api_call($pathname,$scopes) {
+    // $access_token = $this->init_auth();
+    // $this->init_config($access_token['client_id']);
+    // $scopes = explode(' ',$access_token['scope']);
+    // $scopes = ['admin.write'];
+    $script_url = parse_url($_SERVER['SCRIPT_NAME']);
+    $base_path = dirname($script_url['path']);
+
+
+    // $this->init_api($scopes);
+    // $this->secret = yaml_parse_file($this->root."/config/secret.yaml");
+    $this->context = ($_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://').$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
+
+    $path_to_search = preg_replace('/\(.*?\)/', '()', $this->pathname);
+    $path_to_search = str_replace($base_path, '', $path_to_search);
+    $request_method = strToLower(request('REQUEST_METHOD', $_SERVER));
+    // self::http_response(200, str_replace("/","\/","^$base_path"));
+    // $path_to_search = preg_replace("/^".str_replace("/","\/",$base_path)."/", '', $path_to_search);
+
+
+    // debug($path_to_search, array_keys($this->api['paths']));
+    if (isset($this->api['paths'])) {
+      foreach ($this->api['paths'] as $path_name => $path) {
+        if (preg_replace('/\(.*?\)/', '()', $path_name) === $path_to_search) {
+          // $path = (array)$path;
+          // http_response(200, isset($path[$request_method]));
+          $path_method = request($request_method, $path);
+          // http_response(400);
+          $path_method_security = request('security', $path_method);
+
+          // http_response(200, 'JA');
+
+          $operationId = empty($path_method['operationId'])
+          ? str_replace("/","\\",$this->pathname)
+          : $path_method['operationId'];
+
+          // $this->debug($operationId, class_exists($operationId), function_exists($operationId));
+
+          foreach ($path_method_security as $security) {
+            $aliconnect_auth = request('aliconnect_auth', $security);
+            // $this->debug($aliconnect_auth, $this->scopes);
+            check_argument(array_intersect($aliconnect_auth, $scopes), 406, 'Not correct scope');
+
+
+
+            // $this->debug("$operationId\\$request_method", function_exists("$operationId\\$request_method"));
+
+            // debug($operationId);
+            if (function_exists($operationId)) {
+              $res = $operationId($_REQUEST);
+            }
+            else if (function_exists("$operationId\\$request_method")) {
+              $operationId = "$operationId\\$request_method";
+              $res = $operationId($_REQUEST);
+            }
+            else if (method_exists($operationId, $request_method)) {
+              $res = (new $operationId())->$request_method($_REQUEST);
+            }
+            else {
+              $path_matcher = $path_name;
+              $path_matcher = preg_replace([
+                '/\//',
+                '/\(/',
+                '/\)/',
+                '/\{.*?\}/'
+              ], [
+                '\/',
+                '\(',
+                '\)',
+                '(.*?)'
+              ], $path_matcher);
+
+              preg_match("/$path_matcher/", $this->pathname, $match);
+              array_shift($match);
+              $parameters = [];
+              if (isset($path_method['parameters'])) {
+                foreach ($path_method['parameters'] as $i => $parameter) {
+                  $name = $parameter['name'];
+                  if ($parameter['in'] === 'query') {
+                    if (isset($_GET[$name])) {
+                      $parameters[$name] = $_GET[$name];
+                    } else if (!empty($parameter['required'])) {
+                      self::http_response(400, "parameter $name required");
+                    }
+                  } else if ($parameter['in'] === 'path') {
+                    $parameters[$name] = $match[$i];
+                  }
+                }
+              }
+              $res = eval_operation($operationId, $parameters);
+            }
+            // debug(1, $res);
+            self::http_response(200, $res);
+          }
+          self::http_response(403, 'No aliconnect_auth scope');
+        }
+      }
+    }
+
+    self::http_response(403, 'Path not available');
+    // debug(1);
+    //
+    // $url = parse_url(__PATH__);
+    // $path = explode('/', $url['path']);
+    // // $this->context = ($_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://').$_SERVER['SERVER_NAME'].pathinfo($_SERVER['URL'], PATHINFO_DIRNAME);
+    //
+    //
+    //
+    //
+    //
+    // foreach ($path as $folder) {
+    //   if ($folder && preg_match('/(\w+\/|)(\w+)(\((\d+)\)|)/', $folder, $match)) {
+    //     $schema_name = $this->schema_name = $match[2];
+    //     if (isset($this->config['components']['schemas'][$schema_name]['properties'])) {
+    //       $properties = array_keys($this->config['components']['schemas'][$schema_name]['properties']);
+    //       foreach ($_GET as $key => $value) {
+    //         $_GET[preg_replace('/^\$/','',$key)] = $value;
+    //       }
+    //       if (isset($_GET['select']) && $_GET['select'] !== '*') {
+    //         $properties = array_values(array_intersect($properties, explode(',',$_GET['select'])));
+    //       }
+    //       $this->properties_select = implode("','", $this->properties = $properties);
+    //
+    //       debug(8989, $this->scopes);
+    //
+    //       header('OData-Version: 4.0');
+    //       header('Content-Type: application/json');
+    //       if ($match[3]) {
+    //         $id = $match[4];
+    //         $items = $this->sql_query_items("--hostId = @hostId AND classID = @classId AND
+    //         id = $id");
+    //         if ($items) {
+    //           echo json_encode(array_merge([
+    //             '@context'=>$this->context,
+    //           ], (array)$items[0]));
+    //         }
+    //         die();
+    //       } else {
+    //         $items = $this->sql_query_items("--hostId = @hostId AND
+    //         classID = @classId");
+    //         die(json_encode([
+    //           '@context'=>$this->context,
+    //           '@ms'=>round(microtime(true)*1000-__startTime),
+    //           'values'=>$items,
+    //         ]));
+    //       }
+    //     }
+    //   }
+    // }
+    // error(403, 'NOT FOUND');
+    // // die('a');
+    // // debug(['values'=>$values]);
+  }
+
+  public function method_get() {
+  }
+  public function method_post() {
+  }
+  public function method_patch() {
+  }
+  public function method_delete() {
+  }
+  public function mail ($param = []) {
+    if (!isset($param['send'])) {
+      // debug($param);
+      $mailer = new Mailer;
+      $mailer->send($param);
+      return $mailer;
+    } else if ($param['send'] === 1) {
+      unset($param['send']);
+      self::sql_query(
+        "INSERT INTO mail.dt (data) VALUES (%s);",
+        json_encode($param)
+      );
+    } else if ($param['send'] === 0) {
+    }
+  }
+  public function mail_message_to($to, $chapter, $options = []) {
+    $mail_messages = request('mail_messages', $this);
+    if (empty($mail_messages[$to])) {
+      $mail_messages[$to] = [
+        'to'=> $to,
+        'bcc'=> 'max.van.kampen@alicon.nl',
+        'chapters'=> [],
+        // 'send'=> 1,
+      ];
+    }
+    $mail_messages[$to]['chapters'][] = $chapter;
+    $mail_messages[$to] = array_merge_recursive($mail_messages[$to], $options);
+    $this->mail_messages = $mail_messages;
+    return $this;
   }
   public function oas_($config, $scopes = ['guest.read']) {
     $item_classname = '\Aliconnect\Server\Data\Item';
@@ -555,268 +957,6 @@ class Aim {
     }
     return $this->oas = $api;
   }
-
-
-  public function get_client_config() {
-    if (is_file($this->config_filename = $fname = "$this->client_config_path/$this->client_id.yaml")) {
-      $this->config = array_replace_recursive($this->config, yaml_parse_file($fname));
-      if ($name = request('name', $this->config['client'])) {
-        if (is_file($fname = "$this->client_config_path/$name.yaml")) {
-          $this->config = array_replace_recursive($this->config,yaml_parse_file($fname));
-        }
-      }
-    }
-  }
-
-  public function __construct() {
-    // debug(getcwd());
-
-
-    $GLOBALS['aim'] = $this;
-
-    $this->origin = $_SERVER['HTTP_ORIGIN'];
-    $this->context = $this->origin.$_SERVER['REQUEST_URI'];
-    $this->base_path = dirname(parse_url($_SERVER['SCRIPT_NAME'])['path']);
-    $this->request_url = parse_url($_SERVER['REQUEST_URI']);
-    $this->request_path = $this->request_url['path'];
-    $this->hostname = explode('.',$_SERVER['HTTP_HOST'])[0];
-    $this->method = strToLower($_SERVER['REQUEST_METHOD']);
-    $this->config_path = $_SERVER['DOCUMENT_ROOT']."/../config";
-    $this->client_config_path = "$this->config_path/aliconnect.nl/forms/config";
-
-    $this->config = [];
-    $this->secret = [];
-    $this->config = array_replace_recursive($this->config, is_file($fname = "$this->config_path/config.yaml") ? yaml_parse_file($this->default_config_filename = $fname) : []);
-    $this->secret = array_replace_recursive($this->secret, is_file($fname = "$this->config_path/secret.yaml") ? yaml_parse_file($fname) : []);
-    $this->config = array_replace_recursive($this->config, is_file($fname = "$this->client_config_path/$_SERVER[HTTP_HOST].yaml") ? yaml_parse_file($fname) : []);
-    // $hostname = explode('.', $_SERVER['HTTP_HOST'])[0];
-    // $this->config = array_replace_recursive($this->config, is_file($fname = "$this->client_config_path/$hostname.yaml") ? yaml_parse_file($fname) : []);
-    // debug($this->config);
-    $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$_SERVER['HTTP_HOST'].".secret.yaml") ? yaml_parse_file($fname) : []);
-    $this->client_id = request('client_id', $_REQUEST) ?: request('client_id',$this->config['client']);
-    // debug($this->client_id, $this->config);
-    header("Access-Control-Allow-Headers: Authorization");
-    $headers = $this->headers = getallheaders();
-    $this->access = [
-      'client_id'=> $this->client_id,
-      'scope'=> 'guest.read',
-    ];
-    $this->access_token = request('access_token', $_GET);
-    if ($authorization = request('Authorization', $headers)) {
-      $this->access_token = explode(' ', $authorization);
-      $this->access_token = request(1, $this->access_token, true);
-      // debug($this->access_token);
-    }
-    if ($this->access_token) {
-      $jwt = new jwt();
-      $jwt->decode($this->access_token);
-      $payload = request('payload', $jwt);
-      $this->client_id = $payload['client_id'];
-      $this->get_client_config();
-      // $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$this->client_id.".secret.yaml") ? yaml_parse_file($fname) : []);
-      $jwt->validate(request('client_secret', $this->config['client']));
-      if (!$jwt->valid) http_response(401);
-    } else {
-      $this->get_client_config();
-    }
-    // debug(12, $this->client_id, $this->config_filename, $this->config);
-    // $fname = str_replace('.config.','.oas.',$fname);
-    // if (!empty($this->config['client_secret'])) {
-    //   $this->config['client_secret'] = null;
-    //   yaml_emit_file($fname, $this->config);
-    //   yaml_emit_file($fname, $this->oas  = $this->oas($this->config));
-    // } else if (!is_file($fname)) {
-    //   yaml_emit_file($fname, $this->oas  = $this->oas($this->config));
-    // } else {
-    //   $this->oas = yaml_parse_file($fname);
-    // }
-    $this->oas  = $this->oas($this->config);
-    // debug($this->config);
-    // $this->oas = $this->oas($this->config);
-
-    // debug($this->oas);
-    // debug(1);
-
-
-    // debug($this->config);
-
-    // debug(3, $this->client_id, $this->config);
-
-    // debug(1);
-  }
-  public function api(){
-    // aiminfo();
-    $method = $this->method;
-    $paths = [
-      "/$this->hostname/$this->hostname.github.io$this->request_path",
-      "/$this->hostname$this->request_path",
-      $this->request_path,
-    ];
-    foreach ($paths as $path) {
-      foreach([".md", "home.md", "index.md", "readme.md"] as $filename) {
-        if (is_file($fname = $_SERVER['DOCUMENT_ROOT'].$path.$filename)) {
-          readfile($_SERVER['DOCUMENT_ROOT'].'/index.html');
-          $data = base64_encode(json_encode(["md"=>file_get_contents($fname)]));
-          echo "<data md='$data'></data>";
-          die();
-        }
-      }
-    }
-    $scopes = explode(' ', $this->access['scope']);
-    // debug($this->request_path,$this->base_path);
-    // $api_path = preg_replace('/^\/api/', '', $this->request_path);
-    if ($oas = $this->oas) {
-      if ($paths = $oas['paths']) {
-        // debug($paths);
-        $path_to_search = preg_replace('/\(.*?\)/', '()', $this->request_path);
-        $path_to_search = str_replace($this->base_path, '', $path_to_search);
-        // die($path_to_search);
-        $path_to_search = strtolower($path_to_search);
-        // debug($paths);
-        foreach ($paths as $path_name => $path) {
-          // echo strtolower(preg_replace('/\(.*?\)/', '()', $path_name));
-          if (strtolower(preg_replace('/\(.*?\)/', '()', $path_name)) === $path_to_search) {
-            if (!$path_method = request($method, $path)) {
-              http_response(400, 'Method not found');
-            }
-
-            // $path = (array)$path;
-            // http_response(200, isset($path[$request_method]));
-            // $path_method = request($method, $path);
-            // http_response(400);
-            // $path_method_security = request('security', $path_method);
-
-            // http_response(200, 'JA');
-            $operationId = request('operationId', $path_method) ?: str_replace("/","\\",$path_name);
-
-            http_response(200, (new $operationId)->$method());
-            // debug($operationId, class_exists($path_name));
-            // // : $path_method['operationId'];
-            //
-            //
-            //
-            // // $this->debug($operationId, class_exists($operationId), function_exists($operationId));
-            //
-            // foreach ($path_method_security as $security) {
-            //   $aliconnect_auth = request('aliconnect_auth', $security);
-            //   // $this->debug($aliconnect_auth, $this->scopes);
-            //   // check_argument(array_intersect($aliconnect_auth, $scopes), 406, 'Not correct scope');
-            //
-            //   debug();
-            //
-            //   // $this->debug("$operationId\\$request_method", function_exists("$operationId\\$request_method"));
-            //
-            //   // debug($operationId);
-            //   if (function_exists($operationId)) {
-            //     $res = $operationId($_REQUEST);
-            //   }
-            //   else if (function_exists("$operationId\\$request_method")) {
-            //     $operationId = "$operationId\\$request_method";
-            //     $res = $operationId($_REQUEST);
-            //   }
-            //   else if (method_exists($operationId, $request_method)) {
-            //     $res = (new $operationId())->$request_method($_REQUEST);
-            //   }
-            //   else {
-            //     $path_matcher = $path_name;
-            //     $path_matcher = preg_replace([
-            //       '/\//',
-            //       '/\(/',
-            //       '/\)/',
-            //       '/\{.*?\}/'
-            //     ], [
-            //       '\/',
-            //       '\(',
-            //       '\)',
-            //       '(.*?)'
-            //     ], $path_matcher);
-            //
-            //     preg_match("/$path_matcher/", $this->pathname, $match);
-            //     array_shift($match);
-            //     $parameters = [];
-            //     if (isset($path_method['parameters'])) {
-            //       foreach ($path_method['parameters'] as $i => $parameter) {
-            //         $name = $parameter['name'];
-            //         if ($parameter['in'] === 'query') {
-            //           if (isset($_GET[$name])) {
-            //             $parameters[$name] = $_GET[$name];
-            //           } else if (!empty($parameter['required'])) {
-            //             self::http_response(400, "parameter $name required");
-            //           }
-            //         } else if ($parameter['in'] === 'path') {
-            //           $parameters[$name] = $match[$i];
-            //         }
-            //       }
-            //     }
-            //     $res = eval_operation($operationId, $parameters);
-            //   }
-            //   // debug(1, $res);
-            //   self::http_response(200, $res);
-            // }
-            // self::http_response(403, 'No aliconnect_auth scope');
-          }
-        }
-      }
-      // debug($path_to_search, $this->oas);
-
-    }
-  }
-  // public function __construct1() {
-  //
-  //   // $GLOBALS['aim'] = $this;
-  //   if (!$this->initialized) {
-  //     $this->initialized = true;
-  //     // http_response_code(500);
-  //     $this->mail_messages = [];
-  //
-  //     $this->root = explode('\\vendor\\',__DIR__)[0];
-  //     $this->secret = $this->secret ?: yaml_parse_file($this->root.'/config/secret.yaml');
-  //     if (is_file($fname = $this->root."/config/$this->client_id.secret.json")) {
-  //       $this->secret = array_replace_recursive($this->secret,json_parse_file($fname));
-  //     }
-  //
-  //     $this->request_url = parse_url($_SERVER['REQUEST_URI']);
-  //     $this->pathname = $this->request_url['path'];
-  //     $this->scopes = ['guest.read'];
-  //     $this->client_id = request('client_id', $_REQUEST);
-  //     $this->account_id = request('account_id', $_REQUEST);
-  //
-  //
-  //     $this->client_id = 'c52aba40-11fe-4400-90b9-cee5bda2c5aa';
-  //     $this->scopes = ['guest.read','admin.write'];
-  //     $this->sub = 265090;
-  //
-  //
-  //     $this->init_config($this->client_id);
-  //     $this->init_api($this->scopes);
-  //     $this->handle_api_call($this->pathname, $this->scopes);
-  //   }
-  //   $this->init();
-  // }
-  public function init() {
-    $this->mail_messages = [];
-    $this->root = explode('\\vendor\\',__DIR__)[0];
-    $this->secret = $this->secret ?: yaml_parse_file($_SERVER['DOCUMENT_ROOT']."/../config/secret.yaml");
-    if (is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/$this->client_id.secret.json")) {
-      $this->secret = array_replace_recursive($this->secret,json_parse_file($fname));
-    }
-
-    $this->request_url = parse_url($_SERVER['REQUEST_URI']);
-    $this->pathname = $this->request_url['path'];
-
-    $access = $this->access();
-    $this->client_id = request('client_id', $access) ?: request('client_id', $_GET) ?: 'c9b05c80-4d2b-46c1-abfb-0464854dbd9a';
-
-    $this->account_id = request('account_id', $access);
-    $this->scope = request('scope', $access, true);
-    $this->scopes = explode(' ', $this->scope);
-
-    $this->config = $this->init_config($this->client_id);
-    $this->api = $this->init_api($this->config, $this->scopes);
-    // $this->http_response(200, $this->api);
-    // aim()->http_response(200, $this->api['paths']);
-    $this->handle_api_call($this->pathname, $this->scopes);
-  }
   private function openapi_properties($properties) {
     if ($properties) {
       $openapi_property_properties = [
@@ -853,227 +993,20 @@ class Aim {
     }
     return $properties ?: (object)[];
   }
-  // public function __get($property) {
-  //   return isset($this->$property)
-  //   if (isset(self::$args[$property])) {
-  //     return self::$args[$property];
-  //   }
-  //   if (isset($_REQUEST[$property])) {
-  //     return $_REQUEST[$property];
-  //   }
-  //   if (isset($_COOKIE[$property])) {
-  //     return $_COOKIE[$property];
-  //   }
-  //   if (isset($_SERVER[$property])) {
-  //     return $_SERVER[$property];
-  //   }
-  // }
-  // public function __set($property, $value) {
-  //   self::$args[$property] = $value;
-  // }
-  // public static function get($selector) {
-  //   return self::$args[$selector];
-  // }
-  // public static function has($selector) {
-  //   return isset(self::$args[$selector]);
-  // }
-  // public static function set($selector, $context) {
-  //   return self::$args[$selector] = $context;
-  // }
-  public function get_scopes() {
-    $client_id = request('client_id', $this);
-    if (isset($_REQUEST['account_id'])) {
-      $account_id = request('account_id', $this);
-      return $this->get_granted_scopes($client_id, $account_id);
+  public function secret($client_id) {
+    $root = explode('\\vendor\\',__DIR__)[0];
+    $secret = yaml_parse_file($root.'/config/secret.yaml');
+    if (is_file($fname = $root."/config/$client_id.secret.json")) {
+      $secret = array_replace_recursive($secret,json_parse_file($fname));
     }
-    return [];
+    return $secret;
   }
-  public function get_granted_scopes($client_id, $account_id) {
-    // debug($client_id, $account_id);
-    $res = $this->sql_query('SELECT value FROM attribute.dv WHERE nameId=2174 AND itemId=item.getId(%s) AND hostId=item.getId(%s)', [
-      $account_id,
-      $client_id
-    ]);
-    $scopes = [];
-    while ($row = sqlsrv_fetch_object($res)) {
-      $scopes = array_merge($scopes, explode(" ",$row->value));
-    }
-    return array_values(array_unique($scopes));
-  }
-  // public function init_path(){
-  //   $this->base_path = str_replace([$_SERVER['DOCUMENT_ROOT'],'\\'],['','/'],getcwd());
-  //   $this->set(parse_url($_SERVER['REQUEST_URI']));
-  //   $this->pathname = str_replace($this->base_path,'',$this->path);
-  //   $this->set(pathinfo($this->pathname));
-  //   $this->dirname = str_replace('\\','/',$this->dirname);
-  //   $this->root = realpath($_SERVER['DOCUMENT_ROOT']."/..");
-  //   // $this->debug($this->root);
-  // }
-  public function context(){
-    return ($_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://').$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
-  }
-  public function handle_api_call($pathname,$scopes) {
-    // $access_token = $this->init_auth();
-    // $this->init_config($access_token['client_id']);
-    // $scopes = explode(' ',$access_token['scope']);
-    // $scopes = ['admin.write'];
-    $script_url = parse_url($_SERVER['SCRIPT_NAME']);
-    $base_path = dirname($script_url['path']);
-
-
-    // $this->init_api($scopes);
-    // $this->secret = yaml_parse_file($this->root."/config/secret.yaml");
-    $this->context = ($_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://').$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
-
-    $path_to_search = preg_replace('/\(.*?\)/', '()', $this->pathname);
-    $path_to_search = str_replace($base_path, '', $path_to_search);
-    $request_method = strToLower(request('REQUEST_METHOD', $_SERVER));
-    // self::http_response(200, str_replace("/","\/","^$base_path"));
-    // $path_to_search = preg_replace("/^".str_replace("/","\/",$base_path)."/", '', $path_to_search);
-
-
-    // debug($path_to_search, array_keys($this->api['paths']));
-    if (isset($this->api['paths'])) {
-      foreach ($this->api['paths'] as $path_name => $path) {
-        if (preg_replace('/\(.*?\)/', '()', $path_name) === $path_to_search) {
-          // $path = (array)$path;
-          // http_response(200, isset($path[$request_method]));
-          $path_method = request($request_method, $path);
-          // http_response(400);
-          $path_method_security = request('security', $path_method);
-
-          // http_response(200, 'JA');
-
-          $operationId = empty($path_method['operationId'])
-          ? str_replace("/","\\",$this->pathname)
-          : $path_method['operationId'];
-
-          // $this->debug($operationId, class_exists($operationId), function_exists($operationId));
-
-          foreach ($path_method_security as $security) {
-            $aliconnect_auth = request('aliconnect_auth', $security);
-            // $this->debug($aliconnect_auth, $this->scopes);
-            check_argument(array_intersect($aliconnect_auth, $scopes), 406, 'Not correct scope');
-
-
-
-            // $this->debug("$operationId\\$request_method", function_exists("$operationId\\$request_method"));
-
-            // debug($operationId);
-            if (function_exists($operationId)) {
-              $res = $operationId($_REQUEST);
-            }
-            else if (function_exists("$operationId\\$request_method")) {
-              $operationId = "$operationId\\$request_method";
-              $res = $operationId($_REQUEST);
-            }
-            else if (method_exists($operationId, $request_method)) {
-              $res = (new $operationId())->$request_method($_REQUEST);
-            }
-            else {
-              $path_matcher = $path_name;
-              $path_matcher = preg_replace([
-                '/\//',
-                '/\(/',
-                '/\)/',
-                '/\{.*?\}/'
-              ], [
-                '\/',
-                '\(',
-                '\)',
-                '(.*?)'
-              ], $path_matcher);
-
-              preg_match("/$path_matcher/", $this->pathname, $match);
-              array_shift($match);
-              $parameters = [];
-              if (isset($path_method['parameters'])) {
-                foreach ($path_method['parameters'] as $i => $parameter) {
-                  $name = $parameter['name'];
-                  if ($parameter['in'] === 'query') {
-                    if (isset($_GET[$name])) {
-                      $parameters[$name] = $_GET[$name];
-                    } else if (!empty($parameter['required'])) {
-                      self::http_response(400, "parameter $name required");
-                    }
-                  } else if ($parameter['in'] === 'path') {
-                    $parameters[$name] = $match[$i];
-                  }
-                }
-              }
-              $res = eval_operation($operationId, $parameters);
-            }
-            // debug(1, $res);
-            self::http_response(200, $res);
-          }
-          self::http_response(403, 'No aliconnect_auth scope');
-        }
+  public function shutdown() {
+    if ($mail_messages = request('mail_messages', $this)) {
+      foreach ($mail_messages as $to => $mail) {
+        $this->mail($mail);
       }
     }
-
-    self::http_response(403, 'Path not available');
-    // debug(1);
-    //
-    // $url = parse_url(__PATH__);
-    // $path = explode('/', $url['path']);
-    // // $this->context = ($_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://').$_SERVER['SERVER_NAME'].pathinfo($_SERVER['URL'], PATHINFO_DIRNAME);
-    //
-    //
-    //
-    //
-    //
-    // foreach ($path as $folder) {
-    //   if ($folder && preg_match('/(\w+\/|)(\w+)(\((\d+)\)|)/', $folder, $match)) {
-    //     $schema_name = $this->schema_name = $match[2];
-    //     if (isset($this->config['components']['schemas'][$schema_name]['properties'])) {
-    //       $properties = array_keys($this->config['components']['schemas'][$schema_name]['properties']);
-    //       foreach ($_GET as $key => $value) {
-    //         $_GET[preg_replace('/^\$/','',$key)] = $value;
-    //       }
-    //       if (isset($_GET['select']) && $_GET['select'] !== '*') {
-    //         $properties = array_values(array_intersect($properties, explode(',',$_GET['select'])));
-    //       }
-    //       $this->properties_select = implode("','", $this->properties = $properties);
-    //
-    //       debug(8989, $this->scopes);
-    //
-    //       header('OData-Version: 4.0');
-    //       header('Content-Type: application/json');
-    //       if ($match[3]) {
-    //         $id = $match[4];
-    //         $items = $this->sql_query_items("--hostId = @hostId AND classID = @classId AND
-    //         id = $id");
-    //         if ($items) {
-    //           echo json_encode(array_merge([
-    //             '@context'=>$this->context,
-    //           ], (array)$items[0]));
-    //         }
-    //         die();
-    //       } else {
-    //         $items = $this->sql_query_items("--hostId = @hostId AND
-    //         classID = @classId");
-    //         die(json_encode([
-    //           '@context'=>$this->context,
-    //           '@ms'=>round(microtime(true)*1000-__startTime),
-    //           'values'=>$items,
-    //         ]));
-    //       }
-    //     }
-    //   }
-    // }
-    // error(403, 'NOT FOUND');
-    // // die('a');
-    // // debug(['values'=>$values]);
-  }
-  public function attr($id, $name, $value = null, $options = []) {
-    $options = array_replace([
-      'item_id'=> $id,
-      'name'=> $name,
-      'value'=> $value,
-      // "host_id"=> $this->access_token['client_id'],
-      // "user_Id"=> $this->access_token['sub'],
-    ], $options);
-    $this->sql_exec("item.attr", $options);
   }
   public function sms ($recipients='', $body='', $originator='') {
     // DEBUG: Voor testen email gebruiken
@@ -1101,6 +1034,56 @@ class Aim {
 		$response = $messagebird->messages->create($message);
 		return $response;
 	}
+  public static function sql_value_string($val){
+    if (is_null($val)) return 'NULL';
+    // if (is_numeric($val)) return $val;
+    return "'".str_replace("'","''",$val)."'";
+  }
+  public static function sql_exec_string($name, $args){
+    $args = (array)$args;
+    $sql = "EXEC $name ".implode(",",array_map(function($key,$value){
+      return "@$key=".self::sql_value_string($value);
+    },array_keys($args),array_values($args)));
+    // echo $sql;
+    return $sql;
+  }
+  public function sql_exec($name, $args) {
+    return $this->sql_query($this->sql_exec_string($name, $args));
+  }
+  public function sql_query($query, $args = []) {
+    if ($args) {
+      if (!is_array($args)) {
+        $args = func_get_args();
+        $query = array_shift($args);
+      }
+      $args = array_map('get_sql_value', $args);
+      $query = vsprintf($query, $args);
+    }
+    try {
+      if (!isset($this->conn)) {
+        $dbs = $this->secret['config']['dbs'];
+        $this->conn = sqlsrv_connect($dbs['server'],[
+          'Database' => $dbs['database'],
+          'UID' => $dbs['user'],
+          'PWD' => $dbs['password'],
+          'ReturnDatesAsStrings' => true,
+          'CharacterSet' => 'UTF-8'
+        ]);
+      }
+      // echo $query.PHP_EOL; // DEBUG:
+      $query = (isset($nopre) ? '' : 'SET TEXTSIZE -1;SET NOCOUNT ON;').$query;
+
+      // error_log("AIM.sms send $recipients $body $originator");
+      error_log($query."\n", 3, "\aliconnect\webroot\log\sql.log");
+
+      // http_response(501, $query); // DEBUG:
+      return sqlsrv_query ( $this->conn, $query , null, ['Scrollable' => 'buffered']);
+    }
+    catch (Exception $e) {
+      echo 'Caught exception: ',  $e->getMessage(), "\n";
+      die();
+    }
+  }
   public function translate($message = null, $args = null) {
     $args = func_get_args();
     $message = array_shift($args);
@@ -1148,56 +1131,75 @@ class Aim {
     return $message;
   	// return $args ? vsprintf($message, $args) : $message;
   }
-  public static function sql_value_string($val){
-    if (is_null($val)) return 'NULL';
-    // if (is_numeric($val)) return $val;
-    return "'".str_replace("'","''",$val)."'";
-  }
-  public static function sql_exec_string($name, $args){
-    $args = (array)$args;
-    $sql = "EXEC $name ".implode(",",array_map(function($key,$value){
-      return "@$key=".self::sql_value_string($value);
-    },array_keys($args),array_values($args)));
-    // echo $sql;
-    return $sql;
-  }
-  public function sql_exec($name, $args) {
-    return $this->sql_query($this->sql_exec_string($name, $args));
-  }
-  public function account($options){
-    return new Account($options);
-  }
+  // public function __construct1() {
+  //
+  //   // $GLOBALS['aim'] = $this;
+  //   if (!$this->initialized) {
+  //     $this->initialized = true;
+  //     // http_response_code(500);
+  //     $this->mail_messages = [];
+  //
+  //     $this->root = explode('\\vendor\\',__DIR__)[0];
+  //     $this->secret = $this->secret ?: yaml_parse_file($this->root.'/config/secret.yaml');
+  //     if (is_file($fname = $this->root."/config/$this->client_id.secret.json")) {
+  //       $this->secret = array_replace_recursive($this->secret,json_parse_file($fname));
+  //     }
+  //
+  //     $this->request_url = parse_url($_SERVER['REQUEST_URI']);
+  //     $this->pathname = $this->request_url['path'];
+  //     $this->scopes = ['guest.read'];
+  //     $this->client_id = request('client_id', $_REQUEST);
+  //     $this->account_id = request('account_id', $_REQUEST);
+  //
+  //
+  //     $this->client_id = 'c52aba40-11fe-4400-90b9-cee5bda2c5aa';
+  //     $this->scopes = ['guest.read','admin.write'];
+  //     $this->sub = 265090;
+  //
+  //
+  //     $this->init_config($this->client_id);
+  //     $this->init_api($this->scopes);
+  //     $this->handle_api_call($this->pathname, $this->scopes);
+  //   }
+  //   $this->init();
+  // }
+  // public function __get($property) {
+  //   return isset($this->$property)
+  //   if (isset(self::$args[$property])) {
+  //     return self::$args[$property];
+  //   }
+  //   if (isset($_REQUEST[$property])) {
+  //     return $_REQUEST[$property];
+  //   }
+  //   if (isset($_COOKIE[$property])) {
+  //     return $_COOKIE[$property];
+  //   }
+  //   if (isset($_SERVER[$property])) {
+  //     return $_SERVER[$property];
+  //   }
+  // }
+  // public function __set($property, $value) {
+  //   self::$args[$property] = $value;
+  // }
+  // public static function get($selector) {
+  //   return self::$args[$selector];
+  // }
+  // public static function has($selector) {
+  //   return isset(self::$args[$selector]);
+  // }
+  // public static function set($selector, $context) {
+  //   return self::$args[$selector] = $context;
+  // }
+  // public function init_path(){
+  //   $this->base_path = str_replace([$_SERVER['DOCUMENT_ROOT'],'\\'],['','/'],getcwd());
+  //   $this->set(parse_url($_SERVER['REQUEST_URI']));
+  //   $this->pathname = str_replace($this->base_path,'',$this->path);
+  //   $this->set(pathinfo($this->pathname));
+  //   $this->dirname = str_replace('\\','/',$this->dirname);
+  //   $this->root = realpath($_SERVER['DOCUMENT_ROOT']."/..");
+  //   // $this->debug($this->root);
+  // }
 
-  public function sql_query($query, $args = []) {
-    if ($args) {
-      if (!is_array($args)) {
-        $args = func_get_args();
-        $query = array_shift($args);
-      }
-      $args = array_map('get_sql_value', $args);
-      $query = vsprintf($query, $args);
-    }
-    try {
-      if (!isset($this->conn)) {
-        $dbs = $this->secret['config']['dbs'];
-        $this->conn = sqlsrv_connect($dbs['server'],[
-          'Database' => $dbs['database'],
-          'UID' => $dbs['user'],
-          'PWD' => $dbs['password'],
-          'ReturnDatesAsStrings' => true,
-          'CharacterSet' => 'UTF-8'
-        ]);
-      }
-      // echo $query.PHP_EOL; // DEBUG:
-      $query = (isset($nopre) ? '' : 'SET TEXTSIZE -1;SET NOCOUNT ON;').$query;
-      // http_response(501, $query); // DEBUG:
-      return sqlsrv_query ( $this->conn, $query , null, ['Scrollable' => 'buffered']);
-    }
-    catch (Exception $e) {
-      echo 'Caught exception: ',  $e->getMessage(), "\n";
-      die();
-    }
-  }
 }
 
 function aim() { return $GLOBALS['aim']; }

@@ -2867,6 +2867,82 @@
       // }
     });
   }
+  function loginPopup (options) {
+    return aim.promise('LoginPopup', async (resolve, reject) => {
+      console.log('options', options, this.config);
+      options = {
+        // scope: 'name+email+phone_number',
+        response_type: 'code',
+        response_type: 'token',
+        client_id: this.config.auth.client_id = this.config.auth.client_id || this.config.auth.clientId,
+        // redirect_uri: this.config.auth.redirect_uri = this.config.auth.redirect_uri || this.config.auth.redirectUri || this.config.redirect_uri || this.config.redirectUri,
+        // state: state,
+        prompt: 'consent',
+        scope: options.scope || options.scopes.join(' ') || '',
+        // socket_id: aim.WebsocketClient.socket_id,
+      };
+      const url = aim().url(AUTHORIZATION_URL).query(options).toString();
+      const height = 600;
+      const width = 400;
+      let rect = document.body.getBoundingClientRect();
+      let top = self.screenTop + (self.innerHeight - height) / 2;
+      let left = self.screenLeft + (self.innerWidth - width) / 2;
+      const popup = self.open(url, 'loginPopup', `top=${top},left=${left},width=${width},height=${height},toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes`);
+      const interval = setInterval(() => popup.postMessage({msg: 'loginPopup'}, 'https://login.aliconnect.nl'), 1000);
+      self.removeEventListener('message', loginPopup.messageListener);
+      loginPopup.messageListener = self.addEventListener('message', (event) => {
+        console.log(event.data);
+        if (event.data.msg === 'loginPopupAck') {
+          clearInterval(interval);
+        }
+        if (event.data.url) {
+          const url = new URL(event.data.url, document.location);
+          if (url.searchParams.has('token')) {
+            const access_token = url.searchParams.get('token');
+            console.log(this);
+            this.store('access_token', access_token);
+            const access = JSON.parse(atob((access_token).split('.')[1]));
+            aim().url('https://login.aliconnect.nl/token')
+            .query('client_id', this.config.auth.client_id)
+            .query('response_type', 'id_token')
+            .headers('Authorization', 'Bearer ' + access_token)
+            .get().then(e => {
+              this.store('id_token', e.body.id_token);
+              this.account = new Account(e.body.id_token);
+              popup.postMessage({msg: 'close'}, 'https://login.aliconnect.nl');
+              resolve({account: this.account});
+            })
+          } else if (url.searchParams.has('code')) {
+            this.getAccessToken({
+              code: url.searchParams.get('code')
+            }).then(e => {
+              //console.log(3333);
+              resolve({
+                accessToken: this.storage.getItem('aim.access_token'),
+                account: this.account,
+                accountState: "72fc40a8-a2d7-4998-afd0-3a74589015ac",
+                expiresOn: null,
+                fromCache: false,
+                idToken: this.account.idToken,
+                // idToken: {
+                //   rawIdToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Im5Pbz…SUqywC4QuHklGPvrKVQiMc9jpdJfz2DMIfT6O--gxZD2ApJZg",
+                //   claims: {…},
+                //   issuer: "https://login.microsoftonline.com/09786696-f227-4199-91a0-45783f6c660b/v2.0",
+                //   objectId: "f40f8462-da7f-457c-bd8c-d9e5639d2975", subject: "w6TIVTl01uuD9UHe12Fk6YLiilqhf1arasLwPwGnxV0", …}
+                // idTokenClaims: {aud: "4573bb93-5012-4c50-9cc5-562ac8f9a626", iss: "https://login.microsoftonline.com/09786696-f227-4199-91a0-45783f6c660b/v2.0", iat: 1625751439, nbf: 1625751439, exp: 1625755339, …}
+                scopes: [],
+                tenantId: "09786696-f227-4199-91a0-45783f6c660b",
+                tokenType: "id_token",
+                uniqueId: "f40f8462-da7f-457c-bd8c-d9e5639d2975",
+              });
+            });
+          }
+        }
+      }, false);
+      // win.onbeforeunload = e => resolve();
+    });
+    // this.authProvider.login(this.config.auth);
+  }
   function setConfig(config){
     aim.extend(this.config, config);
     if (this.config.components && this.config.components.schemas) {
@@ -3002,81 +3078,6 @@
     return this.loginPopup(aimRequest);
   }
 
-  function loginPopup (options) {
-    return aim.promise('LoginPopup', async (resolve, reject) => {
-      console.log('options', options, this.config);
-      options = {
-        // scope: 'name+email+phone_number',
-        response_type: 'code',
-        response_type: 'token',
-        client_id: this.config.auth.client_id = this.config.auth.client_id || this.config.auth.clientId,
-        // redirect_uri: this.config.auth.redirect_uri = this.config.auth.redirect_uri || this.config.auth.redirectUri || this.config.redirect_uri || this.config.redirectUri,
-        // state: state,
-        prompt: 'consent',
-        scope: options.scope || options.scopes.join(' ') || '',
-        // socket_id: aim.WebsocketClient.socket_id,
-      };
-      const url = aim().url(AUTHORIZATION_URL).query(options).toString();
-      const height = 600;
-      const width = 400;
-      let rect = document.body.getBoundingClientRect();
-      let top = self.screenTop + (self.innerHeight - height) / 2;
-      let left = self.screenLeft + (self.innerWidth - width) / 2;
-      const popup = self.open(url, 'loginPopup', `top=${top},left=${left},width=${width},height=${height},toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes`);
-      const interval = setInterval(() => popup.postMessage({msg: 'loginPopup'}, 'https://login.aliconnect.nl'), 1000);
-      self.removeEventListener('message', loginPopup.messageListener);
-      loginPopup.messageListener = self.addEventListener('message', (event) => {
-        if (event.data.msg === 'loginPopupAck') {
-          clearInterval(interval);
-        }
-        if (event.data.url) {
-          const url = new URL(event.data.url, document.location);
-          if (url.searchParams.has('token')) {
-            const access_token = url.searchParams.get('token');
-            console.log(this);
-            this.store('access_token', access_token);
-            const access = JSON.parse(atob((access_token).split('.')[1]));
-            aim().url('https://login.aliconnect.nl/token')
-            .query('client_id', this.config.auth.client_id)
-            .query('response_type', 'id_token')
-            .headers('Authorization', 'Bearer ' + access_token)
-            .get().then(e => {
-              this.store('id_token', e.body.id_token);
-              this.account = new Account(e.body.id_token);
-              popup.postMessage({msg: 'close'}, 'https://login.aliconnect.nl');
-              resolve({account: this.account});
-            })
-          } else if (url.searchParams.has('code')) {
-            this.getAccessToken({
-              code: url.searchParams.get('code')
-            }).then(e => {
-              //console.log(3333);
-              resolve({
-                accessToken: this.storage.getItem('aim.access_token'),
-                account: this.account,
-                accountState: "72fc40a8-a2d7-4998-afd0-3a74589015ac",
-                expiresOn: null,
-                fromCache: false,
-                idToken: this.account.idToken,
-                // idToken: {
-                //   rawIdToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Im5Pbz…SUqywC4QuHklGPvrKVQiMc9jpdJfz2DMIfT6O--gxZD2ApJZg",
-                //   claims: {…},
-                //   issuer: "https://login.microsoftonline.com/09786696-f227-4199-91a0-45783f6c660b/v2.0",
-                //   objectId: "f40f8462-da7f-457c-bd8c-d9e5639d2975", subject: "w6TIVTl01uuD9UHe12Fk6YLiilqhf1arasLwPwGnxV0", …}
-                // idTokenClaims: {aud: "4573bb93-5012-4c50-9cc5-562ac8f9a626", iss: "https://login.microsoftonline.com/09786696-f227-4199-91a0-45783f6c660b/v2.0", iat: 1625751439, nbf: 1625751439, exp: 1625755339, …}
-                scopes: [],
-                tenantId: "09786696-f227-4199-91a0-45783f6c660b",
-                tokenType: "id_token",
-                uniqueId: "f40f8462-da7f-457c-bd8c-d9e5639d2975",
-              });
-            });
-          }
-        }
-      }, false);
-      // win.onbeforeunload = e => resolve();
-    });
-    // this.authProvider.login(this.config.auth);
-  }
   function UserAgentApplication(config = {}) {
     // if (!config.client_id) throw 'Missing client_id';
     // //console.log('WEB CONSTRUCTOR');
