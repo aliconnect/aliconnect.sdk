@@ -509,12 +509,12 @@ main>.tv>div {
 .lv>div>div.table {
   flex-direction: column;
 }
-table {
+.lv table {
   white-space: nowrap;
   border-collapse: collapse;
   /* width: max-content; */
 }
-table>thead{
+.lv table>thead{
   position: sticky;
   top: 0;
   z-index: 1;
@@ -522,51 +522,51 @@ table>thead{
   background: var(--bg);
   cursor: pointer;
 }
-th{
+.lv th{
   text-align: left;
   white-space: nowrap;
   vertical-align: top;
   border:none;
   padding:0;
 }
-th>div{
+.lv th>div{
   padding: .5rem .5rem;
   border-bottom: solid 1px gray;
 }
-th>div.sort:after{
+.lv th>div.sort:after{
   content: 'V';
   display: inline-block;
   float: right;
   transform: rotate(180deg);
 }
-th>div.asc:after{
+.lv th>div.asc:after{
   transform: rotate(0deg);
 }
-td{
+.lv td{
   white-space: nowrap;
   padding: .5rem .5rem;
   vertical-align: top;
 }
-tbody>tr:nth-of-type(odd) {
+.lv tbody>tr:nth-of-type(odd) {
   background-color: var(--bg-trans);
 }
-tbody tr{
+.lv tbody tr{
   border-top: var(--border);
   border-bottom: var(--border);
   border-spacing: 5px
 }
-table input, table button {
+.lv table input, .lv table button {
   border: var(--border);
   background: inherit;
   color: inherit;
   font: inherit;
   padding: 0 4px;
 }
-table input {
+.lv table input {
   max-width:80px;
 }
 
-tbody, td, tfoot, th, thead, tr {
+.lv tbody, .lv td, .lv tfoot, .lv th, .lv thead, .lv tr {
   border-color: inherit;
   border-style: solid;
   border-width: 0;
@@ -1234,6 +1234,24 @@ footer progress::after {
   color: inherit;
   padding: 0 5px;
 }
+
+footer>article ul {
+  list-style: none;
+  padding: 0;
+}
+footer>article>ul {
+  display: flex;
+  flex: 1 1 auto;
+}
+footer>article>ul>li {
+  flex: 1 1 auto;
+}
+footer>article>ul>li>ul>li>ul {
+  /* padding: 10px 0; */
+  font-size: 0.95em;
+}
+
+
 
 aside.filter {
   flex: 0 0 200px;

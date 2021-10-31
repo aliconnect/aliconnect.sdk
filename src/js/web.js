@@ -1,12 +1,5 @@
 (function (){
 
-  function toLink(s){
-    return s.replace(/\(|\)|\[|\]|,|\.|\=|\{|\}/g,'').replace(/ /g,'-').toLowerCase();
-  }
-  function nameToTitle(key){
-    return isNaN(key) ? key.replace(/^\w/, s => s.toUpperCase()).replace(/-|_/g, ' ').replace(/([a-z])([A-Z])/g, (s,p1,p2) => `${p1} ${p2.toLowerCase()}`) : String(Number(key)+1)
-  }
-
   eol = '\n';
   const tagnames = ['a', 'abbr', 'address', 'area', 'article', 'aside', 'audio', 'b', 'base', 'bdi', 'bdo', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 'cite', 'code', 'col', 'colgroup', 'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html', 'i', 'iframe', 'frameset', 'frame', 'img', 'input', 'ins', 'kbd', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 'menu', 'meta', 'meter', 'nav', 'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'p', 'param', 'picture', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'section', 'select', 'slot', 'small', 'source', 'span', 'strong', 'style', 'sub', 'summary', 'sup', 'table', 'tbody', 'td', 'template', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track', 'u', 'ul', 'var', 'video', 'wbr', ];
 
@@ -832,24 +825,22 @@
         )),
         $('footer').append($('article')),
       ).on('scroll', e => sessionStorage.setItem('scrollY', window.scrollY));
-      fetch('/page/menu.md').then(res => res.text().then(body => {
-        $("button.menu").html(aim.markdown().render(body));
-      }));
-      fetch('/page/top.md').then(res => res.text().then(body => {
-        $(".pagemenu").html(aim.markdown().render(body));
-      }));
-      fetch('/page/footer.md').then(res => res.text().then(body => {
-        $("body>footer>article").text('').html(aim.markdown().render(body));
-      }));
-
-
+      [
+        ['/page/menu.md', 'button.menu'],
+        ['/page/top.md', '.pagemenu'],
+        ['/page/footer.md', 'body>footer>article'],
+      ].forEach(([filename, selector]) => {
+        aim.fetch(filename).then(res => res.status !== 200 ? null : res.text().then(body => {
+          $(selector).html(aim.markdown().render(body));
+        }));
+      })
       const searchParams = new URLSearchParams(document.location.search);
       // return;
       if (searchParams.get('search')) {
         search(searchParams.get('search'));
       } else if (!searchParams.get('id')) {
         const data = document.querySelector('data') ? JSON.parse(atob(document.querySelector('data').getAttribute('md'))) : {
-        md: await fetch(document.location.pathname === '/' ? '/page/Home.md' : '/page'+document.location.pathname+'.md').then(res => res.text()),
+        md: await fetch(document.location.pathname === '/' ? '/page/Home.md' : document.location.pathname+'.md').then(res => res.text()),
       };
         let body = data.md;
         $('.pv').text('')
@@ -1507,29 +1498,35 @@
     },
   };
   aim.orderChangeCell = function(col, row, isInput){
-        if (isInput) {
-          return $('input').text(col.title || col.name).on('change', e=>{
-            aim.api('/abis/data').input({
-              request_type: 'order',
-              id: row.id,
-              name: col.name,
-              value: e.target.value,
-            }).post().then(async res => {
-              console.log(await res.text());
-            });
-          })
-        }
-        return $('button').text(col.title || col.name).on('click', e=>{
-          aim.api('/abis/data').input({
-            request_type: 'order',
-            id: row.id,
-            name: col.name,
-            value: new Date.toISOString(),
-          }).post().then(async res => {
-            console.log(await res.text());
-          });
-        })
-      };
+    if (isInput) {
+      return $('input').text(col.title || col.name).on('change', e=>{
+        aim.api('/abis/data').input({
+          request_type: 'order',
+          id: row.id,
+          name: col.name,
+          value: e.target.value,
+        }).post().then(async res => {
+          console.log(await res.text());
+        });
+      })
+    }
+    return $('button').text(col.title || col.name).on('click', e=>{
+      aim.api('/abis/data').input({
+        request_type: 'order',
+        id: row.id,
+        name: col.name,
+        value: new Date.toISOString(),
+      }).post().then(async res => {
+        console.log(await res.text());
+      });
+    })
+  };
+  function toLink(s){
+    return s.replace(/\(|\)|\[|\]|,|\.|\=|\{|\}/g,'').replace(/ /g,'-').toLowerCase();
+  }
+  function nameToTitle(key){
+    return isNaN(key) ? key.replace(/^\w/, s => s.toUpperCase()).replace(/-|_/g, ' ').replace(/([a-z])([A-Z])/g, (s,p1,p2) => `${p1} ${p2.toLowerCase()}`) : String(Number(key)+1)
+  }
   function listShow(body) {
     // console.log(222, body.rows);
     $('.lv').text('');

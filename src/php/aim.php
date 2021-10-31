@@ -42,8 +42,10 @@ use Aliconnect\Jwt;
 //   return $_SERVER['HTTP_CLIENT_IP'] = $ip?$ip:$default;
 // }
 
-function str_contains($haystack, $needle) {
-  return strpos($haystack, $needle) !== false;
+if (!function_exists('str_contains')) {
+  function str_contains($haystack, $needle) {
+    return strpos($haystack, $needle) !== false;
+  }
 }
 
 
@@ -129,6 +131,12 @@ class Aim {
 
     // debug(1);
   }
+  private function index_with_md($filename) {
+    readfile($_SERVER['DOCUMENT_ROOT'].'/index.html');
+    $data = base64_encode(json_encode(["md"=>file_get_contents($filename)]));
+    echo "<data md='$data'></data>";
+    die();
+  }
   public function api(){
     // aiminfo();
     $method = $this->method;
@@ -137,13 +145,13 @@ class Aim {
       "/$this->hostname$this->request_path",
       $this->request_path,
     ];
+    if (isset($_GET['md'])) {
+      $this->index_with_md($_GET['md']);
+    }
     foreach ($paths as $path) {
       foreach([".md", "home.md", "index.md", "readme.md"] as $filename) {
         if (is_file($fname = $_SERVER['DOCUMENT_ROOT'].$path.$filename)) {
-          readfile($_SERVER['DOCUMENT_ROOT'].'/index.html');
-          $data = base64_encode(json_encode(["md"=>file_get_contents($fname)]));
-          echo "<data md='$data'></data>";
-          die();
+          $this->index_with_md($fname);
         }
       }
     }

@@ -84,145 +84,145 @@
   dstart = 0;
   maxdate = 0;
   const meshitems = [];
-	const zoneMappings = {
-	  "Dateline Standard Time": "Etc/GMT+12",
-	  "UTC-11": "Etc/GMT+11",
-	  "Aleutian Standard Time": "America/Adak",
-	  "Hawaiian Standard Time": "Pacific/Honolulu",
-	  "Marquesas Standard Time": "Pacific/Marquesas",
-	  "Alaskan Standard Time": "America/Anchorage",
-	  "UTC-09": "Etc/GMT+9",
-	  "Pacific Standard Time (Mexico)": "America/Tijuana",
-	  "UTC-08": "Etc/GMT+8",
-	  "Pacific Standard Time": "America/Los_Angeles",
-	  "US Mountain Standard Time": "America/Phoenix",
-	  "Mountain Standard Time (Mexico)": "America/Chihuahua",
-	  "Mountain Standard Time": "America/Denver",
-	  "Central America Standard Time": "America/Guatemala",
-	  "Central Standard Time": "America/Chicago",
-	  "Easter Island Standard Time": "Pacific/Easter",
-	  "Central Standard Time (Mexico)": "America/Mexico_City",
-	  "Canada Central Standard Time": "America/Regina",
-	  "SA Pacific Standard Time": "America/Bogota",
-	  "Eastern Standard Time (Mexico)": "America/Cancun",
-	  "Eastern Standard Time": "America/New_York",
-	  "Haiti Standard Time": "America/Port-au-Prince",
-	  "Cuba Standard Time": "America/Havana",
-	  "US Eastern Standard Time": "America/Indianapolis",
-	  "Turks And Caicos Standard Time": "America/Grand_Turk",
-	  "Paraguay Standard Time": "America/Asuncion",
-	  "Atlantic Standard Time": "America/Halifax",
-	  "Venezuela Standard Time": "America/Caracas",
-	  "Central Brazilian Standard Time": "America/Cuiaba",
-	  "SA Western Standard Time": "America/La_Paz",
-	  "Pacific SA Standard Time": "America/Santiago",
-	  "Newfoundland Standard Time": "America/St_Johns",
-	  "Tocantins Standard Time": "America/Araguaina",
-	  "E. South America Standard Time": "America/Sao_Paulo",
-	  "SA Eastern Standard Time": "America/Cayenne",
-	  "Argentina Standard Time": "America/Buenos_Aires",
-	  "Greenland Standard Time": "America/Godthab",
-	  "Montevideo Standard Time": "America/Montevideo",
-	  "Magallanes Standard Time": "America/Punta_Arenas",
-	  "Saint Pierre Standard Time": "America/Miquelon",
-	  "Bahia Standard Time": "America/Bahia",
-	  "UTC-02": "Etc/GMT+2",
-	  "Azores Standard Time": "Atlantic/Azores",
-	  "Cape Verde Standard Time": "Atlantic/Cape_Verde",
-	  "UTC": "Etc/GMT",
-	  "GMT Standard Time": "Europe/London",
-	  "Greenwich Standard Time": "Atlantic/Reykjavik",
-	  "Sao Tome Standard Time": "Africa/Sao_Tome",
-	  "Morocco Standard Time": "Africa/Casablanca",
-	  "W. Europe Standard Time": "Europe/Berlin",
-	  "Central Europe Standard Time": "Europe/Budapest",
-	  "Romance Standard Time": "Europe/Paris",
-	  "Central European Standard Time": "Europe/Warsaw",
-	  "W. Central Africa Standard Time": "Africa/Lagos",
-	  "Jordan Standard Time": "Asia/Amman",
-	  "GTB Standard Time": "Europe/Bucharest",
-	  "Middle East Standard Time": "Asia/Beirut",
-	  "Egypt Standard Time": "Africa/Cairo",
-	  "E. Europe Standard Time": "Europe/Chisinau",
-	  "Syria Standard Time": "Asia/Damascus",
-	  "West Bank Standard Time": "Asia/Hebron",
-	  "South Africa Standard Time": "Africa/Johannesburg",
-	  "FLE Standard Time": "Europe/Kiev",
-	  "Israel Standard Time": "Asia/Jerusalem",
-	  "Kaliningrad Standard Time": "Europe/Kaliningrad",
-	  "Sudan Standard Time": "Africa/Khartoum",
-	  "Libya Standard Time": "Africa/Tripoli",
-	  "Namibia Standard Time": "Africa/Windhoek",
-	  "Arabic Standard Time": "Asia/Baghdad",
-	  "Turkey Standard Time": "Europe/Istanbul",
-	  "Arab Standard Time": "Asia/Riyadh",
-	  "Belarus Standard Time": "Europe/Minsk",
-	  "Russian Standard Time": "Europe/Moscow",
-	  "E. Africa Standard Time": "Africa/Nairobi",
-	  "Iran Standard Time": "Asia/Tehran",
-	  "Arabian Standard Time": "Asia/Dubai",
-	  "Astrakhan Standard Time": "Europe/Astrakhan",
-	  "Azerbaijan Standard Time": "Asia/Baku",
-	  "Russia Time Zone 3": "Europe/Samara",
-	  "Mauritius Standard Time": "Indian/Mauritius",
-	  "Saratov Standard Time": "Europe/Saratov",
-	  "Georgian Standard Time": "Asia/Tbilisi",
-	  "Volgograd Standard Time": "Europe/Volgograd",
-	  "Caucasus Standard Time": "Asia/Yerevan",
-	  "Afghanistan Standard Time": "Asia/Kabul",
-	  "West Asia Standard Time": "Asia/Tashkent",
-	  "Ekaterinburg Standard Time": "Asia/Yekaterinburg",
-	  "Pakistan Standard Time": "Asia/Karachi",
-	  "Qyzylorda Standard Time": "Asia/Qyzylorda",
-	  "India Standard Time": "Asia/Calcutta",
-	  "Sri Lanka Standard Time": "Asia/Colombo",
-	  "Nepal Standard Time": "Asia/Katmandu",
-	  "Central Asia Standard Time": "Asia/Almaty",
-	  "Bangladesh Standard Time": "Asia/Dhaka",
-	  "Omsk Standard Time": "Asia/Omsk",
-	  "Myanmar Standard Time": "Asia/Rangoon",
-	  "SE Asia Standard Time": "Asia/Bangkok",
-	  "Altai Standard Time": "Asia/Barnaul",
-	  "W. Mongolia Standard Time": "Asia/Hovd",
-	  "North Asia Standard Time": "Asia/Krasnoyarsk",
-	  "N. Central Asia Standard Time": "Asia/Novosibirsk",
-	  "Tomsk Standard Time": "Asia/Tomsk",
-	  "China Standard Time": "Asia/Shanghai",
-	  "North Asia East Standard Time": "Asia/Irkutsk",
-	  "Singapore Standard Time": "Asia/Singapore",
-	  "W. Australia Standard Time": "Australia/Perth",
-	  "Taipei Standard Time": "Asia/Taipei",
-	  "Ulaanbaatar Standard Time": "Asia/Ulaanbaatar",
-	  "Aus Central W. Standard Time": "Australia/Eucla",
-	  "Transbaikal Standard Time": "Asia/Chita",
-	  "Tokyo Standard Time": "Asia/Tokyo",
-	  "North Korea Standard Time": "Asia/Pyongyang",
-	  "Korea Standard Time": "Asia/Seoul",
-	  "Yakutsk Standard Time": "Asia/Yakutsk",
-	  "Cen. Australia Standard Time": "Australia/Adelaide",
-	  "AUS Central Standard Time": "Australia/Darwin",
-	  "E. Australia Standard Time": "Australia/Brisbane",
-	  "AUS Eastern Standard Time": "Australia/Sydney",
-	  "West Pacific Standard Time": "Pacific/Port_Moresby",
-	  "Tasmania Standard Time": "Australia/Hobart",
-	  "Vladivostok Standard Time": "Asia/Vladivostok",
-	  "Lord Howe Standard Time": "Australia/Lord_Howe",
-	  "Bougainville Standard Time": "Pacific/Bougainville",
-	  "Russia Time Zone 10": "Asia/Srednekolymsk",
-	  "Magadan Standard Time": "Asia/Magadan",
-	  "Norfolk Standard Time": "Pacific/Norfolk",
-	  "Sakhalin Standard Time": "Asia/Sakhalin",
-	  "Central Pacific Standard Time": "Pacific/Guadalcanal",
-	  "Russia Time Zone 11": "Asia/Kamchatka",
-	  "New Zealand Standard Time": "Pacific/Auckland",
-	  "UTC+12": "Etc/GMT-12",
-	  "Fiji Standard Time": "Pacific/Fiji",
-	  "Chatham Islands Standard Time": "Pacific/Chatham",
-	  "UTC+13": "Etc/GMT-13",
-	  "Tonga Standard Time": "Pacific/Tongatapu",
-	  "Samoa Standard Time": "Pacific/Apia",
-	  "Line Islands Standard Time": "Pacific/Kiritimati"
-	};
+  const zoneMappings = {
+    "Dateline Standard Time": "Etc/GMT+12",
+    "UTC-11": "Etc/GMT+11",
+    "Aleutian Standard Time": "America/Adak",
+    "Hawaiian Standard Time": "Pacific/Honolulu",
+    "Marquesas Standard Time": "Pacific/Marquesas",
+    "Alaskan Standard Time": "America/Anchorage",
+    "UTC-09": "Etc/GMT+9",
+    "Pacific Standard Time (Mexico)": "America/Tijuana",
+    "UTC-08": "Etc/GMT+8",
+    "Pacific Standard Time": "America/Los_Angeles",
+    "US Mountain Standard Time": "America/Phoenix",
+    "Mountain Standard Time (Mexico)": "America/Chihuahua",
+    "Mountain Standard Time": "America/Denver",
+    "Central America Standard Time": "America/Guatemala",
+    "Central Standard Time": "America/Chicago",
+    "Easter Island Standard Time": "Pacific/Easter",
+    "Central Standard Time (Mexico)": "America/Mexico_City",
+    "Canada Central Standard Time": "America/Regina",
+    "SA Pacific Standard Time": "America/Bogota",
+    "Eastern Standard Time (Mexico)": "America/Cancun",
+    "Eastern Standard Time": "America/New_York",
+    "Haiti Standard Time": "America/Port-au-Prince",
+    "Cuba Standard Time": "America/Havana",
+    "US Eastern Standard Time": "America/Indianapolis",
+    "Turks And Caicos Standard Time": "America/Grand_Turk",
+    "Paraguay Standard Time": "America/Asuncion",
+    "Atlantic Standard Time": "America/Halifax",
+    "Venezuela Standard Time": "America/Caracas",
+    "Central Brazilian Standard Time": "America/Cuiaba",
+    "SA Western Standard Time": "America/La_Paz",
+    "Pacific SA Standard Time": "America/Santiago",
+    "Newfoundland Standard Time": "America/St_Johns",
+    "Tocantins Standard Time": "America/Araguaina",
+    "E. South America Standard Time": "America/Sao_Paulo",
+    "SA Eastern Standard Time": "America/Cayenne",
+    "Argentina Standard Time": "America/Buenos_Aires",
+    "Greenland Standard Time": "America/Godthab",
+    "Montevideo Standard Time": "America/Montevideo",
+    "Magallanes Standard Time": "America/Punta_Arenas",
+    "Saint Pierre Standard Time": "America/Miquelon",
+    "Bahia Standard Time": "America/Bahia",
+    "UTC-02": "Etc/GMT+2",
+    "Azores Standard Time": "Atlantic/Azores",
+    "Cape Verde Standard Time": "Atlantic/Cape_Verde",
+    "UTC": "Etc/GMT",
+    "GMT Standard Time": "Europe/London",
+    "Greenwich Standard Time": "Atlantic/Reykjavik",
+    "Sao Tome Standard Time": "Africa/Sao_Tome",
+    "Morocco Standard Time": "Africa/Casablanca",
+    "W. Europe Standard Time": "Europe/Berlin",
+    "Central Europe Standard Time": "Europe/Budapest",
+    "Romance Standard Time": "Europe/Paris",
+    "Central European Standard Time": "Europe/Warsaw",
+    "W. Central Africa Standard Time": "Africa/Lagos",
+    "Jordan Standard Time": "Asia/Amman",
+    "GTB Standard Time": "Europe/Bucharest",
+    "Middle East Standard Time": "Asia/Beirut",
+    "Egypt Standard Time": "Africa/Cairo",
+    "E. Europe Standard Time": "Europe/Chisinau",
+    "Syria Standard Time": "Asia/Damascus",
+    "West Bank Standard Time": "Asia/Hebron",
+    "South Africa Standard Time": "Africa/Johannesburg",
+    "FLE Standard Time": "Europe/Kiev",
+    "Israel Standard Time": "Asia/Jerusalem",
+    "Kaliningrad Standard Time": "Europe/Kaliningrad",
+    "Sudan Standard Time": "Africa/Khartoum",
+    "Libya Standard Time": "Africa/Tripoli",
+    "Namibia Standard Time": "Africa/Windhoek",
+    "Arabic Standard Time": "Asia/Baghdad",
+    "Turkey Standard Time": "Europe/Istanbul",
+    "Arab Standard Time": "Asia/Riyadh",
+    "Belarus Standard Time": "Europe/Minsk",
+    "Russian Standard Time": "Europe/Moscow",
+    "E. Africa Standard Time": "Africa/Nairobi",
+    "Iran Standard Time": "Asia/Tehran",
+    "Arabian Standard Time": "Asia/Dubai",
+    "Astrakhan Standard Time": "Europe/Astrakhan",
+    "Azerbaijan Standard Time": "Asia/Baku",
+    "Russia Time Zone 3": "Europe/Samara",
+    "Mauritius Standard Time": "Indian/Mauritius",
+    "Saratov Standard Time": "Europe/Saratov",
+    "Georgian Standard Time": "Asia/Tbilisi",
+    "Volgograd Standard Time": "Europe/Volgograd",
+    "Caucasus Standard Time": "Asia/Yerevan",
+    "Afghanistan Standard Time": "Asia/Kabul",
+    "West Asia Standard Time": "Asia/Tashkent",
+    "Ekaterinburg Standard Time": "Asia/Yekaterinburg",
+    "Pakistan Standard Time": "Asia/Karachi",
+    "Qyzylorda Standard Time": "Asia/Qyzylorda",
+    "India Standard Time": "Asia/Calcutta",
+    "Sri Lanka Standard Time": "Asia/Colombo",
+    "Nepal Standard Time": "Asia/Katmandu",
+    "Central Asia Standard Time": "Asia/Almaty",
+    "Bangladesh Standard Time": "Asia/Dhaka",
+    "Omsk Standard Time": "Asia/Omsk",
+    "Myanmar Standard Time": "Asia/Rangoon",
+    "SE Asia Standard Time": "Asia/Bangkok",
+    "Altai Standard Time": "Asia/Barnaul",
+    "W. Mongolia Standard Time": "Asia/Hovd",
+    "North Asia Standard Time": "Asia/Krasnoyarsk",
+    "N. Central Asia Standard Time": "Asia/Novosibirsk",
+    "Tomsk Standard Time": "Asia/Tomsk",
+    "China Standard Time": "Asia/Shanghai",
+    "North Asia East Standard Time": "Asia/Irkutsk",
+    "Singapore Standard Time": "Asia/Singapore",
+    "W. Australia Standard Time": "Australia/Perth",
+    "Taipei Standard Time": "Asia/Taipei",
+    "Ulaanbaatar Standard Time": "Asia/Ulaanbaatar",
+    "Aus Central W. Standard Time": "Australia/Eucla",
+    "Transbaikal Standard Time": "Asia/Chita",
+    "Tokyo Standard Time": "Asia/Tokyo",
+    "North Korea Standard Time": "Asia/Pyongyang",
+    "Korea Standard Time": "Asia/Seoul",
+    "Yakutsk Standard Time": "Asia/Yakutsk",
+    "Cen. Australia Standard Time": "Australia/Adelaide",
+    "AUS Central Standard Time": "Australia/Darwin",
+    "E. Australia Standard Time": "Australia/Brisbane",
+    "AUS Eastern Standard Time": "Australia/Sydney",
+    "West Pacific Standard Time": "Pacific/Port_Moresby",
+    "Tasmania Standard Time": "Australia/Hobart",
+    "Vladivostok Standard Time": "Asia/Vladivostok",
+    "Lord Howe Standard Time": "Australia/Lord_Howe",
+    "Bougainville Standard Time": "Pacific/Bougainville",
+    "Russia Time Zone 10": "Asia/Srednekolymsk",
+    "Magadan Standard Time": "Asia/Magadan",
+    "Norfolk Standard Time": "Pacific/Norfolk",
+    "Sakhalin Standard Time": "Asia/Sakhalin",
+    "Central Pacific Standard Time": "Pacific/Guadalcanal",
+    "Russia Time Zone 11": "Asia/Kamchatka",
+    "New Zealand Standard Time": "Pacific/Auckland",
+    "UTC+12": "Etc/GMT-12",
+    "Fiji Standard Time": "Pacific/Fiji",
+    "Chatham Islands Standard Time": "Pacific/Chatham",
+    "UTC+13": "Etc/GMT-13",
+    "Tonga Standard Time": "Pacific/Tongatapu",
+    "Samoa Standard Time": "Pacific/Apia",
+    "Line Islands Standard Time": "Pacific/Kiritimati"
+  };
 
   const pageHtml = `<!DOCTYPE HTML><html><head><link href="${dmsUrl}/css/web_debug.css" rel="stylesheet"/><script src="${dmsUrl}/js/aim_debug.js" libraries="web"></script></head><body></body></html>`;
 
@@ -1561,7 +1561,7 @@
       .replace(/\r/g,'')
       .replace(/  \n/g, '<BR>')
       .replace(/(.*?)(```(.*?)\n(.*?)```|$)/gs, (s,md,s2,type,codeLines) => {
-        s = ('\n\n'+md)
+        s = ('\n\n' + md)
         .replace(/(^|\s)> (\[\!(\w+)\]\s|.*?)(.+?)(?=\n\n|$)/gs, (s,p1,p2,p3,p4) => `${p1}<BLOCKQUOTE${p3?` class="${p3.toLowerCase()}"`:``}>${(p4||'').replace(/(^|\s)> /gm, ' ')}</BLOCKQUOTE>`)
         .replace(/(\n[^\n]+?)(\n\s*-+\s\|\s.*?\n)(.*?)(?=\n\n|$)/gs, (s,p1,p2,p3) => `<TABLE><THEAD><TR><TH>${p1.trim().replace(/\s\|\s/g, '</TH><TH>')}</TH></TR></THEAD><TBODY><TR><TD>${p3.trim().replace(/\s\|\s/g, '</TD><TD>').replace(/\n/g,'</TD></TR>\n<TR><TD>')}</TD></TR></TBODY></TABLE>`)
         .trim()
@@ -1572,50 +1572,48 @@
             const prevLineIdent = lineIdent;
             lineIdent = (s.match(/^ +/)||[''])[0].length;
             if (lineIdent<prevLineIdent) {
-              p+=closetag(prevLineIdent);
+              p += closetag(prevLineIdent);
             }
-            if (s.trim().match(/^(\*|-|\d+\.) /)) {
+            if (s.match(/^\s*(\*|-|\d+\.) /)) {
               if (identArray[identArray.length-1] === 'P') {
-                p+=closetag(identArray.length-1);
+                p += closetag(identArray.length-1);
               }
-              p+=closetag(lineIdent+1);
-              const tag = s.trim().match(/^(\*|-) /) ? 'UL' : 'OL';
+              p += closetag(lineIdent+1);
+              const tag = s.match(/^\s*(\*|-) /) ? 'UL' : 'OL';
               if (identArray[lineIdent] !== tag) {
                 p+=closetag(lineIdent);
                 p+=opentag(tag,lineIdent);
               }
-              p+=opentag('LI',lineIdent+1);
+              p += opentag('LI',lineIdent+1);
               s = s.replace(/^\s*(\*|-|\d+\.) /, '');
             } else if (s.match(/^#/)) {
               s = s.replace(/^(#+) (.*)/, (s,p1,p2) => closetag(0) + `<A class='anchor' title="${p2}" name="${s = toLink(p2)}"></A><H${p1.length} class="${s}"><A class="anchorref" href="#${s}"></A>${p2}</H${p1.length}>`)
             } else {
               if (!lines[i-1]) {
                 if (identArray[identArray.length-1] === 'P') {
-                  p+=closetag(identArray.length-1);
+                  p += closetag(identArray.length-1);
                 }
-                p+=opentag('P',identArray.length);
+                p += opentag('P',identArray.length);
               }
             }
           }
           s = p + s.trim();
-          return s
-          .replace(/  \n/g, '<BR>')
-          .replace(/(.*?)(`(.*?)`|$)/g, (s,p1,s1,p2) => `${
-            p1
-            .replace(/\*\*(.+?)\*\*/g, '<B>$1</B>')
-            .replace(/__(.+?)__/g, '<B>$1</B>')
-            .replace(/_(.+?)_/g, '<I>$1</I>')
-            .replace(/\*(.+?)\*/g, '<I>$1</I>')
-            .replace(/\[ \]/g, '&#9744;')
-            .replace(/\[v\]/g, '&#9745;')
-            .replace(/\[x\]/g, '&#9746;')
-            .replace(/~~(.*?)~~/g, '<DEL>$1</DEL>')
-            .replace(/~(.*?)~/g, '<U>$1</U>')
-            .replace(/\!\[(.*?)\]\((.*?)\)/g, '<IMG src="$2" alt="$1">')
-            .replace(/\[(.*?)\]\((.*?)\)/g, '<A href="$2">$1</A>')
-            .replace(/\^\^(.*?)\^\^/gs, '<MARK>$1</MARK>')
-            .replace(/:::(\w+)(.*?):::/gs, '<$1$2></$1>')
-          }${p2?`<CODE>${code(p2)}</CODE>`:``}`)
+          return s.replace(/  \n/g, '<BR>')
+          .replace(/(.*?)(`(.*?)`|$)/g, (s1,p1,s2,p2) => p1
+          .replace(/\!\[(.*?)\]\((.*?)\)/g, '<IMG src="$2" alt="$1">')
+          .replace(/\[(.*?)\]\((.*?)\)/g, '<A href="$2">$1</A>')
+          .replace(/:::(\w+)(.*?):::/gs, '<$1$2></$1>')
+          .replace(/(?![^<]*>)\*\*(.+?)\*\*/g, '<B>$1</B>')
+          .replace(/(?![^<]*>)__(.+?)__/g, '<B>$1</B>')
+          .replace(/(?!<a[^>]*>)(?![^<]*>)_(.+?)_(?![^<]*<\/a>)/gi, '<I>$1</I>')
+          .replace(/(?![^<]*>)\*(.+?)\*/g, '<I>$1</I>')
+          .replace(/\[ \]/g, '&#9744;')
+          .replace(/\[v\]/g, '&#9745;')
+          .replace(/\[x\]/g, '&#9746;')
+          .replace(/~~(.*?)~~/g, '<DEL>$1</DEL>')
+          .replace(/~(.*?)~/g, '<U>$1</U>')
+          .replace(/\^\^(.*?)\^\^/gs, '<MARK>$1</MARK>')
+          + (p2 ? `<CODE>${code(p2)}</CODE>` : ''))
         })
         .join('\n') + closetag(0);
         if (codeLines) {
@@ -1623,7 +1621,7 @@
         }
         return s
       });
-      // console.log(s);
+      console.log(s);
       return s
       .replace(/<P>[\s|\n]*<\/P>/gs,'')
       .trim();
@@ -7074,12 +7072,10 @@
     },
   }
 
-  function Api(url, options = {}) {
-    this.options = options;
-    const headers = this.options.headers = this.options.headers || {};
-    headers.accept = headers.accept || 'application/json';
-    this.url = new URL('https://aliconnect.nl/api'+url);
-    // console.log(this.url);
+  function Api(url, options) {
+    // console.warn(url);
+    this.options = options || {};
+    this.url = new URL(url, document.location);
   }
   Api.prototype = {
     query(selector, context){
@@ -7105,8 +7101,10 @@
       return this;
     },
     fetch(){
-      console.log(this.url.toString(), this.options);
-      return fetch(this.url, this.options);
+      return new Promise((resolve, reject) => {
+        // console.log(111, this.url.toString(), this.options);
+        fetch(this.url, this.options).then(resolve).catch(reject);
+      })
     },
   }
 
@@ -7133,8 +7131,14 @@
     urlToId,
     idToUrl,
     extend,
+    fetch(url, options) {
+      return (new Api(url, options)).fetch();
+    },
     api(url, options){
-      return new Api(url, options);
+      options = options || {};
+      const headers = options.headers = options.headers || {};
+      headers.accept = headers.accept || 'application/json';
+      return new Api('https://aliconnect.nl/api' + url, options);
     },
     his: new His,
     log: () => {
@@ -7155,7 +7159,6 @@
         .on('load', e => resolve(self.google.maps))
       }
     }),
-
   })
   Object.defineProperties(aim, {
     InteractionRequiredAuthError: { value: function () { } },
