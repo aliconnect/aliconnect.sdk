@@ -1,0 +1,104 @@
+@page {
+  margin: 1cm 1cm 1cm 1cm;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  font-size: 10pt;
+  padding: 0;
+  padding-left: 1cm;
+  align-items: center;
+  justify-content: center;
+}
+
+table {
+  width: 18cm;
+  border-collapse: collapse;
+  font-size: 10pt;
+  margin: auto;
+  background: white;
+}
+
+.herinner {
+  background: #DF554A;
+  width: 400px;
+  padding: 10px;
+  position: fixed;
+  top: -100px;
+  right: -230px;
+  transform: rotate(40deg);
+  color: white;
+  text-align: center;
+  font-size: 38px;
+  font-weight: bold;
+  border: solid 5px #AB312B;
+}
+
+.herinner:after {
+  content: "NIET BETAALD";
+}
+
+@media not print {
+  body {
+    background: #eee;
+  }
+}
+
+@font-face {
+  font-family: barcode;
+  src: url('fonts/Code39Azalea.eot') format('embedded-opentype'), url('fonts/Code39Azalea.woff') format('woff'), url('fonts/Code39Azalea.ttf') format('truetype'), url('fonts/Code39Azalea.svg#Code39Azalea') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+* {
+  position: relative;
+}
+
+label {
+  font-size: 8pt;
+  display: block;
+  position: center;
+}
+
+tr.hdr td {
+  font-size: 8pt;
+  padding: 5px;
+  background-color: #eee;
+  font-weight: bold;
+}
+
+td {
+  vertical-align: top;
+  padding: 2px 5px;
+}
+
+table.art td {
+  border: solid 1px #eee;
+}
+
+table.art1 {
+  border: solid 1px #eee;
+}
+
+table.art1 td {
+  border-bottom: solid 1px #eee;
+}
+
+h1 {
+  margin-top: 0;
+}
+
+h2 {
+  font-weight: 400;
+}
+
+.np {
+  page-break-before: always;
+}
+
+div.header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+}

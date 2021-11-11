@@ -24,7 +24,7 @@ sqlsrv_configure('ClientBufferMaxKBSize', 180240);
 
 use Aliconnect\Account;
 use Aliconnect\Mailer;
-use Aliconnect\Jwt;
+use Aim\Jwt;
 // use Aliconnect\Item;
 
 
@@ -66,6 +66,8 @@ class Aim {
     $this->base_path = dirname(parse_url($_SERVER['SCRIPT_NAME'])['path']);
     $this->request_url = parse_url($_SERVER['REQUEST_URI']);
     $this->request_path = $this->request_url['path'];
+    $this->script_path = dirname($_SERVER['SCRIPT_NAME']);
+    $this->path = str_replace($this->script_path, "", $this->request_path);
     $this->hostname = explode('.',$_SERVER['HTTP_HOST'])[0];
     $this->method = strToLower($_SERVER['REQUEST_METHOD']);
     $this->config_path = $_SERVER['DOCUMENT_ROOT']."/../config";
@@ -80,7 +82,9 @@ class Aim {
     // $this->config = array_replace_recursive($this->config, is_file($fname = "$this->client_config_path/$hostname.yaml") ? yaml_parse_file($fname) : []);
     // debug($this->config);
     $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$_SERVER['HTTP_HOST'].".secret.yaml") ? yaml_parse_file($fname) : []);
-    $this->client_id = request('client_id', $_REQUEST) ?: request('client_id',$this->config['client']);
+
+
+    $this->client_id = request('client_id', $GLOBALS) ?: request('client_id', $_REQUEST) ?: request('client_id',$this->config['client']);
     // debug($this->client_id, $this->config);
     header("Access-Control-Allow-Headers: Authorization");
     $headers = $this->headers = getallheaders();
@@ -102,7 +106,7 @@ class Aim {
       $this->get_client_config();
       // $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$this->client_id.".secret.yaml") ? yaml_parse_file($fname) : []);
       $jwt->validate(request('client_secret', $this->config['client']));
-      if (!$jwt->valid) http_response(401);
+      if (empty($jwt->valid) && 0) http_response(401);
     } else {
       $this->get_client_config();
     }
@@ -139,6 +143,138 @@ class Aim {
   }
   public function api(){
     // aiminfo();
+    // debug($this->path,basename($this->path),$this->method,$this->config);
+    $basename = basename($this->path);
+    if (isset($this->config['components']['schemas'][$basename])) {
+      $schema = $this->config['components']['schemas'][$basename];
+      if ($tablename = get_item($schema, 'tablename')) {
+        $dbname = get_item($schema,'dbname') ?: get_item($this->config,'dbname');
+        $idname = get_item($schema,'idname') ?: 'id';
+        if ($id = get_item($_GET, 'id')) {
+          if ($this->method === 'post') {
+            $value = $_POST['value'] === '' ? "NULL" : "'".str_replace("'","''",$_POST['value'])."'";
+            // $q = "UPDATE [$dbname].$tablename SET [$_POST[name]] = '$value' WHERE $idname = $id";
+            // die($q);
+            aim()->sql_query("UPDATE [$dbname].$tablename SET [$_POST[name]] = $value WHERE $idname = $id");
+            http_response(200);
+            // die('POST');
+          }
+          $row = sqlsrv_fetch_object(aim()->sql_query("SELECT [schemaName],[$idname] AS [id],* FROM [$dbname].$tablename WHERE $idname = $id"));
+          $row->id = $id = $row->{$idname};
+          $row->{'@id'}=$this->origin . $this->request_path . "?id=$id";
+          $row->schemaName = $basename;
+          http_response(200,$row);
+        }
+        $this->select = request('$select', $_GET) ?: request('select', $_GET) ?: '*';
+
+        // debug($_GET);
+
+        $this->filter = strtolower(request('$filter', $_GET) ?: request('filter', $_GET));
+        $this->search = strtolower(request('$search', $_GET) ?: request('search', $_GET));
+        if (isset($_GET['$search']) && empty($_GET['$search'])) {
+          http_response(200,[
+            '@context'=>aim()->context,
+            'rows'=>[],
+          ]);
+        };
+        $this->order = urldecode(strtolower(request('$order', $_GET) ?: request('order', $_GET)));
+        $this->order = $this->order ? "ORDER BY $this->order" : "";
+        $this->top = request('$top', $_GET) ?: request('top', $_GET) ?: 10000;
+        $this->top = $this->top ? "TOP $this->top" : "";
+        if ($this->filter) {
+          $operators = [
+            " eq null "=>" IS NULL ",
+            " ne null "=>" IS NOT NULL ",
+            " eq "=>" = ",
+            " ne "=>" <> ",
+            " gt "=>" > ",
+            " ge "=>" >= ",
+            " lt "=>" < ",
+            " le "=>" <= ",
+            " and "=>" AND ",
+            " or "=>" OR ",
+            " && "=>" AND ",
+            " || "=>" OR ",
+            " not "=>" NOT ",
+            // "add"=>"",
+            // "sub"=>"",
+            // "mul"=>"",
+            // "div"=>"",
+            // "mod"=>"",
+            "=("=>" IN(",
+            "eq("=>" IN(",
+          ];
+          $this->filter = str_replace(array_keys($operators), array_values($operators), ' '.$this->filter.' ');
+        }
+        $items=[];
+        $and = $this->filter ? [$this->filter] : [];
+        $search_fields = get_item($schema, 'searchFields');
+        if ($search_fields && $this->search && $this->search!=='*') {
+          $search_fields = explode(',', $search_fields);
+          // http_response(200,$search_fields);
+          foreach(explode(' ', $this->search) as $keyword) {
+            $or=[];
+            foreach($search_fields as $fieldname) {
+              $or[]="$fieldname LIKE '%$keyword%'";
+            }
+            $and[]=implode(' OR ', $or);
+          }
+        }
+        // debug("SELECT $this->top * FROM abisingen.api.$selector WHERE (". implode(') AND (', $and) . ") $this->order");
+        $where = $and ? "WHERE (". implode(') AND (', $and) . ")" : "";
+        $q = "SELECT $this->top '$basename' AS [schemaName],[$idname] AS [id],$this->select FROM [$dbname].$tablename $where $this->order";
+        $q = str_replace('schemaName,','',$q);
+        $q = str_replace('id,','',$q);
+        // debug($q);
+        // die($q);
+        if($res = aim()->sql_query($q)) {
+          while ($row = sqlsrv_fetch_object($res)) {
+            if (isset($row->data)) {
+              $row = array_replace((array)json_decode($row->data),(array)$row);
+              unset($row['data']);
+            }
+            if (property_exists($row, 'geolocatie') && empty($row->geolocatie)
+            && !empty($row->businessAddressStreet) && !empty($row->businessAddressPostalCode) && !empty($row->businessAddressCity)) {
+              $address = str_replace(' ','+',implode(' ',[
+                $row->companyName,
+                $row->businessAddressStreet,
+                $row->businessAddressPostalCode,
+                $row->businessAddressCity,
+                'netherlands',
+              ]));
+              $key = $this->secret['config']['google']['keyServer'];
+              $options = [
+                CURLOPT_URL => "https://maps.googleapis.com/maps/api/geocode/json?key=$key&address=$address",//.aim()->secret['config']['google']['key'],
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_SSL_VERIFYPEER => false,
+              ];
+              // debug($options);
+              $curl = curl_init();
+              curl_setopt_array($curl, $options);
+              $result = curl_exec($curl);
+              curl_close($curl);
+              $result = json_decode($result);
+              if ($result->results) {
+                $location = $result->results[0]->geometry->location;
+                $row->geolocatie = $geolocatie = implode(',',[$location->lat,$location->lng]);
+                aim()->sql_query("UPDATE $tablename SET geolocatie = '$geolocatie' WHERE id = $row->id");
+              }
+              // debug($result);
+            }
+            // $row->id = $id = $row->{$idname};
+            $id = $row->id;
+            $row->{'@id'}=$this->origin . $this->request_path . "?id=$id";
+            $row->schemaName = $basename;
+            $items[] = $row;
+          }
+        }
+        http_response(200, [
+          '@context' => aim()->context,
+          'rows'=>$items,
+        ]);
+      }
+      // debug($schema);
+    }
     $method = $this->method;
     $paths = [
       "/$this->hostname/$this->hostname.github.io$this->request_path",
@@ -524,10 +660,10 @@ class Aim {
   }
   public function method_delete() {
   }
-  public function mail ($param = []) {
+  public function mail ($param = [], $options = []) {
     if (!isset($param['send'])) {
       // debug($param);
-      $mailer = new Mailer;
+      $mailer = new Mailer($options);
       $mailer->send($param);
       return $mailer;
     } else if ($param['send'] === 1) {
@@ -814,10 +950,12 @@ class Aim {
       $schema_name = strToLower($schemaName);
       $security_write = ["$schema_name.write"];
       $security_read = ["$schema_name.read","$schema_name.write"];
-      foreach ($schema['security'] as $name) {
-        $security_read[] = "$name.read";
-        $security_read[] = "$name.write";
-        $security_write[] = "$name.write";
+      if (isset($schema['security'])) {
+        foreach ($schema['security'] as $name) {
+          $security_read[] = "$name.read";
+          $security_read[] = "$name.write";
+          $security_write[] = "$name.write";
+        }
       }
       $security_read = array_values($security_read);
       $security_write = array_values($security_write);
@@ -1082,7 +1220,7 @@ class Aim {
       $query = (isset($nopre) ? '' : 'SET TEXTSIZE -1;SET NOCOUNT ON;').$query;
 
       // error_log("AIM.sms send $recipients $body $originator");
-      error_log($query."\n", 3, "\aliconnect\webroot\log\sql.log");
+      error_log($query."\n", 3, "\aliconnect\logs\sql.log");
 
       // http_response(501, $query); // DEBUG:
       return sqlsrv_query ( $this->conn, $query , null, ['Scrollable' => 'buffered']);
@@ -1092,6 +1230,18 @@ class Aim {
       die();
     }
   }
+  public function sql_resultset($query, $args = []) {
+    $res = $this->sql_query($query, $args);
+    $data = [];
+    while ($res) {
+      $rows = [];
+      while ($row = sqlsrv_fetch_object($res)) $rows[] = $row;
+      $data[] = $rows;
+      if (!sqlsrv_next_result($res)) break;
+    }
+    return $data;
+  }
+
   public function translate($message = null, $args = null) {
     $args = func_get_args();
     $message = array_shift($args);
@@ -1288,6 +1438,16 @@ function request($selector, $context = null, $required = false) {
     http_response(400, "Missing requested parameter `$selector`");
   }
 }
+function get_item($context, $selector, $required = false) {
+  $context = $context ? (array)$context : $_REQUEST;
+  if (isset($context[$selector])) {
+    return $context[$selector];
+  }
+  if ($required) {
+    http_response(400, "Missing requested parameter `$selector`");
+  }
+}
+
 function http_response($code = 200, $body = null, $errors = null) {
   // if (!class_exists('\Aliconnect')) return;
   $ms = time()-$_SERVER['REQUEST_TIME'];

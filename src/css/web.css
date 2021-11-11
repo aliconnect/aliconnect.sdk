@@ -68,6 +68,11 @@ html[dark='1'] {
   --fg: #ccc;
   --heighligth: #222;
 }
+html[dark='1'] ::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+
 * {
   box-sizing: border-box;
   -moz-box-sizing: border-box;
@@ -85,17 +90,27 @@ body>div {
   display: flex;
 }
 
-@media only screen {
-  input,body {
-    background-color: var(--bg);
-    color: var(--fg);
-  }
-}
 
 .app body {
   position: fixed;
   margin:auto;
-  top:0;bottom:0;left:0;right:0;
+  top:0; bottom:0; left:0; right:0;
+}
+.app body>header {
+  display:none;
+}
+.app body>footer {
+  display:none;
+}
+.app body aside {
+  display:none;
+}
+.page body>*>article {
+  flex:0 1 1200px;
+  margin: auto;
+}
+.page .col.tv {
+  display: none;
 }
 
 .abtn {
@@ -178,8 +193,8 @@ nav button {
   cursor: pointer;
   /* float: right; */
   /* display: inline-block; */
-  background-color: var(--bg-trans);
-  color: inherit;
+  /* background-color: var(--bg-trans); */
+  /* color: inherit; */
   padding: 0 20px;
   margin: 0;
   text-align: left;
@@ -306,11 +321,6 @@ nav .menu>ul>li>ul>li>ul {
   right: 0;
 }
 
-body>*>article {
-  flex:0 1 1200px;
-  margin:auto;
-  display: flex;
-}
 
 body>header{
   display: flex;
@@ -461,6 +471,11 @@ body>main{
   display:flex;
   flex: 1 0 auto;
 }
+.app body>main{
+  height:0;
+}
+
+
 body>footer{
   display: flex;
   flex: 0 0 24px;
@@ -482,9 +497,23 @@ main>.tv>div {
   flex: 1 0 0;
 }
 
+
+body>*>article {
+  display: flex;
+  flex:1 0 0;
+  flex:1 0;
+}
+
+.app {
+  /* height: 100%; */
+}
+
 .lv {
-  flex: 1 0 auto;
-  width: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 0;
+  /* height: 100vh; */
+  /* width: 0; */
 }
 .lv nav .filter {
   margin-right: auto;
@@ -496,6 +525,7 @@ main>.tv>div {
 }
 .app .lv>div {
   height: 0;
+  /* height: 60vh; */
 }
 
 .lv>div>aside {
@@ -577,6 +607,27 @@ main>.tv>div {
 }
 .lv .cards label::after {
   content: ": ";
+}
+/* .lv .cards span {
+  white-space: nowrap;
+} */
+.lv .cards h1 {
+  font-family: var(--header-font-family);
+  font-weight: normal;
+  margin: 0;
+  font-size: 1.1em;
+}
+.lv .cards h2 {
+  margin: 0;
+  font-size: 0.9em;
+  /* color: var(--blue); */
+  font-weight: normal;
+}
+.lv .cards h3 {
+  margin: 0;
+  font-size: 0.9em;
+  color: var(--trans8);
+  font-weight: normal;
 }
 
 .lv .cards.rows {
@@ -872,14 +923,20 @@ details>summary:only-child::after{
   flex: 1 0 0;
   /* background-color: var(--trans1); */
   margin: 0 auto;
+  overflow: auto;
   /* margin:auto; */
 }
-.pv:not(:empty)+.lv {
+
+.page .pv:not(:empty)+.lv {
   display: none;
   /* flex: 1 0 auto;
   position:absolute;
   left:0; */
 }
+.app .pv {
+  order: 5;
+}
+
 .pv:empty {
   display: none;
 }
@@ -1352,4 +1409,18 @@ pre code {
   background-color: transparent;
   /* border-radius: 0; */
   border: none;
+}
+
+@media only screen {
+  input,body {
+    background-color: var(--bg);
+    color: var(--fg);
+  }
+}
+@media only print {
+  body>nav, body>header, body>footer, aside {
+    display: none;
+  }
+
+
 }

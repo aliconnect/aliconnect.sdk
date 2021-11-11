@@ -1,0 +1,44 @@
+aim.setConfig(`
+info:
+  title: Company Name
+client:
+  client_id: {your_client_id}
+  client_secret: {your_client_secret}
+  dataProcessor:
+    - companyName: Aliconnect
+      businessAddress:
+        street: Geelkerkenkamp 14 A
+        postalCode: 6862 ER
+        city: Oosterbeek
+        country: Netherlands
+      max duur melding: 72
+      hoogte boete bij schending geheimhouding: 5000
+      hoogte boete bij schending melden subverwerkers: 500
+      hoogte boete bij schending melding datalek: 2500
+      locatie verwerking persoonsgegevens: Alleen binnen Europa
+  subDataProcessor:
+    - companyName: CRM Consultans
+      businessAddress:
+        street:
+        postalCode:
+        city:
+        country:
+    - companyName: Patrick Dekker
+      businessAddress:
+        street:
+        postalCode:
+        city:
+        country:
+maps:
+  styles:
+    - featureType: landscape
+      elementType: labels
+      stylers:
+        - visibility: 'off'
+    - featureType: poi
+      stylers:
+        # - visibility: 'off'
+        - visibility: simplified
+        - saturation: -100
+        - lightness: 45
+`);

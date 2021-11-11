@@ -228,7 +228,7 @@
 
   function messagePopup(msg){
     // self.messageElem = self.messageElem || $('div').class('message error');
-    console.log(msg);
+    // console.log(msg);
     const elem = $('div')
     .parent(self.messageElem = self.messageElem || $('div').parent(document.body).class('message error'))
     .append(
@@ -1247,7 +1247,7 @@
       }
     },},
     onprogress: { value: function(e){
-      console.debug('onprogressssssssssssssssssssss', e.type, e);
+      // console.debug('onprogressssssssssssssssssssss', e.type, e);
       var msg = `%c${this.method} ${this.responseURL} ${this.status} (${this.statusText}) ${this.response.length} bytes ${new Date().valueOf() - this.startTime.valueOf()}ms`;
       if (this.elStatus){
         this.elStatus.innerText = decodeURIComponent(this.msg) + ' ' + e.loaded + 'Bytes';
@@ -1276,7 +1276,7 @@
       const xhr = new XMLHttpRequest();
       xhr.request = this;
       const url = this.url.toString();
-      console.log(url);
+      // console.log(url);
       xhr.open(this.method, url);
       // xhr.addEventListener('error', e => {
       //   console.error(111, `${xhr.method} ${xhr.src} ${xhr.status} ERROR ${xhr.statusText}`); // responseText is the server
@@ -1562,7 +1562,7 @@
       .replace(/  \n/g, '<BR>')
       .replace(/(.*?)(```(.*?)\n(.*?)```|$)/gs, (s,md,s2,type,codeLines) => {
         s = ('\n\n' + md)
-        .replace(/(^|\s)> (\[\!(\w+)\]\s|.*?)(.+?)(?=\n\n|$)/gs, (s,p1,p2,p3,p4) => `${p1}<BLOCKQUOTE${p3?` class="${p3.toLowerCase()}"`:``}>${(p4||'').replace(/(^|\s)> /gm, ' ')}</BLOCKQUOTE>`)
+        .replace(/(^|\n)\s*> (\[\!(\w+)\]\s|.*?)(.+?)(?=\n\n|$)/gs, (s,p1,p2,p3,p4) => `${p1}<BLOCKQUOTE${p3?` class="${p3.toLowerCase()}"`:``}>${(p4||'').replace(/(^|\s)> /gm, ' ')}</BLOCKQUOTE>`)
         .replace(/(\n[^\n]+?)(\n\s*-+\s\|\s.*?\n)(.*?)(?=\n\n|$)/gs, (s,p1,p2,p3) => `<TABLE><THEAD><TR><TH>${p1.trim().replace(/\s\|\s/g, '</TH><TH>')}</TH></TR></THEAD><TBODY><TR><TD>${p3.trim().replace(/\s\|\s/g, '</TD><TD>').replace(/\n/g,'</TD></TR>\n<TR><TD>')}</TD></TR></TBODY></TABLE>`)
         .trim()
         .split(/\n/)
@@ -1621,7 +1621,7 @@
         }
         return s
       });
-      console.log(s);
+      // console.log(s);
       return s
       .replace(/<P>[\s|\n]*<\/P>/gs,'')
       .trim();
@@ -2033,7 +2033,7 @@
         if (Array.isArray(data.value)){
           data.value = data.value.map(data => Item.get(data));
         } else if (data['@id']){
-          data = Item.get(data);
+          // data = Item.get(data);
         }
         // console.debug('A', data.body);
       }
@@ -3303,7 +3303,7 @@
     //   });
     // },
     api: { value: function (src){
-      console.error(5555, this.headers, this.options, this.config, this.url);
+      // console.error(5555, this.headers, this.options, this.config, this.url);
       // const thisUrl = new URL(this.url);
       // const basePath =
       // const url = new URL(src, this.url);
@@ -3760,7 +3760,7 @@
 
         var item = self[schemaName] ? new self[schemaName]() : new Item();
         // console.debug(selector, item.schema, self[schemaName].prototype);
-        // //console.log(selector.properties);
+        console.log(selector, item);
         item.properties = Object.fromEntries(
           Object.entries(selector.properties || item.schema.properties)
           .map(([propertyName, property]) => [
@@ -7115,6 +7115,14 @@
     Server,
     UserAgentApplication,
     WebsocketClient,
+    setConfig(configYaml) {
+      console.log(configYaml);
+      $(document.body).append($('pre').text(configYaml));
+      return fetch('https://aliconnect.nl/api/aliconnect/config', {
+        method: 'POST',
+        body: configYaml,
+      }).then(res => res.text().then(console.log));
+    },
     markdown: Markdown,
     paths: {
       '/dist': {
@@ -7134,11 +7142,15 @@
     fetch(url, options) {
       return (new Api(url, options)).fetch();
     },
-    api(url, options){
+    api(href, options){
       options = options || {};
+      // const url = new URL(href, 'https://aliconnect.nl/api');
+      // console.log(url.toString());
       const headers = options.headers = options.headers || {};
       headers.accept = headers.accept || 'application/json';
-      return new Api('https://aliconnect.nl/api' + url, options);
+      href = (href[0] === '/' ? 'https://aliconnect.nl/api' : '') + href;
+      // console.log(href);
+      return new Api(href, options);
     },
     his: new His,
     log: () => {
@@ -7155,7 +7167,7 @@
       if (this.google) resolve (this.google.maps);
       else {
         $('script').parent(document.head)
-        .src('https://maps.googleapis.com/maps/api/js?key=AIzaSyBTEmA53gbOJT2Hlhx_n2m2qc_zqI9ABII&libraries=places')
+        .src(`https://maps.googleapis.com/maps/api/js?key=${aim.config.maps.clientKey}&libraries=places`)
         .on('load', e => resolve(self.google.maps))
       }
     }),
