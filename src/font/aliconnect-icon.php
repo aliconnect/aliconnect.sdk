@@ -5,7 +5,19 @@
 html {--basebg: white;--basefg: black;}body{padding: 20px;}
 </style>
 <?php
-$css = file_get_contents('aliconnect.css');
+// $css = file_get_contents('aliconnect.css');
+$css = '@font-face {
+  font-family: "AliconnectIcon";
+  src: url("aliconnect-icon.woff") format("woff"), url("aliconnect-icon.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+[class^="icn-"] {
+  font-family: AliconnectIcon;
+  font-style: normal;
+  font-weight: bold;
+}
+';
 $data = yaml_parse_file('aliconnect-icon.yaml');
 
 // foreach ($data as $name => $x) {
@@ -18,7 +30,7 @@ foreach ($data as $groupName => $group) {
     echo "<button class='abtn $name' caption='$name'></button>";
     $data1->{$i} = $name;
     // $data1->{$i} = $name;
-    $css .= ".abtn.$name::before{content:'\\$i';}\n";
+    $css .= ".icn-$name::before,.abtn.$name::before{content:'\\$i';}\n";
   }
   echo "</nav>";
 }

@@ -1,5 +1,4 @@
 (function (){
-
   eol = '\n';
   const tagnames = ['a', 'abbr', 'address', 'area', 'article', 'aside', 'audio', 'b', 'base', 'bdi', 'bdo', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 'cite', 'code', 'col', 'colgroup', 'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html', 'i', 'iframe', 'frameset', 'frame', 'img', 'input', 'ins', 'kbd', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 'menu', 'meta', 'meter', 'nav', 'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'p', 'param', 'picture', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'section', 'select', 'slot', 'small', 'source', 'span', 'strong', 'style', 'sub', 'summary', 'sup', 'table', 'tbody', 'td', 'template', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track', 'u', 'ul', 'var', 'video', 'wbr', ];
 
@@ -1713,14 +1712,32 @@
     })
   };
 
+  function list(selector, options={}){
+    console.log(selector, aim.config.components.schemas[selector]);
+    const args = Array.from(arguments);
+    const url = args.shift();
+    options.$select = aim.config.components.schemas[selector].cols.filter(col => col.header || col.filter).map(col => col.name).join(',')
+    // options.$search = '';
+    document.location.hash = `#?l=${aim.urlToId($().url('https://aliconnect.nl/api/'+selector).query(options).toString())}`;
+  }
   function displayvalue(row,col){
     if (col.format === 'date') return new Date(row[col.name]).toLocaleDateString();
+    if (col.type === 'blob') return 'IS BLOB';
     return row[col.name];
   }
+  function viewelem(row, col){
+    if (col.type === 'blob') return $('img');
+    return $('span').text(displayvalue(row, col))
+  }
+
   function inputelem(row,col,data){
     const key = col.name;
     let value = row[key];
     if (value && col.format === 'date') value = new Date(value).toISOString().substr(0,10);
+
+    // console.warn(col.type);
+    if (col.type === 'blob') return $('img').src('data:image/png;base64,' + value);
+
     return $('input').id('input'+inputId)
     .name(key)
     .type(col.format || col.type || types[typeof property.value])
@@ -1735,15 +1752,12 @@
     // .pattern(metaData.pattern)
     .on('change', e => {
       let obj = data;
-
-
-      path.forEach(key => obj = obj[key] = obj[key] || {});
-
-      console.log(col);
-
       obj[key] = e.target.value;
-      if (metaData['@id']) {
-        const ref = metaData['@id'];
+
+      console.log(data,row,col)
+
+      if (col['@id']) {
+        const ref = col['@id'];
         const hostname = new URL(ref).hostname;
         const client = aim.clients.get(hostname);
         client.api(ref).post({
@@ -1753,13 +1767,20 @@
           console.log(3333, body);
         })
 
+      } else {
+
+        path.forEach(key => obj = obj[key] = obj[key] || {});
+
+        console.log(col);
+
       }
+
+
     })
     // $('label').class('caption').for('input'+inputId),
     // $('label').class('ico').for('input'+inputId),
 
   }
-
   function toLink(s){
     return s.replace(/\(|\)|\[|\]|,|\.|\=|\{|\}/g,'').replace(/ /g,'-').toLowerCase();
   }
@@ -1785,14 +1806,9 @@
     }
   }
   function listview(rows, type, filter){
-    // console.log(rows);
-    // cols = this.cols = cols || this.cols;
-    // $('.pv').text('');
     rows = this.rows = rows || this.rows;
     rows = rows.map(row => row.data ? Object.assign(row,JSON.parse(row.data)) : row);
     filter = {}
-    // console.log(rows);
-
     const types = {
       cols: () => {
         return $('div').class('cards',type).append(
@@ -1810,15 +1826,8 @@
                 // page(ref);
               }
             });
-
-            // .attr(row||{})
             return div.append(
               row.images ? $('img').src(row.images[0]) : null,
-              // [1,2,3].map(i => $('div').append(
-              //   config.components.schemas[row.schemaName].cols
-              //   .filter(col => col.header === i)
-              //   .map(col => aim.cols && aim.cols[col.name] ? aim.cols[col.name](row, div) : valueTag(col,row).class(col.name))
-              // )),
               [1,2,3].map(i => $('h'+i).append(
                 config.components.schemas[row.schemaName].cols
                 .filter(col => col.header === i)
@@ -1826,14 +1835,6 @@
                 .map(col => displayvalue(row,col))
                 .join(', ')
               )),
-              // {
-              //   if (col.type) {
-              //     return $('input').type(col.type).min(0).class(col.name).value(row[col.name] || '')
-              //   }
-              //   if (row[col.name]) {
-              //     return $('div').append(labelTag(col,row),valueTag(col,row))
-              //   }
-              // }),
             );
           }),
           ['','','','','','','','','','','','','','',].map(i => $('span').class('ghost')),
@@ -1872,10 +1873,7 @@
         )
       },
     };
-
     const navList = rows.map(row => row.schemaName).unique().map(schemaName => aim.config.components.schemas[schemaName] && aim.config.components.schemas[schemaName].app ? aim.config.components.schemas[schemaName].app.navList : null).filter(Boolean);
-    console.log(navList);
-
     rows.forEach(row => {
       const cols = config.components.schemas[row.schemaName].cols.filter(col => col.filter);
       cols.forEach(col => {
@@ -2019,9 +2017,12 @@
         return mapelem;
       }
     }
+    // console.log('filter', filter);
     filter = Object.values(filter);
     filter.forEach(attribute => attribute.values = Object.values(attribute.values).sort((a,b) => String(a.value||'').localeCompare(String(b.value||''), undefined, {numeric: true})));
-    filter = filter.filter(attribute => attribute.values.length>1 && attribute.values.some(value => value.rows.length>1))
+
+    // filter = filter.filter(attribute => attribute.values.length>1 && attribute.values.some(value => value.rows.length>1))
+    filter = filter.filter(attribute => attribute.values.length>1)
 
     sessionStorage.setItem('listType', type = this.type = type || this.type || sessionStorage.getItem('listType') || 'cols');
     function valueTag(col,row){
@@ -2075,9 +2076,12 @@
     function labelTag(col,row){
       return $('label').text(col.title || col.name)
     }
-
     (function buildlist() {
-      const checkedFilters = filter.filter(col => col.checked);
+      const checkedFilters = filter.filter(col => col.checked = col.values.some(val => val.checked));
+      aim.listRows = rowsVisible = rows.filter(
+        row => !filter.some(col => col.checked && (!(col.name in row) || col.values.filter(val => !val.checked).some( val => val.rows.includes(row) )) )
+      );
+
       // console.log(filter,checkedFilters);
       $('.lv').attr('hidefilter', aim.showfilter).text('').append(
         $('nav').append(
@@ -2092,7 +2096,13 @@
         $('div').append(
           $('aside').class('oa filter').append(
             filter.filter(col => col.checked).map(col => $('div').append(
-              $('span').text(col.title + ': '),
+              $('span').text(col.title),
+              $('i').class('icn-cross-mark-small').on('click', e => {
+                col.values.forEach(v => delete(v.checked));
+                console.log(col);
+                buildlist();
+              }),
+              ': ',
               $('b').text(col.values.filter(val => val.checked).map(val => val.value).join(', ')),
             )),
             filter
@@ -2117,14 +2127,7 @@
                       $('div').text(val.value)
                       .checked(val.checked)
                       .attr('cnt', val.rows.filter(row => colRowsVisible.includes(row)).length)
-                      .on('click', e => {
-                        val.checked ^= 1;
-                        col.checked = col.values.some(val => val.checked);
-                        aim.listRows = rowsVisible = rows.filter(
-                          row => !filter.some(col => col.checked && (!(col.name in row) || col.values.filter(val => !val.checked).some( val => val.rows.includes(row) )) )
-                        );
-                        buildlist();
-                      })
+                      .on('click', e => buildlist(val.checked ^= 1))
                     ]
                   )
                 );
@@ -2335,7 +2338,6 @@
     });
   }
   function buildForm(data, config){
-    // console.log('buildForm',data,config)
     // const metaData = cfg.metaData || { title: isNaN(key) ? key : Number(key)+1 };
     // var dataObj = data;
     const types = {
@@ -2345,6 +2347,7 @@
       object: 'object',
     };
     (function buildForm(parent, obj, config, path = []) {
+      // console.log('buildForm',data,config)
       if (obj) {
         Object.entries(obj).forEach(([key,value]) => {
           if (!config[key]) {
@@ -2366,7 +2369,7 @@
         ([key,property]) => property.metaData &&
         Object.keys(property).length === 1 &&
         (property.metaData.type = property.metaData.type || types[property.value ? typeof property.value : 'string']) &&
-        ['text','number','string','boolean'].includes(property.metaData.type || 'text')
+        ['text','blob','number','string','boolean'].includes(property.metaData.type || 'text')
       )
       const children = configEntries.filter(entry => entry[0] !== 'metaData' && !properties.includes(entry));
 
@@ -2374,12 +2377,14 @@
       properties
       .filter(([key,property]) => aim.isEdit || obj[key])
       .forEach(([key,property]) => {
+        // console.warn(key,property);
         const metaData = config && config[key] && config[key].metaData ? config[key].metaData : {};
         metaData.name = key;
         parent.append(
           $('div').class('attr').append(
             $('label').class('title').text(metaData.title || nameToTitle(key)),
-            aim.isEdit ? inputelem(obj, metaData, data) : $('span').text(displayvalue(obj, metaData)),
+            aim.isEdit ? inputelem(obj, metaData, data) : viewelem(obj, metaData),
+            // $('span').text(displayvalue(obj, metaData)),
 
             // ? $('input').id('input'+inputId)
             // .name(key)
@@ -10911,6 +10916,7 @@
         return replacedText;
     },
     listview,
+    list,
     loadStoredCss: () => {
       const css = JSON.parse(localStorage.getItem('css')) || {};
       for (let [id, param] of Object.entries(css)) {

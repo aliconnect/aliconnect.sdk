@@ -1242,7 +1242,7 @@
           e.target.responseText.length, 'bytes',
           new Date().valueOf() - e.target.startTime.valueOf(), 'ms',
           // [e.target.responseText],
-          // e.body || this.responseText,
+          e.body || this.responseText,
         );
       }
     },},
@@ -1432,7 +1432,7 @@
                 )
                 .replace(
                   /\b(Array|Date|eval|function|hasOwnProperty|Infinity|isFinite|isNaN|isPrototypeOf|length|Math|NaN|name|Number|Object|prototype|String|toString|undefined|valueOf)\b/g,
-                  '<span class=hl-methods>$1</span>'
+                  '<span class=hl-method>$1</span>'
                 )
                 .replace(
                   /\b(alert|all|anchor|anchors|area|assign|blur|button|checkbox|clearInterval|clearTimeout|clientInformation|close|closed|confirm|constructor|crypto|decodeURI|decodeURIComponent|defaultStatus|document|element|elements|embed|embeds|encodeURI|encodeURIComponent|escape|e|fileUpload|focus|form|forms|frame|innerHeight|innerWidth|layer|layers|link|location|mimeTypes|navigate|navigator|frames|frameRate|hidden|history|image|images|offscreenBuffering|open|opener|option|outerHeight|outerWidth|packages|pageXOffset|pageYOffset|parent|parseFloat|parseInt|password|pkcs11|plugin|prompt|propertyIsEnum|radio|reset|screenX|screenY|scroll|secure|select|self|setInterval|setTimeout|status|submit|taint|text|textarea|top|unescape|untaint)\b/g,
@@ -1440,14 +1440,14 @@
                 )
                 .replace(
                   /\b(onblur|onclick|onerror|onfocus|onkeydown|onkeypress|onkeyup|onmouseover|onload|onmouseup|onmousedown|onsubmit)\b/g,
-                  '<span class=hl-events>$1</span>'
+                  '<span class=hl-event>$1</span>'
                 )
                 .replace(/(\w+)(\s*\()/g, '<span class="hl-fn">$1</span>$2')
                 .replace(/\.(\w+)/g, '.<span class="hl-attr">$1</span>')
                 .replace(/\b([A-Z]\w+)\./g, '<span class="hl-obj">$1</span>.')
                 .replace(/\b(\w+)\./g, '<span class="hl-attr">$1</span>.')
                 .replace(/\b(\d+)\b/g, '<span class="hl-nr">$1</span>')
-              ) + (cmt ? `<span class=hl-cmt>${cmt}</span>` : '')
+              ) + (cmt ? `<span class=hl-comment>${cmt}</span>` : '')
             })
           },
           javascript(s) {
@@ -1458,7 +1458,7 @@
               return replaceOutsideQuotes(
                 codeString, codeString => codeString
                 .replace(/\.(.*)\b/g, '.<span class="hl-obj">$1</span>')
-              ) + (cmt ? `<span class=hl-cmt>${cmt}</span>` : '')
+              ) + (cmt ? `<span class=hl-comment>${cmt}</span>` : '')
             })
           },
           json(s) {
@@ -1471,7 +1471,7 @@
               return codeString
               .replace(/^(?=\s*)(.+?):/gm, '<span class="hl-fn">$1</span>:')
               .replace(/: (.*?)$/gm, ': <span class="hl-string">$1</span>')
-              + (cmt ? `<span class=hl-cmt>${cmt}</span>` : '')
+              + (cmt ? `<span class=hl-comment>${cmt}</span>` : '')
             })
           },
           php(s) {
@@ -1481,7 +1481,7 @@
                   /\b(class|abstract|arguments|await|boolean|break|byte|case|catch|char|const|continue|debugger|default|delete|do|double|else|enum|eval|export|extends|false|final|finally|float|for|function|goto|if|implements|import|in|instanceof|int|interface|let|long|native|new|null|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|true|try|typeof|var|void|volatile|while|with|yield|abstract|boolean|byte|char|double|final|float|goto|int|long|native|short|synchronized|throws|transient|volatile)\b(?![^<]*>|[^<>]*<\/)/gi,
                   '<span class=hl-res>$1</span>'
                 )
-              ) + (cmt ? `<span class=hl-cmt>${cmt}</span>` : '')
+              ) + (cmt ? `<span class=hl-comment>${cmt}</span>` : '')
             })
           },
           sql(s) {
@@ -1491,7 +1491,7 @@
                   /\b(ADD|ADD CONSTRAINT|ALTER|ALTER COLUMN|ALTER TABLE|ALL|AND|ANY|AS|ASC|BACKUP DATABASE|BETWEEN|CASE|CHECK|COLUMN|CONSTRAINT|CREATE|CREATE DATABASE|CREATE INDEX|CREATE OR REPLACE VIEW|CREATE TABLE|CREATE PROCEDURE|CREATE UNIQUE INDEX|CREATE VIEW|DATABASE|DEFAULT|DELETE|DESC|DISTINCT|DROP|DROP COLUMN|DROP CONSTRAINT|DROP DATABASE|DROP DEFAULT|DROP INDEX|DROP TABLE|DROP VIEW|EXEC|EXISTS|FOREIGN KEY|FROM|FULL OUTER JOIN|GROUP BY|HAVING|IN|INDEX|INNER JOIN|INSERT INTO|INSERT|IS NULL|IS NOT NULL|JOIN|LEFT JOIN|LIKE|LIMIT|NOT|NOT NULL|OR|ORDER BY|OUTER JOIN|PRIMARY KEY|PROCEDURE|RIGHT JOIN|ROWNUM|SELECT|SELECT DISTINCT|SELECT INTO|SELECT TOP|SET|TABLE|TOP|TRUNCATE TABLE|UNION|UNION ALL|UNIQUE|UPDATE|VALUES|VIEW|WHERE)\b/gi,
                   '<span class=hl-res>$1</span>'
                 )
-              ) + (cmt ? `<span class=hl-cmt>${cmt}</span>` : '')
+              ) + (cmt ? `<span class=hl-comment>${cmt}</span>` : '')
             })
           },
           st(s) {
@@ -1503,7 +1503,7 @@
                 )
                 .replace(
                   /\b(LEN|CONCAT|LEFT|RIGHT|MID|INSERT|DELETE|REPLACE|FIND|SEL|MAX|MIN|LIMIT|MUX|TP|TON|TOF|R_TRIG|F_TRIG|TRUNC|TRUNC_INT|ROL|ROR|SHL|SHR|CTU|CTD|CTUD|ABS|SQR|LN|LOG|EXP|SIN|COS|TAN|ASIN|ACOS|ATAN|EXPT|NOT|AND|XOR|OR|MOD|BOOL_TO_INT|WORD_TO_DINT|BYTE_TO_REAL|REAL_TO_LREAL|TIME_TO_DINT)\b/g,
-                  '<span class=hl-methods>$1</span>'
+                  '<span class=hl-method>$1</span>'
                 )
                 .replace(
                   /(&lt;|&gt;|&lt;&equals;|&gt;&equals;|&lt;&gt;|:&equals;|&equals;)/g,
@@ -1513,7 +1513,7 @@
                   /\b(BOOL|TRUE|FALSE)\b/gi,
                   '<span class=hl-prop>$1</span>'
                 )
-              ) + (cmt ? `<span class=hl-cmt>${cmt}</span>` : '')
+              ) + (cmt ? `<span class=hl-comment>${cmt}</span>` : '')
             })
           },
         };
@@ -1535,7 +1535,7 @@
       if (type) {
         return code(s, type);
       }
-      const lines = [];
+      // const lines = [];
       s = s.replace(
         /<\!-- docIndex -->.*?<\!-- \/docIndex -->/s,
         p => `<!-- docIndex -->\n${
@@ -1549,6 +1549,7 @@
       );
       var identArray = [];
       var lineIdent=0;
+      var identTags = [];
       function closetag(lineIdent){
         const tags = identArray.slice(lineIdent).reverse();
         identArray.length = lineIdent;
@@ -1557,6 +1558,90 @@
       function opentag(tag,lineIdent){
         return `<${identArray[lineIdent] = tag}>`
       }
+      const html = [];
+      function space(l){
+        return '                                  '.substring(0,l);
+      }
+      function formatedline(s){
+        return s
+        .replace(/  $/, '<BR>')
+        .replace(/\[ \]/g, '&#9744;')
+        .replace(/\[v\]/g, '&#9745;')
+        .replace(/\[x\]/g, '&#9746;')
+        .replace(/\!\[(.*?)\]\((.*?)\)/g, '<IMG src="$2" alt="$1">')
+        .replace(/\[(.*?)\]\((.*?)\)/g, '<A href="$2">$1</A>')
+        .replace(/\[\s(.*?)\s\]/g, '<button>$1</button>')
+        .replace(/:::(\w+)(.*?):::/gs, '<$1$2></$1>')
+        .replace(/(?![^<]*>)\*\*(.+?)\*\*/g, '<B>$1</B>')
+        .replace(/(?![^<]*>)__(.+?)__/g, '<B>$1</B>')
+        .replace(/(?!<a[^>]*>)(?![^<]*>)_(.+?)_(?![^<]*<\/a>)/gi, '<i>$1</i>')
+        .replace(/(?![^<]*>)\*(.+?)\*/g, '<i>$1</i>')
+        .replace(/~~(.*?)~~/g, '<del>$1</del>')
+        .replace(/~(.*?)~/g, '<u>$1</u>')
+        .replace(/\^\^(.*?)\^\^/gs, '<mark>$1</mark>')
+      }
+
+      const lines = s
+      .replace(/\r\n/g, '\n').replace(/\n/g, '\r\n')
+      .replace(/(```.*?```)/gs, (s,p1) => p1.replace(/\r\n/gs, '\n'))
+      .replace(/(\r\n[^\r\n]+?)(\r\n\s*-+\s\|\s.*?\r\n)(.*?)(?=\r\n\r\n|$)/gs, (s,p1,p2,p3) => `<TABLE><THEAD><TR><TH>${p1.trim().replace(/\s\|\s/g, '</TH><TH>')}</TH></TR></THEAD><TBODY><TR><TD>${p3.trim().replace(/\s\|\s/g, '</TD><TD>').replace(/\r\n/g,'</TD></TR>\n<TR><TD>')}</TD></TR></TBODY></TABLE>`)
+      .split(/\r\n/);
+
+      function identtag(tag, ident){
+        // console.log('ident', tag, ident, identTags.length, identTags);
+        ident = ident === undefined ? identTags.length : ident;
+        for (var i=identTags.length,itag; i>=ident; i--) {
+          itag=identTags[i];
+          if (itag) html.push(`</${itag}>`);
+        }
+        identTags.length = ident;
+        if (tag) {
+          html.push(`<${identTags[ident] = tag}>`);
+        }
+      }
+
+      for (var i=0, s;i<lines.length;i++) {
+        if (s = lines[i]) {
+          const prevLineIdent = lineIdent;
+          lineIdent = (s.match(/^ +/)||[''])[0].length;
+          if (s.match(/^\s*(\*|-|\d+\.) /)) {
+            const tag = s.match(/^\s*(\*|-) /) ? 'ul' : 'ol';
+            if (identTags[lineIdent] !== tag) {
+              identtag(tag, lineIdent);
+            }
+            identtag('li', lineIdent+1);
+          } else if (s.match(/\s*```/)) {
+            html.push(s.replace(/```(.*?)\n(.*?)```$/s, (s,p1,p2) => `<pre><code language="${p1}">${code(p2,p1.toLowerCase())}</code></pre>`));
+            continue;
+          } else if (s.match(/^#/)) {
+            identtag('', lineIdent);
+          } else if (s.match(/^\s*>\s/)) {
+            identtag('', lineIdent);
+          } else if (!lines[i-1]){
+            identtag('p', lineIdent);
+          // } else if (!s.match(/^\s*</)){
+          //   identtag('p', lineIdent);
+          }
+          html.push(
+            s
+            .replace(/(.*?)(`(.*?)`|$)/g, (s1,p1,s2,p2) => formatedline(p1) + (p2 ? `<code>${code(p2)}</code>` : ''))
+            .replace(/^\s*> (\[\!(\w+)\]\s|.*?)(.+?)(?=\n\n|$)/gs, (s,p1,p2,p3,p4) => `${p1}<BLOCKQUOTE${p3?` class="${p3.toLowerCase()}"`:``}>${(p4||'').replace(/(^|\s)> /gm, ' ')}</BLOCKQUOTE>`)
+            .replace(/^(#+) (.*)/, (s,p1,p2) => closetag(0) + `<A class='anchor' title="${p2}" name="${s = toLink(p2)}"></A><H${p1.length} class="${s}"><A class="anchorref" href="#${s}"></A>${p2}</H${p1.length}>`)
+            .replace(/^(\s*)(\*|-|\d+\.) /, '')
+            // .replace(/^(#+) (.*)/, (s,p1,p2) => closetag(0) + `<A class='anchor' title="${p2}" name="${s = toLink(p2)}"></A><H${p1.length} class="${s}"><A class="anchorref" href="#${s}"></A>${p2}</H${p1.length}>`)
+            .trim()
+          );
+        }
+      }
+      for (let tag of identTags.reverse()) {
+        if (tag) html.push(`</${tag}>`);
+      }
+      // console.log(html.join('\n'));
+      // console.warn(html.join('\n'));
+      return html.join(' ');
+
+
+
       s = s
       .replace(/\r/g,'')
       .replace(/  \n/g, '<BR>')
@@ -1564,6 +1649,7 @@
         s = ('\n\n' + md)
         .replace(/(^|\n)\s*> (\[\!(\w+)\]\s|.*?)(.+?)(?=\n\n|$)/gs, (s,p1,p2,p3,p4) => `${p1}<BLOCKQUOTE${p3?` class="${p3.toLowerCase()}"`:``}>${(p4||'').replace(/(^|\s)> /gm, ' ')}</BLOCKQUOTE>`)
         .replace(/(\n[^\n]+?)(\n\s*-+\s\|\s.*?\n)(.*?)(?=\n\n|$)/gs, (s,p1,p2,p3) => `<TABLE><THEAD><TR><TH>${p1.trim().replace(/\s\|\s/g, '</TH><TH>')}</TH></TR></THEAD><TBODY><TR><TD>${p3.trim().replace(/\s\|\s/g, '</TD><TD>').replace(/\n/g,'</TD></TR>\n<TR><TD>')}</TD></TR></TBODY></TABLE>`)
+        .replace(/\[\s(.*?)\s\]/g, '<button>$1</button>')
         .trim()
         .split(/\n/)
         .map((s,i,lines) => {
@@ -1598,7 +1684,8 @@
             }
           }
           s = p + s.trim();
-          return s.replace(/  \n/g, '<BR>')
+          return s
+          .replace(/  $/g, '<BR>')
           .replace(/(.*?)(`(.*?)`|$)/g, (s1,p1,s2,p2) => p1
           .replace(/\!\[(.*?)\]\((.*?)\)/g, '<IMG src="$2" alt="$1">')
           .replace(/\[(.*?)\]\((.*?)\)/g, '<A href="$2">$1</A>')

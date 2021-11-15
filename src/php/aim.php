@@ -159,7 +159,12 @@ class Aim {
             http_response(200);
             // die('POST');
           }
-          $row = sqlsrv_fetch_object(aim()->sql_query("SELECT [schemaName],[$idname] AS [id],* FROM [$dbname].$tablename WHERE $idname = $id"));
+          $row = sqlsrv_fetch_object(aim()->sql_query("SELECT '$basename' AS [schemaName],[$idname] AS [id],* FROM [$dbname].$tablename WHERE [$idname]=$id"));
+          foreach ($row as $key=>$value) {
+            if (preg_match('/blob/i', $key)) $row->$key = base64_encode($row->$key);
+          }
+          // unset($row->AfbeeldingBlob);
+
           $row->id = $id = $row->{$idname};
           $row->{'@id'}=$this->origin . $this->request_path . "?id=$id";
           $row->schemaName = $basename;
