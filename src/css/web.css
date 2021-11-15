@@ -1127,16 +1127,16 @@ details>summary:only-child::after{
   right: 5px;
   text-align: center;
   font-style: normal;
-  font-weight: bold;
+  /* font-weight: bold; */
 }
 
 .pv .attr .input:invalid+i::after {
   /* alert */
-  content: '\f10c';
-  color: red;
+  content: '\f13e';
+  color: orange;
 }
 .pv .attr .input:invalid:required+i::after {
-  content: '\f13e';
+  content: '\f10c';
   color: orange;
 }
 
