@@ -82,8 +82,9 @@ html[dark='1'] ::-webkit-calendar-picker-indicator {
 }
 
 .filter .icn-cross-mark-small {
-  vertical-align: bottom;
+  vertical-align: text-bottom;
   display: inline-block;
+  float: right;
 }
 .filter .icn-cross-mark-small:hover {
   color: var(--blue);
@@ -642,19 +643,23 @@ body>*>article {
 /* .lv .cards span {
   white-space: nowrap;
 } */
-.lv .cards h1 {
+
+.lv .cards header {
+  display: flex;
+}
+header h1 {
   font-family: var(--header-font-family);
   font-weight: normal;
   margin: 0;
   font-size: 1.1em;
 }
-.lv .cards h2 {
+header h2 {
   margin: 0;
   font-size: 0.9em;
   /* color: var(--blue); */
   font-weight: normal;
 }
-.lv .cards h3 {
+header h3 {
   margin: 0;
   font-size: 0.9em;
   color: var(--trans8);
@@ -945,14 +950,19 @@ details>summary:only-child::after{
 
 .pv {
   max-width: 800px;
+  display:flex;
   flex-direction: column;
   flex: 1 0 0;
   /* background-color: var(--trans1); */
   margin: 0 auto;
-  overflow: auto;
+  /* overflow: auto; */
+  /* overflow: overlay; */
+  /* margin-top: 36px; */
   /* margin:auto; */
 }
-
+.pv:empty {
+  display: none;
+}
 .page .pv:not(:empty)+.lv {
   display: none;
   /* flex: 1 0 auto;
@@ -962,10 +972,41 @@ details>summary:only-child::after{
 .app .pv {
   order: 5;
 }
-
-.pv:empty {
-  display: none;
+.pv>nav {
+  /* position: sticky; */
+  /* top: 0px; */
+  /* background-color: inherit; */
 }
+nav span {
+  flex: 1 0 auto;
+}
+.pv>header {
+  padding: 10px;
+  line-height: 24px;
+  background-color: var(--trans1);
+  display: flex;
+  /* height:120px; */
+  /* position: sticky; */
+  /* top: 0px; */
+  /* background-color: inherit; */
+}
+header>.icon {
+  width: 60px;
+  height: 60px;
+  margin-right: 10px;
+  border: solid 1px;
+  border-radius: 100px;
+  text-align: center;
+  line-height: 58px;
+  font-size: 24px;
+}
+.lv header>.icon {
+  width: 40px;
+  height: 40px;
+  line-height: 38px;
+  font-size: 18px;
+}
+
 
 .app .pv>form{
   flex: 1 0 0;
@@ -974,6 +1015,7 @@ details>summary:only-child::after{
   /* background-color: var(--form-bg); */
   background-color: var(--trans1);
   counter-reset: artikel;
+  overflow: overlay;
 }
 .pv form details {
   padding-bottom: 5px;
@@ -992,13 +1034,18 @@ details>summary:only-child::after{
   counter-increment: artikel;
   counter-reset: par;
 }
-.pv summary{
-  background-color: var(--trans2);
+.pv summary {
+  position: sticky;
+  top: -1px;
+  z-index: 1;
   font-size: 0.8em;
   font-weight: bold;
   /* padding:5px; */
   outline:none;
-  border:solid 1px transparent;
+
+  border:solid 1px rgb(40,40,40);
+  background-color: rgb(40,40,40);
+
   margin-bottom: 5px;
 }
 .pv summary:focus {
@@ -1027,7 +1074,7 @@ details>summary:only-child::after{
 }
 .pv .attr {
   display: flex;
-  padding: 1px 5px;
+  padding: 1px 12px;
   display: flex;
   flex-direction: row;
   break-inside: avoid;
@@ -1397,6 +1444,10 @@ aside.filter {
 }
 aside.filter div {
   cursor: pointer;
+  line-height: 24px;
+}
+aside.filter div b {
+  white-space: nowrap;
 }
 aside.filter div[cnt]::after{
   content: ' (' attr(cnt) ')';

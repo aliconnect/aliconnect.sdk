@@ -1864,6 +1864,14 @@
       aim.om.listview(rows);
     }
   }
+  function rowHeaders(row, cols){
+    return [1,2,3].map(i => cols
+      .filter(col => col.header === i)
+      .filter(col => row[col.name])
+      .map(col => displayvalue(row,col))
+      .join(', ')
+    );
+  }
   function listview(rows, type, filter){
     rows = this.rows = rows || this.rows;
     rows = rows.map(row => row.data ? Object.assign(row,JSON.parse(row.data)) : row);
@@ -1886,14 +1894,15 @@
               }
             });
             return div.append(
-              row.images ? $('img').src(row.images[0]) : null,
-              [1,2,3].map(i => $('h'+i).append(
-                config.components.schemas[row.schemaName].cols
-                .filter(col => col.header === i)
-                .filter(col => row[col.name])
-                .map(col => displayvalue(row,col))
-                .join(', ')
-              )),
+              $('header').append(
+                $('div').class('icon').append(
+                  row.images && row.images[0] ? $('img').src(row.images[0]) : $('span').text((rowHeaders(row,config.components.schemas[row.schemaName].cols).join('').match(/([A-Z]).*?([A-Z])/)||[]).slice(1,3).join('')),
+                ),
+                $('div').append(
+                  rowHeaders(row,config.components.schemas[row.schemaName].cols)
+                  .map((s,i)=>$('h'+(i+1)).text(s)),
+                ),
+              )
             );
           }),
           ['','','','','','','','','','','','','','',].map(i => $('span').class('ghost')),
@@ -2295,35 +2304,56 @@
     // console.log(schemaName,id);
     const hostname = new URL(ref).hostname;
     const client = aim.clients.get(hostname);
-    client.api(ref).get().then(body => {
+    client.api(ref).get().then(row => {
       // console.log(ref,body.schemaName,body);
-      const schema = config.components.schemas[body.schemaName];
+      const schema = config.components.schemas[row.schemaName];
       const app = schema.app || {};
       const data = {};
       const cfg = {};
-      var legend = body.schemaName;
-      if (!schema) console.log(body);
+      var legend = row.schemaName;
+      const images = row.images||[];
+      const [icon] = images;
+      if (!schema) console.log(row);
       Object.entries(schema.properties).forEach(([name, metaData]) => {
         metaData = metaData || {};
         legend = metaData.legend = metaData.legend || legend;
-        metaData['@id'] = body['@id'];
+        metaData['@id'] = row['@id'];
         // console.log(legend,name)
         cfg[legend] = cfg[legend] || {};
         cfg[legend][name] = {metaData};
         data[legend] = data[legend] || {};
-        data[legend][name] = body[name];
+        data[legend][name] = row[name];
       });
+      const cols = config.components.schemas[row.schemaName].cols;
+      const headers = rowHeaders(row, cols);
+      // console.log(headers.join('').match(/([A-Z]).*?([A-Z])/).slice(1,3));
+      const initials = headers.join('').match(/([A-Z]).*?([A-Z])/).slice(1,3).join('');
+      // console.log(headers.map((s,i)=>[s,i]));
       // console.log(111, data, body, cfg);
       // return;
       $('.pv').text('').append(
         $('nav').append(
-          app.nav ? app.nav(body) : null,
+          app.nav ? app.nav(row) : null,
+          $('span'),
+          $('button').class('icn-del'),
+          $('button').class('icn-edit'),
+          $('button').class('icn-popout'),
+          $('button').class('icn-close').on('click', e => $('.pv').text('')),
           // $('button').text('select').on('click', e => {
           //   sessionStorage.setItem('clientId', body.id);
           //   document.location.href = '/';
           // })
         ),
-        $('form').class('oa').buildForm(data, cfg),
+        $('header').append(
+          $('div').class('icon').append(
+            icon ? $('img').src(icon) : $('span').text(initials),
+          ),
+          $('div').append(
+            headers
+            .map((s,i)=>$('h'+(i+1)).text(s)),
+          )
+        ),
+        $('form').buildForm(data, cfg),
         // (
         //
         // $('div').append(
