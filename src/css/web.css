@@ -535,6 +535,9 @@ body>*>article {
   /* height: 100vh; */
   /* width: 0; */
 }
+.lv:empty {
+  display: none;
+}
 
 .lv nav .filter {
   margin-right: auto;

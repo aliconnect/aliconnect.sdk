@@ -66,8 +66,9 @@ class Aim {
     $this->base_path = dirname(parse_url($_SERVER['SCRIPT_NAME'])['path']);
     $this->request_url = parse_url($_SERVER['REQUEST_URI']);
     $this->request_path = $this->request_url['path'];
-    $this->script_path = dirname($_SERVER['SCRIPT_NAME']);
+    $this->script_path = strtolower(dirname($_SERVER['SCRIPT_NAME']));
     $this->path = str_replace($this->script_path, "", $this->request_path);
+    // debug($this->script_path);
     $this->hostname = explode('.',$_SERVER['HTTP_HOST'])[0];
     $this->method = strToLower($_SERVER['REQUEST_METHOD']);
     $this->config_path = $_SERVER['DOCUMENT_ROOT']."/../config";
@@ -296,11 +297,13 @@ class Aim {
     // $api_path = preg_replace('/^\/api/', '', $this->request_path);
     if ($oas = $this->oas) {
       if ($paths = $oas['paths']) {
+        // debug(1, $paths);
         // debug($paths);
-        $path_to_search = preg_replace('/\(.*?\)/', '()', $this->request_path);
+        // $path_to_search = preg_replace('/\(.*?\)/', '()', $this->request_path);
+        $path_to_search = preg_replace('/\(.*?\)/', '()', $this->path);
         $path_to_search = str_replace($this->base_path, '', $path_to_search);
-        // die($path_to_search);
         $path_to_search = strtolower($path_to_search);
+        // die($path_to_search);
         // debug($paths);
         foreach ($paths as $path_name => $path) {
           // echo strtolower(preg_replace('/\(.*?\)/', '()', $path_name));
