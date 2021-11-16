@@ -43,6 +43,7 @@
 .abtn.clear::before{content:'\f162';}
 .abtn.check-mark::before{content:'\f06c';}
 .abtn.cross-mark::before{content:'\f06d';}
+.abtn.cross-mark-small::before{content:'\f3f8';}
 .abtn.check-mark-squared-negative::before{content:'\f06e';}
 .abtn.check-mark-squared::before{content:'\f06f';}
 .abtn.forecolor::before{content:'\f036';}
