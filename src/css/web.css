@@ -1,3 +1,14 @@
+@font-face {
+  font-family: barcode;
+  src:
+  url('../font/Code39Azalea.eot') format('embedded-opentype'),
+  url('../font/Code39Azalea.woff') format('woff'),
+  url('../font/Code39Azalea.ttf') format('truetype'),
+  url('../font/Code39Azalea.svg#Code39Azalea') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
 html {
   --basebg: #666;
   --basefg: white;
@@ -100,15 +111,15 @@ html[dark='1'] ::-webkit-calendar-picker-indicator {
 body {
   font-family: "Segoe UI", "Segoe WP", sans-serif, Tahoma, Arial;
   margin:0;
-  display:flex;
-  flex-direction: column;
 }
-body>div {
+.app body>div {
   display: flex;
 }
 
 
 .app body {
+  display:flex;
+  flex-direction: column;
   position: fixed;
   margin:auto;
   top:0; bottom:0; left:0; right:0;
@@ -533,21 +544,23 @@ body>*>article {
   flex-direction: column;
   flex: 1 0 0;
   background-color: var(--trans05);
+  overflow: overlay;
   /* height: 100vh; */
   /* width: 0; */
 }
 .lv:empty {
   display: none;
 }
-
+.lv>nav {
+  position: sticky;
+  top: 0;
+}
 .lv nav .filter {
   margin-right: auto;
 }
-
 .lv aside.filter {
   background-color: var(--trans05);
 }
-
 .lv>div {
   display:flex;
   flex: 1 0 0;
@@ -556,7 +569,6 @@ body>*>article {
   height: 0;
   /* height: 60vh; */
 }
-
 .lv>div>aside {
   display: flex;
   flex-direction: column;
@@ -601,15 +613,18 @@ body>*>article {
 .lv th>div.asc:after{
   transform: rotate(0deg);
 }
-.lv td{
+.lv td, .lv th {
+  padding: 0 5px;
+}
+.grid-crm td{
   white-space: nowrap;
   padding: .5rem .5rem;
   vertical-align: top;
 }
-.lv tbody>tr:nth-of-type(odd) {
+.grid-crm tbody>tr:nth-of-type(odd) {
   background-color: var(--bg-trans);
 }
-.lv tbody tr{
+.grid-crm tbody tr{
   border-top: var(--border);
   border-bottom: var(--border);
   border-spacing: 5px
@@ -624,13 +639,11 @@ body>*>article {
 .lv table input {
   max-width:80px;
 }
-
 .lv tbody, .lv td, .lv tfoot, .lv th, .lv thead, .lv tr {
   border-color: inherit;
   border-style: solid;
   border-width: 0;
 }
-
 .lv .cards{
   display: flex;
 }
@@ -643,7 +656,6 @@ body>*>article {
 /* .lv .cards span {
   white-space: nowrap;
 } */
-
 .lv .cards header {
   display: flex;
 }
@@ -665,7 +677,6 @@ header h3 {
   color: var(--trans8);
   font-weight: normal;
 }
-
 .lv .cards.rows {
   flex-direction: column;
 }
@@ -697,8 +708,7 @@ header h3 {
 .lv .cards.cols>div:hover{
   box-shadow: inset 0px 0px 10px 3px var(--trans1);
 }
-
-.cards.cols .clientNetPrice::before {
+.lv .cards.cols .clientNetPrice::before {
   content: '';
   display: inline-block;
   position: absolute;
@@ -711,8 +721,7 @@ header h3 {
   color:black;
   z-index: 1;
 }
-
-.cards.cols>div .discount {
+.lv .cards.cols>div .discount {
   display: inline-block;
   position: absolute;
   top: 10px;
@@ -722,12 +731,84 @@ header h3 {
   color:black;
   z-index: 1;
 }
-.cards.cols>div .discount::before {
+.lv .cards.cols>div .discount::before {
   text-align: center;
   width: 100px;
   line-height: 20px;
   content: '-' attr(value) '%';
 }
+.lv .cards.cols div.salesPrice{
+  position: absolute;
+  bottom: 5px;
+  left: 80px;
+  font-weight: bold;
+  color: orange;
+}
+.lv .cards.cols div.salesPrice>label {
+  display:none;
+}
+.lv .cards.cols div.salesPrice+.catalogPrice{
+  text-decoration: line-through;
+  font-weight: normal;
+}
+.lv .cards.cols div[salesPrice]::before {
+  content:'';
+  display: inline-block;
+  position: absolute;
+  width:100px;
+  height:100px;
+  top:-60px;
+  right:-60px;
+  transform: rotate(45deg);
+  background: orange;
+}
+.lv .cards.cols div.orderQuantity{
+  position: absolute;
+  bottom: 5px;
+  right: 10px;
+}
+.lv .cards.cols div.orderQuantity>label {
+  display:none;
+}
+.lv .cards.cols div.orderQuantity>input {
+  border: solid 1px var(--trans2);
+  outline: none;
+  width:80px;
+  text-align: right;
+  font-weight: bold;
+}
+.lv .cards.cols div>div {
+  display: flex;
+}
+.lv .cards.cols div>div>label {
+  font-size: 0.8em;
+  color: var(--trans8);
+  flex-basis: 80px;
+}
+.lv .cards.cols img{
+  height: 160px;
+  object-fit: contain;
+  object-position: center;
+  background-color: white;
+}
+.lv .cards .geolocatie {
+  display: none;
+}
+
+.cover {
+  position: absolute;
+  margin: auto;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--bg);
+  z-index: 1;
+}
+
+
+
+
 .price{
   white-space: nowrap;
   /* display:flex; */
@@ -766,71 +847,9 @@ header h3 {
   font-weight: bold;
   text-align: right;
 }
-
-.cards .geolocatie {
-  display: none;
-}
-
 div.artcode {
   font-size: 0.8em;
   color: var(--trans8);
-}
-
-
-.lv .cards.cols div.salesPrice{
-  position: absolute;
-  bottom: 5px;
-  left: 80px;
-  font-weight: bold;
-  color: orange;
-}
-.lv .cards.cols div.salesPrice>label {
-  display:none;
-}
-.lv .cards.cols div.salesPrice+.catalogPrice{
-  text-decoration: line-through;
-  font-weight: normal;
-}
-.lv .cards.cols div[salesPrice]::before {
-  content:'';
-  display: inline-block;
-  position: absolute;
-  width:100px;
-  height:100px;
-  top:-60px;
-  right:-60px;
-  transform: rotate(45deg);
-  background: orange;
-}
-
-.lv .cards.cols div.orderQuantity{
-  position: absolute;
-  bottom: 5px;
-  right: 10px;
-}
-.lv .cards.cols div.orderQuantity>label {
-  display:none;
-}
-.lv .cards.cols div.orderQuantity>input {
-  border: solid 1px var(--trans2);
-  outline: none;
-  width:80px;
-  text-align: right;
-  font-weight: bold;
-}
-.lv .cards.cols div>div {
-  display: flex;
-}
-.lv .cards.cols div>div>label {
-  font-size: 0.8em;
-  color: var(--trans8);
-  flex-basis: 80px;
-}
-.lv .cards.cols img{
-  height: 160px;
-  object-fit: contain;
-  object-position: center;
-  background-color: white;
 }
 
 .prompt {
@@ -880,9 +899,6 @@ div.artcode {
   -webkit-box-shadow: var(--shadow);
   box-shadow: var(--shadow);
 }
-
-
-
 
 .tv details>details{
   padding-left:10px;
@@ -994,17 +1010,19 @@ header>.icon {
   width: 60px;
   height: 60px;
   margin-right: 10px;
-  border: solid 1px;
+  /* border: solid 1px; */
+  border: none;
   border-radius: 100px;
   text-align: center;
   line-height: 58px;
   font-size: 24px;
+  background-color: var(--trans5);
 }
 .lv header>.icon {
-  width: 40px;
-  height: 40px;
-  line-height: 38px;
-  font-size: 18px;
+  width: 30px;
+  height: 30px;
+  line-height: 28px;
+  font-size: 12px;
 }
 
 
@@ -1084,7 +1102,7 @@ header>.icon {
 .pv .attr>label {
   flex: 0 0 160px;
   font-size: 0.8em;
-  margin-left:24px;
+  margin-left: 18px;
 }
 /* .pv .attr>span {
   flex: 1 0 auto;
@@ -1554,8 +1572,6 @@ pre code {
   body>nav, body>header, body>footer, aside {
     display: none;
   }
-
-
 }
 
 .hl-name{
