@@ -3,7 +3,8 @@
   const tagnames = ['a', 'abbr', 'address', 'area', 'article', 'aside', 'audio', 'b', 'base', 'bdi', 'bdo', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 'cite', 'code', 'col', 'colgroup', 'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html', 'i', 'iframe', 'frameset', 'frame', 'img', 'input', 'ins', 'kbd', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 'menu', 'meta', 'meter', 'nav', 'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'p', 'param', 'picture', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'section', 'select', 'slot', 'small', 'source', 'span', 'strong', 'style', 'sub', 'summary', 'sup', 'table', 'tbody', 'td', 'template', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track', 'u', 'ul', 'var', 'video', 'wbr', ];
 
   var config = {};
-
+  const currentScript = document.currentScript;
+  const scriptPath = currentScript.src.replace(/\/js\/.*/, '');
 
   const libraries = {
     async page() {
@@ -117,6 +118,7 @@
           $('button').class('abtn dark').on('click', e => $(document.documentElement).attr('dark', getItem('dark', getItem('dark')^1))),
           $('button').class('abtn shop'),
           $('button').class('abtn account').text(aimAccount ? aimAccount.sub : '').append(
+            $('span'),
             $('div').append(
               aimAccount
               ? [
@@ -1169,14 +1171,17 @@
                 document.location.hash = `#?id=${btoa(ref)}`;
               }
             });
+            const schema = config.components.schemas[row.schemaName];
+            const app = schema.app || {};
             return div.append(
               $('header').append(
                 $('div').class('icon').append(
                   row.images && row.images[0] ? $('img').src(row.images[0]) : $('span').text((rowHeaders(row,config.components.schemas[row.schemaName].cols).join('').match(/([A-Z]).*?([A-Z])/)||[]).slice(1,3).join('')),
                 ),
-                $('div').append(
-                  rowHeaders(row,config.components.schemas[row.schemaName].cols)
+                $('div').class('aco').append(
+                  rowHeaders(row, schema.cols)
                   .map((s,i)=>$('h'+(i+1)).text(s)),
+                  app.header ? app.header(row) : null,
                 ),
               )
             );
@@ -1604,6 +1609,7 @@
       // console.log(ref,body.schemaName,body);
       const schema = config.components.schemas[row.schemaName];
       const app = schema.app || {};
+      console.log(app.header);
       const data = {};
       const cfg = {};
       var legend = row.schemaName;
@@ -1623,9 +1629,10 @@
       const cols = config.components.schemas[row.schemaName].cols;
       const headers = rowHeaders(row, cols);
       // console.log(headers.join('').match(/([A-Z]).*?([A-Z])/).slice(1,3));
-      const initials = headers.join('').match(/([A-Z]).*?([A-Z])/).slice(1,3).join('');
+      const initials = (headers.join('').match(/([A-Z]).*?([A-Z])/)||[]).slice(1,3).join('');
       // console.log(headers.map((s,i)=>[s,i]));
       // console.log(111, data, body, cfg);
+
       // return;
       $('.pv')
       .text('')
@@ -1651,10 +1658,10 @@
           $('div').class('icon').append(
             icon ? $('img').src(icon) : $('span').text(initials),
           ),
-          $('div').append(
-            headers
-            .map((s,i)=>$('h'+(i+1)).text(s)),
-          )
+          $('div').class('aco').append(
+            headers.map((s,i)=>$('h'+(i+1)).text(s)),
+            app.header ? app.header(row) : null,
+          ),
         ),
         $('form').buildForm(data, cfg, editmode),
         // (
@@ -2529,8 +2536,10 @@
       doc.appendChild(body);
       doc.close();
       body.innerHTML = this.elem.innerHTML;
-      iframe.elem.contentWindow.print();
-      setTimeout(e => iframe.elem.remove(), 500);
+      setTimeout(e => {
+        iframe.elem.contentWindow.print();
+        setTimeout(e => iframe.elem.remove(), 500);
+      }, 500);
       return this;
     },
     printbody() {
@@ -11561,8 +11570,6 @@
   });
   // this.sw();
 
-  const currentScript = document.currentScript;
-  const scriptPath = currentScript.src.replace(/\/js\/.*/, '');
   [...currentScript.attributes].forEach(attribute => $.extend({config: minimist(['--'+attribute.name.replace(/^--/, ''), attribute.value])}));
   (new URLSearchParams(document.location.search)).forEach((value,key)=>$.extend({config: minimist([key,value])}));
 
@@ -11597,7 +11604,7 @@
     } else {
       if (currentScript.attributes.libraries) {
         for (lib of currentScript.attributes.libraries.value.split(',')) {
-          await libraries[lib]();
+          if (libraries[lib]) await libraries[lib]();
         }
       }
     }

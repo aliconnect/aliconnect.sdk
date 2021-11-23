@@ -260,6 +260,7 @@ nav .pagemenu {
 nav ul {
   list-style: none;
   padding: 0;
+  text-align: left;
 }
 nav li {
   padding: 0 10px;
@@ -515,7 +516,6 @@ body>footer{
 .col.err {
   position:fixed;
 }
-
 .col{
   display:flex;
   flex-direction: column;
@@ -524,6 +524,10 @@ body>footer{
   flex: 0 0 36px;
   line-height: 36px
 }
+.aco{
+  flex: auto;
+}
+
 main>.tv>div {
   flex: 1 0 0;
 }
@@ -708,6 +712,8 @@ header h3 {
 .lv .cards.cols>div:hover{
   box-shadow: inset 0px 0px 10px 3px var(--trans1);
 }
+
+
 .lv .cards.cols .clientNetPrice::before {
   content: '';
   display: inline-block;
@@ -747,10 +753,66 @@ header h3 {
 .lv .cards.cols div.salesPrice>label {
   display:none;
 }
-.lv .cards.cols div.salesPrice+.catalogPrice{
-  text-decoration: line-through;
-  font-weight: normal;
+
+div.price{
+  display: flex;
+  line-height: 30px;
+  width: auto;
 }
+div.price span[listprice]::before{
+  content: '€ ';
+}
+div.price span[listprice]::after{
+  content: attr(listprice);
+  margin-right: 5px;
+}
+div.price.discount span[listprice] {
+  text-decoration: line-through;
+  font-size: 0.8em;
+  color: var(--trans5);
+}
+div.price span[price]::before{
+  content: '€ ';
+}
+div.price span[price]::after{
+  content: attr(price);
+  margin-right: 5px;
+  font-size: 1.2em;
+}
+div.price span[price] {
+  color: var(--basebg);
+}
+div.price span[fatprice] {
+  font-size: 0.8em;
+  color: var(--trans5);
+}
+div.price span[fatprice]::before{
+  content: '(€ ' attr(fatprice) ' incl. btw)';
+}
+
+div.price span[discount]::before{
+  content: attr(discount);
+}
+div.price span[discount]::after{
+  content: '%';
+}
+div.price span[discount]{
+  font-size: 0.8em;
+  color: var(--trans5);
+  padding: 0 3px;
+}
+div.price input {
+  width:40px;
+  margin-left: auto;
+  border: solid 1px var(--trans3);
+  outline: none;
+  font-weight: bold;
+  text-align: center;
+  line-height: 30px;
+
+}
+
+/*
 .lv .cards.cols div[salesPrice]::before {
   content:'';
   display: inline-block;
@@ -777,6 +839,47 @@ header h3 {
   text-align: right;
   font-weight: bold;
 }
+
+div.price{
+  white-space: nowrap;
+  margin-top: auto;
+}
+div.price>div[discountperc]::before {
+  content: '€ ' attr(listprice);
+  font-size: 0.8em;
+  color: var(--trans8);
+  margin-right: 10px;
+  text-decoration: line-through;
+}
+div.price>div::after {
+  content: '(€ ' attr(fatprice) ' incl. btw)';
+  font-weight: normal;
+  font-size: 0.8em;
+  margin-left: 10px;
+  color: var(--trans8);
+}
+div.price>div>span::before {
+  content: '€ ';
+  font-size: 0.8em;
+  font-weight: normal;
+}
+div.price>div>span{
+    font-weight: bold;
+}
+div.price>input{
+  width:80px;
+  margin-left: auto;
+  border: solid 1px var(--trans3);
+  outline: none;
+  font-weight: bold;
+  text-align: right;
+}
+div.artcode {
+  font-size: 0.8em;
+  color: var(--trans8);
+}
+
+*/
 .lv .cards.cols div>div {
   display: flex;
 }
@@ -806,51 +909,6 @@ header h3 {
   z-index: 1;
 }
 
-
-
-
-.price{
-  white-space: nowrap;
-  /* display:flex; */
-  margin-top: auto;
-  padding-top: 20px;
-  line-height: 20px;
-}
-.price>div[discountperc]::before {
-  content: '€ ' attr(listprice);
-  font-size: 0.8em;
-  color: var(--trans8);
-  margin-right: 10px;
-  text-decoration: line-through;
-}
-.price>div::after {
-  /* content: '- € ' attr(discount) ' ' attr(discountperc) '% (€ ' attr(fatprice) ' incl. btw)'; */
-  content: '(€ ' attr(fatprice) ' incl. btw)';
-  font-weight: normal;
-  font-size: 0.8em;
-  margin-left: 10px;
-  color: var(--trans8);
-}
-.price>div>span::before {
-  content: '€ ';
-  font-size: 0.8em;
-  font-weight: normal;
-}
-.price>div>span{
-    font-weight: bold;
-}
-.price>input{
-  width:80px;
-  margin-left: auto;
-  border: solid 1px var(--trans3);
-  outline: none;
-  font-weight: bold;
-  text-align: right;
-}
-div.artcode {
-  font-size: 0.8em;
-  color: var(--trans8);
-}
 
 .prompt {
   position:absolute;
