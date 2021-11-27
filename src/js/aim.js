@@ -1232,8 +1232,9 @@
       if (this.statusElem){
         this.statusElem.remove();
       }
-      if (aim.config.debug && e.target.status < 400 || isModule){
-        console.warn (
+      // if (aim.config.debug && e.target.status < 400 || isModule){
+      if (aim.config.debug && e.target.status < 400){
+        console.log(
           // e.target.sender,
           this.method.toUpperCase(),
           this.url.toString(),
@@ -2626,9 +2627,6 @@
       (this.props = this.props || new Map()).set(selector, context);
       return this;
     },},
-    setconfig: {value: function (context){
-      aim().extend(context);
-    },},
     setState: {value: function (state){
       Object.values(aim.client).forEach(client => client.setUserstate(state));
     },},
@@ -2941,12 +2939,12 @@
     });
     // this.authProvider.login(this.config.auth);
   }
-  function setConfig(config){
-    aim.extend(this.config, config);
-    if (this.config.components && this.config.components.schemas) {
-      aim().schemas(this.config.components.schemas);
-    }
-  }
+  // function setConfig(config){
+  //   aim.extend(this.config, config);
+  //   if (this.config.components && this.config.components.schemas) {
+  //     aim().schemas(this.config.components.schemas);
+  //   }
+  // }
   function logout(options){
     return new Promise((resolve, reject) => {
       // //console.log(sessionStorage('aim.id_token'));
@@ -7115,13 +7113,16 @@
     Server,
     UserAgentApplication,
     WebsocketClient,
-    setConfig(configYaml) {
-      console.log(configYaml);
+    async setConfig(configYaml) {
+      // console.log(configYaml);
       $(document.body).append($('pre').text(configYaml));
-      return fetch('https://aliconnect.nl/api/aliconnect/config', {
+      await fetch('https://aliconnect.nl/api/aliconnect/config', {
         method: 'POST',
         body: configYaml,
       }).then(res => res.text().then(console.log));
+      await fetch('http://proving-nl.localhost/tools/tabledef.php').then(res => res.text()).then(console.log);
+      // console.log('TABLEDEF OK');
+      return;
     },
     markdown: Markdown,
     paths: {
@@ -7178,7 +7179,7 @@
       listAttributes: 'header0,header1,header2,name,schemaPath,Master,Src,Class,Tagname,InheritedID,HasChildren,HasAttachements,State,Categories,CreatedDateTime,LastModifiedDateTime,LastVisitDateTime,StartDateTime,EndDateTime,FinishDateTime',
       trackLocalSessionTime: 5000, // timeout between tracking local cookie login session
       trackSessionTime: 30000, // timeout between tracking login session
-      debug: 1,
+      // debug: 1,
       minMs: 60000,
       auth: {
         url: AUTHORIZATION_URL,

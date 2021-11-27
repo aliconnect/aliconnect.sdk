@@ -127,7 +127,7 @@ body {
 .app body>header {
   display:none;
 }
-.app body>footer {
+.app body>footer.page {
   display:none;
 }
 .app body aside {
@@ -654,8 +654,15 @@ body>*>article {
 .lv .cards>div:not(.ghost){
   background-color: var(--bg);
 }
+
+.lv .cards label {
+  color: var(--trans8);
+}
 .lv .cards label::after {
   content: ": ";
+}
+.lv .cards label+span {
+  margin-right: 5px;
 }
 /* .lv .cards span {
   white-space: nowrap;
@@ -692,8 +699,8 @@ header h3 {
   flex-wrap: wrap;
 }
 .lv .cards.cols>* {
-  flex: 1 0 300px;
-  min-width: 200px;
+  flex: 1 0 400px;
+  min-width: 250px;
   margin: 1px;
 }
 .lv .cards.cols>div {
@@ -714,7 +721,7 @@ header h3 {
 }
 
 
-.lv .cards.cols .clientNetPrice::before {
+/* .lv .cards.cols .clientNetPrice::before {
   content: '';
   display: inline-block;
   position: absolute;
@@ -752,12 +759,17 @@ header h3 {
 }
 .lv .cards.cols div.salesPrice>label {
   display:none;
-}
+} */
 
 div.price{
-  display: flex;
-  line-height: 30px;
-  width: auto;
+  white-space: nowrap;
+  position: static;
+  color: var(--trans8);
+}
+
+div.price span::before,
+div.price span::after {
+  font-size: 0.8em;
 }
 div.price span[listprice]::before{
   content: '€ ';
@@ -768,8 +780,6 @@ div.price span[listprice]::after{
 }
 div.price.discount span[listprice] {
   text-decoration: line-through;
-  font-size: 0.8em;
-  color: var(--trans5);
 }
 div.price span[price]::before{
   content: '€ ';
@@ -778,29 +788,72 @@ div.price span[price]::after{
   content: attr(price);
   margin-right: 5px;
   font-size: 1.2em;
-}
-div.price span[price] {
   color: var(--basebg);
 }
-div.price span[fatprice] {
-  font-size: 0.8em;
-  color: var(--trans5);
-}
+
 div.price span[fatprice]::before{
   content: '(€ ' attr(fatprice) ' incl. btw)';
 }
 
+div.price span[purchasediscount] {
+  padding: 0 5px;
+}
+div.price span[purchasediscount]::before{
+  content: '(-' attr(purchasediscount) '%)';
+}
+
+div.price span[purchaseprice] {
+  padding: 0 5px;
+}
+div.price span[purchaseprice]::before{
+  content: '€ ';
+}
+div.price span[purchaseprice]::after{
+  color: orange;
+  content: attr(purchaseprice);
+  font-size: 1.2em;
+}
+
+/* div.price.discount::before {
+  content: '';
+  position: absolute;
+  left: 100%;
+  top: -50px;
+  width: 20px;
+  height: 50px;
+  background-color: blue;
+} */
+
+div.price span[discount] {
+  position: absolute;
+  display: inline-block;
+  vertical-align: bottom;
+  width:100px;
+  line-height: 20px;
+  /* padding-top:60px; */
+  text-align: center;
+  /* height:100px; */
+  top:0;
+  right:-40px;
+  transform: rotate(45deg);
+  background-color: var(--trans5);
+  color:black;
+}
 div.price span[discount]::before{
   content: attr(discount);
 }
 div.price span[discount]::after{
   content: '%';
 }
-div.price span[discount]{
-  font-size: 0.8em;
-  color: var(--trans5);
-  padding: 0 3px;
+
+
+div.price.discount.client span[discount] {
+  background-color: orange;
 }
+
+
+
+
 div.price input {
   width:40px;
   margin-left: auto;
@@ -809,8 +862,9 @@ div.price input {
   font-weight: bold;
   text-align: center;
   line-height: 30px;
-
+  float: right;
 }
+
 
 /*
 .lv .cards.cols div[salesPrice]::before {
@@ -881,7 +935,7 @@ div.artcode {
 
 */
 .lv .cards.cols div>div {
-  display: flex;
+  /* display: flex; */
 }
 .lv .cards.cols div>div>label {
   font-size: 0.8em;
@@ -1059,6 +1113,7 @@ nav span {
   line-height: 24px;
   background-color: var(--trans1);
   display: flex;
+  overflow: hidden;
   /* height:120px; */
   /* position: sticky; */
   /* top: 0px; */
@@ -1486,7 +1541,7 @@ footer progress::-webkit-progress-value {
   /* background-image: linear-gradient(to right, transparent, var(--trans3)); */
   box-shadow: inset -20px 0px 20px -5px var(--trans3);
 }
-footer progress::after {
+/* footer progress::after {
   position: absolute;
   margin:auto;
   top:0;
@@ -1497,7 +1552,7 @@ footer progress::after {
   content: 'Uploading (' attr(proc) '%)';
   color: inherit;
   padding: 0 5px;
-}
+} */
 
 footer>article ul {
   list-style: none;

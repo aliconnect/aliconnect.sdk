@@ -6,6 +6,12 @@
   const currentScript = document.currentScript;
   const scriptPath = currentScript.src.replace(/\/js\/.*/, '');
 
+  Number.prototype.pad = function(size) {
+    var s = String(this);
+    while (s.length < (size || 2)) {s = "0" + s;}
+    return s;
+  }
+
   const libraries = {
     async page() {
       const searchParams = new URLSearchParams(document.location.search);
@@ -81,6 +87,11 @@
         await aim.api('/abis/data').query({request_type: 'clientproduct', $filter: 'clientId EQ ' + sessionStorage.getItem('clientId')}).get().then(response => response.json().then(data => aim.clientproduct = data.rows))
         console.log(aim.clientproduct.map(r => r.artId).join(','))
       }
+      function search(s) {
+        document.location.hash = '?$search=';
+        document.location.hash = '?$search='+s;
+        return false;
+      }
       $(document.body).append(
         $('nav').append($('article').append(
           $('button').class('abtn menu').on('click', e => $(document.documentElement).class(getItem('isApp', getItem('isApp') !== 'app' ? 'app' : 'page' ))),
@@ -108,10 +119,11 @@
           //   $().list(result);
           //   return false;
           // })
-          .on('submit', e => (document.location.hash = '?$search='+e.target.search.value) ? false : false)
+          .on('submit', e => search(e.target.search.value))
+          .on('keyup', e => e.code === 'Enter' ? search(e.target.value) : null)
           .append(
             $('input').name('search').autocomplete('off').placeholder('zoeken').value(searchParams.get('$search')),
-            $('button').class('abtn icn search fr').title('Zoeken'),
+            $('button').class('abtn icn search fr').title('Zoeken').on('click', e => search(e.target.previousElementSibling.value)),
           ),
 
           $('span').class('pagemenu'),
@@ -250,7 +262,7 @@
           $('aside').class('right'),
           $('div').class('prompt'),
         )),
-        $('footer').append(
+        $('footer').class('page').append(
           $('article'),
         ),
         $('footer').append(
@@ -266,23 +278,25 @@
           $('progress'),
         ),
       ).on('scroll', e => sessionStorage.setItem('scrollY', window.scrollY));
-      [
+      const docs = [
         // ['/page/menu.md', 'button.menu'],
         // ['/page/top.md', '.pagemenu'],
         // ['/page/footer.md', 'body>footer>article'],
         ['/nav-left.md', 'button.menu'],
         ['/nav-top.md', '.pagemenu'],
         ['/footer.md', 'body>footer>article'],
-      ].forEach(([filename, selector]) => {
-        aim.fetch(filename).then(res => res.status !== 200 ? null : res.text().then(body => {
+      ];
+      for ([filename, selector] of docs) {
+        await aim.fetch(filename).then(res => res.status !== 200 ? null : res.text().then(body => {
           $(selector).html(aim.markdown().render(body));
         }));
-      })
+      }
       aim.om = new Om();
       aim.om.treeview(aim.config.navleft);
-      if (searchParams.get('search')) {
-        search(searchParams.get('search'));
-      } else if (!searchParams.get('id')) {
+      // if (searchParams.get('search')) {
+      //   search(searchParams.get('search'));
+      // } else
+      if (!searchParams.get('id')) {
         const data = document.querySelector('data') ? JSON.parse(atob(document.querySelector('data').getAttribute('md'))) : {
           md: await fetch(document.location.pathname === '/' ? '/Home.md' : document.location.pathname+'.md').then(res => {
             // console.log(res)
@@ -1130,13 +1144,14 @@
       .join(', ')
     );
   }
-  function list(selector, options={}){
+  function list(selector, options={}, search){
     console.log(selector, aim.config.components.schemas[selector]);
     const args = Array.from(arguments);
     const url = args.shift();
     options.$select = aim.config.components.schemas[selector].cols.filter(col => col.header || col.filter).map(col => col.name).join(',')
     // options.$search = '';
     document.location.hash = `#?l=${aim.urlToId($().url('https://aliconnect.nl/api/'+selector).query(options).toString())}`;
+    // if (search) document.location.hash = `#?$search=` + search;
   }
   function listShow(body) {
     // console.log(222, body.rows);
@@ -1158,12 +1173,16 @@
   }
   function listview(rows, options = {}){
     rows = this.rows = rows || this.rows;
+    // console.log('startlist');
     rows = rows.map(row => row.data ? Object.assign(row,JSON.parse(row.data)) : row);
     let filter = {}
+
     const types = {
       rows: () => {
         return $('div').class('cards',options.type).append(
           rowsVisible.map(row => {
+            const schema = config.components.schemas[row.schemaName];
+            const app = schema.app || {};
             const div = $('div').on('click', e => {
               if (row.id) {
                 const url = new URL(document.location);
@@ -1171,17 +1190,20 @@
                 document.location.hash = `#?id=${btoa(ref)}`;
               }
             });
-            const schema = config.components.schemas[row.schemaName];
-            const app = schema.app || {};
             return div.append(
               $('header').append(
                 $('div').class('icon').append(
                   row.images && row.images[0] ? $('img').src(row.images[0]) : $('span').text((rowHeaders(row,config.components.schemas[row.schemaName].cols).join('').match(/([A-Z]).*?([A-Z])/)||[]).slice(1,3).join('')),
                 ),
                 $('div').class('aco').append(
-                  rowHeaders(row, schema.cols)
-                  .map((s,i)=>$('h'+(i+1)).text(s)),
+                  row.headers.map((s,i)=>$('h'+(i+1)).text(s)),
                   app.header ? app.header(row) : null,
+                  row.options ? $('div').append(
+                    Object.entries(row.options).map(entry => [
+                      $('label').text(entry[0]),
+                      $('span').text(entry[1])
+                    ])
+                  ) : null,
                 ),
               )
             );
@@ -1191,6 +1213,8 @@
       cols: () => {
         return $('div').class('cards',options.type).append(
           rowsVisible.map(row => {
+            const schema = config.components.schemas[row.schemaName];
+            const app = schema.app || {};
             const div = $('div').on('click', e => {
               if (row.id) {
                 // console.log('click', row)
@@ -1209,9 +1233,10 @@
                 $('div').class('icon').append(
                   row.images && row.images[0] ? $('img').src(row.images[0]) : $('span').text((rowHeaders(row,config.components.schemas[row.schemaName].cols).join('').match(/([A-Z]).*?([A-Z])/)||[]).slice(1,3).join('')),
                 ),
-                $('div').append(
-                  rowHeaders(row,config.components.schemas[row.schemaName].cols)
-                  .map((s,i)=>$('h'+(i+1)).text(s)),
+                $('div').class('aco').append(
+                  row.headers.map((s,i)=>$('h'+(i+1)).text(s)),
+                  app.header ? app.header(row) : null,
+                  row.options ? Object.entries(row.options).map(entry => entry.join(': ')).join('\n') : null,
                 ),
               )
             );
@@ -1244,23 +1269,48 @@
       },
     };
     const navList = rows.map(row => row.schemaName).unique().map(schemaName => aim.config.components.schemas[schemaName] && aim.config.components.schemas[schemaName].app ? aim.config.components.schemas[schemaName].app.navList : null).filter(Boolean);
-    rows.forEach(row => {
-      const cols = config.components.schemas[row.schemaName].cols.filter(col => col.filter);
-      cols.forEach(col => {
-        if (col.name in row) {
-          const value = row[col.name];
-          const filtercol = filter[col.name] = filter[col.name] || { name: col.name, title: col.title || col.name.replace(/^\w/, s => s.toUpperCase()), values: {} };
-          const valuerow = filtercol.values[value] = filtercol.values[value] || { value: value, rows: []};
-          valuerow.rows.push(row);
-        }
+    const schemaNames = rows.map(row => row.schemaName).unique();
+    schemaNames.forEach(schemaName => {
+      const schema = config.components.schemas[schemaName];
+      const cols = schema.cols;
+      cols.filter(col => col.filter).forEach(col => {
+        filter[col.name] = {
+          name: col.name,
+          title: col.title || col.name.replace(/^\w/, s => s.toUpperCase()),
+          values: {},
+        };
       })
     })
+    rows.forEach(row => {
+      const schema = config.components.schemas[row.schemaName];
+      const cols = schema.cols;
+      if (schema.app) {
+        if (schema.app.precompile) {
+          schema.app.precompile(row, filter);
+        }
+      }
+      row.headers = rowHeaders(row, cols);
+    });
+
+    filter = Object.values(filter);
+    filter.forEach(attribute => {
+      attribute.values = rows
+      .map(row => row[attribute.name]||'')
+      .unique()
+      .sort((a,b) => String(a).localeCompare(String(b), undefined, {numeric: true}))
+      .map(value => Object({
+        value: value,
+        rows: rows.filter(row => row[attribute.name] === value)
+      }))
+    });
+
+    rows.sort((a,b) => a.headers[0].localeCompare(b.headers[0]));
     let rowsVisible = aim.listRows = rows || [];
     if (rows.some(row => row.geolocatie)) {
       types.map = () => {
         const mapelem = $('div').class('googlemap').css('width:100%;height:100%;');
         aim.maps().then(maps => {
-          console.log(config);
+          // console.log(config);
           const mapOptions = {
             zoom: 10,
             center: { lat: 51, lng: 6 },//new maps.LatLng(51,6),
@@ -1301,7 +1351,7 @@
             // ],
             styles: config.maps.styles,
           };
-          console.log(mapOptions.styles);
+          // console.log(mapOptions.styles);
           const map = new maps.Map(mapelem.elem, mapOptions);
           var bounds = new maps.LatLngBounds();
           // const dataItems = rowsVisible.filter(row => row.geolocatie);
@@ -1387,10 +1437,6 @@
         return mapelem;
       }
     }
-    // console.log('filter', filter);
-    filter = Object.values(filter);
-    filter.forEach(attribute => attribute.values = Object.values(attribute.values).sort((a,b) => String(a.value||'').localeCompare(String(b.value||''), undefined, {numeric: true})));
-
     // filter = filter.filter(attribute => attribute.values.length>1 && attribute.values.some(value => value.rows.length>1))
     filter = filter.filter(attribute => attribute.values.length>1)
 
@@ -1446,14 +1492,16 @@
       return $('label').text(col.title || col.name)
     }
     (function buildlist(type) {
+      // console.log('buildlist');
       type = options.type = type || options.type || sessionStorage.getItem('listType') || 'rows';
       sessionStorage.setItem('listType', type);
-      const checkedFilters = filter.filter(col => col.checked = col.values.some(val => val.checked));
-      aim.listRows = rowsVisible = rows.filter(
-        row => !filter.some(col => col.checked && (!(col.name in row) || col.values.filter(val => !val.checked).some( val => val.rows.includes(row) )) )
-      );
 
-      // console.log(filter,checkedFilters);
+      const checkedFilters = filter
+      .filter(col => col.checked = col.values.some(val => val.checked))
+      .map(col => Object({name: col.name, values:col.values.filter(val => val.checked).map(val => val.value) }));
+
+      aim.listRows = rowsVisible = rows.filter(row => !checkedFilters.some(val => !val.values.includes(row[val.name])));
+
       $('.lv').attr('hidefilter', aim.showfilter).text('').append(
         $('nav').append(
           $('button').class('abtn filter').on('click', e => $('.lv').attr('hidefilter', aim.showfilter ^= 1)),
@@ -1466,11 +1514,12 @@
         ),
         $('div').append(
           $('aside').class('oa filter').append(
-            filter.filter(col => col.checked).map(col => $('div').append(
+            filter
+            .filter(col => col.checked)
+            .map(col => $('div').append(
               $('span').text(col.title),
               $('i').class('icn-cross-mark-small').on('click', e => {
                 col.values.forEach(v => delete(v.checked));
-                console.log(col);
                 buildlist();
               }),
               ': ',
@@ -1479,17 +1528,13 @@
             filter
             .filter(col => col.checked || col.values.some(val => val.rows.some(row => rowsVisible.includes(row))))
             .map(col => {
-              const colRowsVisible = rows.filter(row => !filter.some(c => c !== col && c.checked && c.values.some(val => !val.checked && val.rows.find(r => r === row))))
-              // console.log(col.name, colRowsVisible)
-              const values = col.values;//.filter(val => val.rows.some(row => rowsVisible.includes(row)));
+              const colRowsVisible = rows.filter(row => !checkedFilters.filter(fcol => fcol.name !== col.name).some(val => !val.values.includes(row[val.name])));
+              const values = col.values.filter(val => col.checked || val.rows.some(row => colRowsVisible.includes(row)));
               if(values.some(val => val.checked) || values.length>1) {
                 return $('div')
-                // .open(values.some(val => val.checked))
-                .open(1)
                 .attr('more', col.more)
                 .append(
                   $('legend').text(col.title),
-                  // $('div').class('more').text('more'),
                   values
                   .filter(val => val.value !== null)
                   .filter(val => val.rows.filter(row => colRowsVisible.includes(row)).length).map((val,i) => [
@@ -1508,10 +1553,11 @@
           ),
         ),
       )
+      // console.log('done builddom');
     })()
   }
-  function search(search){
-    // console.log('SEARCH', search)
+  function _search(search){
+    console.warn('SEARCH', search)
     aim.api('/abis/data').query({request_type: 'article',$search: search}).get().then(response => response.json().then(data => {
       // console.log(1,data);
       data.rows.forEach(row => {
@@ -1609,7 +1655,7 @@
       // console.log(ref,body.schemaName,body);
       const schema = config.components.schemas[row.schemaName];
       const app = schema.app || {};
-      console.log(app.header);
+      // console.log(app.header);
       const data = {};
       const cfg = {};
       var legend = row.schemaName;
@@ -10393,12 +10439,11 @@
     },
     prompt,
     promptform,
-    search,
+    // search,
     urlString: (s = '') => {
       return s.replace(/%2F/g, '/');
     },
   });
-
   // console.log(1, this.global);
   Object.defineProperties(aim, {
     clipboard: { value: new Clipboard() },
@@ -11452,7 +11497,6 @@
     }},
   });
 
-
   $.his.openItems = localStorage.getItem('openItems');
   let localAttr = localStorage.getItem('attr');
   $.localAttr = localAttr = localAttr ? JSON.parse(localAttr) : {};
@@ -11640,13 +11684,21 @@
             'search',
             'filter'
           ].forEach(key => {
-            if (docsearchParams.has(key)) {
-              listUrl.searchParams.set('$'+key, docsearchParams.get(key));
+            if (changed[key]) {
+              listUrl.searchParams.set('$'+key, changed[key]);
             }
-            if (docsearchParams.has('$'+key)) {
-              listUrl.searchParams.set('$'+key, docsearchParams.get('$'+key));
+            if (changed['$'+key]) {
+              listUrl.searchParams.set('$'+key, changed['$'+key]);
             }
+
+            // if (docsearchParams.has(key)) {
+            //   listUrl.searchParams.set('$'+key, docsearchParams.get(key));
+            // }
+            // if (docsearchParams.has('$'+key)) {
+            //   listUrl.searchParams.set('$'+key, docsearchParams.get('$'+key));
+            // }
           });
+
 
           // docsearchParams.set('l', aim.urlToId(listUrl));
           const hostname = new URL(listUrl).hostname;
