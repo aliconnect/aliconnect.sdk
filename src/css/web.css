@@ -1208,8 +1208,8 @@ header>.icon {
   padding: 1px 12px;
   display: flex;
   flex-direction: row;
-  break-inside: avoid;
-  flex-wrap:wrap;
+  /* break-inside: avoid; */
+  /* flex-wrap:wrap; */
   line-height: 32px;
 }
 .pv .attr>label {

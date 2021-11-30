@@ -2575,7 +2575,9 @@
 
 
     print() {
-      const iframe = $('iframe').parent(document.body).style('display:none');
+      const iframe = $('iframe')
+      .parent(document.body)
+      .style('width:0;height:0;position:absolute;visibility:hidden;');
       const doc = iframe.elem.contentWindow.document;
       const body = document.createElement('body');
       doc.open();
