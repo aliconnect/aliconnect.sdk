@@ -1304,7 +1304,7 @@
       }))
     });
 
-    rows.sort((a,b) => a.headers[0].localeCompare(b.headers[0]));
+    // rows.sort((a,b) => a.headers[0].localeCompare(b.headers[0]));
     let rowsVisible = aim.listRows = rows || [];
     if (rows.some(row => row.geolocatie)) {
       types.map = () => {

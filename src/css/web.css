@@ -1720,3 +1720,11 @@ pre code {
 .hl-string {
   color: var(--hl-string);
 }
+
+.bc{
+  font-family:barcode;
+  /* font-size:10mm; */
+  /* display:inline-block; */
+  /* height:8mm; */
+  /* overflow:hidden; */
+}
