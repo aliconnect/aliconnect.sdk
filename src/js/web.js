@@ -265,7 +265,7 @@
         $('footer').class('page').append(
           $('article'),
         ),
-        $('footer').append(
+        $('footer').class('statusBar').append(
           $('span').class('ws'),
           $('span').class('aliconnector'),
           $('span').class('http'),
@@ -1303,7 +1303,7 @@
     filter = Object.values(filter);
     filter.forEach(attribute => {
       attribute.values = rows
-      .map(row => attribute.name in row ? (isNaN(row[attribute.name]) ? row[attribute.name].toLowerCase() : row[attribute.name]) : '')
+      .map(row => attribute.name in row ? (isNaN(row[attribute.name]) ? row[attribute.name].toLowerCase().trim() : row[attribute.name]) : '')
       .unique()
       .sort((a,b) => String(a).localeCompare(String(b), undefined, {numeric: true}))
       .map(value => Object({
@@ -1500,6 +1500,19 @@
     function labelTag(col,row){
       return $('label').text(col.title || col.name)
     }
+
+    function rowsFiltered(filter){
+      return rows.filter(row => !filter.some(val => !val.values.some(value => value.rows.includes(row))));
+    }
+
+
+    $('.lv').attr('hidefilter', aim.showfilter).text('');
+    const navElem = $('nav').parent($('.lv'));
+    const listContainerElem = $('div').parent($('.lv'));
+    const filterElem = $('aside').class('oa filter').parent(listContainerElem);
+    const rowsElem = $('div').parent(listContainerElem);
+
+
     (function buildlist(type) {
       // console.log('buildlist');
       type = options.type = type || options.type || sessionStorage.getItem('listType') || 'rows';
@@ -1507,61 +1520,71 @@
 
       const checkedFilters = filter
       .filter(col => col.checked = col.values.some(val => val.checked))
-      .map(col => Object({name: col.name, values:col.values.filter(val => val.checked).map(val => val.value) }));
+      // .map(col => Object({name: col.name, values:col.values.filter(val => val.checked).map(val => val.value) }));
+      .map(col => Object({name: col.name, values:col.values.filter(val => val.checked) }));
 
-      aim.listRows = rowsVisible = rows.filter(row => !checkedFilters.some(val => !val.values.includes(row[val.name])));
+      // aim.listRows = rowsVisible = rows.filter(row => !checkedFilters.some(val => !val.values.includes(row[val.name])));
 
-      $('.lv').attr('hidefilter', aim.showfilter).text('').append(
-        $('nav').append(
-          $('button').class('abtn filter').on('click', e => $('.lv').attr('hidefilter', aim.showfilter ^= 1)),
-          ...navList.map(fn => fn()),
-          $('button').class('abtn view').append(
-            $('div').append(
-              Object.keys(types).map(key => $('button').text(key).on('click', e => buildlist(type = key)))
-            ),
-          ),
-        ),
-        $('div').append(
-          $('aside').class('oa filter').append(
-            filter
-            .filter(col => col.checked)
-            .map(col => $('div').append(
-              $('span').text(col.title),
-              $('i').class('icn-cross-mark-small').on('click', e => {
-                col.values.forEach(v => delete(v.checked));
-                buildlist();
-              }),
-              ': ',
-              $('b').text(col.values.filter(val => val.checked).map(val => val.title).join(', ')),
-            )),
-            filter
-            .filter(col => col.checked || col.values.some(val => val.rows.some(row => rowsVisible.includes(row))))
-            .map(col => {
-              const colRowsVisible = rows.filter(row => !checkedFilters.filter(fcol => fcol.name !== col.name).some(val => !val.values.includes(String(row[val.name]).toLowerCase())));
-              const values = col.values.filter(val => col.checked || val.rows.some(row => colRowsVisible.includes(row)));
-              if(values.some(val => val.checked) || values.length>1) {
-                return $('div')
-                .attr('more', col.more)
-                .append(
-                  $('legend').text(col.title),
-                  values
-                  .filter(val => val.value !== null)
-                  .filter(val => val.rows.filter(row => colRowsVisible.includes(row)).length).map((val,i) => [
-                    i == 5 ? $('div').class('more').on('click', e => e.target.parentElement.setAttribute('more', col.more ^= 1)) : null,
-                    $('div').text(val.title)
-                    .checked(val.checked)
-                    .attr('cnt', val.rows.filter(row => colRowsVisible.includes(row)).length)
-                    .on('click', e => buildlist(type, val.checked ^= 1))
-                  ])
-                );
-              }
-            })
-          ),
-          $('div').class('oa', type).append(
-            types[type] ? types[type]() : types.cols(),
+      // aim.listRows = rowsVisible = rows.filter(row => !checkedFilters.some(val => !val.values.find(value => value == String(row[val.name]).toLowerCase())));
+
+      // aim.listRows = rowsVisible = rows.filter(row => !checkedFilters.some(val => !val.values.some(value => value == String(row[val.name]).toLowerCase())));
+      aim.listRows = rowsVisible = rowsFiltered(checkedFilters);
+
+      // aim.listRows = rowsVisible = rows.filter(row => !checkedFilters.some(val => !val.rows.includes(row)));
+
+      // console.log(checkedFilters, rows, rowsVisible);
+      $('span.pos').text(rowsVisible.length+'/'+rows.length);
+      navElem.text('').append(
+        $('button').class('abtn filter').on('click', e => $('.lv').attr('hidefilter', aim.showfilter ^= 1)),
+        ...navList.map(fn => fn()),
+        $('button').class('abtn view').append(
+          $('div').append(
+            Object.keys(types).map(key => $('button').text(key).on('click', e => buildlist(type = key)))
           ),
         ),
       )
+      filterElem.text('').append(
+        filter
+        .filter(col => col.checked)
+        .map(col => $('div').append(
+          $('span').text(col.title),
+          $('i').class('icn-cross-mark-small').on('click', e => {
+            col.values.forEach(v => delete(v.checked));
+            buildlist();
+          }),
+          ': ',
+          $('b').text(col.values.filter(val => val.checked).map(val => val.title).join(', ')),
+        )),
+        filter
+        .filter(col => col.checked || col.values.some(val => val.rows.some(row => rowsVisible.includes(row))))
+        .map(col => {
+          // const colRowsVisible = rows.filter(row => !checkedFilters.filter(fcol => fcol.name !== col.name).some(val => !val.values.includes(String(row[val.name]).toLowerCase())));
+          const colRowsVisible = rowsFiltered(checkedFilters.filter(fcol => fcol.name !== col.name));
+          const values = col.values.filter(val => col.checked || val.rows.some(row => colRowsVisible.includes(row)));
+          if(values.some(val => val.checked) || values.length>1) {
+            return $('div')
+            .attr('more', col.more)
+            .append(
+              $('legend').text(col.title),
+              values
+              .filter(val => val.value !== null)
+              .filter(val => val.rows.filter(row => colRowsVisible.includes(row)).length).map((val,i) => [
+                i == 5 ? $('div').class('more').on('click', e => e.target.parentElement.setAttribute('more', col.more ^= 1)) : null,
+                $('div')
+                .checked(val.checked)
+                .attr('cnt', val.rows.filter(row => colRowsVisible.includes(row)).length)
+                .on('click', e => buildlist(type, val.checked ^= 1))
+                .append(
+                  $('span').text(val.title)
+                )
+              ])
+            );
+          }
+        })
+      );
+      rowsElem.text('').class('oa', type).append(
+        types[type] ? types[type]() : types.cols(),
+      );
       // console.log('done builddom');
     })()
   }
