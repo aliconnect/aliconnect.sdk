@@ -1521,7 +1521,8 @@ footer.statusBar progress {
   position: absolute;
   z-index: 1;
   width: 100%;
-  height: 100%;
+  height: 3px;
+  bottom: 0;
   background-color: transparent;
   color: inherit;
   /* box-shadow: inset 0px 11px 8px -10px var(--trans3), inset 0px -11px 8px -10px var(--trans3); */
@@ -1537,16 +1538,19 @@ footer.statusBar progress[context] {
   height:100%;
 }
 footer.statusBar progress::-webkit-progress-bar {
-  background: transparent;
+  background-color: transparent;
+  background-color: red;
   /* box-shadow: inset 0 0 5px var(--trans3); */
 }
 footer.statusBar progress[value]::-webkit-progress-value {
   /* transition: all 1s; */
 }
 footer.statusBar progress::-webkit-progress-value {
-  background: transparent;
+  background-color: transparent;
+  background-color: green;
   /* background-image: linear-gradient(to right, transparent, var(--trans3)); */
   box-shadow: inset -20px 0px 20px -5px var(--trans3);
+
 }
 /* footer progress::after {
   position: absolute;
