@@ -1303,7 +1303,7 @@
     filter = Object.values(filter);
     filter.forEach(attribute => {
       attribute.values = rows
-      .map(row => attribute.name in row ? (isNaN(row[attribute.name]) ? row[attribute.name].toLowerCase().trim() : row[attribute.name]) : '')
+      .map(row => attribute.name in row ? (isNaN(row[attribute.name]) ? String(row[attribute.name]).toLowerCase().trim() : row[attribute.name]) : '')
       .unique()
       .sort((a,b) => String(a).localeCompare(String(b), undefined, {numeric: true}))
       .map(value => Object({
