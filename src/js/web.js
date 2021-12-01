@@ -1274,11 +1274,11 @@
       const schema = config.components.schemas[schemaName];
       const cols = schema.cols;
       cols.filter(col => col.filter).forEach(col => {
-        filter[col.name] = {
+        filter[col.name] = Object.assign({
           name: col.name,
           title: col.title || col.name.replace(/^\w/, s => s.toUpperCase()),
           values: {},
-        };
+        },col)
       })
     })
     rows.forEach(row => {
@@ -1292,15 +1292,24 @@
       row.headers = rowHeaders(row, cols);
     });
 
+    function displayvalue(value, col){
+      // console.log(col, value)
+      if (col.type === 'boolean') {
+        return value ? 'Ja' : 'Nee';
+      }
+      return String(value).replace(/\w/, s => s.toUpperCase());
+    }
+
     filter = Object.values(filter);
     filter.forEach(attribute => {
       attribute.values = rows
-      .map(row => row[attribute.name]||'')
+      .map(row => attribute.name in row ? (isNaN(row[attribute.name]) ? row[attribute.name].toLowerCase() : row[attribute.name]) : '')
       .unique()
       .sort((a,b) => String(a).localeCompare(String(b), undefined, {numeric: true}))
       .map(value => Object({
         value: value,
-        rows: rows.filter(row => row[attribute.name] === value)
+        title: displayvalue(value, attribute),
+        rows: rows.filter(row => attribute.name in row && String(row[attribute.name]).toLowerCase() == value )
       }))
     });
 
@@ -1523,12 +1532,12 @@
                 buildlist();
               }),
               ': ',
-              $('b').text(col.values.filter(val => val.checked).map(val => val.value).join(', ')),
+              $('b').text(col.values.filter(val => val.checked).map(val => val.title).join(', ')),
             )),
             filter
             .filter(col => col.checked || col.values.some(val => val.rows.some(row => rowsVisible.includes(row))))
             .map(col => {
-              const colRowsVisible = rows.filter(row => !checkedFilters.filter(fcol => fcol.name !== col.name).some(val => !val.values.includes(row[val.name])));
+              const colRowsVisible = rows.filter(row => !checkedFilters.filter(fcol => fcol.name !== col.name).some(val => !val.values.includes(String(row[val.name]).toLowerCase())));
               const values = col.values.filter(val => col.checked || val.rows.some(row => colRowsVisible.includes(row)));
               if(values.some(val => val.checked) || values.length>1) {
                 return $('div')
@@ -1539,7 +1548,7 @@
                   .filter(val => val.value !== null)
                   .filter(val => val.rows.filter(row => colRowsVisible.includes(row)).length).map((val,i) => [
                     i == 5 ? $('div').class('more').on('click', e => e.target.parentElement.setAttribute('more', col.more ^= 1)) : null,
-                    $('div').text(val.value)
+                    $('div').text(val.title)
                     .checked(val.checked)
                     .attr('cnt', val.rows.filter(row => colRowsVisible.includes(row)).length)
                     .on('click', e => buildlist(type, val.checked ^= 1))
