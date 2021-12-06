@@ -1300,6 +1300,9 @@
           try {
             const arr = e.body.match(/(.*?)([\[|\{].*)/s
             );
+            if (!arr[2]) {
+              console.error(e.body);
+            }
             const data = JSON.parse(arr[2]);
             const error = data.error || data;
             messagePopup({

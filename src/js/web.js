@@ -1154,7 +1154,7 @@
     // if (search) document.location.hash = `#?$search=` + search;
   }
   function listShow(body) {
-    // console.log(222, body.rows);
+    console.log('listShow', body);
     $('.lv').text('');
     if (body.rows && body.rows.length) {
       const rows = body.rows;
@@ -11732,25 +11732,13 @@
             //   listUrl.searchParams.set('$'+key, docsearchParams.get('$'+key));
             // }
           });
-
-
           // docsearchParams.set('l', aim.urlToId(listUrl));
           const hostname = new URL(listUrl).hostname;
           const client = aim.clients.get(hostname);
-          // console.log(client);
           if (client) {
-            client.api(listUrl.href).get().then(async body => {
-              console.log('SHOW');
-              // const items = body.value || body.Children || await body.children;
-              listShow(body);
-              // aim().list(items);
-            });
-            // } else {
-            //   // aim('list').load(refurl.href);
+            console.log(listUrl.href);
+            client.api(listUrl.href).get().then(listShow);
           }
-          // } else if (!changed.l) {
-          //   $('.lv').text('');
-          // }
         }
         if (changed.id) {
           // console.warn(page)

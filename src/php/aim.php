@@ -149,6 +149,7 @@ class Aim {
     if (isset($this->config['components']['schemas'][$basename])) {
       $schema = $this->config['components']['schemas'][$basename];
       if ($tablename = get_item($schema, 'tablename')) {
+        // die('a');
         $dbname = get_item($schema,'dbname') ?: get_item($this->config,'dbname');
         $idname = get_item($schema,'idname') ?: 'id';
         if ($id = get_item($_GET, 'id')) {
@@ -160,8 +161,10 @@ class Aim {
             http_response(200);
             // die('POST');
           }
-          $row = sqlsrv_fetch_object(aim()->sql_query("SELECT [schemaName],[$idname] AS [id],* FROM [$dbname].$tablename WHERE $idname = $id"));
-          $row->id = $id = $row->{$idname};
+          $row = sqlsrv_fetch_object(aim()->sql_query("SELECT [$idname] AS [id],* FROM [$dbname].$tablename WHERE [$idname] = $id"));
+          // debug($row);
+          $id = $row->id;// = $row->{$idname};
+          $row->schemaName = $basename;
           $row->{'@id'}=$this->origin . $this->request_path . "?id=$id";
           $row->schemaName = $basename;
           http_response(200,$row);

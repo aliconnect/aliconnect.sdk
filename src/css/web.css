@@ -1160,6 +1160,10 @@ header>.icon {
   counter-increment: artikel;
   counter-reset: par;
 }
+summary:only-child {
+  /* display:none; */
+}
+
 .pv summary {
   position: sticky;
   top: -1px;
@@ -1511,6 +1515,7 @@ footer.statusBar {
   background-color: rgb(10,10,10);
   font-size: 12px;
   color: rgb(140,140,140);
+  white-space: nowrap;
 }
 footer.statusBar span:not(:empty) {
   padding: 0 5px;
