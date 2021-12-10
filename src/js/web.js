@@ -1683,7 +1683,8 @@
     // console.log(schemaName,id);
     const hostname = new URL(ref).hostname;
     const client = aim.clients.get(hostname);
-    client.api(ref).get().then(row => {
+    console.log(aim.idfilter);
+    client.api(ref).filter(aim.idfilter||'').get().then(row => {
       // console.log(ref,body.schemaName,body);
       const schema = config.components.schemas[row.schemaName];
       const app = schema.app || {};
@@ -11661,7 +11662,7 @@
         hostname: document.location.hostname,
         client_id: aim.config.client_id,
       }).get().then(res => res.json());
-      console.log(1, config, config.client);
+      // console.log(1, config, config.client);
       // config = JSON.parse(config);
       // console.log(JSON.parse(config));
 

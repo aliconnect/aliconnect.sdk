@@ -3194,7 +3194,7 @@
     return new Client(options, config);
   }
   function Client (options, config) {
-    console.warn('Client', options, config);
+    // console.warn('Client', options, config);
 
     this.config = config;
     this.options = options;
@@ -7109,6 +7109,90 @@
     },
   }
 
+
+  function StatusMessage(context){
+    const statusBarMain = document.querySelector('.statusBar>.main');
+    return statusElem = statusBarMain
+    ? $('span').parent(statusBarMain).on('click', e => statusElem.remove())
+    : {
+      text(){
+        console.log(context);
+      }
+    };
+  }
+
+  function req(url, options = {}) {
+    const xhr = new XMLHttpRequest();
+    url = new URL(url, document.location);
+    options.method = 'get';
+    const statusMessage = new StatusMessage;
+
+    function Request(){}
+    Request.prototype = {
+      json: () => new Promise((resolve,fail) => {
+        if (!xhr.responseText) return resolve();
+        try {
+          const data = JSON.parse(xhr.responseText);
+          resolve(data);
+        } catch (err) {
+          fail(err);
+        }
+      }),
+      text: () => new Promise(resolve => resolve(xhr.responseText)),
+    };
+    function query(selector, context) {
+      if (typeof selector === 'object') {
+        Object.entries(selector).forEach(entry => query(...entry));
+      } else {
+        url.searchParams.set(selector, context);
+      }
+      return ret;
+    }
+    function setOption(selector, context, input) {
+      options[selector] = context;
+      if (input) ret.input(input);
+      return ret;
+    }
+
+    const ret = Object.assign(new Promise((resolve, fail) => setTimeout( () => {
+      statusMessage.text('Wachten op ' + url);
+      xhr.open(options.method, url);
+      xhr.addEventListener('load', async e => {
+        // console.log(e, xhr);
+        if (xhr.status < 400) {
+          statusMessage.remove();
+          resolve(new Request)
+        } else {
+          statusMessage.style('background-color:red;');
+          const req = new Request;
+          const {error} = await req.json();
+          console.error(error);
+          fail(error.message);
+        }
+      });
+      xhr.send(options.input);
+    })), {
+      query,
+      filter: context => query('filter', context),
+      select: context => query('$select', context),
+      top: context => query('$top', context),
+      search: context => query('$search', context),
+      order: context => query('$order', context),
+
+      get: context => setOption('method', 'get', context),
+      post: context => setOption('method', 'post', context),
+      delete: context => setOption('method', 'delete', context),
+      put: context => setOption('method', 'put', context),
+      patch: context => setOption('method', 'patch', context),
+      input: context => {
+        options.input = JSON.stringify(context);
+        return ret;
+      }
+    });
+    return ret;
+  }
+
+
   Object.assign(aim, {
     Client,
     Dist,
@@ -7140,6 +7224,7 @@
     url: (url) => {
       return new Request(url);
     },
+    req,
     urlToId,
     idToUrl,
     extend,

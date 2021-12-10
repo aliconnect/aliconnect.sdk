@@ -762,6 +762,12 @@ div.price{
   color: var(--trans8);
 }
 
+span.price {
+  font-size: 1.2em;
+  color: var(--basebg);
+}
+
+
 div.price span::before,
 div.price span::after {
   font-size: 0.8em;
@@ -790,11 +796,11 @@ div.price span[fatprice]::before{
   content: '(€ ' attr(fatprice) ' incl. btw)';
 }
 
-div.price span[purchasediscount] {
+div.price span[discount] {
   padding: 0 5px;
 }
-div.price span[purchasediscount]::before{
-  content: '(-' attr(purchasediscount) '%)';
+div.price span[discount]::before{
+  content: '(-' attr(discount) '%)';
 }
 
 div.price span[purchaseprice] {
@@ -819,7 +825,7 @@ div.price span[purchaseprice]::after{
   background-color: blue;
 } */
 
-div.price span[discount] {
+div.price span[discount1] {
   position: absolute;
   display: inline-block;
   vertical-align: bottom;
@@ -834,10 +840,10 @@ div.price span[discount] {
   background-color: var(--trans5);
   color:black;
 }
-div.price span[discount]::before{
+div.price span[discount1]::before{
   content: attr(discount);
 }
-div.price span[discount]::after{
+div.price span[discount1]::after{
   content: '%';
 }
 
@@ -1513,7 +1519,7 @@ footer.statusBar {
   line-height: 24px;
   /* background-color: #22252B; */
   background-color: rgb(10,10,10);
-  font-size: 12px;
+  font-size: 14px;
   color: rgb(140,140,140);
   white-space: nowrap;
 }

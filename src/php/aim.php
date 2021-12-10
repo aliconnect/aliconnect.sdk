@@ -152,39 +152,7 @@ class Aim {
         // die('a');
         $dbname = get_item($schema,'dbname') ?: get_item($this->config,'dbname');
         $idname = get_item($schema,'idname') ?: 'id';
-        if ($id = get_item($_GET, 'id')) {
-          if ($this->method === 'post') {
-            $value = $_POST['value'] === '' ? "NULL" : "'".str_replace("'","''",$_POST['value'])."'";
-            // $q = "UPDATE [$dbname].$tablename SET [$_POST[name]] = '$value' WHERE $idname = $id";
-            // die($q);
-            aim()->sql_query("UPDATE [$dbname].$tablename SET [$_POST[name]] = $value WHERE $idname = $id");
-            http_response(200);
-            // die('POST');
-          }
-          $row = sqlsrv_fetch_object(aim()->sql_query("SELECT [$idname] AS [id],* FROM [$dbname].$tablename WHERE [$idname] = $id"));
-          // debug($row);
-          $id = $row->id;// = $row->{$idname};
-          $row->schemaName = $basename;
-          $row->{'@id'}=$this->origin . $this->request_path . "?id=$id";
-          $row->schemaName = $basename;
-          http_response(200,$row);
-        }
-        $this->select = request('$select', $_GET) ?: request('select', $_GET) ?: '*';
-
-        // debug($_GET);
-
         $this->filter = strtolower(request('$filter', $_GET) ?: request('filter', $_GET));
-        $this->search = strtolower(request('$search', $_GET) ?: request('search', $_GET));
-        if (isset($_GET['$search']) && empty($_GET['$search'])) {
-          http_response(200,[
-            '@context'=>aim()->context,
-            'rows'=>[],
-          ]);
-        };
-        $this->order = urldecode(strtolower(request('$order', $_GET) ?: request('order', $_GET)));
-        $this->order = $this->order ? "ORDER BY $this->order" : "";
-        $this->top = request('$top', $_GET) ?: request('top', $_GET) ?: 10000;
-        $this->top = $this->top ? "TOP $this->top" : "";
         if ($this->filter) {
           $operators = [
             " eq null "=>" IS NULL ",
@@ -210,6 +178,40 @@ class Aim {
           ];
           $this->filter = str_replace(array_keys($operators), array_values($operators), ' '.$this->filter.' ');
         }
+        if ($id = get_item($_GET, 'id')) {
+          $filter = $this->filter ? "AND $this->filter" : "";
+          if ($this->method === 'post') {
+            $value = $_POST['value'] === '' ? "NULL" : "'".str_replace("'","''",$_POST['value'])."'";
+            // $q = "UPDATE [$dbname].$tablename SET [$_POST[name]] = '$value' WHERE $idname = $id";
+            // die($q);
+            aim()->sql_query("UPDATE [$dbname].$tablename SET [$_POST[name]] = $value WHERE $idname = $id $filter");
+            http_response(200);
+            // die('POST');
+          }
+          $keys = implode(',',array_keys($schema['properties']));
+          $row = sqlsrv_fetch_object(aim()->sql_query("SELECT TOP 1 [$idname] AS [id],$keys FROM [$dbname].$tablename WHERE [$idname] = $id $filter"));
+          // debug($row);
+          $id = $row->id;// = $row->{$idname};
+          $row->schemaName = $basename;
+          $row->{'@id'}=$this->origin . $this->request_path . "?id=$id";
+          $row->schemaName = $basename;
+          http_response(200,$row);
+        }
+        $this->select = request('$select', $_GET) ?: request('select', $_GET) ?: '*';
+
+        // debug($_GET);
+
+        $this->search = strtolower(request('$search', $_GET) ?: request('search', $_GET));
+        if (isset($_GET['$search']) && empty($_GET['$search'])) {
+          http_response(200,[
+            '@context'=>aim()->context,
+            'rows'=>[],
+          ]);
+        };
+        $this->order = urldecode(strtolower(request('$order', $_GET) ?: request('order', $_GET)));
+        $this->order = $this->order ? "ORDER BY $this->order" : "";
+        $this->top = request('$top', $_GET) ?: request('top', $_GET) ?: 10000;
+        $this->top = $this->top ? "TOP $this->top" : "";
         $items=[];
         $and = $this->filter ? [$this->filter] : [];
         $search_fields = get_item($schema, 'searchFields');
@@ -1237,15 +1239,20 @@ class Aim {
     }
   }
   public function sql_resultset($query, $args = []) {
-    $res = $this->sql_query($query, $args);
-    $data = [];
-    while ($res) {
-      $rows = [];
-      while ($row = sqlsrv_fetch_object($res)) $rows[] = $row;
-      $data[] = $rows;
-      if (!sqlsrv_next_result($res)) break;
+    if ($res = $this->sql_query($query, $args)) {
+      $data = [];
+      while ($res) {
+        $rows = [];
+        while ($row = sqlsrv_fetch_object($res)) $rows[] = $row;
+        $data[] = $rows;
+        if (!sqlsrv_next_result($res)) break;
+      }
+      return $data;
+    } else {
+      http_response(400, [
+        "query"=> $query,
+      ]);
     }
-    return $data;
   }
 
   public function translate($message = null, $args = null) {
@@ -1783,6 +1790,11 @@ function http_response($code = 200, $body = null, $errors = null) {
 function http_response_post($arr) {
   http_response(200, array_replace($_POST, $arr));
 }
+function http_response_query($query, $args = []) {
+  if (is_array($query)) $query = implode(PHP_EOL,$query);
+  http_response(200, aim()->sql_resultset($query, $args));
+}
+
 function debug() {
   // throw new Exception('a');
   // $t = round(microtime(true)*1000-__startTime);
