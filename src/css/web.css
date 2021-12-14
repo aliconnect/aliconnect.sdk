@@ -81,12 +81,14 @@ html {
   --hl-string: var(--red);
 
   --shadow: 0px 0px 5px 0px #000000;
+  --rowselect: rgb(0,90,158);
 }
 html[dark='1'] {
   /* filter: invert(100%); */
   --bg: #111;
   --fg: #ccc;
   --heighligth: #222;
+  /* --rowselect: rgb(0,90,158); */
 }
 html[dark='1'] ::-webkit-calendar-picker-indicator {
   filter: invert(1);
@@ -534,6 +536,26 @@ body>*>article {
   flex:1 0;
 }
 
+header h1 {
+  font-family: var(--header-font-family);
+  font-weight: normal;
+  margin: 0;
+  font-size: 1.1em;
+}
+header h2 {
+  margin: 0;
+  font-size: 0.9em;
+  /* color: var(--blue); */
+  font-weight: normal;
+}
+header h3 {
+  margin: 0;
+  font-size: 0.9em;
+  color: var(--trans8);
+  font-weight: normal;
+}
+
+
 .app {
   /* height: 100%; */
 }
@@ -559,6 +581,7 @@ body>*>article {
 }
 .lv aside.filter {
   background-color: var(--trans05);
+  padding: 5px;
 }
 .lv>div {
   display:flex;
@@ -665,24 +688,6 @@ body>*>article {
 .lv .cards header {
   display: flex;
 }
-header h1 {
-  font-family: var(--header-font-family);
-  font-weight: normal;
-  margin: 0;
-  font-size: 1.1em;
-}
-header h2 {
-  margin: 0;
-  font-size: 0.9em;
-  /* color: var(--blue); */
-  font-weight: normal;
-}
-header h3 {
-  margin: 0;
-  font-size: 0.9em;
-  color: var(--trans8);
-  font-weight: normal;
-}
 .lv .cards.rows {
   flex-direction: column;
 }
@@ -698,22 +703,141 @@ header h3 {
   min-width: 250px;
   margin: 1px;
 }
-.lv .cards.cols>div {
+.lv .cards>div {
   padding: 10px;
-  border: solid 1px var(--trans2);
   overflow: hidden;
   white-space: pre-wrap;
-  /* display: flex; */
-  /* flex-direction: column; */
-  /* padding-bottom: 30px */
-
+  border-bottom: solid 1px var(--trans05);
+}
+.lv .cards>div {
+  border: solid 1px var(--trans2);
 }
 /* .lv .cards.cols>div span:not(:empty) {
   padding-right: 5px;
 } */
-.lv .cards.cols>div:hover{
+/* .lv .cards>div:hover{
   box-shadow: inset 0px 0px 10px 3px var(--trans1);
+} */
+/*
+.lv .cards.cols div[salesPrice]::before {
+  content:'';
+  display: inline-block;
+  position: absolute;
+  width:100px;
+  height:100px;
+  top:-60px;
+  right:-60px;
+  transform: rotate(45deg);
+  background: orange;
 }
+.lv .cards.cols div.orderQuantity{
+  position: absolute;
+  bottom: 5px;
+  right: 10px;
+}
+.lv .cards.cols div.orderQuantity>label {
+  display:none;
+}
+.lv .cards.cols div.orderQuantity>input {
+  border: solid 1px var(--trans2);
+  outline: none;
+  width:80px;
+  text-align: right;
+  font-weight: bold;
+}
+
+div.price{
+  white-space: nowrap;
+  margin-top: auto;
+}
+div.price>div[discountperc]::before {
+  content: '€ ' attr(listprice);
+  font-size: 0.8em;
+  color: var(--trans8);
+  margin-right: 10px;
+  text-decoration: line-through;
+}
+div.price>div::after {
+  content: '(€ ' attr(fatprice) ' incl. btw)';
+  font-weight: normal;
+  font-size: 0.8em;
+  margin-left: 10px;
+  color: var(--trans8);
+}
+div.price>div>span::before {
+  content: '€ ';
+  font-size: 0.8em;
+  font-weight: normal;
+}
+div.price>div>span{
+    font-weight: bold;
+}
+div.price>input{
+  width:80px;
+  margin-left: auto;
+  border: solid 1px var(--trans3);
+  outline: none;
+  font-weight: bold;
+  text-align: right;
+}
+div.artcode {
+  font-size: 0.8em;
+  color: var(--trans8);
+}
+
+*/
+.lv .cards.cols div>div {
+  /* display: flex; */
+}
+.lv .cards.cols div>div>label {
+  font-size: 0.8em;
+  color: var(--trans8);
+  flex-basis: 80px;
+}
+.lv .cards.cols img{
+  height: 160px;
+  object-fit: contain;
+  object-position: center;
+  background-color: white;
+}
+.lv .cards .geolocatie {
+  display: none;
+}
+.lv>div>.list {
+  outline: none;
+}
+.lv>div>.list>div>div{
+  cursor: default;
+}
+
+.lv .cards>div:before {
+  display: block;
+  position: absolute;
+  top:0;
+  bottom:0;
+  left:0;
+  right:0;
+}
+.lv .cards>div:hover:before {
+  content: '';
+  background-color: var(--trans1);
+}
+/* .lv .cards>div:active{
+  content: '';
+  background-color: var(--trans2);
+} */
+.lv .cards>div[focus]{
+  content: '';
+  background-color: var(--trans2);
+  background-color: var(--rowselect);
+}
+.lv div.list:focus>.cards>div[focus]{
+  background-color: var(--rowselect);
+}
+/* .lv .cards>div[select]{
+  content: '';
+  background-color: var(--trans2);
+} */
 
 
 /* .lv .cards.cols .clientNetPrice::before {
@@ -852,9 +976,6 @@ div.price.discount.client span[discount] {
   background-color: orange;
 }
 
-
-
-
 div.price input {
   width:40px;
   margin-left: auto;
@@ -866,92 +987,6 @@ div.price input {
   float: right;
 }
 
-
-/*
-.lv .cards.cols div[salesPrice]::before {
-  content:'';
-  display: inline-block;
-  position: absolute;
-  width:100px;
-  height:100px;
-  top:-60px;
-  right:-60px;
-  transform: rotate(45deg);
-  background: orange;
-}
-.lv .cards.cols div.orderQuantity{
-  position: absolute;
-  bottom: 5px;
-  right: 10px;
-}
-.lv .cards.cols div.orderQuantity>label {
-  display:none;
-}
-.lv .cards.cols div.orderQuantity>input {
-  border: solid 1px var(--trans2);
-  outline: none;
-  width:80px;
-  text-align: right;
-  font-weight: bold;
-}
-
-div.price{
-  white-space: nowrap;
-  margin-top: auto;
-}
-div.price>div[discountperc]::before {
-  content: '€ ' attr(listprice);
-  font-size: 0.8em;
-  color: var(--trans8);
-  margin-right: 10px;
-  text-decoration: line-through;
-}
-div.price>div::after {
-  content: '(€ ' attr(fatprice) ' incl. btw)';
-  font-weight: normal;
-  font-size: 0.8em;
-  margin-left: 10px;
-  color: var(--trans8);
-}
-div.price>div>span::before {
-  content: '€ ';
-  font-size: 0.8em;
-  font-weight: normal;
-}
-div.price>div>span{
-    font-weight: bold;
-}
-div.price>input{
-  width:80px;
-  margin-left: auto;
-  border: solid 1px var(--trans3);
-  outline: none;
-  font-weight: bold;
-  text-align: right;
-}
-div.artcode {
-  font-size: 0.8em;
-  color: var(--trans8);
-}
-
-*/
-.lv .cards.cols div>div {
-  /* display: flex; */
-}
-.lv .cards.cols div>div>label {
-  font-size: 0.8em;
-  color: var(--trans8);
-  flex-basis: 80px;
-}
-.lv .cards.cols img{
-  height: 160px;
-  object-fit: contain;
-  object-position: center;
-  background-color: white;
-}
-.lv .cards .geolocatie {
-  display: none;
-}
 
 .cover {
   position: absolute;
@@ -1024,9 +1059,9 @@ div.artcode {
 summary {
   display: flex;
   /* flex-direction: row-reverse; */
-  line-height: 24px;
+  line-height: 36px;
   /* padding: 5px; */
-  padding-left: 20px;
+  padding-left: 24px;
   outline: none;
   cursor: pointer;
 }
@@ -1065,7 +1100,6 @@ details>summary:only-child::after{
   cursor: pointer;
 }
 .tv details>summary::before {
-  content: '';
   position: absolute;
   top: 0;
   height: 100%;
@@ -1073,8 +1107,12 @@ details>summary:only-child::after{
   left: -100%;
 }
 .tv details>summary:hover::before {
-  background:var(--trans1);
-
+  content: '';
+  background-color:var(--trans1);
+}
+.tv details>summary[select]::before {
+  content: '';
+  background-color: var(--rowselect);
 }
 
 .pv {
@@ -1166,9 +1204,6 @@ header>.icon {
   counter-increment: artikel;
   counter-reset: par;
 }
-summary:only-child {
-  /* display:none; */
-}
 
 .pv summary {
   position: sticky;
@@ -1183,6 +1218,9 @@ summary:only-child {
   background-color: rgb(40,40,40);
 
   margin-bottom: 5px;
+}
+.pv summary:only-child {
+  display:none;
 }
 .pv summary:focus {
   border-color: blue;
@@ -1357,38 +1395,44 @@ summary:only-child {
 }
 
 .oa{
-  overflow:auto;
+  overflow: overlay;
 }
-::-webkit-scrollbar {
+*::-webkit-scrollbar {
   height: 12px;
   width: 12px;
   /* height: 6px;
   width: 6px; */
   /* cursor: pointer; */
 }
-::-webkit-scrollbar-corner {
+*::-webkit-scrollbar-corner {
   /* background-color: var(--trans1); */
   background: transparent;
 }
-::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb {
   /* background-color: var(--trans4); */
   /* border: solid 3px rgba(140,140,140,0.0); */
   /* border: solid 3px white; */
   /* border: 3px solid #21252b; */
-  background: var(--trans2);
+  /* background: var(--trans2); */
   background-clip: content-box;
   border: solid 4px transparent;
 }
-::-webkit-scrollbar-thumb:not(:active) {
+*::-webkit-scrollbar-thumb:not(:active) {
   border-radius: 9px;
 }
-::-webkit-scrollbar-thumb:active {
+*:hover::-webkit-scrollbar-thumb {
+  background-color: var(--trans5);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--select);
+}
+*::-webkit-scrollbar-thumb:active {
   border: none;
-  background-color: var(--trans2);
+  background-color: var(--trans8);
   cursor: pointer;
   /* background: red; */
 }
-::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track {
   background: transparent;
   /* background-color: var(--trans4); */
 }
@@ -1761,4 +1805,13 @@ pre code {
   /* display:inline-block; */
   /* height:8mm; */
   /* overflow:hidden; */
+}
+
+table>tr:first-child{
+  position:sticky;
+  top:36px;
+  font-size: 0.8em;
+  font-weight: bold;
+  background-color: var(--bg);
+  z-index:1;
 }

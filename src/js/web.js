@@ -249,8 +249,6 @@
 
           $('aside').class('left'),
           $('section').class('pv doc-content').css('max-width', $().storage('view.width') || '700px')
-
-
           // .append(
           //   $('nav').class('doc-nav'),
           //   $('header').class('doc-header'),
@@ -1176,20 +1174,42 @@
     // console.log('startlist');
     rows = rows.map(row => row.data ? Object.assign(row,JSON.parse(row.data)) : row);
     let filter = {}
-
+    function focus(elem){
+      clearTimeout(selectTimeout);
+      if (this.focusElem) this.focusElem.attr('focus', null);
+      this.focusElem = elem;
+      this.focusElem.attr('focus', '');
+      this.focusElem.scrollIntoView();
+      // const {row} = elem;
+    }
+    function select(elem){
+      if (elem) focus(elem);
+      if (this.selectElem !== this.focusElem) {
+        if (this.selectElem) this.selectElem.attr('select', null);
+        const {row} = this.selectElem = this.focusElem;
+        this.selectElem.attr('select', '');
+        if (row.id) {
+          const url = new URL(document.location);
+          const ref = row['@id'];//`${row.schemaName}(${row.id})`;
+          document.location.hash = `#?id=${btoa(ref)}`;
+        }
+        $('span.pos').text(rows.length + (rowsVisible.length === rows.length ? '' : '/' + rowsVisible.length) + ':' + ( rowsVisible.indexOf(row) + 1));
+      }
+    }
+    let selectTimeout;
     const types = {
       rows: () => {
         return $('div').class('cards',options.type).append(
           rowsVisible.map(row => {
             const schema = config.components.schemas[row.schemaName];
             const app = schema.app || {};
-            const div = $('div').on('click', e => {
-              if (row.id) {
-                const url = new URL(document.location);
-                const ref = row['@id'];//`${row.schemaName}(${row.id})`;
-                document.location.hash = `#?id=${btoa(ref)}`;
-              }
-            });
+            const div = $('div')
+            .on('click', e => select(div));
+            if (aim.pageTag === row.schemaName+row.id) {
+              console.log(aim.pageTag, row.schemaName+row.id);
+              div.attr('focus', '');
+            }
+            div.row = row;
             return div.append(
               $('header').append(
                 $('div').class('icon').append(
@@ -1211,36 +1231,7 @@
         )
       },
       cols: () => {
-        return $('div').class('cards',options.type).append(
-          rowsVisible.map(row => {
-            const schema = config.components.schemas[row.schemaName];
-            const app = schema.app || {};
-            const div = $('div').on('click', e => {
-              if (row.id) {
-                // console.log('click', row)
-                const url = new URL(document.location);
-                const ref = row['@id'];//`${row.schemaName}(${row.id})`;
-                // console.log(ref);
-
-                document.location.hash = `#?id=${btoa(ref)}`;
-                // url.searchParams.set('id', btoa(ref));
-                // window.history.pushState('page', '',  url.href);
-                // page(ref);
-              }
-            });
-            return div.append(
-              $('header').append(
-                $('div').class('icon').append(
-                  row.images && row.images[0] ? $('img').src(row.images[0]) : $('span').text((rowHeaders(row,config.components.schemas[row.schemaName].cols).join('').match(/([A-Z]).*?([A-Z])/)||[]).slice(1,3).join('')),
-                ),
-                $('div').class('aco').append(
-                  row.headers.map((s,i)=>$('h'+(i+1)).text(s)),
-                  app.header ? app.header(row) : null,
-                  row.options ? Object.entries(row.options).map(entry => entry.join(': ')).join('\n') : null,
-                ),
-              )
-            );
-          }),
+        return types.rows().append(
           ['','','','','','','','','','','','','','',].map(i => $('span').class('ghost')),
         )
       },
@@ -1500,17 +1491,32 @@
     function labelTag(col,row){
       return $('label').text(col.title || col.name)
     }
-
     function rowsFiltered(filter){
       return rows.filter(row => !filter.some(val => !val.values.some(value => value.rows.includes(row))));
     }
-
 
     $('.lv').attr('hidefilter', aim.showfilter).text('');
     const navElem = $('nav').parent($('.lv'));
     const listContainerElem = $('div').parent($('.lv'));
     const filterElem = $('aside').class('oa filter').parent(listContainerElem);
-    const rowsElem = $('div').parent(listContainerElem);
+    const rowsElem = $('div')
+    .parent(listContainerElem)
+    .tabindex(0)
+    // .on('focus', console.log)
+    .on('keydown', e => {
+      switch (e.key) {
+        case 'ArrowDown': {
+          e.preventDefault();
+          return focusElem.nextElementSibling ? focus(focusElem.nextElementSibling) : null;
+        }
+        case 'ArrowUp': {
+          e.preventDefault();
+          return focusElem.previousElementSibling ? focus(focusElem.previousElementSibling) : null;
+        }
+      }
+      // console.log(e);
+    })
+    .on('keyup', e => selectTimeout = setTimeout(() => select(), 300));
 
 
     (function buildlist(type) {
@@ -1533,13 +1539,13 @@
       // aim.listRows = rowsVisible = rows.filter(row => !checkedFilters.some(val => !val.rows.includes(row)));
 
       // console.log(checkedFilters, rows, rowsVisible);
-      $('span.pos').text(rowsVisible.length+'/'+rows.length);
+      $('span.pos').text(rows.length + (rowsVisible.length === rows.length ? '' : '/' + rowsVisible.length));
       navElem.text('').append(
         $('button').class('abtn filter').on('click', e => $('.lv').attr('hidefilter', aim.showfilter ^= 1)),
         ...navList.map(fn => fn()),
         $('button').class('abtn view').append(
           $('div').append(
-            Object.keys(types).map(key => $('button').text(key).on('click', e => buildlist(type = key)))
+            Object.keys(types).map(key => $('button').class('abtn', key).on('click', e => buildlist(type = key)))
           ),
         ),
       )
@@ -1582,7 +1588,7 @@
           }
         })
       );
-      rowsElem.text('').class('oa', type).append(
+      rowsElem.text('').class('oa list').append(
         types[type] ? types[type]() : types.cols(),
       );
       // console.log('done builddom');
@@ -1683,8 +1689,12 @@
     // console.log(schemaName,id);
     const hostname = new URL(ref).hostname;
     const client = aim.clients.get(hostname);
-    console.log(aim.idfilter);
-    client.api(ref).filter(aim.idfilter||'').get().then(row => {
+    // console.log(ref);
+    // console.log(aim.idfilter);
+    client.api(ref)
+    // .filter(aim.idfilter||'')
+    .get().then(row => {
+      aim.pageTag = row.schemaName+row.id;
       // console.log(ref,body.schemaName,body);
       const schema = config.components.schemas[row.schemaName];
       const app = schema.app || {};
@@ -2605,7 +2615,10 @@
       // )
 
     },
-
+    click(){
+      this.elem.click();
+      return this;
+    },
 
     print() {
       const iframe = $('iframe')
@@ -4399,1987 +4412,2022 @@
             });
             return this.url;
           }},
-          maps: { value: async function (selector, referenceNode) {
-            const maps = await $.his.maps();
-            // if (!$.his.maps.script) {
-            // 	return $.his.maps.script = $('script')
-            // 	.attr('src', 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAKNir6jia2uSgmEoLFvrbcMztx-ao_Oys&libraries=places')
-            // 	.parent(document.head)
-            // 	.on('load', e => arguments.callee.apply(this, arguments))
-            // }
-            // $.his.maps.showonmap (par.maps, el);
-            // referenceNode = referenceNode || $.listview.listItemElement;
-            // referenceNode.innerText = '';
-            // //console.log('============================');
-            // const myLatLng = { lat: -25.363, lng: 131.044 };
-            // const map = new google.maps.Map(document.getElementById("map"), {
-            // 	zoom: 4,
-            // 	center: myLatLng,
-            // });
-            // new google.maps.Marker({
-            // 	position: myLatLng,
-            // 	map,
-            // 	title: "Hello World!",
-            // });
-            // referenceNode.style = 'width:100%;height:500px;';
-            // this.mapel = referenceNode;//referenceNode.createElement('DIV', { className: 'googlemap', style: 'width:100%;height:100%;' });
-            let map = new maps.Map(this.elem, { zoom: 8 });
-            bounds = new maps.LatLngBounds();
-            geocoder = new maps.Geocoder();
-            // var address = selector;//decodeURI(params).split('/').pop();
-            // //console.debug(address);
-            geocoder.geocode({
-              'address': selector
-            }, function(results, status) {
-              if (status == maps.GeocoderStatus.OK) {
-                $.marker = new maps.Marker({
-                  map: map,
-                  position: results[0].geometry.location
-                });
-                bounds.extend($.marker.getPosition());
-                map.fitBounds(bounds);
-                maps.e.addListenerOnce(map, 'bounds_changed', e => this.setZoom(Math.min(10, this.getZoom())));
-              } else {
-                // //console.debug('Geocode was not successful for the following reason: ' + status);
-              }
-            });
-            // new $.his.maps(el, par.maps);
-          }},
-          renderCode: { value: function (responseURL) {
-            Array.from(this.elem.getElementsByTagName('code')).forEach(elem => {
-              if (elem.hasAttribute('source')) {
-                $().url(hrefSrc(elem.getAttribute('source'), responseURL)).get().then(e => {
-                  var content = e.target.responseText.replace(/\r/g, '');
-                  if (elem.hasAttribute('id')) {
-                    var id = elem.getAttribute('id');
-                    var content = content.replace(new RegExp(`.*?<${id}>.*?\n(.*?)\n(\/\/|<\!--) <\/${id}.*`, 's'), '$1').trim();
-                  }
-                  if (elem.hasAttribute('function')) {
-                    var id = elem.getAttribute('function');
-                    var content = content.replace(/\r/g, '').replace(new RegExp(`.*?((async |)function ${id}.*?\n\})\n.*`, 's'), '$1').trim();
-                  }
-                  content = window.markdown().render(content, elem.getAttribute('language'));
-                  // console.log(content);
-                  // console.log(content);
-                  $(elem).class('block').append($('pre').html(content.trim()));
-                  // console.log(content);
-                  // $(elem).html(content, elem.getAttribute('language'));
-                });
-              }
-            });
-            return this;
-          }},
-          md: { value: function (content) {
-            if (window.markdown) {
-              for (let [key,value] of Object.entries($.his.api_parameters)) {
-                content = content.replace(key,value);
-              }
-              const mdElem = $('div').html(window.markdown().render(content));
-              for (let divElement of mdElem.elem.getElementsByTagName('DIV')) {
-                if (divElement.hasAttribute('source')) {
-                  var loadingTask = pdfjsLib.getDocument(divElement.getAttribute('source'));
-                  loadingTask.promise.then(async pdf => {
-                    // console.log('PDF loaded');
-                    var numPages = pdf.numPages;
-                    // console.log(pdf);
-                    for (var pageNumber=1, numPages = pdf.numPages;pageNumber<=numPages;pageNumber++) {
-                      await pdf.getPage(pageNumber).then(function(page) {
-                        // console.log('Page loaded');
+        maps: { value: async function (selector, referenceNode) {
+          const maps = await $.his.maps();
+          // if (!$.his.maps.script) {
+          // 	return $.his.maps.script = $('script')
+          // 	.attr('src', 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAKNir6jia2uSgmEoLFvrbcMztx-ao_Oys&libraries=places')
+          // 	.parent(document.head)
+          // 	.on('load', e => arguments.callee.apply(this, arguments))
+          // }
+          // $.his.maps.showonmap (par.maps, el);
+          // referenceNode = referenceNode || $.listview.listItemElement;
+          // referenceNode.innerText = '';
+          // //console.log('============================');
+          // const myLatLng = { lat: -25.363, lng: 131.044 };
+          // const map = new google.maps.Map(document.getElementById("map"), {
+          // 	zoom: 4,
+          // 	center: myLatLng,
+          // });
+          // new google.maps.Marker({
+          // 	position: myLatLng,
+          // 	map,
+          // 	title: "Hello World!",
+          // });
+          // referenceNode.style = 'width:100%;height:500px;';
+          // this.mapel = referenceNode;//referenceNode.createElement('DIV', { className: 'googlemap', style: 'width:100%;height:100%;' });
+          let map = new maps.Map(this.elem, { zoom: 8 });
+          bounds = new maps.LatLngBounds();
+          geocoder = new maps.Geocoder();
+          // var address = selector;//decodeURI(params).split('/').pop();
+          // //console.debug(address);
+          geocoder.geocode({
+            'address': selector
+          }, function(results, status) {
+            if (status == maps.GeocoderStatus.OK) {
+              $.marker = new maps.Marker({
+                map: map,
+                position: results[0].geometry.location
+              });
+              bounds.extend($.marker.getPosition());
+              map.fitBounds(bounds);
+              maps.e.addListenerOnce(map, 'bounds_changed', e => this.setZoom(Math.min(10, this.getZoom())));
+            } else {
+              // //console.debug('Geocode was not successful for the following reason: ' + status);
+            }
+          });
+          // new $.his.maps(el, par.maps);
+        }},
+        renderCode: { value: function (responseURL) {
+          Array.from(this.elem.getElementsByTagName('code')).forEach(elem => {
+            if (elem.hasAttribute('source')) {
+              $().url(hrefSrc(elem.getAttribute('source'), responseURL)).get().then(e => {
+                var content = e.target.responseText.replace(/\r/g, '');
+                if (elem.hasAttribute('id')) {
+                  var id = elem.getAttribute('id');
+                  var content = content.replace(new RegExp(`.*?<${id}>.*?\n(.*?)\n(\/\/|<\!--) <\/${id}.*`, 's'), '$1').trim();
+                }
+                if (elem.hasAttribute('function')) {
+                  var id = elem.getAttribute('function');
+                  var content = content.replace(/\r/g, '').replace(new RegExp(`.*?((async |)function ${id}.*?\n\})\n.*`, 's'), '$1').trim();
+                }
+                content = window.markdown().render(content, elem.getAttribute('language'));
+                // console.log(content);
+                // console.log(content);
+                $(elem).class('block').append($('pre').html(content.trim()));
+                // console.log(content);
+                // $(elem).html(content, elem.getAttribute('language'));
+              });
+            }
+          });
+          return this;
+        }},
+        md: { value: function (content) {
+          if (window.markdown) {
+            for (let [key,value] of Object.entries($.his.api_parameters)) {
+              content = content.replace(key,value);
+            }
+            const mdElem = $('div').html(window.markdown().render(content));
+            for (let divElement of mdElem.elem.getElementsByTagName('DIV')) {
+              if (divElement.hasAttribute('source')) {
+                var loadingTask = pdfjsLib.getDocument(divElement.getAttribute('source'));
+                loadingTask.promise.then(async pdf => {
+                  // console.log('PDF loaded');
+                  var numPages = pdf.numPages;
+                  // console.log(pdf);
+                  for (var pageNumber=1, numPages = pdf.numPages;pageNumber<=numPages;pageNumber++) {
+                    await pdf.getPage(pageNumber).then(function(page) {
+                      // console.log('Page loaded');
 
-                        var scale = 1;
-                        var viewport = page.getViewport({scale: scale});
+                      var scale = 1;
+                      var viewport = page.getViewport({scale: scale});
 
-                        // Prepare canvas using PDF page dimensions
-                        var a = $('a').parent(divElement).href(divElement.getAttribute('source'));
-                        var canvas = $('canvas').parent(a).elem;
-                        // document.body.appendChild(canvas);
-                        // var canvas = document.getElementById('the-canvas');
-                        var context = canvas.getContext('2d');
-                        canvas.height = viewport.height;
-                        canvas.width = viewport.width;
+                      // Prepare canvas using PDF page dimensions
+                      var a = $('a').parent(divElement).href(divElement.getAttribute('source'));
+                      var canvas = $('canvas').parent(a).elem;
+                      // document.body.appendChild(canvas);
+                      // var canvas = document.getElementById('the-canvas');
+                      var context = canvas.getContext('2d');
+                      canvas.height = viewport.height;
+                      canvas.width = viewport.width;
 
-                        // Render PDF page into canvas context
-                        var renderContext = {
-                          canvasContext: context,
-                          viewport: viewport
-                        };
-                        var renderTask = page.render(renderContext);
-                        renderTask.promise.then(function () {
-                          // console.log('Page rendered');
-                        });
+                      // Render PDF page into canvas context
+                      var renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                      };
+                      var renderTask = page.render(renderContext);
+                      renderTask.promise.then(function () {
+                        // console.log('Page rendered');
                       });
-                    }
-
-                    // Fetch the first page
-                  }, function (reason) {
-                    // PDF loading error
-                    console.error(reason);
-                  });
-                  // console.log(source);
-                }
-              }
-              // this.elem.innerHTML += $.string.mdHtml(s);
-              this.elem.append(...mdElem.elem.childNodes);
-            }
-            // const src = currentScript.src.replace(/elem/g, 'markdown');
-            // const md = Array.from(document.getElementsByTagName('SCRIPT')).find(e => e.src === src);
-            // console.log(window.markdown);
-            // console.log('md1');
-            // importScript(currentScript.src.replace(/elem/g, 'markdown')).then(e => {
-            //   console.log('md');
-            //   // console.log($.his.api_parameters);
-            // });
-            return this;
-          }},
-          mdc: { value: function (s) {
-            const newlines = [];
-            let level = 0;
-            $.string.mdHtml(s).split(/\n/).forEach(line => {
-              const match = line.match(/^<h(\d)>(>\s)/);
-              if (match) {
-                // line = line.replace(/h\d>/g,'summary>')
-                // if (match[1]==level) {
-                //   newlines.push('</details><details>'+line);
-                // } else if (match[1]>level) {
-                //   newlines.push('<details>'+line);
-                // } else if (match[1]<level) {
-                //   newlines.push('</details></details><details>'+line);
-                // }
-                line = '<summary>'+line.replace(/>\s/,'')+'</summary>';
-                if (match[1]==level) {
-                  newlines.push('</details><details>'+line);
-                } else if (match[1]>level) {
-                  newlines.push('<details>'+line);
-                } else if (match[1]<level) {
-                  newlines.push('</details></details><details>'+line);
-                }
-                level = match[1];
-                return;
-              }
-              return newlines.push(line);
-            });
-            this.elem.innerHTML += newlines.join('\n');
-            [...this.elem.getElementsByTagName('DETAILS')].forEach(
-              el => el.addEventListener('toggle', e => el.open ? ga('send', 'pageview', el.firstChild.innerText) : null)
-            );
-            //   if (el.open) {
-            //     console.log(el.firstChild.innerText);
-            //     ga('send', 'pageview', el.firstChild.innerText);
-            //   }
-            // }))
-            // this.on('click', e => {
-            //   const el = e.path.filter(el => el.tagName === 'SUMMARY').shift();
-            //   if (el && el.firstChild) {
-            //     // ga('send', 'e', 'click', el.firstChild.innerText);
-            //     ga('send', 'pageview', el.firstChild.innerText);
-            //     // ga('send', 'e', {
-            //     //   'hitType': 'pageview',
-            //     //   'page': 'Testpage'
-            //     // });
-            //     // ga('send', 'e', 'Videos', 'play', 'Fall Campaign');
-            //     // ga('send', 'e', {
-            //     //   'eventCategory': 'Category',
-            //     //   'eventAction': 'Action'
-            //     // });
-            //     // ga('set', 'title', el.firstChild.innerText);
-            //     console.log(el.firstChild.innerText);
-            //   }
-            // })
-            return this;
-          }},
-          mdAddCodeButtons: { value: function (){
-            [...this.elem.getElementsByClassName('code-header')].forEach(elem => {
-              const elemHeader = $(elem);
-              const elemCode = $(elem.nextElementSibling);
-              elemHeader.append(
-                $('button').class('abtn copy').css('margin-left: auto'),
-                $('button').class('abtn edit').on('click', e => elemCode.editor(elemHeader.attr('ln'))),
-                $('button').class('abtn view').on('click', e => {
-                  const block = {
-                    html: '',
-                    css: '',
-                    js: '',
-                  };
-                  for (let codeElem of this.docElem.elem.getElementsByClassName('code')) {
-                    const type = codeElem.previousElementSibling.innerText.toLowerCase();
-                    if (type === 'html') {
-                      block[type] = block[type].includes('<!-- html -->') ? block[type].replace('<!-- html -->', codeElem.innerText) : codeElem.innerText;
-                    } else if (type === 'js') {
-                      block.html = block.html.replace(
-                        /\/\*\* js start \*\*\/.*?\/\*\* js end \*\*\//s, codeElem.innerText
-                      );
-                    } else if (type === 'yaml') {
-                      block.html = block.html.replace(
-                        /`yaml`/s, '`'+codeElem.innerText + '`',
-                      );
-                    } else if (type === 'css') {
-                      block.html = block.html.replace(
-                        /\/\*\* css start \*\*\/.*?\/\*\* css end \*\*\//s, codeElem.innerText
-                      );
-                    }
-                    if (codeElem === elem) break;
-                  }
-                  var html = block.html
-                  .replace('/** css **/', block.css)
-                  .replace('/** js **/', block.js);
-                  console.log(html);
-                  return;
-                  const win = window.open('about:blank', 'sample');
-                  const doc = win.document;
-                  doc.open();
-                  doc.write(html);
-                  doc.close();
-                }),
-              )
-            });
-            return this;
-          }},
-          // media: new Media(),
-
-          // menuitems: {
-          // 	copy: { Title: 'Kopieren', key: 'Ctrl+C', onclick: function() { aimClient.selection.copy(); } },
-          // 	cut: { Title: 'Knippen', key: 'Ctrl+X', onclick: function() { aimClient.selection.cut(); } },
-          // 	paste: { Title: 'Plakken', key: 'Ctrl+V', onclick: function() { aimClient.selection.paste(); } },
-          // 	hyperlink: { Title: 'Hyperlink plakken', key: 'Ctrl+K', onclick: function() { aimClient.selection.link(); } },
-          // 	del: { Title: 'Verwijderen', key: 'Ctrl+Del', onclick: function() { aimClient.selection.delete(); } },
-          // 	//add: {
-          // 	//    Title: 'Nieuw',
-          // 	//    click: function() { // //console.debug(this); },
-          // 	//    menu: {
-          // 	//        map: { Title: 'Map', key: 'Ctrl+N', },
-          // 	//        contact: { Title: 'Contact', },
-          // 	//    }
-          // 	//},
-          // 	move: {
-          // 		Title: 'Verplaatsen',
-          // 		popupmenu: {
-          // 			moveup: { Title: 'Omhoog', key: 'Alt+Shift+Up', },
-          // 			movedown: { Title: 'Omlaag', key: 'Alt+Shift+Dwon', },
-          // 			ident: { Title: 'Inspringen', key: 'Alt+Shift+Right', },
-          // 			outdent: { Title: 'Terughalen', key: 'Alt+Shift+Left', },
-          // 		}
-          // 	},
-          // 	//cat: {
-          // 	//    Title: 'Categoriseren',
-          // 	//    menu: {
-          // 	//        Ja: { Title: 'Ja', color: 'black', },
-          // 	//        Nee: { Title: 'Nee', color: 'red', },
-          // 	//        Groen: { Title: 'Groen', color: 'green', },
-          // 	//        Blauw: { Title: 'Blauw', color: 'blue', },
-          // 	//    }
-          // 	//},
-          // 	state: {
-          // 		Title: 'Status',
-          // 		//menu: this.item.class.fields.state.options
-          // 	},
-          // },
-          // mse: {
-          // 	Contacts: {
-          // 		/** @function $.mse.Contacts.find
-          // 		*/
-          // 		find: function() {
-          // 			if (!$.mse.loggedin === undefined) setTimeout(arguments.callee.bind(this), 500);
-          // 			var url = "/api/v2.0/me/contacts?$select=DisplayName&$top=1000&$order=LastModifiedDateTime+DESC";
-          // 			$.https.request ({ hostname: "outlook.office.com", path: url, headers: $.mse.headers }, function(e) {
-          // 				//console.log("OUTLOOK contacts", e.body);
-          // 				if (!e.body || !e.body.Value) return;
-          // 				e.body.Value.forEach(function(row){
-          // 					row.req = {headers: $.mse.headers, path: row['@odata.id'] };
-          // 					row.Title = row.DisplayName
-          // 				});
-          // 				Listview.show(e.body.Value);
-          // 			});
-          // 		},
-          // 	},
-          // 	Messages: {
-          // 		/** @function $.mse.Messages.find
-          // 		*/
-          // 		find: function(){
-          // 			//console.log(this);
-          // 			var url = "/api/v2.0/me/messages?$select=*&$top=10&order=LastModifiedDateTime DESC";
-          // 			$.https.request ({ hostname: "outlook.office.com", path: url, headers: $.mse.headers }, function(e) {
-          // 				//console.log("OUTLOOK messsages", e.body);
-          // 				if (!e.body || !e.body.Value) return;
-          // 				e.body.Value.forEach(function(row){
-          // 					row.req = {headers: $.mse.headers, path: row['@odata.id'] };
-          // 					row.Title = row.From.EmailAddress.Name;
-          // 					row.Subject = row.Subject;
-          // 				});
-          // 				Listview.show(e.body.Value);
-          // 			});
-          // 		},
-          // 	},
-          // 	Events: {
-          // 		/** @function $.mse.Events.find
-          // 		*/
-          // 		find: function(){
-          // 			var url = "/api/v2.0/me/es?$select=*&$top=10";
-          // 			$.https.request ({ hostname: "outlook.office.com", path: url, headers: $.mse.headers }, function(e) {
-          // 				e.body.Value.forEach(function(row){
-          // 					row.Title = row.Subject;
-          // 					row.Subject = row.Start.DateTime + row.End.DateTime;
-          // 					row.Summary = row.BodyPreview;
-          // 					row.req = {headers: $.mse.headers, path: row['@odata.id'] };
-          // 				});
-          // 				Listview.show(e.body.Value);
-          // 				//console.log("OUTLOOK DATA", this.getHeader("OData-Version"), e.body);
-          // 			});
-          // 		},
-          // 	},
-          // 	Calendarview: {
-          // 		/** @function $.mse.Calendarview.find
-          // 		*/
-          // 		find: function() {
-          // 			var url = "/api/v2.0/me/calendarview?startDateTime=2017-01-01T01:00:00&endDateTime=2017-03-31T23:00:00&$select=Id, Subject, BodyPreview, HasAttachments&$top=100";
-          // 			$.https.request ({ hostname: "outlook.office.com", path: url, headers: $.mse.headers }, function(e) {
-          // 				e.body.Value.forEach(function(row){
-          // 					row.Title = row.Subject;
-          // 					row.req = {headers: $.mse.headers, path: row['@odata.id'] };
-          // 				});
-          // 				Listview.show(e.body.Value);
-          // 				//console.log("OUTLOOK DATA", this.getHeader("OData-Version"), e.body);
-          // 			});
-          // 		},
-          // 	},
-          // 	userdata: {},
-          // 	login: function() {
-          // 		return;
-          // 		if (!$.paths || !$.paths['/mse/login']) return $.mse.loggedin = null;
-          // 		aimClient.api.request ({ path: '/mse/login' }, function(e) {
-          // 			if (!e.body || !e.body.access_token) return $.mse.loggedin = false;
-          // 			$.mse.loggedin = true;
-          // 			this.userdata = e.body;
-          // 			var mse_access_token = e.body.access_token.split('-');
-          // 			var access = mse_access_token[0].split('.');
-          // 			var header = JSON.parse(atob(access[0]));
-          // 			this.payload = JSON.parse(atob(access[1]));
-          // 			// //console.log("RT", e.body.refresh_token);
-          // 			// //console.log("RT", e.body.refresh_token.split('.'));
-          // 			// for (var i=0, c=e.body.refresh_token.split('-'), code;i<c.length;i++) {
-          // 			// 	//console.log("C1", i, c[i]);
-          // 			// 	try { //console.log("E1", i, atob(c[i])); } catch(err) {}
-          // 			// 	for (var i2=0, c2=c[i].split('_'), code2;i2<c2.length;i2++) {
-          // 			// 		//console.log("C1", i, "C2", i2, c2[i2]);
-          // 			// 		try { //console.log("C1", i, "E2", i2, atob(c2[i2])); } catch(err) {}
-          // 			// 	}
-          // 			// }
-          // 			// //console.log("MSE", e.body.refresh_token.split('-'));
-          // 			var timeleft = Math.round(this.payload.exp * 1000 - new Date().getTime());
-          // 			// //console.log("MSE USER DATA", this.responseText, header, this.payload);
-          // 			this.headers = {
-          // 				"Authorization": "Bearer " + this.userdata.access_token,
-          // 				"Accept": "application/json",
-          // 				"client-request-id": $().client_id,
-          // 				"return-client-request-id": "true",
-          // 				"X-AnchorMailbox": this.userdata.preferred_username,
-          // 			};
-          // 			setTimeout(this.login, timeleft<0 ? 5000 : timeleft-10);
-          // 			rowinfo.createElement('SPAN', 'mse', this.payload.unique_name);
-          // 			this.userdata.login_url = this.userdata.login_url + "&state=" + btoa(document.location.href);
-          // 			// , href: "https://login.microsoftonline.com/common/oauth/v2.0/authorize?response_type=code&client_id=24622611-2311-4791-947c-5c1d1b086d6c&redirect_uri=https://aliconnect.nl/$/v1/api/mse.php&state=" + [$.config.$.domain].join("+") + "&prompt=login&scope=openid offline_access profile email https://outlook.office.com/mail.readwrite https://outlook.office.com/calendars.readwrite https://outlook.office.com/contacts.readwrite https://outlook.office.com/people.read"
-          // 			// rowinfo.createElement('SPAN').createElement('A', {innerText: 'login', href: $.mse.btnLogin.href = this.userdata.login_url = this.userdata.login_url + "&state=" + btoa(document.location.href) });
-          // 		}.bind(this));
-          // 	},
-          // },
-
-          navlist: { value: function (selector, context) {
-            (function init(parent, selector, context) {
-              if (selector) {
-                if (typeof selector === 'string') {
-                  const li = $('li').parent(parent);
-                  const a = $('a').parent(li).attr('id', 'nav'+selector).text(selector.replace(/^\d+-/,''));
-                  if (context && typeof context === 'object') {
-                    Object.entries(context).forEach(entry => {
-                      if (typeof entry[1] === 'object') {
-                        a.attr('open', a.attr('open') || '0');
-                        const ul = li.ul = li.ul || $('ul').parent(li);
-                        init(ul, ...entry);
-                      } else if (typeof entry[1] === 'function') {
-                        a.elem[entry[0]] = entry[1];
-                      } else {
-                        a.attr(...entry);
-                      }
                     });
-                    a.class('abtn')
                   }
-                } else {
-                  if (Array.isArray(selector)) {
-                    selector.forEach(item => init(parent, item))
-                  } else if (selector instanceof Object) {
-                    Object.entries(selector).forEach(entry => init(parent, ...entry));
+
+                  // Fetch the first page
+                }, function (reason) {
+                  // PDF loading error
+                  console.error(reason);
+                });
+                // console.log(source);
+              }
+            }
+            // this.elem.innerHTML += $.string.mdHtml(s);
+            this.elem.append(...mdElem.elem.childNodes);
+          }
+          // const src = currentScript.src.replace(/elem/g, 'markdown');
+          // const md = Array.from(document.getElementsByTagName('SCRIPT')).find(e => e.src === src);
+          // console.log(window.markdown);
+          // console.log('md1');
+          // importScript(currentScript.src.replace(/elem/g, 'markdown')).then(e => {
+          //   console.log('md');
+          //   // console.log($.his.api_parameters);
+          // });
+          return this;
+        }},
+        mdc: { value: function (s) {
+          const newlines = [];
+          let level = 0;
+          $.string.mdHtml(s).split(/\n/).forEach(line => {
+            const match = line.match(/^<h(\d)>(>\s)/);
+            if (match) {
+              // line = line.replace(/h\d>/g,'summary>')
+              // if (match[1]==level) {
+              //   newlines.push('</details><details>'+line);
+              // } else if (match[1]>level) {
+              //   newlines.push('<details>'+line);
+              // } else if (match[1]<level) {
+              //   newlines.push('</details></details><details>'+line);
+              // }
+              line = '<summary>'+line.replace(/>\s/,'')+'</summary>';
+              if (match[1]==level) {
+                newlines.push('</details><details>'+line);
+              } else if (match[1]>level) {
+                newlines.push('<details>'+line);
+              } else if (match[1]<level) {
+                newlines.push('</details></details><details>'+line);
+              }
+              level = match[1];
+              return;
+            }
+            return newlines.push(line);
+          });
+          this.elem.innerHTML += newlines.join('\n');
+          [...this.elem.getElementsByTagName('DETAILS')].forEach(
+            el => el.addEventListener('toggle', e => el.open ? ga('send', 'pageview', el.firstChild.innerText) : null)
+          );
+          //   if (el.open) {
+          //     console.log(el.firstChild.innerText);
+          //     ga('send', 'pageview', el.firstChild.innerText);
+          //   }
+          // }))
+          // this.on('click', e => {
+          //   const el = e.path.filter(el => el.tagName === 'SUMMARY').shift();
+          //   if (el && el.firstChild) {
+          //     // ga('send', 'e', 'click', el.firstChild.innerText);
+          //     ga('send', 'pageview', el.firstChild.innerText);
+          //     // ga('send', 'e', {
+          //     //   'hitType': 'pageview',
+          //     //   'page': 'Testpage'
+          //     // });
+          //     // ga('send', 'e', 'Videos', 'play', 'Fall Campaign');
+          //     // ga('send', 'e', {
+          //     //   'eventCategory': 'Category',
+          //     //   'eventAction': 'Action'
+          //     // });
+          //     // ga('set', 'title', el.firstChild.innerText);
+          //     console.log(el.firstChild.innerText);
+          //   }
+          // })
+          return this;
+        }},
+        mdAddCodeButtons: { value: function (){
+          [...this.elem.getElementsByClassName('code-header')].forEach(elem => {
+            const elemHeader = $(elem);
+            const elemCode = $(elem.nextElementSibling);
+            elemHeader.append(
+              $('button').class('abtn copy').css('margin-left: auto'),
+              $('button').class('abtn edit').on('click', e => elemCode.editor(elemHeader.attr('ln'))),
+              $('button').class('abtn view').on('click', e => {
+                const block = {
+                  html: '',
+                  css: '',
+                  js: '',
+                };
+                for (let codeElem of this.docElem.elem.getElementsByClassName('code')) {
+                  const type = codeElem.previousElementSibling.innerText.toLowerCase();
+                  if (type === 'html') {
+                    block[type] = block[type].includes('<!-- html -->') ? block[type].replace('<!-- html -->', codeElem.innerText) : codeElem.innerText;
+                  } else if (type === 'js') {
+                    block.html = block.html.replace(
+                      /\/\*\* js start \*\*\/.*?\/\*\* js end \*\*\//s, codeElem.innerText
+                    );
+                  } else if (type === 'yaml') {
+                    block.html = block.html.replace(
+                      /`yaml`/s, '`'+codeElem.innerText + '`',
+                    );
+                  } else if (type === 'css') {
+                    block.html = block.html.replace(
+                      /\/\*\* css start \*\*\/.*?\/\*\* css end \*\*\//s, codeElem.innerText
+                    );
                   }
+                  if (codeElem === elem) break;
+                }
+                var html = block.html
+                .replace('/** css **/', block.css)
+                .replace('/** js **/', block.js);
+                console.log(html);
+                return;
+                const win = window.open('about:blank', 'sample');
+                const doc = win.document;
+                doc.open();
+                doc.write(html);
+                doc.close();
+              }),
+            )
+          });
+          return this;
+        }},
+        // media: new Media(),
+
+        // menuitems: {
+        // 	copy: { Title: 'Kopieren', key: 'Ctrl+C', onclick: function() { aimClient.selection.copy(); } },
+        // 	cut: { Title: 'Knippen', key: 'Ctrl+X', onclick: function() { aimClient.selection.cut(); } },
+        // 	paste: { Title: 'Plakken', key: 'Ctrl+V', onclick: function() { aimClient.selection.paste(); } },
+        // 	hyperlink: { Title: 'Hyperlink plakken', key: 'Ctrl+K', onclick: function() { aimClient.selection.link(); } },
+        // 	del: { Title: 'Verwijderen', key: 'Ctrl+Del', onclick: function() { aimClient.selection.delete(); } },
+        // 	//add: {
+        // 	//    Title: 'Nieuw',
+        // 	//    click: function() { // //console.debug(this); },
+        // 	//    menu: {
+        // 	//        map: { Title: 'Map', key: 'Ctrl+N', },
+        // 	//        contact: { Title: 'Contact', },
+        // 	//    }
+        // 	//},
+        // 	move: {
+        // 		Title: 'Verplaatsen',
+        // 		popupmenu: {
+        // 			moveup: { Title: 'Omhoog', key: 'Alt+Shift+Up', },
+        // 			movedown: { Title: 'Omlaag', key: 'Alt+Shift+Dwon', },
+        // 			ident: { Title: 'Inspringen', key: 'Alt+Shift+Right', },
+        // 			outdent: { Title: 'Terughalen', key: 'Alt+Shift+Left', },
+        // 		}
+        // 	},
+        // 	//cat: {
+        // 	//    Title: 'Categoriseren',
+        // 	//    menu: {
+        // 	//        Ja: { Title: 'Ja', color: 'black', },
+        // 	//        Nee: { Title: 'Nee', color: 'red', },
+        // 	//        Groen: { Title: 'Groen', color: 'green', },
+        // 	//        Blauw: { Title: 'Blauw', color: 'blue', },
+        // 	//    }
+        // 	//},
+        // 	state: {
+        // 		Title: 'Status',
+        // 		//menu: this.item.class.fields.state.options
+        // 	},
+        // },
+        // mse: {
+        // 	Contacts: {
+        // 		/** @function $.mse.Contacts.find
+        // 		*/
+        // 		find: function() {
+        // 			if (!$.mse.loggedin === undefined) setTimeout(arguments.callee.bind(this), 500);
+        // 			var url = "/api/v2.0/me/contacts?$select=DisplayName&$top=1000&$order=LastModifiedDateTime+DESC";
+        // 			$.https.request ({ hostname: "outlook.office.com", path: url, headers: $.mse.headers }, function(e) {
+        // 				//console.log("OUTLOOK contacts", e.body);
+        // 				if (!e.body || !e.body.Value) return;
+        // 				e.body.Value.forEach(function(row){
+        // 					row.req = {headers: $.mse.headers, path: row['@odata.id'] };
+        // 					row.Title = row.DisplayName
+        // 				});
+        // 				Listview.show(e.body.Value);
+        // 			});
+        // 		},
+        // 	},
+        // 	Messages: {
+        // 		/** @function $.mse.Messages.find
+        // 		*/
+        // 		find: function(){
+        // 			//console.log(this);
+        // 			var url = "/api/v2.0/me/messages?$select=*&$top=10&order=LastModifiedDateTime DESC";
+        // 			$.https.request ({ hostname: "outlook.office.com", path: url, headers: $.mse.headers }, function(e) {
+        // 				//console.log("OUTLOOK messsages", e.body);
+        // 				if (!e.body || !e.body.Value) return;
+        // 				e.body.Value.forEach(function(row){
+        // 					row.req = {headers: $.mse.headers, path: row['@odata.id'] };
+        // 					row.Title = row.From.EmailAddress.Name;
+        // 					row.Subject = row.Subject;
+        // 				});
+        // 				Listview.show(e.body.Value);
+        // 			});
+        // 		},
+        // 	},
+        // 	Events: {
+        // 		/** @function $.mse.Events.find
+        // 		*/
+        // 		find: function(){
+        // 			var url = "/api/v2.0/me/es?$select=*&$top=10";
+        // 			$.https.request ({ hostname: "outlook.office.com", path: url, headers: $.mse.headers }, function(e) {
+        // 				e.body.Value.forEach(function(row){
+        // 					row.Title = row.Subject;
+        // 					row.Subject = row.Start.DateTime + row.End.DateTime;
+        // 					row.Summary = row.BodyPreview;
+        // 					row.req = {headers: $.mse.headers, path: row['@odata.id'] };
+        // 				});
+        // 				Listview.show(e.body.Value);
+        // 				//console.log("OUTLOOK DATA", this.getHeader("OData-Version"), e.body);
+        // 			});
+        // 		},
+        // 	},
+        // 	Calendarview: {
+        // 		/** @function $.mse.Calendarview.find
+        // 		*/
+        // 		find: function() {
+        // 			var url = "/api/v2.0/me/calendarview?startDateTime=2017-01-01T01:00:00&endDateTime=2017-03-31T23:00:00&$select=Id, Subject, BodyPreview, HasAttachments&$top=100";
+        // 			$.https.request ({ hostname: "outlook.office.com", path: url, headers: $.mse.headers }, function(e) {
+        // 				e.body.Value.forEach(function(row){
+        // 					row.Title = row.Subject;
+        // 					row.req = {headers: $.mse.headers, path: row['@odata.id'] };
+        // 				});
+        // 				Listview.show(e.body.Value);
+        // 				//console.log("OUTLOOK DATA", this.getHeader("OData-Version"), e.body);
+        // 			});
+        // 		},
+        // 	},
+        // 	userdata: {},
+        // 	login: function() {
+        // 		return;
+        // 		if (!$.paths || !$.paths['/mse/login']) return $.mse.loggedin = null;
+        // 		aimClient.api.request ({ path: '/mse/login' }, function(e) {
+        // 			if (!e.body || !e.body.access_token) return $.mse.loggedin = false;
+        // 			$.mse.loggedin = true;
+        // 			this.userdata = e.body;
+        // 			var mse_access_token = e.body.access_token.split('-');
+        // 			var access = mse_access_token[0].split('.');
+        // 			var header = JSON.parse(atob(access[0]));
+        // 			this.payload = JSON.parse(atob(access[1]));
+        // 			// //console.log("RT", e.body.refresh_token);
+        // 			// //console.log("RT", e.body.refresh_token.split('.'));
+        // 			// for (var i=0, c=e.body.refresh_token.split('-'), code;i<c.length;i++) {
+        // 			// 	//console.log("C1", i, c[i]);
+        // 			// 	try { //console.log("E1", i, atob(c[i])); } catch(err) {}
+        // 			// 	for (var i2=0, c2=c[i].split('_'), code2;i2<c2.length;i2++) {
+        // 			// 		//console.log("C1", i, "C2", i2, c2[i2]);
+        // 			// 		try { //console.log("C1", i, "E2", i2, atob(c2[i2])); } catch(err) {}
+        // 			// 	}
+        // 			// }
+        // 			// //console.log("MSE", e.body.refresh_token.split('-'));
+        // 			var timeleft = Math.round(this.payload.exp * 1000 - new Date().getTime());
+        // 			// //console.log("MSE USER DATA", this.responseText, header, this.payload);
+        // 			this.headers = {
+        // 				"Authorization": "Bearer " + this.userdata.access_token,
+        // 				"Accept": "application/json",
+        // 				"client-request-id": $().client_id,
+        // 				"return-client-request-id": "true",
+        // 				"X-AnchorMailbox": this.userdata.preferred_username,
+        // 			};
+        // 			setTimeout(this.login, timeleft<0 ? 5000 : timeleft-10);
+        // 			rowinfo.createElement('SPAN', 'mse', this.payload.unique_name);
+        // 			this.userdata.login_url = this.userdata.login_url + "&state=" + btoa(document.location.href);
+        // 			// , href: "https://login.microsoftonline.com/common/oauth/v2.0/authorize?response_type=code&client_id=24622611-2311-4791-947c-5c1d1b086d6c&redirect_uri=https://aliconnect.nl/$/v1/api/mse.php&state=" + [$.config.$.domain].join("+") + "&prompt=login&scope=openid offline_access profile email https://outlook.office.com/mail.readwrite https://outlook.office.com/calendars.readwrite https://outlook.office.com/contacts.readwrite https://outlook.office.com/people.read"
+        // 			// rowinfo.createElement('SPAN').createElement('A', {innerText: 'login', href: $.mse.btnLogin.href = this.userdata.login_url = this.userdata.login_url + "&state=" + btoa(document.location.href) });
+        // 		}.bind(this));
+        // 	},
+        // },
+
+        navlist: { value: function (selector, context) {
+          (function init(parent, selector, context) {
+            if (selector) {
+              if (typeof selector === 'string') {
+                const li = $('li').parent(parent);
+                const a = $('a').parent(li).attr('id', 'nav'+selector).text(selector.replace(/^\d+-/,''));
+                if (context && typeof context === 'object') {
+                  Object.entries(context).forEach(entry => {
+                    if (typeof entry[1] === 'object') {
+                      a.attr('open', a.attr('open') || '0');
+                      const ul = li.ul = li.ul || $('ul').parent(li);
+                      init(ul, ...entry);
+                    } else if (typeof entry[1] === 'function') {
+                      a.elem[entry[0]] = entry[1];
+                    } else {
+                      a.attr(...entry);
+                    }
+                  });
+                  a.class('abtn')
+                }
+              } else {
+                if (Array.isArray(selector)) {
+                  selector.forEach(item => init(parent, item))
+                } else if (selector instanceof Object) {
+                  Object.entries(selector).forEach(entry => init(parent, ...entry));
                 }
               }
-            })(this, ...arguments);
-            return this;
-          }},
-          on: { value: function (selector, context) {
-            if (typeof selector === 'object') {
-              Object.entries(selector).forEach(entry => this.on(...entry))
+            }
+          })(this, ...arguments);
+          return this;
+        }},
+        on: { value: function (selector, context) {
+          if (typeof selector === 'object') {
+            Object.entries(selector).forEach(entry => this.on(...entry))
+          } else {
+            // //console.log(selector, 'on'+selector in this.elem, this.elem['on'+selector])
+            if (('on'+selector in this.elem) && !this.elem['on'+selector]) {
+              this.elem['on'+selector] = context
+              // //console.log('JA', this.elem['on'+selector])
             } else {
-              // //console.log(selector, 'on'+selector in this.elem, this.elem['on'+selector])
-              if (('on'+selector in this.elem) && !this.elem['on'+selector]) {
-                this.elem['on'+selector] = context
-                // //console.log('JA', this.elem['on'+selector])
-              } else {
-                this.elem.addEventListener(...arguments);
-              }
+              this.elem.addEventListener(...arguments);
             }
-            // //console.log(this.elem, ...arguments);
-            return this;
-          },},
-          open: { value: function elemOpen (state) {
-            if (!arguments.length) {
-              return this.elem.hasAttribute('open')
-            }
-            if ('open' in this.elem) {
-              this.elem.open = state;
-            } else {
-              this.attr('open', state ? '' : null);
-            }
-            return this;
-          },},
-          operations: { value: function (selector){
-            this.append(Object.entries(selector).map(entry =>
-              $('button').class('abtn', entry[0]).attr(name, entry[0]).assign(entry[1])
-            ))
-          },},
-          payform: { value: function (params){
-            // if (!$.shop.customer || !$.shop.customer.Product) return;
-            let subtotal = 0;
-            function nr(val) {
-              return Number(val).toLocaleString(undefined, {minimumFractionDigits: 2});
-            }
-            this.append(
-              $('form')
-              .class('col aco payform doc-content')
-              .attr('action', '/?order')
-              .attr('novalidate', 'true')
-              // .on('submit', e => {
-              // 	//console.log('submit', order);
-              // 	e.preventDefault();
-              // 	for (var i=0, el;el=this.elements[i];i++) {
-              // 		if (el.required && el.offsetParent && !el.value) {
-              // 			el.focus();
-              // 			// return false;
-              // 		}
-              // 	}
-              // 	this.order.value = JSON.stringify(order);
-              // 	new $.HttpRequest($.config.$, 'POST', '/?order', this);
-              // 	return false;
-              // })
-              .append(
-                $('fieldset').append(
-                  $('legend').text('Vul je gegevens in'),
-                  $('div').text('Heb je al een account? Dan kun je inloggen.'),
-                  $('div').properties({
-                    Type: { format:'radio', required:true, options: {
-                      particulier: { },
-                      zakelijk: {},
-                    }},
-                    CompanyName: {required1: true, autofocus: true, value: params.customer.Title},
-                    FirstName: { required1: true },
-                    LastName: { required1: true },
-                    BusinessPhone0: { type: 'tel', required1: true },
-                    EmailAddress0: { type: 'email', required1: true, autocomplete: false },
-                    gender: { format:'radio', options: {
-                      male: { color: 'red' },
-                      female: { color: 'green' },
-                    } },
-                    OtherAddress: { format: 'address' },
-                    hasBusinessAddress: { format: 'checkbox' },
-                    BusinessAddress: { format: 'address' },
-                    NewsLetter: { format: 'checkbox', title: 'Ja, ik wil nieuwsbrieven ontvangen.' },
-                    SendDeals: { format: 'checkbox', title: 'Ja, stuur mij relevante deals afgestemd op mijn interesses' },
-                    CreateAccount: { format: 'checkbox', title: 'Ik wil een account aanmaken' },
-                    Password: { type: 'password', autocomplete:'new-password' },
-                    day: { type:'number', min: 1, max: 31, value:'1' },
-                    month: { type:'number', min: 1, max: 12, value:'1' },
-                    year: { type:'number', min: 1900, max: 2020, value:'2000' },
-                  }),
-                ),
-                $('fieldset').append(
-                  $('legend').text('Kies een verzendmethode'),
-                  $('div').text('Maak een keuze: (zie Verzendkosten)'),
-                  $('div').properties({
-                    verzending: { format:'radio', required:true, className:'col', options: {
-                      afleveradres: {
-                        title: 'Bezorgen op het afleveradres',
-                        checked:1,
-                      },
-                      westerfoort: {
-                        title: 'Afhalen in Westerfoort',
-                        info: 'Openingstijden: di/wo/vr: 9:00-18:00\Ado: 9:00-20:00, za: 09:00-17:00\AAdres: Hopjesweg 12A, 1234AB, Westerfoort',
-                      },
-                      dhl: {
-                        title: 'Afhalen bij een DHL ServicePoint'
-                      },
-                    }}
-                  }),
-                ),
-                $('fieldset').append(
-                  $('legend').text('Kies een betaalmethode'),
-                  $('div').text('Kies de betaalmethode die je makkelijk vindt.'),
-                  $('div').properties({
-                    paymethod: { format:'radio', required:true, options: {
-                      oprekening: {
-                        title: 'Achteraf betalen',
-                        unit: '+2%',
-                        checked: 1,
-                      },
-                      contant: {
-                        title: 'Contant bij afhalen',
-                      },
-                      ideal: {
-                        title: 'iDEAL',
-                      },
-                      paypal: {
-                        title: 'PayPAL',
-                        unit: '+2%',
-                        disabled: true,
-                      },
-                      mastercard: {
-                        disabled: true,
-                      },
-                      visa: {
-                        disabled: true,
-                      },
-                      meastro: {
-                        disabled: true,
-                      },
-                    }},
-                    issuer_id: {
-                      title: 'Kies bank.',
-                      id: 'issuerID',
-                      options: {
-                        0031: 'ABN Amro bank',
-                        0761: 'ASN Bank',
-                        0802: 'bunq',
-                        0721: 'ING',
-                        0801: 'Knab',
-                        0021: 'Rabobank',
-                        0771: 'RegioBank',
-                        0751: 'SNS Bank',
-                        0511: 'Triodos Bank',
-                        0161: 'Van Lanschot Bankiers',
-                      }
-                    }
-                  }),
-                ),
-                $('fieldset').append(
-                  $('legend').text('Waardebon- of actiecode invoeren'),
-                ).properties({
-                  discountcode: { title: 'Waardebon- of actiecode invoeren' },
-                  // }).operations({
-                  // 	activate: { type: 'button' },
+          }
+          // //console.log(this.elem, ...arguments);
+          return this;
+        },},
+        open: { value: function elemOpen (state) {
+          if (!arguments.length) {
+            return this.elem.hasAttribute('open')
+          }
+          if ('open' in this.elem) {
+            this.elem.open = state;
+          } else {
+            this.attr('open', state ? '' : null);
+          }
+          return this;
+        },},
+        operations: { value: function (selector){
+          this.append(Object.entries(selector).map(entry =>
+            $('button').class('abtn', entry[0]).attr(name, entry[0]).assign(entry[1])
+          ))
+        },},
+        payform: { value: function (params){
+          // if (!$.shop.customer || !$.shop.customer.Product) return;
+          let subtotal = 0;
+          function nr(val) {
+            return Number(val).toLocaleString(undefined, {minimumFractionDigits: 2});
+          }
+          this.append(
+            $('form')
+            .class('col aco payform doc-content')
+            .attr('action', '/?order')
+            .attr('novalidate', 'true')
+            // .on('submit', e => {
+            // 	//console.log('submit', order);
+            // 	e.preventDefault();
+            // 	for (var i=0, el;el=this.elements[i];i++) {
+            // 		if (el.required && el.offsetParent && !el.value) {
+            // 			el.focus();
+            // 			// return false;
+            // 		}
+            // 	}
+            // 	this.order.value = JSON.stringify(order);
+            // 	new $.HttpRequest($.config.$, 'POST', '/?order', this);
+            // 	return false;
+            // })
+            .append(
+              $('fieldset').append(
+                $('legend').text('Vul je gegevens in'),
+                $('div').text('Heb je al een account? Dan kun je inloggen.'),
+                $('div').properties({
+                  Type: { format:'radio', required:true, options: {
+                    particulier: { },
+                    zakelijk: {},
+                  }},
+                  CompanyName: {required1: true, autofocus: true, value: params.customer.Title},
+                  FirstName: { required1: true },
+                  LastName: { required1: true },
+                  BusinessPhone0: { type: 'tel', required1: true },
+                  EmailAddress0: { type: 'email', required1: true, autocomplete: false },
+                  gender: { format:'radio', options: {
+                    male: { color: 'red' },
+                    female: { color: 'green' },
+                  } },
+                  OtherAddress: { format: 'address' },
+                  hasBusinessAddress: { format: 'checkbox' },
+                  BusinessAddress: { format: 'address' },
+                  NewsLetter: { format: 'checkbox', title: 'Ja, ik wil nieuwsbrieven ontvangen.' },
+                  SendDeals: { format: 'checkbox', title: 'Ja, stuur mij relevante deals afgestemd op mijn interesses' },
+                  CreateAccount: { format: 'checkbox', title: 'Ik wil een account aanmaken' },
+                  Password: { type: 'password', autocomplete:'new-password' },
+                  day: { type:'number', min: 1, max: 31, value:'1' },
+                  month: { type:'number', min: 1, max: 12, value:'1' },
+                  year: { type:'number', min: 1900, max: 2020, value:'2000' },
                 }),
-                $('fieldset').class('col').append(
-                  $('legend').text('Overzicht van je bestelling'),
-                  $('table').append(
-                    $('thead').append(
-                      $('tr').append(
-                        'Omschrijving,Aantal,Prijs,Totaal'.split(',').map(val => $('th').text(val)),
-                      ),
-                    ),
-                    $('tbody').append(
-                      params.rows.map(
-                        row => $('tr').append(
-                          Object.values(row).map(
-                            val => $('td').text(
-                              isNaN(val)
-                              ? val
-                              : nr(val, subtotal += row.tot = Math.round(row.amount * row.price * 100) / 100)
-                            )
-                          )
-                        )
-                      ),
-                      $('tr').append(
-                        $('td').text('Verzendkosten').attr('colspan', 3),
-                        $('td').text(nr(params.verzendkosten, subtotal += params.verzendkosten)),
-                      ),
-                      $('tr').append(
-                        $('td').text('Transactiekosten').attr('colspan', 3),
-                        $('td').text(nr(params.transactiekosten, subtotal += params.transactiekosten)),
-                      ),
-                      $('tr').append(
-                        $('td').text(`BTW ${params.btw}% over ${nr(subtotal)}`).attr('colspan', 3),
-                        $('td').text(nr(params.btw = Math.round(subtotal * params.btw) / 100, subtotal += params.btw)),
-                      ),
-                      $('tr').append(
-                        $('td').text('TE BETALEN').attr('colspan', 3),
-                        $('td').text(nr(subtotal)),
-                      ),
+              ),
+              $('fieldset').append(
+                $('legend').text('Kies een verzendmethode'),
+                $('div').text('Maak een keuze: (zie Verzendkosten)'),
+                $('div').properties({
+                  verzending: { format:'radio', required:true, className:'col', options: {
+                    afleveradres: {
+                      title: 'Bezorgen op het afleveradres',
+                      checked:1,
+                    },
+                    westerfoort: {
+                      title: 'Afhalen in Westerfoort',
+                      info: 'Openingstijden: di/wo/vr: 9:00-18:00\Ado: 9:00-20:00, za: 09:00-17:00\AAdres: Hopjesweg 12A, 1234AB, Westerfoort',
+                    },
+                    dhl: {
+                      title: 'Afhalen bij een DHL ServicePoint'
+                    },
+                  }}
+                }),
+              ),
+              $('fieldset').append(
+                $('legend').text('Kies een betaalmethode'),
+                $('div').text('Kies de betaalmethode die je makkelijk vindt.'),
+                $('div').properties({
+                  paymethod: { format:'radio', required:true, options: {
+                    oprekening: {
+                      title: 'Achteraf betalen',
+                      unit: '+2%',
+                      checked: 1,
+                    },
+                    contant: {
+                      title: 'Contant bij afhalen',
+                    },
+                    ideal: {
+                      title: 'iDEAL',
+                    },
+                    paypal: {
+                      title: 'PayPAL',
+                      unit: '+2%',
+                      disabled: true,
+                    },
+                    mastercard: {
+                      disabled: true,
+                    },
+                    visa: {
+                      disabled: true,
+                    },
+                    meastro: {
+                      disabled: true,
+                    },
+                  }},
+                  issuer_id: {
+                    title: 'Kies bank.',
+                    id: 'issuerID',
+                    options: {
+                      0031: 'ABN Amro bank',
+                      0761: 'ASN Bank',
+                      0802: 'bunq',
+                      0721: 'ING',
+                      0801: 'Knab',
+                      0021: 'Rabobank',
+                      0771: 'RegioBank',
+                      0751: 'SNS Bank',
+                      0511: 'Triodos Bank',
+                      0161: 'Van Lanschot Bankiers',
+                    }
+                  }
+                }),
+              ),
+              $('fieldset').append(
+                $('legend').text('Waardebon- of actiecode invoeren'),
+              ).properties({
+                discountcode: { title: 'Waardebon- of actiecode invoeren' },
+                // }).operations({
+                // 	activate: { type: 'button' },
+              }),
+              $('fieldset').class('col').append(
+                $('legend').text('Overzicht van je bestelling'),
+                $('table').append(
+                  $('thead').append(
+                    $('tr').append(
+                      'Omschrijving,Aantal,Prijs,Totaal'.split(',').map(val => $('th').text(val)),
                     ),
                   ),
-                  $('input').attr('hidden', '').attr('name', 'order'),
-                  $('div').text('Als je op de bestelknop klikt ga je akkoord met onze algemene leveringsvoorwaarden.'),
-                  // $('div').class('row btns').operations({
-                  // 	activate: { label: 'Bestellen en betalen', default:true },
-                  // }),
-                  $('div').text('Door op de bestelknop te klikken rond je de bestelling af.'),
-                  $('div').text('Als je nu bestelt, gaan we direct aan de slag!'),
-                ),
-              ),
-            )
-          },},
-          prompts: { value: function () {
-            this.append([...arguments].map(name=>$('a').class('abtn', name).caption(name).href('#?prompt='+name)));
-            return this;
-          },},
-          parent: { value: function (selector){
-            $(selector).append(this.elem);
-            return this;
-          },},
-          path: { value: function (){
-            const path = [];
-            for (let p = this.elem; p ;p = p.parentElement) {
-              // //console.log(p);
-              path.push(p);
-            }
-            return path;
-          },},
-          properties: { value: function (properties) {
-            [...arguments].filter(Boolean).forEach(properties => {
-              let elem = this.elem;
-              let parent = this;
-              let selector = parent;
-              const format = {
-                address: {
-                  edit() {
-                    const addressField = this.property;
-                    const item = this.property.item;
-                    const prefix = this.property.name;
-                    // console.log(prefix);
-                    function onchange (e) {
-                      const formElement = e.target.form;
-                      item[e.target.name] = e.target.value;
-                      e.target.modified = true;
-                      let address = [
-                        ['Street', 'Number'].map(name => formElement[prefix + name].value).filter(Boolean).join('+'),
-                        ['PostalCode', 'City'].map(name => formElement[prefix + name].value).filter(Boolean).join('+'),
-                        ['Country'].map(name => formElement[prefix + name].value).filter(Boolean).join('+'),
-                      ].join(',');
-                      // console.log(address, formElement);
-                      $().url('https://maps.googleapis.com/maps/api/geocode/json').query({
-                        address: address,
-                      }).get().then(e => {
-                        let compnames = {
-                          route: prefix + 'Street',
-                          sublocality_level_2: prefix + 'Street',
-                          sublocality: prefix + 'Street',
-                          street_number: prefix + 'Number',
-                          postal_code: prefix + 'PostalCode',
-                          locality: prefix + 'City',
-                          administrative_area_level_2: prefix + 'Town',
-                          administrative_area_level_1: prefix + 'State',
-                          country: prefix + 'Country',
-                        };
-                        e.body.results.forEach(result => {
-                          if (result.address_components) {
-                            result.address_components.forEach(comp => {
-                              comp.types.forEach(type => {
-                                fieldname = compnames[type];
-                                // console.log(type);
-                                if (formElement[fieldname] && !formElement[fieldname].modified) {
-                                  item[fieldname] = formElement[fieldname].value = comp.long_name;
-                                }
-                              })
-                            });
-                          }
-                        });
-                      });
-                    };
-                    function prop (selector, options) {
-                      return $('span').class('col aco prop input').append(
-                        $('input').id(prefix + selector).name(prefix + selector).value(item[prefix + selector]).class('inp')
-                        .placeholder(' ').on('change', onchange),
-                        $('label').for(prefix + selector).ttext('Address' + selector),
-                        $('i'),
-                      )
-                    }
-                    this.selector.append(
-                      $('div').class('row wrap').append(prop('Street'), prop('Number')),
-                      $('div').class('row wrap').append(prop('PostalCode'), prop('City')),
-                      $('div').class('row wrap').append(prop('Town'), prop('State'), prop('Country')),
-                    );
-                  },
-                },
-                cam: {
-                  className: 'doc-content',
-                  createInput: function() {
-                    let snap = 0;
-                    let camElement = this.elEdit.createElement('div', 'cam col', [
-                      ['div', 'row top w', [
-                        ['button', 'abtn icn r save', 'save', {onclick() {
-                          $('video').pause();
-                          let canvas = camElement.createElement('canvas', {
-                            width: 640,
-                            height: 480,
-                          });
-                          let context = canvas.getContext("2d");
-                          context.drawImage(video, 0, 0, 640, 480);
-                          data = canvas.toDataURL("image/png");
-                          //console.log(data);
-                          // UPLOAD DATA
-                          canvas.remove();
-                          // App.files.fileUpload(this.item, { name: 'photo.png' }, $('canvas').toDataURL("image/png"));
-                        }}],
-                      ]],
-                      ['video', 'aco', { id:'video', autoplay: true, width: 640, height: 480, onclick() {
-                        let video = $('video');
-                        if (video.paused) {
-                          $('video').play();
-                        } else {
-                          $('video').pause();
-                        }
-                      }}],
-                    ]);
-                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                      navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-                        try {
-                          $('video').srcObject = stream;
-                        } catch (error) {
-                          $('video').src = window.URL.createObjectURL(stream);
-                        }
-                        if ($('video')) {
-                          $('video').play();
-                        }
-                      });
-                    }
-                  },
-                },
-                // check: {
-                // 	createInput: function() {
-                // 		this.elEdit.className += ' fw';
-                // 		var values = this.value.split(', ');
-                // 		this.elInp = this.elEdit.createElement('DIV', { className: 'inp row wrap' });
-                // 		this.options = this.options || this.enum;
-                // 		for (var optionname in this.options) {
-                // 			var option = this.options[optionname];
-                // 			var elInpOption = this.elInp.createElement('span', { className: 'radiobtn check' });
-                // 			elInpOption.createElement('INPUT', {
-                // 				el: this.elInp, type: 'checkbox', id: this.name + optionname, value: optionname, checked: (values.indexOf(optionname) != -1) ? 1 : 0, onclick: function(e) {
-                // 					var c = this.elEdit.getElementsByTagName('INPUT');
-                // 					var a = [];
-                // 					for (var i = 0, e; e = c[i]; i++) if (e.checked) a.push(e.value);
-                // 					this.elEdit.newvalue = a.join(', ');
-                // 				}
-                // 			});
-                // 			elInpLabel = elInpSpan.createElement('LABEL', { for: this.name + optionname  });
-                // 			elInpLabel.createElement('icon').style.backgroundColor = option.color;
-                // 			elInpLabel.createElement('span', { innerText: option.Title });
-                // 		}
-                // 		//this.elEdit.createElement('LABEL', { innerText: this.placeholder });
-                // 	}
-                // },
-                checkbox: {
-                  view() {
-                    $('div')
-                    .parent(this.selector)
-                    .class('row prop check',this.property.format,this.property.name)
-                    .append(
-                      $('label').class('check').text(this.property.title || this.property.name),
-                      $('label').ttext(this.displayvalue)
-                    );
-                    return this;
-                  },
-                  edit() {
-                    const property = this.property;
-                    let value = this.value || this.defaultValue;
-                    // var forId = ['property',this.name].join('_');
-                    console.log('CEHCKBOX', this.name);
-                    $('div')
-                    .parent(this.selector)
-                    .class('col input check',this.format || this.type || '',this.property.name)
-                    .append(
-                      $('div').class('row check').append(
-                        $('input')
-                        .on('change', e => this.value = e.target.checked ? 'on' : null)
-                        .type('checkbox')
-                        // .name(this.name)
-                        // .attr(this)
-                        .checkbox(this, this.property, this.attributes),
-                      )
-                    );
-                    // return;
-                    // const elements = [];
-                    // const inputElement = this.selector;
-                    //
-                    //
-                    // let el = inputElement.createElement('DIV', ['col input check',property.format,property.name].join(' '));
-                    //
-                    // let value = this.value || this.defaultValue || '';
-                    // if (property.options) {
-                    // 	value = value.split(',');
-                    // 	var options = property.options || {   };
-                    // 	el.createElement('LABEL', '', __(property.title || property.name));
-                    // 	el = el.createElement('DIV', 'row');
-                    // 	function createElem(tag, option) {
-                    // 		var forId = ['property',property.name,tag].join('_');
-                    // 		el.createElement('DIV', 'row check', [
-                    // 			['INPUT', {
-                    // 				type: 'checkbox',
-                    // 				// name: tag,
-                    // 				id: forId,
-                    // 				checked: value.includes(tag),
-                    // 			}],
-                    // 			['LABEL', 'caption', { for: forId }, [
-                    // 				['I', option.color ? {style : `background-color:${option.color};`} : null],
-                    // 				['SPAN', '', __(option.title || tag)],
-                    // 			]],
-                    // 		]);
-                    // 	}
-                    // 	Object.entries(options).forEach(entry => createElem(...entry));
-                    // } else {
-                    // 	var forId = ['property',property.name].join('_');
-                    // 	el.createElement('DIV', 'row check', [
-                    // 		['INPUT', {
-                    // 			type: 'checkbox',
-                    // 			name: property.name,
-                    // 			id: forId,
-                    // 			checked: value ? 1 : 0,
-                    // 		}],
-                    // 		['LABEL', 'caption', { for: forId }, [
-                    // 			['I'],
-                    // 			['SPAN', '', __(property.title || property.name)],
-                    // 		]],
-                    // 	]);
-                    // }
-                  },
-                },
-                checklist: {
-                  createInput: function() {
-                    this.elInp = this.elEdit.createElement('select', {});
-                    for (var optionname in this.options) this.elInp.createElement('option', { value: optionname, innerText: this.options[optionname].Title || optionname });
-                  },
-                },
-                default: {
-                  showDetails() {
-                    if (lastLegend !== legend) {
-                      const currentLegend = lastLegend = legend;
-                      $('div').parent(parent).append(
-                        this.selector = selector = $('details').class('col')
-                        .parent(parent)
-                        .open($().storage(currentLegend))
-                        .on('toggle', e => $().storage(currentLegend, e.target.open))
-                        .append(
-                          $('summary').class('focus').text(currentLegend)
+                  $('tbody').append(
+                    params.rows.map(
+                      row => $('tr').append(
+                        Object.values(row).map(
+                          val => $('td').text(
+                            isNaN(val)
+                            ? val
+                            : nr(val, subtotal += row.tot = Math.round(row.amount * row.price * 100) / 100)
+                          )
                         )
                       )
-                    }
-                    return this;
-                  },
-                  view(property) {
-                    $('div')
-                    .parent(this.selector)
-                    .class(
-                      'row prop', this.format || this.type || '',
-                      this.property.name,
+                    ),
+                    $('tr').append(
+                      $('td').text('Verzendkosten').attr('colspan', 3),
+                      $('td').text(nr(params.verzendkosten, subtotal += params.verzendkosten)),
+                    ),
+                    $('tr').append(
+                      $('td').text('Transactiekosten').attr('colspan', 3),
+                      $('td').text(nr(params.transactiekosten, subtotal += params.transactiekosten)),
+                    ),
+                    $('tr').append(
+                      $('td').text(`BTW ${params.btw}% over ${nr(subtotal)}`).attr('colspan', 3),
+                      $('td').text(nr(params.btw = Math.round(subtotal * params.btw) / 100, subtotal += params.btw)),
+                    ),
+                    $('tr').append(
+                      $('td').text('TE BETALEN').attr('colspan', 3),
+                      $('td').text(nr(subtotal)),
+                    ),
+                  ),
+                ),
+                $('input').attr('hidden', '').attr('name', 'order'),
+                $('div').text('Als je op de bestelknop klikt ga je akkoord met onze algemene leveringsvoorwaarden.'),
+                // $('div').class('row btns').operations({
+                // 	activate: { label: 'Bestellen en betalen', default:true },
+                // }),
+                $('div').text('Door op de bestelknop te klikken rond je de bestelling af.'),
+                $('div').text('Als je nu bestelt, gaan we direct aan de slag!'),
+              ),
+            ),
+          )
+        },},
+        prompts: { value: function () {
+          this.append([...arguments].map(name=>$('a').class('abtn', name).caption(name).href('#?prompt='+name)));
+          return this;
+        },},
+        parent: { value: function (selector){
+          $(selector).append(this.elem);
+          return this;
+        },},
+        path: { value: function (){
+          const path = [];
+          for (let p = this.elem; p ;p = p.parentElement) {
+            // //console.log(p);
+            path.push(p);
+          }
+          return path;
+        },},
+        properties: { value: function (properties) {
+          [...arguments].filter(Boolean).forEach(properties => {
+            let elem = this.elem;
+            let parent = this;
+            let selector = parent;
+            const format = {
+              address: {
+                edit() {
+                  const addressField = this.property;
+                  const item = this.property.item;
+                  const prefix = this.property.name;
+                  // console.log(prefix);
+                  function onchange (e) {
+                    const formElement = e.target.form;
+                    item[e.target.name] = e.target.value;
+                    e.target.modified = true;
+                    let address = [
+                      ['Street', 'Number'].map(name => formElement[prefix + name].value).filter(Boolean).join('+'),
+                      ['PostalCode', 'City'].map(name => formElement[prefix + name].value).filter(Boolean).join('+'),
+                      ['Country'].map(name => formElement[prefix + name].value).filter(Boolean).join('+'),
+                    ].join(',');
+                    // console.log(address, formElement);
+                    $().url('https://maps.googleapis.com/maps/api/geocode/json').query({
+                      address: address,
+                    }).get().then(e => {
+                      let compnames = {
+                        route: prefix + 'Street',
+                        sublocality_level_2: prefix + 'Street',
+                        sublocality: prefix + 'Street',
+                        street_number: prefix + 'Number',
+                        postal_code: prefix + 'PostalCode',
+                        locality: prefix + 'City',
+                        administrative_area_level_2: prefix + 'Town',
+                        administrative_area_level_1: prefix + 'State',
+                        country: prefix + 'Country',
+                      };
+                      e.body.results.forEach(result => {
+                        if (result.address_components) {
+                          result.address_components.forEach(comp => {
+                            comp.types.forEach(type => {
+                              fieldname = compnames[type];
+                              // console.log(type);
+                              if (formElement[fieldname] && !formElement[fieldname].modified) {
+                                item[fieldname] = formElement[fieldname].value = comp.long_name;
+                              }
+                            })
+                          });
+                        }
+                      });
+                    });
+                  };
+                  function prop (selector, options) {
+                    return $('span').class('col aco prop input').append(
+                      $('input').id(prefix + selector).name(prefix + selector).value(item[prefix + selector]).class('inp')
+                      .placeholder(' ').on('change', onchange),
+                      $('label').for(prefix + selector).ttext('Address' + selector),
+                      $('i'),
                     )
-                    .append(
-                      $('label').ttext(this.title),
-                      $('span')
-                      .class(
-                        'aco pre wrap',
-                        this.className,
-                        // data.some(data => data.SrcID == ID) ? 'ownprop' : '',
-                        // data.some(data => data.SrcID != ID) ? 'srcprop' : '',
+                  }
+                  this.selector.append(
+                    $('div').class('row wrap').append(prop('Street'), prop('Number')),
+                    $('div').class('row wrap').append(prop('PostalCode'), prop('City')),
+                    $('div').class('row wrap').append(prop('Town'), prop('State'), prop('Country')),
+                  );
+                },
+              },
+              cam: {
+                className: 'doc-content',
+                createInput: function() {
+                  let snap = 0;
+                  let camElement = this.elEdit.createElement('div', 'cam col', [
+                    ['div', 'row top w', [
+                      ['button', 'abtn icn r save', 'save', {onclick() {
+                        $('video').pause();
+                        let canvas = camElement.createElement('canvas', {
+                          width: 640,
+                          height: 480,
+                        });
+                        let context = canvas.getContext("2d");
+                        context.drawImage(video, 0, 0, 640, 480);
+                        data = canvas.toDataURL("image/png");
+                        //console.log(data);
+                        // UPLOAD DATA
+                        canvas.remove();
+                        // App.files.fileUpload(this.item, { name: 'photo.png' }, $('canvas').toDataURL("image/png"));
+                      }}],
+                    ]],
+                    ['video', 'aco', { id:'video', autoplay: true, width: 640, height: 480, onclick() {
+                      let video = $('video');
+                      if (video.paused) {
+                        $('video').play();
+                      } else {
+                        $('video').pause();
+                      }
+                    }}],
+                  ]);
+                  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+                      try {
+                        $('video').srcObject = stream;
+                      } catch (error) {
+                        $('video').src = window.URL.createObjectURL(stream);
+                      }
+                      if ($('video')) {
+                        $('video').play();
+                      }
+                    });
+                  }
+                },
+              },
+              // check: {
+              // 	createInput: function() {
+              // 		this.elEdit.className += ' fw';
+              // 		var values = this.value.split(', ');
+              // 		this.elInp = this.elEdit.createElement('DIV', { className: 'inp row wrap' });
+              // 		this.options = this.options || this.enum;
+              // 		for (var optionname in this.options) {
+              // 			var option = this.options[optionname];
+              // 			var elInpOption = this.elInp.createElement('span', { className: 'radiobtn check' });
+              // 			elInpOption.createElement('INPUT', {
+              // 				el: this.elInp, type: 'checkbox', id: this.name + optionname, value: optionname, checked: (values.indexOf(optionname) != -1) ? 1 : 0, onclick: function(e) {
+              // 					var c = this.elEdit.getElementsByTagName('INPUT');
+              // 					var a = [];
+              // 					for (var i = 0, e; e = c[i]; i++) if (e.checked) a.push(e.value);
+              // 					this.elEdit.newvalue = a.join(', ');
+              // 				}
+              // 			});
+              // 			elInpLabel = elInpSpan.createElement('LABEL', { for: this.name + optionname  });
+              // 			elInpLabel.createElement('icon').style.backgroundColor = option.color;
+              // 			elInpLabel.createElement('span', { innerText: option.Title });
+              // 		}
+              // 		//this.elEdit.createElement('LABEL', { innerText: this.placeholder });
+              // 	}
+              // },
+              checkbox: {
+                view() {
+                  $('div')
+                  .parent(this.selector)
+                  .class('row prop check',this.property.format,this.property.name)
+                  .append(
+                    $('label').class('check').text(this.property.title || this.property.name),
+                    $('label').ttext(this.displayvalue)
+                  );
+                  return this;
+                },
+                edit() {
+                  const property = this.property;
+                  let value = this.value || this.defaultValue;
+                  // var forId = ['property',this.name].join('_');
+                  console.log('CEHCKBOX', this.name);
+                  $('div')
+                  .parent(this.selector)
+                  .class('col input check',this.format || this.type || '',this.property.name)
+                  .append(
+                    $('div').class('row check').append(
+                      $('input')
+                      .on('change', e => this.value = e.target.checked ? 'on' : null)
+                      .type('checkbox')
+                      // .name(this.name)
+                      // .attr(this)
+                      .checkbox(this, this.property, this.attributes),
+                    )
+                  );
+                  // return;
+                  // const elements = [];
+                  // const inputElement = this.selector;
+                  //
+                  //
+                  // let el = inputElement.createElement('DIV', ['col input check',property.format,property.name].join(' '));
+                  //
+                  // let value = this.value || this.defaultValue || '';
+                  // if (property.options) {
+                  // 	value = value.split(',');
+                  // 	var options = property.options || {   };
+                  // 	el.createElement('LABEL', '', __(property.title || property.name));
+                  // 	el = el.createElement('DIV', 'row');
+                  // 	function createElem(tag, option) {
+                  // 		var forId = ['property',property.name,tag].join('_');
+                  // 		el.createElement('DIV', 'row check', [
+                  // 			['INPUT', {
+                  // 				type: 'checkbox',
+                  // 				// name: tag,
+                  // 				id: forId,
+                  // 				checked: value.includes(tag),
+                  // 			}],
+                  // 			['LABEL', 'caption', { for: forId }, [
+                  // 				['I', option.color ? {style : `background-color:${option.color};`} : null],
+                  // 				['SPAN', '', __(option.title || tag)],
+                  // 			]],
+                  // 		]);
+                  // 	}
+                  // 	Object.entries(options).forEach(entry => createElem(...entry));
+                  // } else {
+                  // 	var forId = ['property',property.name].join('_');
+                  // 	el.createElement('DIV', 'row check', [
+                  // 		['INPUT', {
+                  // 			type: 'checkbox',
+                  // 			name: property.name,
+                  // 			id: forId,
+                  // 			checked: value ? 1 : 0,
+                  // 		}],
+                  // 		['LABEL', 'caption', { for: forId }, [
+                  // 			['I'],
+                  // 			['SPAN', '', __(property.title || property.name)],
+                  // 		]],
+                  // 	]);
+                  // }
+                },
+              },
+              checklist: {
+                createInput: function() {
+                  this.elInp = this.elEdit.createElement('select', {});
+                  for (var optionname in this.options) this.elInp.createElement('option', { value: optionname, innerText: this.options[optionname].Title || optionname });
+                },
+              },
+              default: {
+                showDetails() {
+                  if (lastLegend !== legend) {
+                    const currentLegend = lastLegend = legend;
+                    $('div').parent(parent).append(
+                      this.selector = selector = $('details').class('col')
+                      .parent(parent)
+                      .open($().storage(currentLegend))
+                      .on('toggle', e => $().storage(currentLegend, e.target.open))
+                      .append(
+                        $('summary').class('focus').text(currentLegend)
                       )
-                      .html(this.displayvalue),
                     )
-                  },
-                  edit(property) {
-                    // console.log(property);
-                    $('div').parent(this.selector).class('col prop input',this.format || this.type || '',this.property.name).append(
-                      this.input = $('input')
+                  }
+                  return this;
+                },
+                view(property) {
+                  $('div')
+                  .parent(this.selector)
+                  .class(
+                    'row prop', this.format || this.type || '',
+                    this.property.name,
+                  )
+                  .append(
+                    $('label').ttext(this.title),
+                    $('span')
+                    .class(
+                      'aco pre wrap',
+                      this.className,
+                      // data.some(data => data.SrcID == ID) ? 'ownprop' : '',
+                      // data.some(data => data.SrcID != ID) ? 'srcprop' : '',
+                    )
+                    .html(this.displayvalue),
+                  )
+                },
+                edit(property) {
+                  // console.log(property);
+                  $('div').parent(this.selector).class('col prop input',this.format || this.type || '',this.property.name).append(
+                    this.input = $('input')
+                    .class(
+                      'inp focus aco',
+                      this.className,
+                      // data.some(data => data.SrcID == ID) ? 'ownprop' : '',
+                      // data.some(data => data.SrcID != ID) ? 'srcprop' : '',
+                    )
+                    .id(this.name)
+                    .name(this.property.name)
+                    .attr(this)
+                    // .attr(this.attributes)
+                    .value(this.ownprop || !this.srcprop ? this.value : '')
+                    .placeholder(this.srcprop ? this.value : ' ')
+                    .on('change', e => this.value = e.target.value),
+                    $('label').class('row aco').ttext(this.title || this.name).for(this.name),
+                    $('i').pattern(this.pattern),
+                  )
+                },
+              },
+              draw: {
+                view(property) {
+                },
+                edit(property) {
+                  $(this.selector).append(
+                    $('div').append(
+                      $('canvas').width(640).height(480).style('border:solid 1px gray;').draw()
+                    )
+                  );
+                },
+              },
+              email: {
+                type: 'email',
+                pattern: '[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$',
+              },
+              files: {
+                createInput() {
+                  //console.log('FILESSSSS', attributeName, attribute, this.elEdit, this.item);
+                  const files = new Files(this, this.elEdit);
+                  if (this.item && this.item.editBarElement) {
+                    if (!this.item.files) {
+                      this.item.files = files;
+                      this.item.editBarElement.createElement('button', 'abtn attach', {type: 'button', accept: '', onclick: files.openDialog});
+                      this.item.editBarElement.createElement('button', 'abtn image', {type: 'button', accept: 'image/*', onclick: files.openDialog});
+                    }
+                  }
+                  this.elEdit.append(files.elem);
+                  // apr.item.editBarElement = $.pageEditElement.createElement('DIV', 'row top abs btnbar np', { id: 'pageEditTopBar', operations: {
+                  // 	close: {Title: 'Sluit formulier' },
+                  // 	attach: {type: 'button', accept: '', onclick: files.openDialog},
+                  // 	image: {type: 'button', accept: 'image/*', onclick: files.openDialog},
+                  // 	camera: {type: 'button', item: this, onclick: $.prompt.camera},
+                  // 	freedraw: {type: 'button', item: this, onclick: $.prompt.freedraw},
+                  // }});
+                  // this.elEdit.append(new Files(this).elem);
+                },
+                createView() {
+                  const files = new Files(this);
+                  this.item.files = this.item.files || files;
+                  // elForm.filesAttribute = elForm.filesAttribute || files;
+                  // this.elSpan = this.elView.append(files.elem);
+                  return this.elView = files.elem;
+                  // new Files(this, this.elSpan);
+                },
+              },
+              hidden: {
+                edit() {
+                  const is = $('input')
+                  .attr(this.property)
+                  .parent(this.selector)
+                  .name(this.name)
+                  .attr('tabindex', -1);
+                  if (this.property.format === 'hidden') {
+                    is.class('hide_input');
+                  }
+                }
+              },
+              html: {
+                view(property) {
+                  $('div').parent(this.selector).class('col prop', this.format || this.type || '', this.property.name).append(
+                    $('label').ttext(this.title),
+                    $('span').class('aco pre wrap doc-content',this.className).html(this.displayvalue),
+                  )
+                },
+                edit() {
+                  // let html = (this.value||'').trim()
+                  // 				.replace(/<p><\/p>/gis, '')
+                  // 				.replace(/<p><br><\/p>/gis, '')
+                  // 				.replace(/<div><\/div>/gis, '')
+                  // 				.replace(/<div><br><\/div>/gis, '')
+                  // 				.replace(/^<p>/is, '')
+                  // 				.replace(/<\/p>$/is, '')
+                  // 				.replace(/^/is, '<p>')
+                  // 				.replace(/$/is, '</p>')
+                  // 				;
+                  // 				html='';
+                  // //console.log(html);
+                  let html = this.value || '';
+                  $('div').class('prop col').parent(this.selector).append(
+                    $('div')
+                    .class('inp doc-content')
+                    .placeholder('')
+                    .html(html)
+                    .htmledit(this.property),
+                    $('label').text(this.property.title || this.property.name),
+                  );
+                },
+              },
+              json: {
+                createInput: function() {
+                  this.elEdit.className = 'field col fw';
+                  this.elInp = this.elEdit.createElement('CODE').createElement('TEXTAREA', { className: 'inp oa', style: 'white-space:nowrap;', value: editor.json(this.value) });
+                  this.elInp.addEventListener('change', function() { try { JSON.parse(this.value, true) } catch (err) { alert('JSON format niet in orde;'); } });
+                  this.elEdit.createElement('LABEL', { innerText: this.placeholder });
+                  this.elInp.onkeyup = function(e) {
+                    if (this.style.height < 300) {
+                      this.style.height = 'auto';
+                      this.style.height = Math.min(this.scrollHeight + 20, 300) + 'px';
+                    }
+                  };
+                  setTimeout(function(el) { this.elEdit.onkeyup(); }, 100, this.elInp);
+                },
+              },
+              linkedin: {
+              },
+              location: {
+                className: 'doc-content',
+                createInput: function() {
+                  let mapsElement = this.elEdit.createElement('DIV', {
+                    id:'map',
+                    style: 'width:100%;height:400px;',
+                  });
+                  let map = new google.maps.Map(mapsElement, {
+                    zoom: 8,
+                    // zoomControl: true,
+                    // scaleControl: false,
+                    // scrollwheel: false,
+                    // disableDoubleClickZoom: true,
+                    // gestureHandling: 'greedy',
+                    // gestureHandling: 'none',
+                    // gestureHandling: 'auto',
+                    gestureHandling: 'cooperative',
+                  });
+                  bounds = new google.maps.LatLngBounds();
+                  geocoder = new google.maps.Geocoder();
+                  if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                      var pos = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                      };
+                      //console.log('CURRENT POS', position);
+                      var myLatlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                      $.currgeocoder = $.currgeocoder || new google.maps.Geocoder();
+                      $.currgeocoder.geocode({
+                        'location': myLatlng
+                      }, function (results, status) {
+                        if (status == google.maps.GeocoderStatus.OK) {
+                          let marker = new google.maps.Marker({
+                            map: map,
+                            position: results[0].geometry.location
+                          });
+                          bounds.extend(marker.getPosition());
+                          map.fitBounds(bounds);
+                          google.maps.e.addListenerOnce(map, 'bounds_changed', function() {
+                            this.setZoom(Math.min(10, this.getZoom()));
+                          });
+                        } else {
+                          //console.error('Geocode was not successful for the following reason: ' + status);
+                        }
+                      });
+                    }, function() {
+                      // handleLocationError(true, infoWindow, map.getCenter());
+                    });
+                  } else {
+                    alert('NOT navigator.geolocation');
+                    // Browser doesn't support Geolocation
+                    handleLocationError(false, infoWindow, map.getCenter());
+                  }
+                },
+              },
+              meter: {
+                view() {
+                  this.selector.createElement('DIV', ['row prop',this.property.format,this.property.name].join(' '), [
+                    ['LABEL', '', this.property.title || this.property.name, {for: this.property.name } ],
+                    ['METER', 'aco', '2 outof 10', this.property, {id: this.property.name } ],
+                  ]);
+                },
+                edit() {
+                  this.selector.createElement('DIV', ['row input',this.property.format,this.property.name].join(' '), [
+                    ['LABEL', '', {for: this.property.name } ],
+                    ['METER', 'aco', '2 outof 10', this.property, {id: this.property.name } ],
+                  ]);
+                },
+              },
+              number: {
+                type: 'number',
+              },
+              password: {
+                type: 'password',
+              },
+              radio: {
+                view() {
+                  $('div')
+                  .parent(this.selector)
+                  .class('row prop',this.property.format,this.property.name)
+                  .setProperty('btbg', ((this.property.options||{})[this.value]||{}).color)
+                  .append(
+                    $('label').class('check').text(this.property.title || this.property.name),
+                    $('label').ttext(this.displayvalue)
+                  );
+                  return this;
+                },
+                edit() {
+                  const property = this.property;
+                  let value = this.value || this.defaultValue;
+                  function option(tag, option){
+                    option.value = tag;
+                    option.checked = tag === value;
+                    const forId = ['property',property.name, tag].join('_');
+                    if (property.required && !value) {
+                      value = this.value = tag;
+                    }
+                    return $('div')
+                    .class('row')
+                    .setProperty('btbg', option.color)
+                    .append(
+                      $('input')
+                      .type('radio')
+                      .on('change', e => {
+                        property.value = tag;
+                        this.changed = e.target;
+                      })
+                      .on('keydown', e => {
+                        if (this.changed === e.target && e.code === 'Space' && !property.required) {
+                          e.target.checked ^= 1;
+                          property.value = e.target.form[e.target.name].value = e.target.checked ? e.target.value : null;
+                          this.changed = null;
+                          e.preventDefault();
+                        }
+                      })
+                      .on('click', e => {
+                        if (this.changed === e.target && !property.required) {
+                          e.target.checked ^= 1;
+                          property.value = e.target.form[e.target.name].value = e.target.checked ? e.target.value : null;
+                          this.changed = null;
+                        }
+                      })
+                      .checkbox(property, option)
+                    )
+                  }
+                  this.selector.append(
+                    $('div').class('col prop input',property.format,property.name).append(
+                      $('label').text(property.title || property.name),
+                      $('div').class('row wrap').append(
+                        Object.entries(property.options||{}).map(entry => option(...entry))
+                      )
+                    )
+                  );
+                  return this;
+                },
+              },
+              select: {
+                get textvalue() {
+                  return 'ja';
+                },
+                view(property) {
+                  // console.log(this.textvalue, this.property.options, this.property.value);
+                  $('div')
+                  .parent(this.selector)
+                  .class(
+                    'row prop', this.format || this.type || '',
+                    this.property.name,
+                  )
+                  .append(
+                    $('label').ttext(this.title),
+                    $('span')
+                    .class(
+                      'aco pre wrap',
+                      this.className,
+                      // data.some(data => data.SrcID == ID) ? 'ownprop' : '',
+                      // data.some(data => data.SrcID != ID) ? 'srcprop' : '',
+                    )
+                    .displayvalue(this.property.name)
+                    .item(this.property.item, this.name + 'view')
+                    // .html(this.displayvalue),
+                  )
+                },
+                createInput() {
+                  console.log(this.textvalue);
+                  this.elInp = this.elEdit.createElement('select', 'inp row aco', { item: this.item, name: this.name });
+                  this.elEdit.createElement('LABEL', '', this.title || this.name);
+                  let selected = [];
+                  let value = this.value || this.defaultvalue || '';
+                  // //console.log(value);
+                  if (this.type === 'array') {
+                    this.elInp.setAttribute('multiple', '');
+                    selected = value ? String(value).split(',') : [];
+                    // //console.log(selected);
+                  }
+                  if (Object.prototype.toString.call(this.options) === '[object Array]') {
+                    for (var i = 0, optionvalue; optionvalue = this.options[i]; i++) {
+                      var optionElement = this.elInp.createElement('option', '', optionvalue, { value: optionvalue, selected: selected.includes(optionvalue) });
+                    }
+                  } else {
+                    for (let [optionName, option] of Object.entries(this.options)) {
+                      // //console.log(selected, option.value);
+                      var optionElement = this.elInp.createElement('option', '', typeof option === 'object' ? option.title || optionName : option, { value: optionName });
+                      if (selected.includes(optionName)) {
+                        optionElement.setAttribute('selected', '');
+                      }
+                    }
+                  }
+                  //this.elInp.value = 'pe';
+                  // //console.debug(this.value, this);
+                  this.elInp.addEventListener('change', e => {
+                    this.value = [...e.target.options].filter(option => option.selected).map(option => option.value).join(',');
+                    //console.log(this.value);
+                    // //console.log(e, [...e.target.options].filter(option => option.selected).map(option => option.value).join(','), e.target.value);
+                    // this.elInp.value = [...e.target.options].filter(option => option.selected).map(option => option.value).join(',');
+                    // // e.target.value = e.target.
+                    // //console.log(this.elInp.value);
+                  }, true);
+                  // this.elInp.value = '1,2';
+                  this.elInp.value = this.value;
+                },
+                edit() {
+                  console.log(this.value, this.property);
+                  this.selector.append(
+                    $('div').class('row prop input',this.format || this.type || '',this.property.name).append(
+                      this.input = $('select')
                       .class(
                         'inp focus aco',
                         this.className,
-                        // data.some(data => data.SrcID == ID) ? 'ownprop' : '',
-                        // data.some(data => data.SrcID != ID) ? 'srcprop' : '',
                       )
                       .id(this.name)
-                      .name(this.property.name)
-                      .attr(this)
-                      // .attr(this.attributes)
-                      .value(this.ownprop || !this.srcprop ? this.value : '')
-                      .placeholder(this.srcprop ? this.value : ' ')
-                      .on('change', e => this.value = e.target.value),
-                      $('label').class('row aco').ttext(this.title || this.name).for(this.name),
-                      $('i').pattern(this.pattern),
-                    )
-                  },
-                },
-                draw: {
-                  view(property) {
-                  },
-                  edit(property) {
-                    $(this.selector).append(
-                      $('div').append(
-                        $('canvas').width(640).height(480).style('border:solid 1px gray;').draw()
-                      )
-                    );
-                  },
-                },
-                email: {
-                  type: 'email',
-                  pattern: '[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$',
-                },
-                files: {
-                  createInput() {
-                    //console.log('FILESSSSS', attributeName, attribute, this.elEdit, this.item);
-                    const files = new Files(this, this.elEdit);
-                    if (this.item && this.item.editBarElement) {
-                      if (!this.item.files) {
-                        this.item.files = files;
-                        this.item.editBarElement.createElement('button', 'abtn attach', {type: 'button', accept: '', onclick: files.openDialog});
-                        this.item.editBarElement.createElement('button', 'abtn image', {type: 'button', accept: 'image/*', onclick: files.openDialog});
-                      }
-                    }
-                    this.elEdit.append(files.elem);
-                    // apr.item.editBarElement = $.pageEditElement.createElement('DIV', 'row top abs btnbar np', { id: 'pageEditTopBar', operations: {
-                    // 	close: {Title: 'Sluit formulier' },
-                    // 	attach: {type: 'button', accept: '', onclick: files.openDialog},
-                    // 	image: {type: 'button', accept: 'image/*', onclick: files.openDialog},
-                    // 	camera: {type: 'button', item: this, onclick: $.prompt.camera},
-                    // 	freedraw: {type: 'button', item: this, onclick: $.prompt.freedraw},
-                    // }});
-                    // this.elEdit.append(new Files(this).elem);
-                  },
-                  createView() {
-                    const files = new Files(this);
-                    this.item.files = this.item.files || files;
-                    // elForm.filesAttribute = elForm.filesAttribute || files;
-                    // this.elSpan = this.elView.append(files.elem);
-                    return this.elView = files.elem;
-                    // new Files(this, this.elSpan);
-                  },
-                },
-                hidden: {
-                  edit() {
-                    const is = $('input')
-                    .attr(this.property)
-                    .parent(this.selector)
-                    .name(this.name)
-                    .attr('tabindex', -1);
-                    if (this.property.format === 'hidden') {
-                      is.class('hide_input');
-                    }
-                  }
-                },
-                html: {
-                  view(property) {
-                    $('div').parent(this.selector).class('col prop', this.format || this.type || '', this.property.name).append(
-                      $('label').ttext(this.title),
-                      $('span').class('aco pre wrap doc-content',this.className).html(this.displayvalue),
-                    )
-                  },
-                  edit() {
-                    // let html = (this.value||'').trim()
-                    // 				.replace(/<p><\/p>/gis, '')
-                    // 				.replace(/<p><br><\/p>/gis, '')
-                    // 				.replace(/<div><\/div>/gis, '')
-                    // 				.replace(/<div><br><\/div>/gis, '')
-                    // 				.replace(/^<p>/is, '')
-                    // 				.replace(/<\/p>$/is, '')
-                    // 				.replace(/^/is, '<p>')
-                    // 				.replace(/$/is, '</p>')
-                    // 				;
-                    // 				html='';
-                    // //console.log(html);
-                    let html = this.value || '';
-                    $('div').class('prop col').parent(this.selector).append(
-                      $('div')
-                      .class('inp doc-content')
-                      .placeholder('')
-                      .html(html)
-                      .htmledit(this.property),
-                      $('label').text(this.property.title || this.property.name),
-                    );
-                  },
-                },
-                json: {
-                  createInput: function() {
-                    this.elEdit.className = 'field col fw';
-                    this.elInp = this.elEdit.createElement('CODE').createElement('TEXTAREA', { className: 'inp oa', style: 'white-space:nowrap;', value: editor.json(this.value) });
-                    this.elInp.addEventListener('change', function() { try { JSON.parse(this.value, true) } catch (err) { alert('JSON format niet in orde;'); } });
-                    this.elEdit.createElement('LABEL', { innerText: this.placeholder });
-                    this.elInp.onkeyup = function(e) {
-                      if (this.style.height < 300) {
-                        this.style.height = 'auto';
-                        this.style.height = Math.min(this.scrollHeight + 20, 300) + 'px';
-                      }
-                    };
-                    setTimeout(function(el) { this.elEdit.onkeyup(); }, 100, this.elInp);
-                  },
-                },
-                linkedin: {
-                },
-                location: {
-                  className: 'doc-content',
-                  createInput: function() {
-                    let mapsElement = this.elEdit.createElement('DIV', {
-                      id:'map',
-                      style: 'width:100%;height:400px;',
-                    });
-                    let map = new google.maps.Map(mapsElement, {
-                      zoom: 8,
-                      // zoomControl: true,
-                      // scaleControl: false,
-                      // scrollwheel: false,
-                      // disableDoubleClickZoom: true,
-                      // gestureHandling: 'greedy',
-                      // gestureHandling: 'none',
-                      // gestureHandling: 'auto',
-                      gestureHandling: 'cooperative',
-                    });
-                    bounds = new google.maps.LatLngBounds();
-                    geocoder = new google.maps.Geocoder();
-                    if (navigator.geolocation) {
-                      navigator.geolocation.getCurrentPosition(function(position) {
-                        var pos = {
-                          lat: position.coords.latitude,
-                          lng: position.coords.longitude
-                        };
-                        //console.log('CURRENT POS', position);
-                        var myLatlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-                        $.currgeocoder = $.currgeocoder || new google.maps.Geocoder();
-                        $.currgeocoder.geocode({
-                          'location': myLatlng
-                        }, function (results, status) {
-                          if (status == google.maps.GeocoderStatus.OK) {
-                            let marker = new google.maps.Marker({
-                              map: map,
-                              position: results[0].geometry.location
-                            });
-                            bounds.extend(marker.getPosition());
-                            map.fitBounds(bounds);
-                            google.maps.e.addListenerOnce(map, 'bounds_changed', function() {
-                              this.setZoom(Math.min(10, this.getZoom()));
-                            });
-                          } else {
-                            //console.error('Geocode was not successful for the following reason: ' + status);
-                          }
-                        });
-                      }, function() {
-                        // handleLocationError(true, infoWindow, map.getCenter());
-                      });
-                    } else {
-                      alert('NOT navigator.geolocation');
-                      // Browser doesn't support Geolocation
-                      handleLocationError(false, infoWindow, map.getCenter());
-                    }
-                  },
-                },
-                meter: {
-                  view() {
-                    this.selector.createElement('DIV', ['row prop',this.property.format,this.property.name].join(' '), [
-                      ['LABEL', '', this.property.title || this.property.name, {for: this.property.name } ],
-                      ['METER', 'aco', '2 outof 10', this.property, {id: this.property.name } ],
-                    ]);
-                  },
-                  edit() {
-                    this.selector.createElement('DIV', ['row input',this.property.format,this.property.name].join(' '), [
-                      ['LABEL', '', {for: this.property.name } ],
-                      ['METER', 'aco', '2 outof 10', this.property, {id: this.property.name } ],
-                    ]);
-                  },
-                },
-                number: {
-                  type: 'number',
-                },
-                password: {
-                  type: 'password',
-                },
-                radio: {
-                  view() {
-                    $('div')
-                    .parent(this.selector)
-                    .class('row prop',this.property.format,this.property.name)
-                    .setProperty('btbg', ((this.property.options||{})[this.value]||{}).color)
-                    .append(
-                      $('label').class('check').text(this.property.title || this.property.name),
-                      $('label').ttext(this.displayvalue)
-                    );
-                    return this;
-                  },
-                  edit() {
-                    const property = this.property;
-                    let value = this.value || this.defaultValue;
-                    function option(tag, option){
-                      option.value = tag;
-                      option.checked = tag === value;
-                      const forId = ['property',property.name, tag].join('_');
-                      if (property.required && !value) {
-                        value = this.value = tag;
-                      }
-                      return $('div')
-                      .class('row')
-                      .setProperty('btbg', option.color)
+                      .name(this.name)
+                      .placeholder(' ')
+                      .attr(this.property)
+                      .attr(this.attributes)
                       .append(
-                        $('input')
-                        .type('radio')
-                        .on('change', e => {
-                          property.value = tag;
-                          this.changed = e.target;
-                        })
-                        .on('keydown', e => {
-                          if (this.changed === e.target && e.code === 'Space' && !property.required) {
-                            e.target.checked ^= 1;
-                            property.value = e.target.form[e.target.name].value = e.target.checked ? e.target.value : null;
-                            this.changed = null;
-                            e.preventDefault();
-                          }
-                        })
-                        .on('click', e => {
-                          if (this.changed === e.target && !property.required) {
-                            e.target.checked ^= 1;
-                            property.value = e.target.form[e.target.name].value = e.target.checked ? e.target.value : null;
-                            this.changed = null;
-                          }
-                        })
-                        .checkbox(property, option)
+                        Object.entries(this.property.options||{}).map(([optionName,option])=>$('option').value(optionName).text(option.title).selected(optionName === this.value ? 'JA': null))
                       )
-                    }
-                    this.selector.append(
-                      $('div').class('col prop input',property.format,property.name).append(
-                        $('label').text(property.title || property.name),
-                        $('div').class('row wrap').append(
-                          Object.entries(property.options||{}).map(entry => option(...entry))
-                        )
-                      )
-                    );
-                    return this;
-                  },
+                      // .value(this.value)
+                      .on('change', e => {
+                        console.log(e.target, e.target.value);
+                        this.property.value = e.target.value;
+                      }),
+                      $('label').class('row aco').ttext(this.title || this.name).attr('for', this.name),
+                      $('i').attr('pattern', this.attributes ? this.attributes.pattern : null),
+                    )
+                  )
                 },
-                select: {
-                  get textvalue() {
-                    return 'ja';
-                  },
-                  view(property) {
-                    // console.log(this.textvalue, this.property.options, this.property.value);
-                    $('div')
-                    .parent(this.selector)
-                    .class(
-                      'row prop', this.format || this.type || '',
-                      this.property.name,
-                    )
-                    .append(
-                      $('label').ttext(this.title),
-                      $('span')
-                      .class(
-                        'aco pre wrap',
-                        this.className,
-                        // data.some(data => data.SrcID == ID) ? 'ownprop' : '',
-                        // data.some(data => data.SrcID != ID) ? 'srcprop' : '',
-                      )
-                      .displayvalue(this.property.name)
-                      .item(this.property.item, this.name + 'view')
-                      // .html(this.displayvalue),
-                    )
-                  },
-                  createInput() {
-                    console.log(this.textvalue);
-                    this.elInp = this.elEdit.createElement('select', 'inp row aco', { item: this.item, name: this.name });
-                    this.elEdit.createElement('LABEL', '', this.title || this.name);
-                    let selected = [];
-                    let value = this.value || this.defaultvalue || '';
-                    // //console.log(value);
-                    if (this.type === 'array') {
-                      this.elInp.setAttribute('multiple', '');
-                      selected = value ? String(value).split(',') : [];
-                      // //console.log(selected);
-                    }
-                    if (Object.prototype.toString.call(this.options) === '[object Array]') {
-                      for (var i = 0, optionvalue; optionvalue = this.options[i]; i++) {
-                        var optionElement = this.elInp.createElement('option', '', optionvalue, { value: optionvalue, selected: selected.includes(optionvalue) });
-                      }
-                    } else {
-                      for (let [optionName, option] of Object.entries(this.options)) {
-                        // //console.log(selected, option.value);
-                        var optionElement = this.elInp.createElement('option', '', typeof option === 'object' ? option.title || optionName : option, { value: optionName });
-                        if (selected.includes(optionName)) {
-                          optionElement.setAttribute('selected', '');
+              },
+              selectitem: {
+                view() {
+                  const property = this.property;
+                  const data = {};//[].concat(this.property.item.data[property.name]).shift();
+                  // console.log(this.name, this.property.item.data, this.property.item.Master);
+                  $('div').parent(this.selector)
+                  .class('row prop', this.format || this.type || '', this.property.name)
+                  .append(
+                    $('label').ttext(property.title),
+                    $('span').itemLink(data)
+                  )
+                },
+                edit() {
+                  const property = this.property;
+                  const items = [...$.props.values()]
+                  .unique()
+                  .filter(item => item instanceof Item)
+                  .filter(item => this.schema && (this.schema === '*' || this.schema.includes(item.schemaName)));
+                  const listElement = $.his.listElement = $.his.listElement || $('datalist')
+                  .parent(document.body)
+                  .id('listitems')
+                  .on('updateList', e => {
+                    listElement.text('');
+                    const value = e.detail.value.toLowerCase();
+                    // console.log('updateList', e.detail, schemaName, finditems);
+                    e.detail.items
+                    .filter(item => item.header0.toLowerCase().includes(value))
+                    .forEach(item => $('option').parent(listElement).text(item.subject).value(item.header0 === item.tag ? item.header0 : item.header0 + ' ' + item.tag))
+                  });
+                  // console.log(this.selector, selector);
+                  selector.append(
+                    $('div').class('col prop', property.format, property.name).append(
+                      this.inputElem = $('input').class('inp')
+                      .value(this.oldValue = this.value)
+                      .name(this.name)
+                      .autocomplete('none')
+                      .placeholder(' ')
+                      .attr('list', 'listitems')
+                      .attr(property)
+                      .on('drop', e => {
+                        let data = (e.dataTransfer || e.clipboardData).getData("aim/items");
+                        if (data) {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          data = JSON.parse(data);
+                          const linkitem = data.value[0];
+                          // console.log(item, this.property.item);
+                          // return;
+                          if (linkitem) {
+                            this.property.item.attr(this.name, {
+                              AttributeID: this.data ? this.data.AttributeID : null,
+                              LinkID: linkitem.ID,
+                            }, true).then(item => {
+                              console.log('updated');
+                              // this.inputElem.value($(linkitem).header0);
+                              item.details(true).then(item => $('view').show(item, true));
+                            })
+                          }
+                          // console.log(item, $(item));
                         }
-                      }
-                    }
-                    //this.elInp.value = 'pe';
-                    // //console.debug(this.value, this);
-                    this.elInp.addEventListener('change', e => {
-                      this.value = [...e.target.options].filter(option => option.selected).map(option => option.value).join(',');
-                      //console.log(this.value);
-                      // //console.log(e, [...e.target.options].filter(option => option.selected).map(option => option.value).join(','), e.target.value);
-                      // this.elInp.value = [...e.target.options].filter(option => option.selected).map(option => option.value).join(',');
-                      // // e.target.value = e.target.
-                      // //console.log(this.elInp.value);
-                    }, true);
-                    // this.elInp.value = '1,2';
-                    this.elInp.value = this.value;
-                  },
-                  edit() {
-                    console.log(this.value, this.property);
-                    this.selector.append(
-                      $('div').class('row prop input',this.format || this.type || '',this.property.name).append(
-                        this.input = $('select')
-                        .class(
-                          'inp focus aco',
-                          this.className,
-                        )
-                        .id(this.name)
-                        .name(this.name)
-                        .placeholder(' ')
-                        .attr(this.property)
-                        .attr(this.attributes)
-                        .append(
-                          Object.entries(this.property.options||{}).map(([optionName,option])=>$('option').value(optionName).text(option.title).selected(optionName === this.value ? 'JA': null))
-                        )
-                        // .value(this.value)
-                        .on('change', e => {
-                          console.log(e.target, e.target.value);
-                          this.property.value = e.target.value;
-                        }),
-                        $('label').class('row aco').ttext(this.title || this.name).attr('for', this.name),
-                        $('i').attr('pattern', this.attributes ? this.attributes.pattern : null),
-                      )
-                    )
-                  },
-                },
-                selectitem: {
-                  view() {
-                    const property = this.property;
-                    const data = {};//[].concat(this.property.item.data[property.name]).shift();
-                    // console.log(this.name, this.property.item.data, this.property.item.Master);
-                    $('div').parent(this.selector)
-                    .class('row prop', this.format || this.type || '', this.property.name)
-                    .append(
-                      $('label').ttext(property.title),
-                      $('span').itemLink(data)
-                    )
-                  },
-                  edit() {
-                    const property = this.property;
-                    const items = [...$.props.values()]
-                    .unique()
-                    .filter(item => item instanceof Item)
-                    .filter(item => this.schema && (this.schema === '*' || this.schema.includes(item.schemaName)));
-                    const listElement = $.his.listElement = $.his.listElement || $('datalist')
-                    .parent(document.body)
-                    .id('listitems')
-                    .on('updateList', e => {
-                      listElement.text('');
-                      const value = e.detail.value.toLowerCase();
-                      // console.log('updateList', e.detail, schemaName, finditems);
-                      e.detail.items
-                      .filter(item => item.header0.toLowerCase().includes(value))
-                      .forEach(item => $('option').parent(listElement).text(item.subject).value(item.header0 === item.tag ? item.header0 : item.header0 + ' ' + item.tag))
-                    });
-                    // console.log(this.selector, selector);
-                    selector.append(
-                      $('div').class('col prop', property.format, property.name).append(
-                        this.inputElem = $('input').class('inp')
-                        .value(this.oldValue = this.value)
-                        .name(this.name)
-                        .autocomplete('none')
-                        .placeholder(' ')
-                        .attr('list', 'listitems')
-                        .attr(property)
-                        .on('drop', e => {
-                          let data = (e.dataTransfer || e.clipboardData).getData("aim/items");
-                          if (data) {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            data = JSON.parse(data);
-                            const linkitem = data.value[0];
-                            // console.log(item, this.property.item);
-                            // return;
-                            if (linkitem) {
-                              this.property.item.attr(this.name, {
-                                AttributeID: this.data ? this.data.AttributeID : null,
-                                LinkID: linkitem.ID,
-                              }, true).then(item => {
-                                console.log('updated');
-                                // this.inputElem.value($(linkitem).header0);
-                                item.details(true).then(item => $('view').show(item, true));
-                              })
-                            }
-                            // console.log(item, $(item));
-                          }
-                        })
-                        .on('change', e => {
-                          this.oldValue = e.target.value;
-                          const [tag] = e.target.value.match(/\b[\w_]+\(\d+\)/);
-                          if (tag) {
-                            const item = items.find(item => item.tag === tag);
-                            if (item) {
-                              this.value = {
-                                LinkID: item.ID,
-                              }
+                      })
+                      .on('change', e => {
+                        this.oldValue = e.target.value;
+                        const [tag] = e.target.value.match(/\b[\w_]+\(\d+\)/);
+                        if (tag) {
+                          const item = items.find(item => item.tag === tag);
+                          if (item) {
+                            this.value = {
+                              LinkID: item.ID,
                             }
                           }
+                        }
+                      })
+                      .on('keyup', e => {
+                        //console.log(e.type);
+                        if (this.oldValue === e.target.value) return;
+                        const value = this.oldValue = e.target.value;
+                        listElement.emit('updateList', {value: e.target.value, items: items});
+                        if (this.request) return;
+                        clearTimeout(this.timeout);
+                        this.timeout = setTimeout(() => {
+                          return;
+                          this.request = $().api(`/${attribute.schema}`)
+                          .select('Title')
+                          .search(inputElement.value)
+                          .top(20)
+                          .get()
+                          .then(result => {
+                            $.his.listElement.updateList(property.schema, value, this.request = null);
+                          });
+                        },500);
+                      }),
+                      $('label').text(property.title || property.name),
+                    ),
+                  );
+                },
+              },
+              sharecam: {
+                createInput: function() {
+                  //console.log('SHARE CAM', this);
+                  this.wall = this.item.tag;
+                  this.client = $.access.sub;
+                  new Chat(this, this.elEdit);
+                },
+              },
+              skype: {
+              },
+              tel: {
+                type: 'tel',
+                pattern: '[0-9]{10,11}',
+              },
+              text: {
+                type: 'text',
+              },
+              textarea: {
+                view() {
+                  return;
+                  this.selector.createElement('DIV', ['row prop check',this.property.format,this.property.name].join(' '), [
+                    ['LABEL', '', this.property.title || this.property.name],
+                    ['SPAN', '', this.value],
+                  ]);
+                },
+                edit() {
+                  function resize (e) {
+                    e.target.style.height = '0px';
+                    e.target.style.height = (e.target.scrollHeight + 24) + 'px';
+                  }
+                  return;
+                  let el = this.selector.createElement('DIV', ['col input',this.property.format,this.property.name].join(' '), [
+                    ['LABEL', '', this.property.title || this.property.name],
+                    ['TEXTAREA', 'inp', {value: this.value, onkeyup: resize }],
+                  ]);
+                },
+              },
+              url: {
+              },
+              yaml: {
+                view() {
+                  this.selector.createElement('DIV', ['row prop check',this.property.format,this.property.name].join(' '), [
+                    ['LABEL', '', this.property.title || this.property.name],
+                    ['SPAN', '', this.value],
+                  ]);
+                },
+                edit() {
+                  function resize (e) {
+                    e.target.style.height = '0px';
+                    e.target.style.height = (e.target.scrollHeight + 24) + 'px';
+                  }
+                  let el = this.selector.createElement('DIV', ['col input',this.property.format,this.property.name].join(' '), [
+                    ['LABEL', '', this.property.title || this.property.name],
+                    ['TEXTAREA', 'inp', {value: this.value, onkeyup: resize }],
+                  ]);
+                },
+              },
+              bedieningen: {
+                view() {
+                  return this.selector.append(
+                    $('div').class('col').append(
+                      $('button').class('abtn')
+                      .ttext(this.property.title || this.property.name)
+                      // .click(this.property.item[this.name].bind(this.property.item))
+                      .on('click', e => {
+                        console.log(this.property.item.tag);
+                        $().send({
+                          // to: { aud: aimClient.access.aud },
+                          path: `/${this.property.item.tag}/${this.name}()`,
+                          method: 'post',
+                          // forward: $.forward || $.WebsocketClient.socket_id,
                         })
-                        .on('keyup', e => {
-                          //console.log(e.type);
-                          if (this.oldValue === e.target.value) return;
-                          const value = this.oldValue = e.target.value;
-                          listElement.emit('updateList', {value: e.target.value, items: items});
-                          if (this.request) return;
-                          clearTimeout(this.timeout);
-                          this.timeout = setTimeout(() => {
-                            return;
-                            this.request = $().api(`/${attribute.schema}`)
-                            .select('Title')
-                            .search(inputElement.value)
-                            .top(20)
-                            .get()
-                            .then(result => {
-                              $.his.listElement.updateList(property.schema, value, this.request = null);
-                            });
-                          },500);
-                        }),
-                        $('label').text(property.title || property.name),
-                      ),
-                    );
-                  },
+                      })
+                      // e => {
+                      //   console.log(this.property.item, this.name, this.property.item[this.name]);
+                      //   // property.item.handVerkeerslichtenGedoofd.call(property.item);
+                      // })
+                    )
+                  );
                 },
-                sharecam: {
-                  createInput: function() {
-                    //console.log('SHARE CAM', this);
-                    this.wall = this.item.tag;
-                    this.client = $.access.sub;
-                    new Chat(this, this.elEdit);
-                  },
+                edit() {
+                  return this.view();
                 },
-                skype: {
-                },
-                tel: {
-                  type: 'tel',
-                  pattern: '[0-9]{10,11}',
-                },
-                text: {
-                  type: 'text',
-                },
-                textarea: {
-                  view() {
-                    return;
-                    this.selector.createElement('DIV', ['row prop check',this.property.format,this.property.name].join(' '), [
-                      ['LABEL', '', this.property.title || this.property.name],
-                      ['SPAN', '', this.value],
-                    ]);
-                  },
-                  edit() {
-                    function resize (e) {
-                      e.target.style.height = '0px';
-                      e.target.style.height = (e.target.scrollHeight + 24) + 'px';
-                    }
-                    return;
-                    let el = this.selector.createElement('DIV', ['col input',this.property.format,this.property.name].join(' '), [
-                      ['LABEL', '', this.property.title || this.property.name],
-                      ['TEXTAREA', 'inp', {value: this.value, onkeyup: resize }],
-                    ]);
-                  },
-                },
-                url: {
-                },
-                yaml: {
-                  view() {
-                    this.selector.createElement('DIV', ['row prop check',this.property.format,this.property.name].join(' '), [
-                      ['LABEL', '', this.property.title || this.property.name],
-                      ['SPAN', '', this.value],
-                    ]);
-                  },
-                  edit() {
-                    function resize (e) {
-                      e.target.style.height = '0px';
-                      e.target.style.height = (e.target.scrollHeight + 24) + 'px';
-                    }
-                    let el = this.selector.createElement('DIV', ['col input',this.property.format,this.property.name].join(' '), [
-                      ['LABEL', '', this.property.title || this.property.name],
-                      ['TEXTAREA', 'inp', {value: this.value, onkeyup: resize }],
-                    ]);
-                  },
-                },
-                bedieningen: {
-                  view() {
-                    return this.selector.append(
-                      $('div').class('col').append(
-                        $('button').class('abtn')
-                        .ttext(this.property.title || this.property.name)
-                        // .click(this.property.item[this.name].bind(this.property.item))
-                        .on('click', e => {
-                          console.log(this.property.item.tag);
-                          $().send({
-                            // to: { aud: aimClient.access.aud },
-                            path: `/${this.property.item.tag}/${this.name}()`,
-                            method: 'post',
-                            // forward: $.forward || $.WebsocketClient.socket_id,
-                          })
+              },
+              besturingen: {
+                view() {
+                  return this.selector.append(
+                    $('div').class('col').append(
+                      $('button').class('abtn')
+                      .ttext(this.property.title || this.property.name)
+                      // .click(this.property.item[this.name].bind(this.property.item))
+                      .on('click', e => {
+                        console.log(this.property.item.tag);
+                        $().send({
+                          // to: { aud: aimClient.access.aud },
+                          path: `/${this.property.item.tag}/${this.name}()`,
+                          method: 'post',
+                          // forward: $.forward || $.WebsocketClient.socket_id,
                         })
-                        // e => {
-                        //   console.log(this.property.item, this.name, this.property.item[this.name]);
-                        //   // property.item.handVerkeerslichtenGedoofd.call(property.item);
-                        // })
-                      )
-                    );
-                  },
-                  edit() {
-                    return this.view();
-                  },
+                      })
+                      // e => {
+                      //   console.log(this.property.item, this.name, this.property.item[this.name]);
+                      //   // property.item.handVerkeerslichtenGedoofd.call(property.item);
+                      // })
+                    )
+                  );
                 },
-                besturingen: {
-                  view() {
-                    return this.selector.append(
-                      $('div').class('col').append(
-                        $('button').class('abtn')
-                        .ttext(this.property.title || this.property.name)
-                        // .click(this.property.item[this.name].bind(this.property.item))
-                        .on('click', e => {
-                          console.log(this.property.item.tag);
-                          $().send({
-                            // to: { aud: aimClient.access.aud },
-                            path: `/${this.property.item.tag}/${this.name}()`,
-                            method: 'post',
-                            // forward: $.forward || $.WebsocketClient.socket_id,
-                          })
+                edit() {
+                  return this.view();
+                },
+              },
+              autonoom_processen: {
+                view() {
+                  return this.selector.append(
+                    $('div').class('col').append(
+                      $('button').class('abtn')
+                      .ttext(this.property.title || this.property.name)
+                      // .click(this.property.item[this.name].bind(this.property.item))
+                      .on('click', e => {
+                        console.log(this.property.item.tag);
+                        $().send({
+                          // to: { aud: aimClient.access.aud },
+                          path: `/${this.property.item.tag}/${this.name}()`,
+                          method: 'post',
+                          // forward: $.forward || $.WebsocketClient.socket_id,
                         })
-                        // e => {
-                        //   console.log(this.property.item, this.name, this.property.item[this.name]);
-                        //   // property.item.handVerkeerslichtenGedoofd.call(property.item);
-                        // })
-                      )
-                    );
-                  },
-                  edit() {
-                    return this.view();
-                  },
+                      })
+                      // e => {
+                      //   console.log(this.property.item, this.name, this.property.item[this.name]);
+                      //   // property.item.handVerkeerslichtenGedoofd.call(property.item);
+                      // })
+                    )
+                  );
                 },
-                autonoom_processen: {
-                  view() {
-                    return this.selector.append(
-                      $('div').class('col').append(
-                        $('button').class('abtn')
-                        .ttext(this.property.title || this.property.name)
-                        // .click(this.property.item[this.name].bind(this.property.item))
-                        .on('click', e => {
-                          console.log(this.property.item.tag);
-                          $().send({
-                            // to: { aud: aimClient.access.aud },
-                            path: `/${this.property.item.tag}/${this.name}()`,
-                            method: 'post',
-                            // forward: $.forward || $.WebsocketClient.socket_id,
-                          })
-                        })
-                        // e => {
-                        //   console.log(this.property.item, this.name, this.property.item[this.name]);
-                        //   // property.item.handVerkeerslichtenGedoofd.call(property.item);
-                        // })
-                      )
-                    );
-                  },
-                  edit() {
-                    return this.view();
-                  },
+                edit() {
+                  return this.view();
                 },
-              };
-              const path = parent.path();
-              const isForm = path.some(elem => elem.tagName === 'FORM');
-              let legend = '';
-              let lastLegend = '';
-              for (let [name, property] of Object.entries(properties)) {
-                // console.log('properties', name, property);
-                function Property () {
-                  if (!property) return;
-                  this.property = property;
-                  this.selector = selector;
-                  this.name = name;
-                  // if (this.enum && !this.options) {
-                  // 	if (Array.isArray(this.enum)) {
-                  // 		this.options = this.enum;
-                  // 	} else if (typeof this.enum === 'object') {
-                  // 		this.options = this.enum;
-                  // 		this.enum = Object.keys(this.options);
-                  // 		if (this.enum.length === 2 && Object.values(this.options).filter(Boolean).length === 1) {
-                  // 			this.format = 'checkbox';
-                  // 		}
-                  // 	}
-                  // }
-                  // if (this.options && !this.enum) {
-                  // 	this.enum = Object.keys(this.options);
-                  // 	// property.format = property.format || 'radio';
-                  // }
-                  if (this.schema) {
-                    this.format = 'selectitem';
-                  }
-                  if (!this.format) {
-                    if (this.enum && this.type !== 'array') {
-                      this.format = this.enum.length > 4 ? 'select' : 'radio';
-                    }
-                  }
-                  if (!this.type) {
-                    if (this.enum) {
-                      this.type = this.enum.some(v => typeof v === 'string') ? 'string' : 'number';
-                    }
-                  }
-                  if (property.stereotype) {
-                    property.format = property.format || property.stereotype;
-                    property.legend = property.legend || __(property.stereotype);
-                  }
-                  Object.assign(this, property, format.default, format[this.type], format[this.format]);
-                  this.placeholder = this.placeholder || ' ';
-                  this.data = this.item ? this.item.data[name] : {};
-                  this.title = this.title || this.name;
-                  legend = this.legend = property.legend || legend;
-                  if (this.property.item) {
-                    const ID = this.property.item.ID;
-                    const data = [].concat(this.data, this.item);
-                    // console.log('CLASSNAME', data);
-                    this.ownprop = data.some(data => data && data.Value && data.SrcID && data.SrcID == ID );
-                    this.srcprop = data.some(data => data && data.Value && data.SrcID && data.SrcID != ID);
-                    this.className = [
-                      this.ownprop ? 'ownprop' : '',
-                      this.srcprop ? 'srcprop' : '',
-                    ].join(' ')
-                    // console.log('CLASSNAME', this.name, this.className, data, this);
-                  }
-                  // console.log(333, name, this.property);
-                  if (isForm) {
-                    if (elem.elements[this.property.name]) return;
-                    this.showDetails().edit();
-                    if (this.autofocus && this.input) {
-                      setTimeout(() => this.input.focus(),500);
-                    }
-                  } else if (this.displayvalue !== null || ['bediening','besturing','autonoom_proces'].includes(property.stereotype)) {
-                    if (property.type === 'hidden') return;
-                    this.showDetails().view();
+              },
+            };
+            const path = parent.path();
+            const isForm = path.some(elem => elem.tagName === 'FORM');
+            let legend = '';
+            let lastLegend = '';
+            for (let [name, property] of Object.entries(properties)) {
+              // console.log('properties', name, property);
+              function Property () {
+                if (!property) return;
+                this.property = property;
+                this.selector = selector;
+                this.name = name;
+                // if (this.enum && !this.options) {
+                // 	if (Array.isArray(this.enum)) {
+                // 		this.options = this.enum;
+                // 	} else if (typeof this.enum === 'object') {
+                // 		this.options = this.enum;
+                // 		this.enum = Object.keys(this.options);
+                // 		if (this.enum.length === 2 && Object.values(this.options).filter(Boolean).length === 1) {
+                // 			this.format = 'checkbox';
+                // 		}
+                // 	}
+                // }
+                // if (this.options && !this.enum) {
+                // 	this.enum = Object.keys(this.options);
+                // 	// property.format = property.format || 'radio';
+                // }
+                if (this.schema) {
+                  this.format = 'selectitem';
+                }
+                if (!this.format) {
+                  if (this.enum && this.type !== 'array') {
+                    this.format = this.enum.length > 4 ? 'select' : 'radio';
                   }
                 }
-                Property.prototype = Object.create(property, {
-                  displayvalue: {
-                    get() {
-                      return $.attr.displayvalue(this.value, property);
-                    },
-                  },
-                });
-                new Property();
+                if (!this.type) {
+                  if (this.enum) {
+                    this.type = this.enum.some(v => typeof v === 'string') ? 'string' : 'number';
+                  }
+                }
+                if (property.stereotype) {
+                  property.format = property.format || property.stereotype;
+                  property.legend = property.legend || __(property.stereotype);
+                }
+                Object.assign(this, property, format.default, format[this.type], format[this.format]);
+                this.placeholder = this.placeholder || ' ';
+                this.data = this.item ? this.item.data[name] : {};
+                this.title = this.title || this.name;
+                legend = this.legend = property.legend || legend;
+                if (this.property.item) {
+                  const ID = this.property.item.ID;
+                  const data = [].concat(this.data, this.item);
+                  // console.log('CLASSNAME', data);
+                  this.ownprop = data.some(data => data && data.Value && data.SrcID && data.SrcID == ID );
+                  this.srcprop = data.some(data => data && data.Value && data.SrcID && data.SrcID != ID);
+                  this.className = [
+                    this.ownprop ? 'ownprop' : '',
+                    this.srcprop ? 'srcprop' : '',
+                  ].join(' ')
+                  // console.log('CLASSNAME', this.name, this.className, data, this);
+                }
+                // console.log(333, name, this.property);
+                if (isForm) {
+                  if (elem.elements[this.property.name]) return;
+                  this.showDetails().edit();
+                  if (this.autofocus && this.input) {
+                    setTimeout(() => this.input.focus(),500);
+                  }
+                } else if (this.displayvalue !== null || ['bediening','besturing','autonoom_proces'].includes(property.stereotype)) {
+                  if (property.type === 'hidden') return;
+                  this.showDetails().view();
+                }
               }
-            });
-            return this;
-          },},
-          qr: { value: function (selector, context) {
-            const elem = this.elem;
-            const src = scriptPath.replace(/src/, 'dist') + '/js/qrcode.js';
-            importScript(src).then(e => {
-              new QRCode(elem, selector);
-              if (elem.tagName === 'IMG') {
-                elem.src = elem.firstChild.toDataURL("image/png");
-                elem.firstChild.remove();
-              }
-            });
-            return this;
-          },},
-          remove: { value: function (selector) {
-            if (selector) {
-              if (this.elem.hasAttribute(selector)) {
-                this.elem.removeAttribute(selector)
-              } else {
-                (this.elem || this.selector).removeEventListener(...arguments);
-              }
-            } else {
-              this.elem.remove()
-            }
-            return this;
-          },},
-          resizable: { value: function () {
-            this.class('resizable');
-            const table = this.elem;
-            const row = table.getElementsByTagName('tr')[0];
-            if (!row) return;
-            const cols = [...row.children];
-            cols.forEach(elem => {
-              $('i').parent(elem).class('resizer').on('mousedown', function (e) {
-                let pageX,curCol,nxtCol,curColWidth,nxtColWidth;
-                table.style.cursor = 'col-resize';
-                curCol = e.target.parentElement;
-                nxtCol = curCol.nextElementSibling;
-                pageX = e.pageX;
-                let padding = paddingDiff(curCol);
-                curColWidth = curCol.offsetWidth - padding;
-                if (nxtCol) {
-                  nxtColWidth = nxtCol.offsetWidth - padding;
-                }
-                function mousemove (e) {
-                  if (curCol) {
-                    let diffX = e.pageX - pageX;
-                    if (nxtCol)
-                    clearTimeout(to);
-                    to = setTimeout(() => {
-                      // nxtCol.style.width = (nxtColWidth - (diffX))+'px';
-                      curCol.style.width = (curColWidth + diffX)+'px';
-                    }, 100);
-                  }
-                }
-                function mouseup (e) {
-                  table.style.cursor = '';
-                  curCol = nxtCol = pageX = nxtColWidth = curColWidth = undefined;
-                  document.removeEventListener('mousemove', mousemove);
-                  document.removeEventListener('mouseup', mouseup);
-                }
-                document.addEventListener('mousemove', mousemove);
-                document.addEventListener('mouseup', mouseup);
+              Property.prototype = Object.create(property, {
+                displayvalue: {
+                  get() {
+                    return $.attr.displayvalue(this.value, property);
+                  },
+                },
               });
-              elem.style.width = elem.offsetWidth + 'px';
-            });
-            table.style.tableLayout = 'fixed';
-            let to;
-            function paddingDiff(col){
-              if (getStyleVal(col,'box-sizing') == 'border-box') {
-                return 0;
-              }
-              var padLeft = getStyleVal(col,'padding-left');
-              var padRight = getStyleVal(col,'padding-right');
-              return (parseInt(padLeft) + parseInt(padRight));
+              new Property();
             }
-            function getStyleVal(elm,css){
-              return (window.getComputedStyle(elm, null).getPropertyValue(css))
+          });
+          return this;
+        },},
+        qr: { value: function (selector, context) {
+          const elem = this.elem;
+          const src = scriptPath.replace(/src/, 'dist') + '/js/qrcode.js';
+          importScript(src).then(e => {
+            new QRCode(elem, selector);
+            if (elem.tagName === 'IMG') {
+              elem.src = elem.firstChild.toDataURL("image/png");
+              elem.firstChild.remove();
             }
-          },},
-          sample: { value: function (selector, sample) {
-            const htmlScript = `
-            <html>
-            <head>
-            <link rel="stylesheet" href="https://aliconnect.nl/v1/api/css/web.css" />
-            <script src="https://aliconnect.nl/v1/api/js/aim.js"></script>
-            <style><!-- style --></style>
-            <script><!-- script --></script>
-            </head>
-            <body>
-            </body>
-            `;
-            const head = `<script src="/v1/api/js/aim.js"></script><script src="/v1/api/js/web.js"></script>`;
-            function codeJs (f) {
-              let content = String(f);
-              content = String(content).replace(/^(.*?)\{|\}$/g,'').split(/\n/);
-              let ident = content.filter(line => line.trim());
-              if (ident.length) {
-                ident = ident[0].search(/\S/);
-                content = content.map(line => line.substr(ident));
-              }
-              // //console.log(content);
-              return content.join('\n').trim();
-            }
-            //console.log(selector);
-            const ref = {};
-            sample.template = sample.template || htmlScript;
-            // const elemHtml = $('td', 'code');
-            if (sample.type === 'iframe') {
-              this.elem.append(
-                $('table').append(
-                  $('tr').append(
-                    $('th', '', 'script'),
-                    $('th', '', 'iframe'),
-                  ),
-                  $('tr').append(
-                    $('td', 'code', $().toHtml(codeJs(sample.script), 'js')),
-                    $('td').append(sampleBody = $('iframe')),
-                  ),
-                ),
-              );
-              const doc = sampleBody.elem.contentWindow.document;
-              const html = sample.template.replace(/<\!-- script -->/, script);
-              doc.open();
-              doc.write(html);
-              doc.close();
+          });
+          return this;
+        },},
+        remove: { value: function (selector) {
+          if (selector) {
+            if (this.elem.hasAttribute(selector)) {
+              this.elem.removeAttribute(selector)
             } else {
-              ref.table = $('table').append(
+              (this.elem || this.selector).removeEventListener(...arguments);
+            }
+          } else {
+            this.elem.remove()
+          }
+          return this;
+        },},
+        resizable: { value: function () {
+          this.class('resizable');
+          const table = this.elem;
+          const row = table.getElementsByTagName('tr')[0];
+          if (!row) return;
+          const cols = [...row.children];
+          cols.forEach(elem => {
+            $('i').parent(elem).class('resizer').on('mousedown', function (e) {
+              let pageX,curCol,nxtCol,curColWidth,nxtColWidth;
+              table.style.cursor = 'col-resize';
+              curCol = e.target.parentElement;
+              nxtCol = curCol.nextElementSibling;
+              pageX = e.pageX;
+              let padding = paddingDiff(curCol);
+              curColWidth = curCol.offsetWidth - padding;
+              if (nxtCol) {
+                nxtColWidth = nxtCol.offsetWidth - padding;
+              }
+              function mousemove (e) {
+                if (curCol) {
+                  let diffX = e.pageX - pageX;
+                  if (nxtCol)
+                  clearTimeout(to);
+                  to = setTimeout(() => {
+                    // nxtCol.style.width = (nxtColWidth - (diffX))+'px';
+                    curCol.style.width = (curColWidth + diffX)+'px';
+                  }, 100);
+                }
+              }
+              function mouseup (e) {
+                table.style.cursor = '';
+                curCol = nxtCol = pageX = nxtColWidth = curColWidth = undefined;
+                document.removeEventListener('mousemove', mousemove);
+                document.removeEventListener('mouseup', mouseup);
+              }
+              document.addEventListener('mousemove', mousemove);
+              document.addEventListener('mouseup', mouseup);
+            });
+            elem.style.width = elem.offsetWidth + 'px';
+          });
+          table.style.tableLayout = 'fixed';
+          let to;
+          function paddingDiff(col){
+            if (getStyleVal(col,'box-sizing') == 'border-box') {
+              return 0;
+            }
+            var padLeft = getStyleVal(col,'padding-left');
+            var padRight = getStyleVal(col,'padding-right');
+            return (parseInt(padLeft) + parseInt(padRight));
+          }
+          function getStyleVal(elm,css){
+            return (window.getComputedStyle(elm, null).getPropertyValue(css))
+          }
+        },},
+        sample: { value: function (selector, sample) {
+          const htmlScript = `
+          <html>
+          <head>
+          <link rel="stylesheet" href="https://aliconnect.nl/v1/api/css/web.css" />
+          <script src="https://aliconnect.nl/v1/api/js/aim.js"></script>
+          <style><!-- style --></style>
+          <script><!-- script --></script>
+          </head>
+          <body>
+          </body>
+          `;
+          const head = `<script src="/v1/api/js/aim.js"></script><script src="/v1/api/js/web.js"></script>`;
+          function codeJs (f) {
+            let content = String(f);
+            content = String(content).replace(/^(.*?)\{|\}$/g,'').split(/\n/);
+            let ident = content.filter(line => line.trim());
+            if (ident.length) {
+              ident = ident[0].search(/\S/);
+              content = content.map(line => line.substr(ident));
+            }
+            // //console.log(content);
+            return content.join('\n').trim();
+          }
+          //console.log(selector);
+          const ref = {};
+          sample.template = sample.template || htmlScript;
+          // const elemHtml = $('td', 'code');
+          if (sample.type === 'iframe') {
+            this.elem.append(
+              $('table').append(
                 $('tr').append(
                   $('th', '', 'script'),
-                  $('th', '', 'div'),
+                  $('th', '', 'iframe'),
                 ),
                 $('tr').append(
                   $('td', 'code', $().toHtml(codeJs(sample.script), 'js')),
-                  $('td').append(sampleBody = $('div')),
+                  $('td').append(sampleBody = $('iframe')),
                 ),
-              );
-              document._body = sampleBody.elem;
-              //console.log(document._body);
-              sample.script();
-              document._body = null;
-            }
-            this.elem.append(
-              $('h1', '', selector),
+              ),
             );
-            return this;
-          },},
-          scrollIntoView: { value: function (options = { block: "nearest", inline: "nearest" }) {
-            this.elem.scrollIntoView(options);
-            return this;
-          },},
-          script: { value: function (src) {
-            return $.promise('script', resolve => $('script').src(src).parent(this).on('load', resolve))
-          },},
-          _select: { value: function (e) {
-            const elem = this.elem;
-            const setOpen = open => {
-              //console.log('setOpen', open, elem);
-              open = Number(open);
-              $(elem).attr('open', open);
-              if (elem.label) {
-                var foldersOpen = $.his.cookie.foldersOpen
-                ? $.his.cookie.foldersOpen.split(', ').filter(x => x !== elem.label)
-                : [];
-                if (open) {
-                  foldersOpen.push(elem.label);
-                }
-                $.his.cookie = {
-                  foldersOpen: foldersOpen.join(', ')
-                };
-              }
+            const doc = sampleBody.elem.contentWindow.document;
+            const html = sample.template.replace(/<\!-- script -->/, script);
+            doc.open();
+            doc.write(html);
+            doc.close();
+          } else {
+            ref.table = $('table').append(
+              $('tr').append(
+                $('th', '', 'script'),
+                $('th', '', 'div'),
+              ),
+              $('tr').append(
+                $('td', 'code', $().toHtml(codeJs(sample.script), 'js')),
+                $('td').append(sampleBody = $('div')),
+              ),
+            );
+            document._body = sampleBody.elem;
+            //console.log(document._body);
+            sample.script();
+            document._body = null;
+          }
+          this.elem.append(
+            $('h1', '', selector),
+          );
+          return this;
+        },},
+        scrollIntoView: { value: function (options = { block: "nearest", inline: "nearest" }) {
+          this.elem.scrollIntoView(options);
+          return this;
+        },},
+        script: { value: function (src) {
+          return $.promise('script', resolve => $('script').src(src).parent(this).on('load', resolve))
+        },},
+        _select: { value: function (e) {
+          const elem = this.elem;
+          const setOpen = open => {
+            //console.log('setOpen', open, elem);
+            open = Number(open);
+            $(elem).attr('open', open);
+            if (elem.label) {
+              var foldersOpen = $.his.cookie.foldersOpen
+              ? $.his.cookie.foldersOpen.split(', ').filter(x => x !== elem.label)
+              : [];
               if (open) {
-                if (elem.onopen && !elem.loaded) {
-                  elem.loaded = elem.onopen();
+                foldersOpen.push(elem.label);
+              }
+              $.his.cookie = {
+                foldersOpen: foldersOpen.join(', ')
+              };
+            }
+            if (open) {
+              if (elem.onopen && !elem.loaded) {
+                elem.loaded = elem.onopen();
+              }
+            } else {
+              if (elem.onclose) {
+                elem.onclose();
+              }
+            }
+          };
+          if (!elem.label) {
+            // //console.log('elementSelect', elem);
+            for (var par = elem.parentElement; par; par = par.parentElement) {
+              if (!['UL', 'LI'].includes(par.tagName)) {
+                break;
+              }
+            }
+            [...par.getElementsByTagName('A')].forEach(el => {
+              if (el.hasAttribute('open') && el !== elem) {
+                if (el.hasAttribute('selected')) {
+                  el.removeAttribute('selected');
                 }
-              } else {
-                if (elem.onclose) {
-                  elem.onclose();
+                if (el.getAttribute('open') === '1') {
+                  el.setAttribute('open', 0);
                 }
               }
-            };
-            if (!elem.label) {
-              // //console.log('elementSelect', elem);
-              for (var par = elem.parentElement; par; par = par.parentElement) {
-                if (!['UL', 'LI'].includes(par.tagName)) {
-                  break;
-                }
-              }
-              [...par.getElementsByTagName('A')].forEach(el => {
-                if (el.hasAttribute('open') && el !== elem) {
-                  if (el.hasAttribute('selected')) {
-                    el.removeAttribute('selected');
-                  }
-                  if (el.getAttribute('open') === '1') {
-                    el.setAttribute('open', 0);
-                  }
+            });
+            for (var el = elem.parentElement; el; el = el.parentElement) {
+              [el, el.firstChild].forEach(el => {
+                if (['A','DIV'].includes(el.tagName) && el.getAttribute && el.getAttribute('open') === '0' && el !== elem) {
+                  el.setAttribute('open', 1);
                 }
               });
-              for (var el = elem.parentElement; el; el = el.parentElement) {
-                [el, el.firstChild].forEach(el => {
-                  if (['A','DIV'].includes(el.tagName) && el.getAttribute && el.getAttribute('open') === '0' && el !== elem) {
-                    el.setAttribute('open', 1);
-                  }
+            }
+          }
+          if (e && e.type === 'click' && elem.tagName === 'A') {
+            if (elem.href && elem.href.match(/#(\w)/)) {
+              return;
+            }
+            if (elem.hasAttribute('selected')) {
+              if (elem.getAttribute('open') === '1') {
+                return setOpen(0);
+              }
+            }
+          } else {
+            if (elem.getAttribute('open') === '1') {
+              return setOpen(0);
+              // for (var el = elem.nextElementSibling; el && el.tagName != elem.tagName; el = el.nextElementSibling) {
+              // 	el.style.display = 'none';
+              // }
+            }
+          }
+          if (elem.getAttribute('open') === '0') {
+            return setOpen(1);
+            // for (var el = elem.nextElementSibling; el && el.tagName != elem.tagName; el = el.nextElementSibling) {
+            // 	el.style.display = '';
+            // }
+          }
+          elem.setAttribute('selected', '');
+          elem.scrollIntoViewIfNeeded(false);
+          // //console.log('OPEN', elem.label);
+          return this;
+        },},
+        seperator: { value: function (pos) {
+          const ZINDEX = 6;
+          const selector = this;
+          const elem = selector.elem;
+          let targetElement;
+          function start(e) {
+            if (e.which === 1) {
+              if (!e) e = window.event;
+              e.stopPropagation();
+              e.preventDefault();
+              window.getSelection().removeAllRanges();
+              targetElement = elem.hasAttribute('right') ? elem.nextElementSibling : elem.previousElementSibling;
+              elem.clientX = e.clientX;
+              selector.css('left', elem.moveX = 0).css('z-index', 300).attr('active', '');
+              document.addEventListener("mouseup", checkmouseup, true);
+              document.addEventListener("mousemove", doresizeelement, true);
+            }
+          };
+          function doresizeelement(e) {
+            selector.css('left', (elem.moveX = e.clientX - elem.clientX) + 'px');
+          };
+          function checkmouseup (e) {
+            document.removeEventListener('mousemove', doresizeelement, true);
+            document.removeEventListener('mouseup', checkmouseup, true);
+            $(targetElement).css('max-width', (targetElement.offsetWidth + (elem.hasAttribute('right') ? -elem.moveX : elem.moveX)) + 'px');
+            $().storage(targetElement.id + '.width', targetElement.style.maxWidth);
+            // //console.log(targetElement.id + 'Width', targetElement.style.maxWidth);
+            selector.css('left', elem.moveX = 0).css('z-index', ZINDEX).attr('active', null);
+          };
+          selector
+          .attr(pos, '')
+          // .class('seperator')
+          .class('seperator noselect')
+          .on('mousedown', start)
+          .css('z-index',ZINDEX);
+          return this;
+        },},
+        set: { value: function () {
+          return this.map.set(...arguments);
+        },},
+        show: { value: function (item, doEdit) {
+          // TODO: wijzig rechten
+          // var edit = !Number(this.userID) || this.userID == $.auth.sub;
+          item.details().then(e => {
+            // console.log(item);
+            ItemSelected = item;
+            this.item = item;
+            document.title = item.header0;
+            $().ga('send', 'pageview');
+            // if (item.data.Id) {
+            //   const url = new URL(document.location);
+            //   url.searchParams.set('id', item.data.Id);
+            //   $.his.replaceUrl(url.toString());
+            //
+            //   // $.his.replaceUrl(document.location.origin+document.location.pathname.replace(/\/id\/.*/,'')+'/id/'+item.data.Id+document.location.search)
+            // }
+            function logVisit() {
+              console.debug('logVisit');return; // DEBUG:
+              if (item.data.ID) {
+                clearTimeout($.his.viewTimeout);
+                $.his.viewTimeout = setTimeout(() => {
+                  aimClient.api('/').query('request_type','visit').query('id',item.data.ID).get().then(result => {
+                    $.his.items[item.data.ID] = new Date().toISOString();
+                  })
+                },1000);
+              }
+            }
+            item.data.fav = [
+              {
+                '@id': '/Contact(265090)',
+                LinkID: 265090,
+                Value: 'Max van Kampen',
+                AttributeID: 1,
+              },
+              {
+                '@id': '/Contact(265091)',
+                LinkID: 265091,
+                Value: 'Text Alicon',
+                AttributeID: 1,
+              },
+            ];
+            const fav = [].concat(item.data.fav).map(item => $(item));
+            const isFav = fav.some(item => item === $.user);
+            function users() {
+              return;
+              // TODO: Item Users
+              fieldsElement.createElement('DIV', 'row users', [
+                __('To') + ': ',
+                ['DIV', 'row aco', userElement],
+              ]);
+              if (Array.isArray(this.Users)) {
+                this.Users.forEach((row)=>{
+                  userElement.push(['A', 'c ' + row.ID, row.Value || ($.getItem(row.tag) ? $.getItem(row.tag).Title : row.ID), {
+                    // onclick: Web.Element.onclick,
+                    href: '#'+row.tag,
+                    // id: row.ID,
+                    // innerText: row.Value || ($.getItem(row.tag] ? $.getItem(row.tag].Title : row.ID),
+                  }], ';\u00A0');
                 });
               }
             }
-            if (e && e.type === 'click' && elem.tagName === 'A') {
-              if (elem.href && elem.href.match(/#(\w)/)) {
-                return;
-              }
-              if (elem.hasAttribute('selected')) {
-                if (elem.getAttribute('open') === '1') {
-                  return setOpen(0);
-                }
-              }
-            } else {
-              if (elem.getAttribute('open') === '1') {
-                return setOpen(0);
-                // for (var el = elem.nextElementSibling; el && el.tagName != elem.tagName; el = el.nextElementSibling) {
-                // 	el.style.display = 'none';
-                // }
-              }
+            function printmenu() {
+              return;
+              // TODO:
+              //if (this.printmenu) for (var menuname in this.printmenu) {
+              //	menuitem = this.printmenu[menuname];
+              //	menuitem.name = menuname;
+              //	menuitem.id = this.id;
+              //	//menuitem.href = this.href;
+              //	menuitem.item = this;
+              //	//// //console.debug('MENU ITEM ', menuname);
+              //	break;
+              //	//// //console.debug('menuitem href', menuitem.href);
+              //	//if (this.ref) this.printmenu[menuname].href = this.href+'/'+
+              //	if (!menuitem.href) this.printmenu[menuname].onclick = menuitem.ref ? $.url.objbyref(menuitem.ref).e : function(e) {
+              //		if (this.menuitem.object) {
+              //			if (window[this.menuitem.object]) window[this.menuitem.object].onload(this.menuitem.id);
+              //			else window[this.menuitem.script] = document.body.createElement('script', { src: this.menuitem.script, menuitem: this.menuitem, onload: function() { window[this.menuitem.object].onload(this.menuitem.id) } });
+              //			return false;
+              //		}
+              //		if (this.menuitem.href) return true;// document.location.href = this.menuitem.href;
+              //		this.menuitem.post = this.menuitem.post || {};
+              //		this.menuitem.get = this.menuitem.get || {};
+              //		this.menuitem.get.name = this.menuitem.name;
+              //		this.menuitem.get.Title = this.menuitem.Title;
+              //		this.menuitem.get.id = this.menuitem.id;
+              //		//// //console.debug('MENUITEM PRINT', this.menuitem.post, this.menuitem.src);
+              //		//if ($.url.byref())
+              //		new $.HttpRequest({
+              //			menuitem: this.menuitem,
+              //			item: this.menuitem.item,
+              //			api: this.menuitem.api ? this.menuitem.api : rpt ? this.menuitem.item.class.name + '/' + this.menuitem.id + '/' + this.menuitem.rpt + '.html' : null,
+              //			src: this.menuitem.src,
+              //			post: this.menuitem.post,
+              //			get: this.menuitem.get,
+              //			onload: $.Docs.onload
+              //		});
+              //	};
+              //}
             }
-            if (elem.getAttribute('open') === '0') {
-              return setOpen(1);
-              // for (var el = elem.nextElementSibling; el && el.tagName != elem.tagName; el = el.nextElementSibling) {
-              // 	el.style.display = '';
-              // }
-            }
-            elem.setAttribute('selected', '');
-            elem.scrollIntoViewIfNeeded(false);
-            // //console.log('OPEN', elem.label);
-            return this;
-          },},
-          seperator: { value: function (pos) {
-            const ZINDEX = 6;
-            const selector = this;
-            const elem = selector.elem;
-            let targetElement;
-            function start(e) {
-              if (e.which === 1) {
-                if (!e) e = window.event;
-                e.stopPropagation();
-                e.preventDefault();
-                window.getSelection().removeAllRanges();
-                targetElement = elem.hasAttribute('right') ? elem.nextElementSibling : elem.previousElementSibling;
-                elem.clientX = e.clientX;
-                selector.css('left', elem.moveX = 0).css('z-index', 300).attr('active', '');
-                document.addEventListener("mouseup", checkmouseup, true);
-                document.addEventListener("mousemove", doresizeelement, true);
-              }
-            };
-            function doresizeelement(e) {
-              selector.css('left', (elem.moveX = e.clientX - elem.clientX) + 'px');
-            };
-            function checkmouseup (e) {
-              document.removeEventListener('mousemove', doresizeelement, true);
-              document.removeEventListener('mouseup', checkmouseup, true);
-              $(targetElement).css('max-width', (targetElement.offsetWidth + (elem.hasAttribute('right') ? -elem.moveX : elem.moveX)) + 'px');
-              $().storage(targetElement.id + '.width', targetElement.style.maxWidth);
-              // //console.log(targetElement.id + 'Width', targetElement.style.maxWidth);
-              selector.css('left', elem.moveX = 0).css('z-index', ZINDEX).attr('active', null);
-            };
-            selector
-            .attr(pos, '')
-            // .class('seperator')
-            .class('seperator noselect')
-            .on('mousedown', start)
-            .css('z-index',ZINDEX);
-            return this;
-          },},
-          set: { value: function () {
-            return this.map.set(...arguments);
-          },},
-          show: { value: function (item, doEdit) {
-            // TODO: wijzig rechten
-            // var edit = !Number(this.userID) || this.userID == $.auth.sub;
-            item.details().then(e => {
-              // console.log(item);
-              ItemSelected = item;
-              this.item = item;
-              document.title = item.header0;
-              $().ga('send', 'pageview');
-              // if (item.data.Id) {
-              //   const url = new URL(document.location);
-              //   url.searchParams.set('id', item.data.Id);
-              //   $.his.replaceUrl(url.toString());
-              //
-              //   // $.his.replaceUrl(document.location.origin+document.location.pathname.replace(/\/id\/.*/,'')+'/id/'+item.data.Id+document.location.search)
-              // }
-              function logVisit() {
-                console.debug('logVisit');return; // DEBUG:
-                if (item.data.ID) {
-                  clearTimeout($.his.viewTimeout);
-                  $.his.viewTimeout = setTimeout(() => {
-                    aimClient.api('/').query('request_type','visit').query('id',item.data.ID).get().then(result => {
-                      $.his.items[item.data.ID] = new Date().toISOString();
-                    })
-                  },1000);
-                }
-              }
-              item.data.fav = [
-                {
-                  '@id': '/Contact(265090)',
-                  LinkID: 265090,
-                  Value: 'Max van Kampen',
-                  AttributeID: 1,
-                },
-                {
-                  '@id': '/Contact(265091)',
-                  LinkID: 265091,
-                  Value: 'Text Alicon',
-                  AttributeID: 1,
-                },
-              ];
-              const fav = [].concat(item.data.fav).map(item => $(item));
-              const isFav = fav.some(item => item === $.user);
-              function users() {
-                return;
-                // TODO: Item Users
-                fieldsElement.createElement('DIV', 'row users', [
-                  __('To') + ': ',
-                  ['DIV', 'row aco', userElement],
-                ]);
-                if (Array.isArray(this.Users)) {
-                  this.Users.forEach((row)=>{
-                    userElement.push(['A', 'c ' + row.ID, row.Value || ($.getItem(row.tag) ? $.getItem(row.tag).Title : row.ID), {
-                      // onclick: Web.Element.onclick,
-                      href: '#'+row.tag,
-                      // id: row.ID,
-                      // innerText: row.Value || ($.getItem(row.tag] ? $.getItem(row.tag].Title : row.ID),
-                    }], ';\u00A0');
-                  });
-                }
-              }
-              function printmenu() {
-                return;
-                // TODO:
-                //if (this.printmenu) for (var menuname in this.printmenu) {
-                //	menuitem = this.printmenu[menuname];
-                //	menuitem.name = menuname;
-                //	menuitem.id = this.id;
-                //	//menuitem.href = this.href;
-                //	menuitem.item = this;
-                //	//// //console.debug('MENU ITEM ', menuname);
-                //	break;
-                //	//// //console.debug('menuitem href', menuitem.href);
-                //	//if (this.ref) this.printmenu[menuname].href = this.href+'/'+
-                //	if (!menuitem.href) this.printmenu[menuname].onclick = menuitem.ref ? $.url.objbyref(menuitem.ref).e : function(e) {
-                //		if (this.menuitem.object) {
-                //			if (window[this.menuitem.object]) window[this.menuitem.object].onload(this.menuitem.id);
-                //			else window[this.menuitem.script] = document.body.createElement('script', { src: this.menuitem.script, menuitem: this.menuitem, onload: function() { window[this.menuitem.object].onload(this.menuitem.id) } });
-                //			return false;
-                //		}
-                //		if (this.menuitem.href) return true;// document.location.href = this.menuitem.href;
-                //		this.menuitem.post = this.menuitem.post || {};
-                //		this.menuitem.get = this.menuitem.get || {};
-                //		this.menuitem.get.name = this.menuitem.name;
-                //		this.menuitem.get.Title = this.menuitem.Title;
-                //		this.menuitem.get.id = this.menuitem.id;
-                //		//// //console.debug('MENUITEM PRINT', this.menuitem.post, this.menuitem.src);
-                //		//if ($.url.byref())
-                //		new $.HttpRequest({
-                //			menuitem: this.menuitem,
-                //			item: this.menuitem.item,
-                //			api: this.menuitem.api ? this.menuitem.api : rpt ? this.menuitem.item.class.name + '/' + this.menuitem.id + '/' + this.menuitem.rpt + '.html' : null,
-                //			src: this.menuitem.src,
-                //			post: this.menuitem.post,
-                //			get: this.menuitem.get,
-                //			onload: $.Docs.onload
-                //		});
-                //	};
-                //}
-              }
-              this.showMessages = e => {
-                let date;
-                let time;
-                let author;
-                aimClient.api(`/${item.tag}/Messages`)
-                .top(100)
-                .select('schemaPath,BodyHTML,CreatedDateTime,CreatedByID,CreatedByTitle,files')
-                .get()
-                .then(body => {
-                  console.log(body, aimClient.access.sub);
-                  let el;
-                  this.messagesElem.text('').append(
-                    $('summary').text('Messages'),
-                    $('div').class('oa').append(
-                      body.value.map(message => {
-                        const dt = new Date(message.data.CreatedDateTime);
-                        const messageDate = dt.toLocaleDateString();
-                        const messageTime = dt.toLocaleTimeString().substr(0,5);
-                        const messageAuthor = message.data.CreatedByID;
-                        return el = $('div').class('msgbox row', aimClient.access.sub == message.data.CreatedByID ? 'me' : '').append(
-                          $('div').append(
-                            $('div').class('small').append(
-                              author === messageAuthor ? null : $('span').class('author').text(author = messageAuthor),
-                              date === messageDate ? null : $('span').text(date = messageDate),
-                              time === messageTime ? null : $('span').text(time = messageTime),
-                              $('i').class('icn del').on('click', e => {
-                                e.target.parentElement.parentElement.remove();
-                                message.delete();
-                              }),
-                            ),
-                            $('div').class('body').html(message.BodyHTML || 'Empty'),
+            this.showMessages = e => {
+              let date;
+              let time;
+              let author;
+              aimClient.api(`/${item.tag}/Messages`)
+              .top(100)
+              .select('schemaPath,BodyHTML,CreatedDateTime,CreatedByID,CreatedByTitle,files')
+              .get()
+              .then(body => {
+                console.log(body, aimClient.access.sub);
+                let el;
+                this.messagesElem.text('').append(
+                  $('summary').text('Messages'),
+                  $('div').class('oa').append(
+                    body.value.map(message => {
+                      const dt = new Date(message.data.CreatedDateTime);
+                      const messageDate = dt.toLocaleDateString();
+                      const messageTime = dt.toLocaleTimeString().substr(0,5);
+                      const messageAuthor = message.data.CreatedByID;
+                      return el = $('div').class('msgbox row', aimClient.access.sub == message.data.CreatedByID ? 'me' : '').append(
+                        $('div').append(
+                          $('div').class('small').append(
+                            author === messageAuthor ? null : $('span').class('author').text(author = messageAuthor),
+                            date === messageDate ? null : $('span').text(date = messageDate),
+                            time === messageTime ? null : $('span').text(time = messageTime),
+                            $('i').class('icn del').on('click', e => {
+                              e.target.parentElement.parentElement.remove();
+                              message.delete();
+                            }),
                           ),
-                        )
-                      })
-                    )
-                  );
-                  el.scrollIntoView();
-                })
-              };
-              logVisit();
-              const itemdata = {};
-              let properties;
-              function breakdown_data() {
-                return aimClient.api(`/${item.tag}`).query('request_type', 'build_breakdown').get().then(body => {
+                          $('div').class('body').html(message.BodyHTML || 'Empty'),
+                        ),
+                      )
+                    })
+                  )
+                );
+                el.scrollIntoView();
+              })
+            };
+            logVisit();
+            const itemdata = {};
+            let properties;
+            function breakdown_data() {
+              return aimClient.api(`/${item.tag}`).query('request_type', 'build_breakdown').get().then(body => {
+                const data = body.value;
+                let items = [];
+                (function row(item, level) {
+                  item.level = level;
+                  item[item.schemaPath] = item.header0;
+                  items.push(item);
+                  data.filter(child => child.data.MasterID === item.ID).forEach(item => row(item, level+1))
+                })(data.find(child => child.ID == item.data.ID), 1);
+                const schemaNames = items.map(item => item.schemaPath).unique();
+                const schemas = [...Object($().schemas()).entries()].filter(([schemaName, schema]) => schemaNames.includes(schemaName));
+                const schemaKeys = schemas.map(([schemaName, schema]) => schemaName);
+                // properties = ['ID', 'level','schemaPath','schemaName','header0','header1','header2'].concat(...schemas.map(([schemaName, schema]) => schemaName), ...schemas.map(([key, schema]) => Object.keys(schema.properties))).unique();
+                const schema_values = {};
+                items.forEach(item => {
+                  let value = '';
+                  schemaKeys.forEach(schemaName => {
+                    if (value) {
+                      item[schemaName] = schema_values[schemaName] = null;
+                    } else if (item.schemaPath === schemaName) {
+                      value = item[schemaName] = schema_values[schemaName] = item.header0;
+                    } else {
+                      item[schemaName] = schema_values[schemaName];
+                    }
+                  })
+                });
+                return items;
+              });
+            }
+            function build_map(fn) {
+              if (itemdata.build_map) {
+                $('list').text('').append($('div').text('Generate document'));
+                setTimeout(() => fn(itemdata.build_map));
+              } else {
+                $('list').text('').append($('div').text('Loading data'));
+                aimClient.api(`/${item.tag}`).query('request_type', 'build_breakdown').get().then(body => {
                   const data = body.value;
                   let items = [];
                   (function row(item, level) {
@@ -6405,1068 +6453,1036 @@
                       }
                     })
                   });
-                  return items;
+                  fn(itemdata.build_map = items);
                 });
               }
-              function build_map(fn) {
-                if (itemdata.build_map) {
-                  $('list').text('').append($('div').text('Generate document'));
-                  setTimeout(() => fn(itemdata.build_map));
-                } else {
-                  $('list').text('').append($('div').text('Loading data'));
-                  aimClient.api(`/${item.tag}`).query('request_type', 'build_breakdown').get().then(body => {
-                    const data = body.value;
-                    let items = [];
-                    (function row(item, level) {
-                      item.level = level;
-                      item[item.schemaPath] = item.header0;
-                      items.push(item);
-                      data.filter(child => child.data.MasterID === item.ID).forEach(item => row(item, level+1))
-                    })(data.find(child => child.ID == item.data.ID), 1);
-                    const schemaNames = items.map(item => item.schemaPath).unique();
-                    const schemas = [...Object($().schemas()).entries()].filter(([schemaName, schema]) => schemaNames.includes(schemaName));
-                    const schemaKeys = schemas.map(([schemaName, schema]) => schemaName);
-                    // properties = ['ID', 'level','schemaPath','schemaName','header0','header1','header2'].concat(...schemas.map(([schemaName, schema]) => schemaName), ...schemas.map(([key, schema]) => Object.keys(schema.properties))).unique();
-                    const schema_values = {};
-                    items.forEach(item => {
-                      let value = '';
-                      schemaKeys.forEach(schemaName => {
-                        if (value) {
-                          item[schemaName] = schema_values[schemaName] = null;
-                        } else if (item.schemaPath === schemaName) {
-                          value = item[schemaName] = schema_values[schemaName] = item.header0;
-                        } else {
-                          item[schemaName] = schema_values[schemaName];
-                        }
-                      })
-                    });
-                    fn(itemdata.build_map = items);
-                  });
-                }
-              }
-              function linkElem(link) {
-                const elem = $('span').itemLink(link).append(
-                  $('button')
-                  .type('button')
-                  .on('click', e => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    elem.remove();
-                    item.elemTo.emit('change');
-                  })
-                );
-                return elem;
-              }
-              const to = [].concat(item.data.to||[]);
+            }
+            function linkElem(link) {
+              const elem = $('span').itemLink(link).append(
+                $('button')
+                .type('button')
+                .on('click', e => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  elem.remove();
+                  item.elemTo.emit('change');
+                })
+              );
+              return elem;
+            }
+            const to = [].concat(item.data.to||[]);
 
-              // console.debug('item.properties', item, item.properties); // DEBUG:
+            // console.debug('item.properties', item, item.properties); // DEBUG:
 
-              this.text('').append(
-                $('nav').class('row top abs btnbar np').append(
-                  this.schema === 'Company' ? $('button').class('abtn shop').on('click', e => $.shop.setCustomer.bind(this)) : null,
-                  $('button').class('abtn refresh r').on('click', e => item.details(true).then(item => $('view').show(item))),
-                  $('button').class('abtn view').append($('ul').append(
-                    $('li').class('abtn dashboard').text('Dashbord').on('click', e => this.showDashboard()),
-                    $('li').class('abtn slide').text('Slideshow').on('click', e => {
-                      var el = document.documentElement, rfs = el.requestFullscreen || el.webkitRequestFullScreen || el.mozRequestFullScreen || el.msRequestFullscreen;
-                      rfs.call(el);
-                      $.show({ sv: this.item.id });
-                    }),
-                    $('li').class('abtn model3d').text('Build 3D Model').on('click', e => {
+            this.text('').append(
+              $('nav').class('row top abs btnbar np').append(
+                this.schema === 'Company' ? $('button').class('abtn shop').on('click', e => $.shop.setCustomer.bind(this)) : null,
+                $('button').class('abtn refresh r').on('click', e => item.details(true).then(item => $('view').show(item))),
+                $('button').class('abtn view').append($('ul').append(
+                  $('li').class('abtn dashboard').text('Dashbord').on('click', e => this.showDashboard()),
+                  $('li').class('abtn slide').text('Slideshow').on('click', e => {
+                    var el = document.documentElement, rfs = el.requestFullscreen || el.webkitRequestFullScreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+                    rfs.call(el);
+                    $.show({ sv: this.item.id });
+                  }),
+                  $('li').class('abtn model3d').text('Build 3D Model').on('click', e => {
+                    const elem = $('div').parent($('list')).class('col abs').append(
+                      $('div').class('row top abs btnbar').append(
+                        $('button').class('abtn icn r refresh').on('click', e => this.rebuild() ),
+                        $('button').class('abtn icn close').on('click', e => elem.remove()),
+                      ),
+                      this.three = $('div').class('col aco').three(
+                        this.init = three => (this.rebuild = e => aimClient.api('/'+item.tag).query('three', '').get().then(three.build))()
+                      ),
+                    );
+                  }),
+                  $('li').class('abtn network').text('Netwerk').on('click', e => {
+                    (function init() {
                       const elem = $('div').parent($('list')).class('col abs').append(
                         $('div').class('row top abs btnbar').append(
-                          $('button').class('abtn icn r refresh').on('click', e => this.rebuild() ),
+                          $('button').class('abtn icn r refresh').on('click', e => {
+                            elem.remove();
+                            init();
+                          }),
                           $('button').class('abtn icn close').on('click', e => elem.remove()),
                         ),
-                        this.three = $('div').class('col aco').three(
-                          this.init = three => (this.rebuild = e => aimClient.api('/'+item.tag).query('three', '').get().then(three.build))()
+                      );
+                      aimClient.api(`/${item.tag}`).query('request_type','build_link_data').get().then(
+                        body => $('div').class('col aco').parent(elem).style('background:white;').modelDigraph(body)
+                      );
+                    })();
+                  }),
+                  !this.srcID ? null : $('li').class('abtn showInherited').attr('title', 'Toon master-class').on('click', e => {
+                    items.show({ id: this.item.srcID })
+                  }),
+                  !this.srcID ? null : $('li').class('abtn clone').attr('title', 'Overnemen class eigenschappen').on('click', e => {
+                    this.setAttribute('clone', 1, { post: 1 })
+                  }),
+                  //revert: { disabled: !this.srcID, Title: 'Revert to inherited', item: this, onclick: function() { this.item.revertToInherited(); } },
+                  // $('li').class('abtn sbs').text('SBS').on('click', e => {}),
+                  // $('li').class('abtn').text('Api key').href(`api/?request_type=api_key&sub=${item.ID}`),
+                  $('li').class('abtn').text('Api key').on('click', e => {
+                    aimClient.api('/').query('request_type', 'api_key').query('expires_after', 30).post({
+                      sub: item.ID,
+                      aud: item.ID
+                    }).get().then(body => {
+                      $('dialog').open(true).parent(document.body).text(body);
+                      console.log(body);
+                    })
+                  }),
+                  // $('li').class('abtn').text('Secret JSON Unlimited').attr('href', `api/?request_type=secret_json&release&sub=${this.ID}&aud=${$.auth.access.aud}`),
+                  // $('li').class('abtn doc').text('Breakdown').click(e => build_map(items => $().list(items))),
+                  $('li').class('abtn doc').text('Breakdown').on('click', e => {
+                    $().list([]);
+                    aimClient.api(`/${item.tag}`).query('request_type', 'build_breakdown').get().then(body => {
+                      const data = body.value;
+                      console.log(data);
+                      const topitem = data.find(child => child.ID == item.data.ID);
+                      const items = [];
+                      (function build(item, tagname) {
+                        console.log(item);
+                        // if (!item) return;
+                        items.push(item);
+                        item.data.Tagname = tagname = (tagname ? tagname + '.' : '') + (item.data.Prefix || '') + (item.data.Tag || item.data.Name || '');
+                        item.data.children = data
+                        .filter(child => child.data.MasterID == item.data.ID)
+                        .sort((a,b) => String(a.data.idx||'').localeCompare(b.data.idx||'', undefined, {numeric: true}))
+                        .map(child => build(child, tagname));
+                        return item;
+                      })(topitem);
+                      items.forEach(item => {
+                        if (item.data && item.data.link) {
+                          const link = item.data.link.shift();
+                          const linkItem = $(link.LinkID);
+                          item.data.LinkTagname = linkItem.data.Tagname;
+                          linkItem.data.LinkTagname = item.data.Tagname;
+                          // item.data.Linktagname = $(item.data.link.shift().LinkID).data.Tagname;
+                        }
+                      });
+                      // items.sort((a,b) => (a.data.Tagname || '').localeCompare(b.data.Tagname || ''));
+                      return $().list(items);
+                    });
+                  }),
+                  $('li').class('abtn doc').text('Doc').on('click', e => {
+                    (async function init() {
+                      const elem = $('div').parent($('list')).class('col abs').append(
+                        $('div').class('row top abs btnbar').append(
+                          $('button').class('abtn icn r refresh').on('click', e => {
+                            elem.remove();
+                            init();
+                          }),
+                          $('button').class('abtn icn close').on('click', e => elem.remove()),
                         ),
                       );
-                    }),
-                    $('li').class('abtn network').text('Netwerk').on('click', e => {
-                      (function init() {
-                        const elem = $('div').parent($('list')).class('col abs').append(
-                          $('div').class('row top abs btnbar').append(
-                            $('button').class('abtn icn r refresh').on('click', e => {
-                              elem.remove();
-                              init();
-                            }),
-                            $('button').class('abtn icn close').on('click', e => elem.remove()),
+                      breakdown_data().then(e => {
+                        const items = e.body.value;
+                        console.log(items);
+                        const topitem = items.find(child => child.ID == item.data.ID);
+                        function chapter(item, level) {
+                          // console.log(item.schema, item.schemaPath);
+                          // const schemaName = item.schemaPath.split(':').pop();
+                          const properties = Object.entries(item.schema.properties)
+                          .filter(([propertyName, property])=> item[propertyName])
+                          .map(([propertyName, property])=> $('li').class('prop').append(
+                            $('label').text(propertyName+': '),item[propertyName],
+                          ));
+                          return [
+                            $('h'+level).text(item.header0),
+                            // $('div').text('inleiding'),
+                            $('ul').append(properties),
+                          ].concat(...items.filter(child => child.data.MasterID === item.ID).map(item => chapter(item, level+1)));
+                        }
+                        $('div').parent(elem).class('row doc aco').append(
+                          (this.docElem = $('div')).class('aco doc-content counter oa').append(
+                            chapter(topitem, 1)
                           ),
-                        );
-                        aimClient.api(`/${item.tag}`).query('request_type','build_link_data').get().then(
-                          body => $('div').class('col aco').parent(elem).style('background:white;').modelDigraph(body)
-                        );
-                      })();
-                    }),
-                    !this.srcID ? null : $('li').class('abtn showInherited').attr('title', 'Toon master-class').on('click', e => {
-                      items.show({ id: this.item.srcID })
-                    }),
-                    !this.srcID ? null : $('li').class('abtn clone').attr('title', 'Overnemen class eigenschappen').on('click', e => {
-                      this.setAttribute('clone', 1, { post: 1 })
-                    }),
-                    //revert: { disabled: !this.srcID, Title: 'Revert to inherited', item: this, onclick: function() { this.item.revertToInherited(); } },
-                    // $('li').class('abtn sbs').text('SBS').on('click', e => {}),
-                    // $('li').class('abtn').text('Api key').href(`api/?request_type=api_key&sub=${item.ID}`),
-                    $('li').class('abtn').text('Api key').on('click', e => {
-                      aimClient.api('/').query('request_type', 'api_key').query('expires_after', 30).post({
-                        sub: item.ID,
-                        aud: item.ID
-                      }).get().then(body => {
-                        $('dialog').open(true).parent(document.body).text(body);
-                        console.log(body);
-                      })
-                    }),
-                    // $('li').class('abtn').text('Secret JSON Unlimited').attr('href', `api/?request_type=secret_json&release&sub=${this.ID}&aud=${$.auth.access.aud}`),
-                    // $('li').class('abtn doc').text('Breakdown').click(e => build_map(items => $().list(items))),
-                    $('li').class('abtn doc').text('Breakdown').on('click', e => {
-                      $().list([]);
-                      aimClient.api(`/${item.tag}`).query('request_type', 'build_breakdown').get().then(body => {
-                        const data = body.value;
-                        console.log(data);
-                        const topitem = data.find(child => child.ID == item.data.ID);
-                        const items = [];
-                        (function build(item, tagname) {
-                          console.log(item);
-                          // if (!item) return;
-                          items.push(item);
-                          item.data.Tagname = tagname = (tagname ? tagname + '.' : '') + (item.data.Prefix || '') + (item.data.Tag || item.data.Name || '');
-                          item.data.children = data
-                          .filter(child => child.data.MasterID == item.data.ID)
-                          .sort((a,b) => String(a.data.idx||'').localeCompare(b.data.idx||'', undefined, {numeric: true}))
-                          .map(child => build(child, tagname));
-                          return item;
-                        })(topitem);
-                        items.forEach(item => {
-                          if (item.data && item.data.link) {
-                            const link = item.data.link.shift();
-                            const linkItem = $(link.LinkID);
-                            item.data.LinkTagname = linkItem.data.Tagname;
-                            linkItem.data.LinkTagname = item.data.Tagname;
-                            // item.data.Linktagname = $(item.data.link.shift().LinkID).data.Tagname;
-                          }
-                        });
-                        // items.sort((a,b) => (a.data.Tagname || '').localeCompare(b.data.Tagname || ''));
-                        return $().list(items);
+                          $('div').class('mc-menu right np oa').append(
+                            $('div').class('ac-header').text('Table of contents'),
+                            $('ul').index(this.docElem)
+                          ),
+                        )
                       });
+                    })();
+                  }),
+                  // $('li').class('abtn download').text('Data JSON').attr('href', `api/?request_type=data_json&id=${this.ID}`),
+                  $('a').class('abtn download').text('config_data').href(`https://dms.aliconnect.nl/system/build?response_type=config_data&id=${item.data.ID}&download`),
+                    $('a').class('abtn download').text('data_v1').href(`https://dms.aliconnect.nl/system/build?response_type=data_v1&id=${item.data.ID}&download`),
+                    )),
+                    $('button').class('abtn msg').attr('cnt', item.data.Messages ? item.data.Messages.length : 0).on('click', this.showMessages),
+                    $('button').class('abtn send').on('click', e => {
+                      new $.HttpRequest($.config.$, 'GET', `/${this.item.schema}(${this.item.id})?mailing`, e => {
+                        // //console.debug(this.responseText);
+                        alert(this.responseText);
+                      }).send();
+                      return false;
                     }),
-                    $('li').class('abtn doc').text('Doc').on('click', e => {
-                      (async function init() {
-                        const elem = $('div').parent($('list')).class('col abs').append(
-                          $('div').class('row top abs btnbar').append(
-                            $('button').class('abtn icn r refresh').on('click', e => {
-                              elem.remove();
-                              init();
-                            }),
-                            $('button').class('abtn icn close').on('click', e => elem.remove()),
-                          ),
-                        );
-                        breakdown_data().then(e => {
-                          const items = e.body.value;
-                          console.log(items);
-                          const topitem = items.find(child => child.ID == item.data.ID);
-                          function chapter(item, level) {
-                            // console.log(item.schema, item.schemaPath);
-                            // const schemaName = item.schemaPath.split(':').pop();
-                            const properties = Object.entries(item.schema.properties)
-                            .filter(([propertyName, property])=> item[propertyName])
-                            .map(([propertyName, property])=> $('li').class('prop').append(
-                              $('label').text(propertyName+': '),item[propertyName],
-                            ));
-                            return [
-                              $('h'+level).text(item.header0),
-                              // $('div').text('inleiding'),
-                              $('ul').append(properties),
-                            ].concat(...items.filter(child => child.data.MasterID === item.ID).map(item => chapter(item, level+1)));
-                          }
-                          $('div').parent(elem).class('row doc aco').append(
-                            (this.docElem = $('div')).class('aco doc-content counter oa').append(
-                              chapter(topitem, 1)
-                            ),
-                            $('div').class('mc-menu right np oa').append(
-                              $('div').class('ac-header').text('Table of contents'),
-                              $('ul').index(this.docElem)
-                            ),
-                          )
-                        });
-                      })();
-                    }),
-                    // $('li').class('abtn download').text('Data JSON').attr('href', `api/?request_type=data_json&id=${this.ID}`),
-                    $('a').class('abtn download').text('config_data').href(`https://dms.aliconnect.nl/system/build?response_type=config_data&id=${item.data.ID}&download`),
-                      $('a').class('abtn download').text('data_v1').href(`https://dms.aliconnect.nl/system/build?response_type=data_v1&id=${item.data.ID}&download`),
-                      )),
-                      $('button').class('abtn msg').attr('cnt', item.data.Messages ? item.data.Messages.length : 0).on('click', this.showMessages),
-                      $('button').class('abtn send').on('click', e => {
-                        new $.HttpRequest($.config.$, 'GET', `/${this.item.schema}(${this.item.id})?mailing`, e => {
-                          // //console.debug(this.responseText);
-                          alert(this.responseText);
-                        }).send();
-                        return false;
-                      }),
-                      $('button').class('abtn fav').attr('checked', isFav).on('click', e => e => this.fav ^= 1),
-                      $('button').class('abtn edit').name('edit').on('click', e => this.edit(item)).append(
-                        $('ul').append(
-                          // $('li').class('row').append(
-                          //   $('a').class('aco abtn share').text('share').href('#?prompt=share'),
-                          // ),
-                          $('li').class('abtn share').text('share').on('click', e => e.stopPropagation()).on('click', e => aim.prompt('share_item')),
-                          $('li').class('abtn read').text('readonly').attr('disabled', '').on('click', e => e.stopPropagation()),
-                          $('li').class('abtn public').text('public').on('click', e => this.scope = 'private').on('click', e => e.stopPropagation()),
-                          $('li').class('abtn private').text('private').on('click', e => this.scope = 'public').on('click', e => e.stopPropagation()),
-                          $('li').class('abtn upload mailimport').text('Importeer mail uit outlook')
-                          // .attr('hidden', !$.Aliconnector.connected)
-                          .on('click', e => external.Mailimport())
-                          .on('click', e => e.stopPropagation()),
-                          $('li').class('abtn clone').text('clone').on('click', e => item.clone()),
-                          $('li').class('abtn del').text('delete').on('click', e => item.delete()),
-                        ),
+                    $('button').class('abtn fav').attr('checked', isFav).on('click', e => e => this.fav ^= 1),
+                    $('button').class('abtn edit').name('edit').on('click', e => this.edit(item)).append(
+                      $('ul').append(
+                        // $('li').class('row').append(
+                        //   $('a').class('aco abtn share').text('share').href('#?prompt=share'),
+                        // ),
+                        $('li').class('abtn share').text('share').on('click', e => e.stopPropagation()).on('click', e => aim.prompt('share_item')),
+                        $('li').class('abtn read').text('readonly').attr('disabled', '').on('click', e => e.stopPropagation()),
+                        $('li').class('abtn public').text('public').on('click', e => this.scope = 'private').on('click', e => e.stopPropagation()),
+                        $('li').class('abtn private').text('private').on('click', e => this.scope = 'public').on('click', e => e.stopPropagation()),
+                        $('li').class('abtn upload mailimport').text('Importeer mail uit outlook')
+                        // .attr('hidden', !$.Aliconnector.connected)
+                        .on('click', e => external.Mailimport())
+                        .on('click', e => e.stopPropagation()),
+                        $('li').class('abtn clone').text('clone').on('click', e => item.clone()),
+                        $('li').class('abtn del').text('delete').on('click', e => item.delete()),
                       ),
-                      $('button').class('abtn popout').on('click', e => {
-                        const rect = this.elem.getBoundingClientRect();
-                        item.popout(window.screenX+rect.x, window.screenY+rect.y+window.outerHeight-window.innerHeight, rect.width, rect.height)
-                      }),
-                      $('button').class('abtn close').name('close').on('click', e => {
-                        this.text('');
-                        delete ItemSelected;
-                        $.his.replaceUrl(document.location.pathname.replace(/\/id\/.*/,'')+'?'+document.location.search);
-                      }),
                     ),
-                    this.header(item),
-                    this.main = $('main')
-                    .class('aco oa')
-                    .on('dragover', e => {
+                    $('button').class('abtn popout').on('click', e => {
+                      const rect = this.elem.getBoundingClientRect();
+                      item.popout(window.screenX+rect.x, window.screenY+rect.y+window.outerHeight-window.innerHeight, rect.width, rect.height)
+                    }),
+                    $('button').class('abtn close').name('close').on('click', e => {
+                      this.text('');
+                      delete ItemSelected;
+                      $.his.replaceUrl(document.location.pathname.replace(/\/id\/.*/,'')+'?'+document.location.search);
+                    }),
+                  ),
+                  this.header(item),
+                  this.main = $('main')
+                  .class('aco oa')
+                  .on('dragover', e => {
+                    e.preventDefault();
+                  })
+                  .on('drop', e => {
+                    e.stopPropagation();
+                    const eventData = e.dataTransfer || e.clipboardData;
+                    const type = $.his.keyEvent && $.his.keyEvent.shiftKey ? 'link' : e.type;
+                    if (data = eventData.getData("aim/items")) {
+                      data = JSON.parse(data);
+                      data.type = data.type || (e.ctrlKey ? 'copy' : 'cut');
+                      //console.log('ja1', data.value, data.value.length);
+                      data.value.forEach(link => {
+                        link = Item.get(link.tag);
+                        console.log(([].concat(item.data.link).shift()||{}).AttributeID);
+                        item.attr('link', {
+                          AttributeID: e.ctrlKey ? null : ([].concat(item.data.link).shift()||{}).AttributeID,
+                          LinkID: link.data.ID,
+                          max: 999,
+                          type: e.ctrlKey ? 'append' : '',
+                        }, true)
+                        .then(item => item.details(true).then(item => $('view').show(item)));
+                      });
+                      //console.log('DROP', data.value);
+                    } else if (eventData.files) {
                       e.preventDefault();
+                      [...eventData.files].forEach(item.elemFiles.appendFile)
+                    }
+                  })
+                  .append(
+                    item.elemTo = $('div')
+                    .class('row editlinks to')
+                    .text('to:')
+                    .on('change', e => {
+                      const items = [...e.target.getElementsByTagName('A')].map(e=>e.item);
+                      items.filter(item => !to.find(to => to.LinkID == item.ID)).forEach(to => item.to = { LinkID: to.ID });
+                      to.filter(to => !items.find(item => to.LinkID == item.ID)).forEach(to => item.to = { AttributeID: to.AttributeID, LinkID: null, Value: null });
                     })
                     .on('drop', e => {
+                      e.preventDefault();
                       e.stopPropagation();
                       const eventData = e.dataTransfer || e.clipboardData;
                       const type = $.his.keyEvent && $.his.keyEvent.shiftKey ? 'link' : e.type;
                       if (data = eventData.getData("aim/items")) {
                         data = JSON.parse(data);
                         data.type = data.type || (e.ctrlKey ? 'copy' : 'cut');
-                        //console.log('ja1', data.value, data.value.length);
-                        data.value.forEach(link => {
-                          link = Item.get(link.tag);
-                          console.log(([].concat(item.data.link).shift()||{}).AttributeID);
-                          item.attr('link', {
-                            AttributeID: e.ctrlKey ? null : ([].concat(item.data.link).shift()||{}).AttributeID,
-                            LinkID: link.data.ID,
-                            max: 999,
-                            type: e.ctrlKey ? 'append' : '',
-                          }, true)
-                          .then(item => item.details(true).then(item => $('view').show(item)));
-                        });
-                        //console.log('DROP', data.value);
-                      } else if (eventData.files) {
-                        e.preventDefault();
-                        [...eventData.files].forEach(item.elemFiles.appendFile)
+                        data.value.forEach(item => e.target.is.append(linkElem(item)));
+                        e.target.is.emit('change')
                       }
                     })
-                    .append(
-                      item.elemTo = $('div')
-                      .class('row editlinks to')
-                      .text('to:')
-                      .on('change', e => {
-                        const items = [...e.target.getElementsByTagName('A')].map(e=>e.item);
-                        items.filter(item => !to.find(to => to.LinkID == item.ID)).forEach(to => item.to = { LinkID: to.ID });
-                        to.filter(to => !items.find(item => to.LinkID == item.ID)).forEach(to => item.to = { AttributeID: to.AttributeID, LinkID: null, Value: null });
-                      })
-                      .on('drop', e => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const eventData = e.dataTransfer || e.clipboardData;
-                        const type = $.his.keyEvent && $.his.keyEvent.shiftKey ? 'link' : e.type;
-                        if (data = eventData.getData("aim/items")) {
-                          data = JSON.parse(data);
-                          data.type = data.type || (e.ctrlKey ? 'copy' : 'cut');
-                          data.value.forEach(item => e.target.is.append(linkElem(item)));
-                          e.target.is.emit('change')
-                        }
-                      })
-                      .append(to.map(linkElem)),
-                      item.elemFiles = $('div').files(item, 'Files'),
-                    )
-                    .properties(item.properties),
-                    this.messagesElem = $('details').class('message-list').attr('open', 1),
-                    $('form').class('message-new col msgbox')
-                    .on('keydown', e => {
-                      if (e.keyPressed === 'Enter') {
-                        e.preventDefault();
-                        e.target.dispatchEvent(new Event('submit'));
-                      }
-                    })
-                    .on('submit', e => {
+                    .append(to.map(linkElem)),
+                    item.elemFiles = $('div').files(item, 'Files'),
+                  )
+                  .properties(item.properties),
+                  this.messagesElem = $('details').class('message-list').attr('open', 1),
+                  $('form').class('message-new col msgbox')
+                  .on('keydown', e => {
+                    if (e.keyPressed === 'Enter') {
                       e.preventDefault();
-                      let html = this.msgElem.elem.innerHTML.replace(/<p><br><\/p>/g,'');
-                      if (!html) return;
-                      e.target.BodyHTML.value = html;
-                      this.msgElem.elem.innerHTML = '<p><br></p>';
-                      aimClient.api(`/${item.tag}/Messages`).post(e.target).then(body => this.showMessages());
-                      return false;
-                    })
-                    .append(
-                      // $().files(),
-                      $('input').type('hidden').name('BodyHTML'),
-                      $('input').type('hidden').name('masterId').value(this.id),
-                      $('div').class('row aco msgbox').append(
-                        this.msgElem = $('div').class('aco').html('<p><br></p>').placeholder('Write message or add attachements').htmledit(),
-                        $('div').class('row np').append(
-                          $('button').class('abtn send').type('submit'),
-                          $('button').class('abtn image').type('button').attr('accept', 'image/*').on('click', e => {}),
-                          $('button').class('abtn image').type('button').attr('accept', '').on('click', e => {}),
-                        )
+                      e.target.dispatchEvent(new Event('submit'));
+                    }
+                  })
+                  .on('submit', e => {
+                    e.preventDefault();
+                    let html = this.msgElem.elem.innerHTML.replace(/<p><br><\/p>/g,'');
+                    if (!html) return;
+                    e.target.BodyHTML.value = html;
+                    this.msgElem.elem.innerHTML = '<p><br></p>';
+                    aimClient.api(`/${item.tag}/Messages`).post(e.target).then(body => this.showMessages());
+                    return false;
+                  })
+                  .append(
+                    // $().files(),
+                    $('input').type('hidden').name('BodyHTML'),
+                    $('input').type('hidden').name('masterId').value(this.id),
+                    $('div').class('row aco msgbox').append(
+                      this.msgElem = $('div').class('aco').html('<p><br></p>').placeholder('Write message or add attachements').htmledit(),
+                      $('div').class('row np').append(
+                        $('button').class('abtn send').type('submit'),
+                        $('button').class('abtn image').type('button').attr('accept', 'image/*').on('click', e => {}),
+                        $('button').class('abtn image').type('button').attr('accept', '').on('click', e => {}),
                       )
                     )
-                  );
-                  // console.log('FILES',item, item.data.files);
-                  //
-                  //
-                  // if (item.data.files) {
-                  //   JSON.parse(item.data.files).forEach(item.elemFiles.appendFile)
-                  // }
-                  // return console.log('SHOW', item);
-                  $.clipboard.setItem([item], 'selected', '');
-                  let link;
-                  if (item.data.link) {
-                    // console.log(item.data.link);
-                    link = [].concat(item.data.link).map(link => Object.assign(link, {item: $(link)}));
-                    this.main.append(link.map(link => link.item.schemaName).unique().map(
-                      schemaName => $('details')
-                      .class('col')
-                      .open(localStorage.getItem('detailsLink'))
-                      .on('toggle', e => localStorage.setItem('detailsLink', e.target.open))
+                  )
+                );
+                // console.log('FILES',item, item.data.files);
+                //
+                //
+                // if (item.data.files) {
+                //   JSON.parse(item.data.files).forEach(item.elemFiles.appendFile)
+                // }
+                // return console.log('SHOW', item);
+                $.clipboard.setItem([item], 'selected', '');
+                let link;
+                if (item.data.link) {
+                  // console.log(item.data.link);
+                  link = [].concat(item.data.link).map(link => Object.assign(link, {item: $(link)}));
+                  this.main.append(link.map(link => link.item.schemaName).unique().map(
+                    schemaName => $('details')
+                    .class('col')
+                    .open(localStorage.getItem('detailsLink'))
+                    .on('toggle', e => localStorage.setItem('detailsLink', e.target.open))
+                    .append(
+                      $('summary').text(schemaName),
+                      $('div')
+                      .class('row editlinks')
                       .append(
-                        $('summary').text(schemaName),
-                        $('div')
-                        .class('row editlinks')
-                        .append(
-                          link.filter(link => link.item.schemaName === schemaName).map(
-                            link => $('span').itemLink(link).append(
-                              $('button')
-                              .type('button')
-                              .on('click', e => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                item.attr('link', {
-                                  AttributeID: link.AttributeID,
-                                  LinkID: null,
-                                  Value: null,
-                                }, true)
-                                .then(item => item.details(true).then(item => $('view').show(item)));
-                              })
-                            )),
-                          )
+                        link.filter(link => link.item.schemaName === schemaName).map(
+                          link => $('span').itemLink(link).append(
+                            $('button')
+                            .type('button')
+                            .on('click', e => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              item.attr('link', {
+                                AttributeID: link.AttributeID,
+                                LinkID: null,
+                                Value: null,
+                              }, true)
+                              .then(item => item.details(true).then(item => $('view').show(item)));
+                            })
+                          )),
                         )
-                      ));
-                    }
-                    if (item.onloadEdit = item.onloadEdit || doEdit) {
-                      return this.edit(item);
-                    }
-                  });
-                  return this;
-                },},
-                showpage: { value: function (item) {
-                  item.details().then(item => {
-                    $('list').text('').append(
-                      this.elemDiv = $('div').class('aco col').append(
-                        $('h1').text(item.header0),
+                      )
+                    ));
+                  }
+                  if (item.onloadEdit = item.onloadEdit || doEdit) {
+                    return this.edit(item);
+                  }
+                });
+                return this;
+              },},
+              showpage: { value: function (item) {
+                item.details().then(item => {
+                  $('list').text('').append(
+                    this.elemDiv = $('div').class('aco col').append(
+                      $('h1').text(item.header0),
+                      $('div').text(item.header1),
+                      $('div').html(item.BodyHTML||''),
+                    )
+                  );
+                  aimClient.api(`/${item.tag}/children`).select('*').get().then(async body => {
+                    console.log(body);
+                    this.elemDiv.append(
+                      (await item.children).map(item => $('div').append(
+                        $('h2').text(item.header0),
                         $('div').text(item.header1),
                         $('div').html(item.BodyHTML||''),
-                      )
+                      ))
                     );
-                    aimClient.api(`/${item.tag}/children`).select('*').get().then(async body => {
-                      console.log(body);
-                      this.elemDiv.append(
-                        (await item.children).map(item => $('div').append(
-                          $('h2').text(item.header0),
-                          $('div').text(item.header1),
-                          $('div').html(item.BodyHTML||''),
-                        ))
-                      );
-                    });
-                  })
-                },},
-                showMenuTop: { value: async function (item) {
-                  const children = await item.children;
-                  if (this.webpage = children.find(item => item instanceof Webpage)) {
-                    aimClient.api(`/${this.webpage.tag}/children`).query('level', 3).get().then(async body => {
-                      $.his.elem.menuList = $('ul').parent(this.elem);
-                      function addChildren(elem, item, level) {
-                        if (Array.isArray(item.data.Children)) {
-                          item.data.Children.forEach(data => {
-                            const item = $(data);
-                            const elemLi = $('li').parent(elem);
-                            $('a').parent(elemLi).text(item.header0).on('click', e => {
-                              e.stopPropagation();
-                              $.his.elem.menuList.style('display:none;');
-                              $('view').showpage(item);
-                            });
-                            if (level < 3) {
-                              addChildren($('ul').parent(elemLi), item, level + 1);
-                            }
+                  });
+                })
+              },},
+              showMenuTop: { value: async function (item) {
+                const children = await item.children;
+                if (this.webpage = children.find(item => item instanceof Webpage)) {
+                  aimClient.api(`/${this.webpage.tag}/children`).query('level', 3).get().then(async body => {
+                    $.his.elem.menuList = $('ul').parent(this.elem);
+                    function addChildren(elem, item, level) {
+                      if (Array.isArray(item.data.Children)) {
+                        item.data.Children.forEach(data => {
+                          const item = $(data);
+                          const elemLi = $('li').parent(elem);
+                          $('a').parent(elemLi).text(item.header0).on('click', e => {
+                            e.stopPropagation();
+                            $.his.elem.menuList.style('display:none;');
+                            $('view').showpage(item);
                           });
-                        }
+                          if (level < 3) {
+                            addChildren($('ul').parent(elemLi), item, level + 1);
+                          }
+                        });
                       }
-                      addChildren($.his.elem.menuList, this.webpage, 1);
-                      this.on('mouseenter', e => $.his.elem.menuList.style(''))
-                    });
-                  }
-                },},
-                showLinks: { value: function (item) {
-                  aimClient.api(`/${item.tag}`).query('request_type','build_link_data').get().then(body => {
-                    //console.log(e.body);
-                    $('div').style('display:block;width:100%;height:400px;background:white;border:solid 1px red;')
-                    .attr('height',400)
-                    .width(400)
-                    .parent(this.main)
-                    // .modelLinks(e.body)
-                    // .modelTraverse(e.body)
-                    .modelDigraph(body)
-                  });
-                },},
-
-                // sort: {
-                //   Title: function(a, b) { return String(a.Title.toLowerCase()).localeCompare(String(b.Title.toLowerCase())) },
-                //   index: function(a, b) {
-                //     if (a.index != undefined && b.index == undefined) return -1;
-                //     if (a.index != undefined && b.index == undefined) return 1;
-                //     if (a.index > b.index) return 1;
-                //     if (a.index < b.index) return -1;
-                //     return 0;
-                //   },
-                //   id: function(a, b) {
-                //     if (a.id < b.id)
-                //     return -1;
-                //     if (a.id > b.id)
-                //     return 1;
-                //     return 0;
-                //   },
-                //   filter: function(a, b) {
-                //     if (a.cnt > 0 && b.cnt == 0) return -1;
-                //     if (a.cnt == 0 && b.cnt > 0) return 1;
-                //     return a.value.localeCompare(b.value, {}, 'numeric');
-                //   },
-                //   value: function(a, b) {
-                //     var va = (isNaN(a.value)) ? a.value.toLowerCase() : a.value;
-                //     var vb = (isNaN(b.value)) ? b.value.toLowerCase() : b.value;
-                //     if (va < vb) return -1;
-                //     if (va > vb) return 1;
-                //     return 0;
-                //   },
-                //   prijs: function(a, b) {
-                //     if (Number(isnull(a.Prijs, 0)) < Number(isnull(b.Prijs, 0)))
-                //     return -1;
-                //     if (Number(isnull(a.Prijs, 0)) > Number(isnull(b.Prijs, 0)))
-                //     return 1;
-                //     return 0;
-                //   },
-                //   prijsLaagHoog: function(a, b) {
-                //     if (Number(isnull(a.field.Prijs.Value, 0)) < Number(isnull(b.field.Prijs.Value, 0)))
-                //     return -1;
-                //     if (Number(isnull(a.field.Prijs.Value, 0)) > Number(isnull(b.field.Prijs.Value, 0)))
-                //     return 1;
-                //     return 0;
-                //   },
-                //   prijsHoogLaag: function(a, b) {
-                //     if (Number(isnull(a.field.Prijs.Value, 0)) < Number(isnull(b.field.Prijs.Value, 0)))
-                //     return 1;
-                //     if (Number(isnull(a.field.Prijs.Value, 0)) > Number(isnull(b.field.Prijs.Value, 0)))
-                //     return -1;
-                //     return 0;
-                //   },
-                //   nameAz: function(a, b) {
-                //     if ((a.field.Name.Value || '').toLowerCase() < (b.field.Name.Value || '').toLowerCase())
-                //     return -1;
-                //     if ((a.field.Name.Value || '').toLowerCase() > (b.field.Name.Value || '').toLowerCase())
-                //     return 1;
-                //     return 0;
-                //   },
-                //   nameZa: function(a, b) {
-                //     if ((a.field.Name.Value || '').toLowerCase() < (b.field.Name.Value || '').toLowerCase())
-                //     return 1;
-                //     if ((a.field.Name.Value || '').toLowerCase() > (b.field.Name.Value || '').toLowerCase())
-                //     return -1;
-                //     return 0;
-                //   },
-                //   prijsdesc: function(a, b) {
-                //     if (Number(isnull(a.Prijs, 0)) < Number(isnull(b.Prijs, 0)))
-                //     return 1;
-                //     if (Number(isnull(a.Prijs, 0)) > Number(isnull(b.Prijs, 0)))
-                //     return -1;
-                //     return 0;
-                //   },
-                //   idx1: function(a, b) {
-                //     if (a.index < b.index)
-                //     return -1;
-                //     if (a.index > b.index)
-                //     return 1;
-                //     return 0;
-                //   },
-                //   az: function(a, b) {
-                //     if (isnull(a.Name, '') < isnull(b.Name, ''))
-                //     return 1;
-                //     if (isnull(a.Name, '') > isnull(b.Name, ''))
-                //     return -1;
-                //     return 0;
-                //   },
-                //   za: function(a, b) {
-                //     if (isnull(a.Name, '') < isnull(b.Name, ''))
-                //     return -1;
-                //     if (isnull(a.Name, '') > isnull(b.Name, ''))
-                //     return 1;
-                //     return 0;
-                //   },
-                //   cntdn: function(a, b) {
-                //     if (a.cnt < b.cnt)
-                //     return 1;
-                //     if (a.cnt > b.cnt)
-                //     return -1;
-                //     return 0;
-                //   },
-                // },
-
-                // statusbar: { value: function () {
-                //   $.his.elem.statusbar = this.class('row statusbar np').append(
-                //     ['ws','aliconnector','http','is_checked','clipboard','pos','source','target','main']
-                //     .map(name => this[name] = $('span').class(name)),
-                //   );
-                //   this.progress = $('progress').parent(this.main.class('aco'));
-                //   return this;
-                // },},
-                setProperty: { value: function (selector, context) {
-                  this.elem.style.setProperty('--'+selector, context);
-                  return this;
-                },},
-                slider: { value: function (element){
-                  console.error('SLIDER');
-                  const elements = [...document.getElementsByClassName('aimage')].filter(elem => elem.is.has('ofile'));
-                  let imageNr = elements.indexOf(element);
-                  elements.forEach(element => { if (element.pause) element.pause() });
-                  // let imageNr = 0;
-                  this.show = element => {
-                    const elem = element.is;
-                    const ofile = elem.get('ofile') || {};
-                    const src = ofile.src;
-                    console.log(imageNr, elements.length, src);
-                    this.titleElem.text(
-                      element.alt,
-                      ofile.lastmodifieddate ? new Date(ofile.lastmodifieddate).toLocaleString(): null,
-                      ofile.size ? ofile.size + 'kB': null,
-                    );
-                    if (this.srcElem) {
-                      this.srcElem.remove();
                     }
-                    this.scrollPlay = () => {
-                      this.srcElem.elem.currentTime = frameNumber;
-                      //window.requestAnimationFrame(scrollPlay);
-                    };
-                    if (ofile.src.match(/jpg|png|bmp|jpeg|gif|bin/i)) {
-                      this.srcElem = $('img')
-                      .parent(this.containerElem)
-                      .class(element.className)
-                      .src(ofile.src)
-                    } else if (ofile.src.match(/3ds/i)) {
-                      this.srcElem = $('div')
-                      .parent(this.containerElem)
-                      .class(element.className)
-                      .tds({src:ofile.src, hasControls: true})
-                    } else if (ofile.src.match(/mp4|webm|mov/i)) {
-                      frameNumber = 0;
-                      this.srcElem = $('video')
-                      .parent(this.containerElem)
-                      .class(element.className)
-                      .src(ofile.src)
-                      .controls('')
-                      .autobuffer('')
-                      .preload('')
-                      .autoplay('')
-                      .on('click', e => {
-                        if (!this.srcElem.elem.paused) {
-                          this.srcElem.elem.pause();
-                          frameNumber = this.srcElem.elem.currentTime;
-                        } else {
-                          this.srcElem.elem.play();
-                        }
-                      })
-                      .on('wheel', e => {
-                        if (!this.srcElem.elem.paused) {
-                          this.srcElem.elem.pause();
-                          frameNumber = this.srcElem.elem.currentTime;
-                        }
-                        frameNumber += e.deltaY / 1000;
-                        window.requestAnimationFrame(this.scrollPlay);
-                      });
+                    addChildren($.his.elem.menuList, this.webpage, 1);
+                    this.on('mouseenter', e => $.his.elem.menuList.style(''))
+                  });
+                }
+              },},
+              showLinks: { value: function (item) {
+                aimClient.api(`/${item.tag}`).query('request_type','build_link_data').get().then(body => {
+                  //console.log(e.body);
+                  $('div').style('display:block;width:100%;height:400px;background:white;border:solid 1px red;')
+                  .attr('height',400)
+                  .width(400)
+                  .parent(this.main)
+                  // .modelLinks(e.body)
+                  // .modelTraverse(e.body)
+                  .modelDigraph(body)
+                });
+              },},
+
+              // sort: {
+              //   Title: function(a, b) { return String(a.Title.toLowerCase()).localeCompare(String(b.Title.toLowerCase())) },
+              //   index: function(a, b) {
+              //     if (a.index != undefined && b.index == undefined) return -1;
+              //     if (a.index != undefined && b.index == undefined) return 1;
+              //     if (a.index > b.index) return 1;
+              //     if (a.index < b.index) return -1;
+              //     return 0;
+              //   },
+              //   id: function(a, b) {
+              //     if (a.id < b.id)
+              //     return -1;
+              //     if (a.id > b.id)
+              //     return 1;
+              //     return 0;
+              //   },
+              //   filter: function(a, b) {
+              //     if (a.cnt > 0 && b.cnt == 0) return -1;
+              //     if (a.cnt == 0 && b.cnt > 0) return 1;
+              //     return a.value.localeCompare(b.value, {}, 'numeric');
+              //   },
+              //   value: function(a, b) {
+              //     var va = (isNaN(a.value)) ? a.value.toLowerCase() : a.value;
+              //     var vb = (isNaN(b.value)) ? b.value.toLowerCase() : b.value;
+              //     if (va < vb) return -1;
+              //     if (va > vb) return 1;
+              //     return 0;
+              //   },
+              //   prijs: function(a, b) {
+              //     if (Number(isnull(a.Prijs, 0)) < Number(isnull(b.Prijs, 0)))
+              //     return -1;
+              //     if (Number(isnull(a.Prijs, 0)) > Number(isnull(b.Prijs, 0)))
+              //     return 1;
+              //     return 0;
+              //   },
+              //   prijsLaagHoog: function(a, b) {
+              //     if (Number(isnull(a.field.Prijs.Value, 0)) < Number(isnull(b.field.Prijs.Value, 0)))
+              //     return -1;
+              //     if (Number(isnull(a.field.Prijs.Value, 0)) > Number(isnull(b.field.Prijs.Value, 0)))
+              //     return 1;
+              //     return 0;
+              //   },
+              //   prijsHoogLaag: function(a, b) {
+              //     if (Number(isnull(a.field.Prijs.Value, 0)) < Number(isnull(b.field.Prijs.Value, 0)))
+              //     return 1;
+              //     if (Number(isnull(a.field.Prijs.Value, 0)) > Number(isnull(b.field.Prijs.Value, 0)))
+              //     return -1;
+              //     return 0;
+              //   },
+              //   nameAz: function(a, b) {
+              //     if ((a.field.Name.Value || '').toLowerCase() < (b.field.Name.Value || '').toLowerCase())
+              //     return -1;
+              //     if ((a.field.Name.Value || '').toLowerCase() > (b.field.Name.Value || '').toLowerCase())
+              //     return 1;
+              //     return 0;
+              //   },
+              //   nameZa: function(a, b) {
+              //     if ((a.field.Name.Value || '').toLowerCase() < (b.field.Name.Value || '').toLowerCase())
+              //     return 1;
+              //     if ((a.field.Name.Value || '').toLowerCase() > (b.field.Name.Value || '').toLowerCase())
+              //     return -1;
+              //     return 0;
+              //   },
+              //   prijsdesc: function(a, b) {
+              //     if (Number(isnull(a.Prijs, 0)) < Number(isnull(b.Prijs, 0)))
+              //     return 1;
+              //     if (Number(isnull(a.Prijs, 0)) > Number(isnull(b.Prijs, 0)))
+              //     return -1;
+              //     return 0;
+              //   },
+              //   idx1: function(a, b) {
+              //     if (a.index < b.index)
+              //     return -1;
+              //     if (a.index > b.index)
+              //     return 1;
+              //     return 0;
+              //   },
+              //   az: function(a, b) {
+              //     if (isnull(a.Name, '') < isnull(b.Name, ''))
+              //     return 1;
+              //     if (isnull(a.Name, '') > isnull(b.Name, ''))
+              //     return -1;
+              //     return 0;
+              //   },
+              //   za: function(a, b) {
+              //     if (isnull(a.Name, '') < isnull(b.Name, ''))
+              //     return -1;
+              //     if (isnull(a.Name, '') > isnull(b.Name, ''))
+              //     return 1;
+              //     return 0;
+              //   },
+              //   cntdn: function(a, b) {
+              //     if (a.cnt < b.cnt)
+              //     return 1;
+              //     if (a.cnt > b.cnt)
+              //     return -1;
+              //     return 0;
+              //   },
+              // },
+
+              // statusbar: { value: function () {
+              //   $.his.elem.statusbar = this.class('row statusbar np').append(
+              //     ['ws','aliconnector','http','is_checked','clipboard','pos','source','target','main']
+              //     .map(name => this[name] = $('span').class(name)),
+              //   );
+              //   this.progress = $('progress').parent(this.main.class('aco'));
+              //   return this;
+              // },},
+              setProperty: { value: function (selector, context) {
+                this.elem.style.setProperty('--'+selector, context);
+                return this;
+              },},
+              slider: { value: function (element){
+                console.error('SLIDER');
+                const elements = [...document.getElementsByClassName('aimage')].filter(elem => elem.is.has('ofile'));
+                let imageNr = elements.indexOf(element);
+                elements.forEach(element => { if (element.pause) element.pause() });
+                // let imageNr = 0;
+                this.show = element => {
+                  const elem = element.is;
+                  const ofile = elem.get('ofile') || {};
+                  const src = ofile.src;
+                  console.log(imageNr, elements.length, src);
+                  this.titleElem.text(
+                    element.alt,
+                    ofile.lastmodifieddate ? new Date(ofile.lastmodifieddate).toLocaleString(): null,
+                    ofile.size ? ofile.size + 'kB': null,
+                  );
+                  if (this.srcElem) {
+                    this.srcElem.remove();
+                  }
+                  this.scrollPlay = () => {
+                    this.srcElem.elem.currentTime = frameNumber;
+                    //window.requestAnimationFrame(scrollPlay);
+                  };
+                  if (ofile.src.match(/jpg|png|bmp|jpeg|gif|bin/i)) {
+                    this.srcElem = $('img')
+                    .parent(this.containerElem)
+                    .class(element.className)
+                    .src(ofile.src)
+                  } else if (ofile.src.match(/3ds/i)) {
+                    this.srcElem = $('div')
+                    .parent(this.containerElem)
+                    .class(element.className)
+                    .tds({src:ofile.src, hasControls: true})
+                  } else if (ofile.src.match(/mp4|webm|mov/i)) {
+                    frameNumber = 0;
+                    this.srcElem = $('video')
+                    .parent(this.containerElem)
+                    .class(element.className)
+                    .src(ofile.src)
+                    .controls('')
+                    .autobuffer('')
+                    .preload('')
+                    .autoplay('')
+                    .on('click', e => {
+                      if (!this.srcElem.elem.paused) {
+                        this.srcElem.elem.pause();
+                        frameNumber = this.srcElem.elem.currentTime;
+                      } else {
+                        this.srcElem.elem.play();
+                      }
+                    })
+                    .on('wheel', e => {
+                      if (!this.srcElem.elem.paused) {
+                        this.srcElem.elem.pause();
+                        frameNumber = this.srcElem.elem.currentTime;
+                      }
+                      frameNumber += e.deltaY / 1000;
                       window.requestAnimationFrame(this.scrollPlay);
-                      // this.srcElement.onended = e => {
-                      // 	this.next();
-                      // };
-                    }
-                  };
-                  this.prior = e => {
-                    console.warn(imageNr, elements.length);
-                    this.show(elements[imageNr = imageNr ? imageNr - 1 : elements.length - 1]);
-                  };
-                  this.next = e => {
-                    console.warn(imageNr, elements.length);
-                    this.show(elements[imageNr = imageNr < elements.length - 1 ? imageNr + 1 : 0]);
-                  };
-                  const onkeydown = e => {
-                    if (e.code === "ArrowLeft") {
-                      e.stopPropagation(e.preventDefault(this.prior(e)))
-                    } else if (e.code === "ArrowRight") {
-                      e.stopPropagation(e.preventDefault(this.next(e)))
-                    } else if (e.code === "Escape") {
-                      e.stopPropagation(e.preventDefault(this.closeSlider(e)))
-                    }
-                  };
-                  document.addEventListener('keydown', onkeydown, true);
-                  this.closeSlider = e => {
-                    document.removeEventListener('keydown', onkeydown, true);
-                    this.sliderElem.remove();
-                    // this.elem = null;
-                  };
-                  this.sliderElem = $('div')
-                  .class('imageSlider')
-                  .parent(this.elem)
-                  .on('click', e => e.stopPropagation())
-                  .append(
-                    $('div').class('row top').append(
-                      $('button').class('abtn icn close abs').on('click', this.closeSlider),
-                      this.titleElem = $('div').class('aco'),
-                    ),
-                    this.containerElem = $('div').class('Image').append(
-                      $('div').class('sliderButton prior').on('click', this.prior).append(
-                        $('span'),
-                      ),
-                      $('div').class('sliderButton next').on('click', this.next).append(
-                        $('span'),
-                      ),
-                    ),
-                  );
-                  // swipedetect(divElement, swipedir => {
-                  // 	if (swipedir === 'left') next();
-                  // 	else if (swipedir === 'right') prior();
-                  // });
-                  this.show(element);
-                },},
-                text: { value: function (value) {
-                  if (arguments.length) {
-                    this.elem.innerText = [].concat(...arguments).join(' ');
-                    return this;
-                  }
-                  return this.elem.innerText;
-                },},
-                tds: { value: function (options = {}) {
-                  var container, controls;
-                  var camera, scene, renderer;
-                  container = this.elem;
-                  // console.log(this.elem, this.width(), this.height());
-                  // container.style = 'width:120px;';
-                  const width = this.width() || container.offsetWidth;
-                  const height = this.height() || container.offsetHeight;
-                  // console.log([...document.getElementsByTagName('SCRIPT')].find(s => s.src === '/lib/three/examples/js/controls/TrackballControls.js'));
-                  (async () => {
-                    await importScript('three/build/three.js');
-                    await importScript('three/examples/js/controls/TrackballControls.js');
-                    await importScript('three/examples/js/loaders/TDSLoader.js');
-                    console.log(container.offsetWidth, container.offsetHeight);
-                    camera = new THREE.PerspectiveCamera( 60, width / height, 0.1, 10 );
-                    camera.position.z = 2;
-                    scene = new THREE.Scene();
-                    scene.add( new THREE.HemisphereLight() );
-                    var directionalLight = new THREE.DirectionalLight( 0xffeedd );
-                    directionalLight.position.set( 0, 0, 2 );
-                    scene.add( directionalLight );
-                    //3ds files dont store normal maps
-                    // var loader = new THREE.TextureLoader();
-                    // // var normal = loader.load( '/lib/three/examples/models/3ds/portalgun/textures/normal.jpg' );
-                    // var normal = loader.load( '/shared/upload/normal.jpg' );
-                    var loader = new THREE.TDSLoader( );
-                    // loader.setResourcePath( '/lib/three/examples/models/3ds/portalgun/textures/' );
-                    // loader.setResourcePath( '/shared/upload/' );
-                    // loader.load( '/lib/three/examples/models/3ds/portalgun/portalgun.3ds', function ( object ) {
-                    loader.load( options.src, function ( object ) {
-                      // object.traverse( function ( child ) {
-                      //
-                      // 	if ( child.isMesh ) {
-                      //
-                      // 		child.material.normalMap = normal;
-                      //
-                      // 	}
-                      //
-                      // } );
-                      scene.add( object );
-                    } );
-                    renderer = new THREE.WebGLRenderer();
-                    renderer.setPixelRatio( window.devicePixelRatio );
-                    // renderer.setSize( width, height );
-                    this.append( renderer.domElement );
-                    controls = new THREE.TrackballControls( camera, renderer.domElement );
-                    // console.log(window);
-                    $(window).on('resize', resize, false).emit('resize');
-                    setTimeout(() => {
-                      renderer.render( scene, camera );
-                    },200);
-                    if (options.hasControls) {
-                      animate();
-                    }
-                    // requestAnimationFrame( animate );
-                    // animate();
-                  })();
-                  function resize() {
-                    camera.aspect = width / height;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize( width, height );
-                  }
-                  function animate() {
-                    controls.update();
-                    renderer.render( scene, camera );
-                    requestAnimationFrame( animate );
-                  }
-                  return this;
-                },},
-                treelist: { value: function (){
-                  if (!Array.isArray(par.treelist)) return;
-                  var treelist = treelist || {};
-                  par.treelist.sort($.sort.index);
-                  par.treelist.forEach(row => {
-                    var elLI = el.createElement('LI', 'col', treelist.li || {
-                      onmouseenter: e => elLI.hasAttribute('open') ? elLI.setAttribute('open', 1) : null,
-                      onmouseleave: e => elLI.hasAttribute('open') ? elLI.setAttribute('open', 0) : null,
-                      onclick: e => elLI.hasAttribute('open') ? elLI.setAttribute('open', 0) : null,
-                      draggable: 1
                     });
-                    var elA = elLI.createElement('A', { href: `#${row.tag}`, href: '#/id/' + btoa(row['@id']), innerText: row.Title, });
-                    row.Children = row.Children || row.items;
-                    if (row.Children && row.Children.length) {
-                      elLI.setAttribute('open', treelist.opendefault || 0);
-                      elLI.createElement('UL', 'bg', {open: 1, treelist: row.Children});
-                    }
+                    window.requestAnimationFrame(this.scrollPlay);
+                    // this.srcElement.onended = e => {
+                    // 	this.next();
+                    // };
+                  }
+                };
+                this.prior = e => {
+                  console.warn(imageNr, elements.length);
+                  this.show(elements[imageNr = imageNr ? imageNr - 1 : elements.length - 1]);
+                };
+                this.next = e => {
+                  console.warn(imageNr, elements.length);
+                  this.show(elements[imageNr = imageNr < elements.length - 1 ? imageNr + 1 : 0]);
+                };
+                const onkeydown = e => {
+                  if (e.code === "ArrowLeft") {
+                    e.stopPropagation(e.preventDefault(this.prior(e)))
+                  } else if (e.code === "ArrowRight") {
+                    e.stopPropagation(e.preventDefault(this.next(e)))
+                  } else if (e.code === "Escape") {
+                    e.stopPropagation(e.preventDefault(this.closeSlider(e)))
+                  }
+                };
+                document.addEventListener('keydown', onkeydown, true);
+                this.closeSlider = e => {
+                  document.removeEventListener('keydown', onkeydown, true);
+                  this.sliderElem.remove();
+                  // this.elem = null;
+                };
+                this.sliderElem = $('div')
+                .class('imageSlider')
+                .parent(this.elem)
+                .on('click', e => e.stopPropagation())
+                .append(
+                  $('div').class('row top').append(
+                    $('button').class('abtn icn close abs').on('click', this.closeSlider),
+                    this.titleElem = $('div').class('aco'),
+                  ),
+                  this.containerElem = $('div').class('Image').append(
+                    $('div').class('sliderButton prior').on('click', this.prior).append(
+                      $('span'),
+                    ),
+                    $('div').class('sliderButton next').on('click', this.next).append(
+                      $('span'),
+                    ),
+                  ),
+                );
+                // swipedetect(divElement, swipedir => {
+                // 	if (swipedir === 'left') next();
+                // 	else if (swipedir === 'right') prior();
+                // });
+                this.show(element);
+              },},
+              text: { value: function (value) {
+                if (arguments.length) {
+                  this.elem.innerText = [].concat(...arguments).join(' ');
+                  return this;
+                }
+                return this.elem.innerText;
+              },},
+              tds: { value: function (options = {}) {
+                var container, controls;
+                var camera, scene, renderer;
+                container = this.elem;
+                // console.log(this.elem, this.width(), this.height());
+                // container.style = 'width:120px;';
+                const width = this.width() || container.offsetWidth;
+                const height = this.height() || container.offsetHeight;
+                // console.log([...document.getElementsByTagName('SCRIPT')].find(s => s.src === '/lib/three/examples/js/controls/TrackballControls.js'));
+                (async () => {
+                  await importScript('three/build/three.js');
+                  await importScript('three/examples/js/controls/TrackballControls.js');
+                  await importScript('three/examples/js/loaders/TDSLoader.js');
+                  console.log(container.offsetWidth, container.offsetHeight);
+                  camera = new THREE.PerspectiveCamera( 60, width / height, 0.1, 10 );
+                  camera.position.z = 2;
+                  scene = new THREE.Scene();
+                  scene.add( new THREE.HemisphereLight() );
+                  var directionalLight = new THREE.DirectionalLight( 0xffeedd );
+                  directionalLight.position.set( 0, 0, 2 );
+                  scene.add( directionalLight );
+                  //3ds files dont store normal maps
+                  // var loader = new THREE.TextureLoader();
+                  // // var normal = loader.load( '/lib/three/examples/models/3ds/portalgun/textures/normal.jpg' );
+                  // var normal = loader.load( '/shared/upload/normal.jpg' );
+                  var loader = new THREE.TDSLoader( );
+                  // loader.setResourcePath( '/lib/three/examples/models/3ds/portalgun/textures/' );
+                  // loader.setResourcePath( '/shared/upload/' );
+                  // loader.load( '/lib/three/examples/models/3ds/portalgun/portalgun.3ds', function ( object ) {
+                  loader.load( options.src, function ( object ) {
+                    // object.traverse( function ( child ) {
+                    //
+                    // 	if ( child.isMesh ) {
+                    //
+                    // 		child.material.normalMap = normal;
+                    //
+                    // 	}
+                    //
+                    // } );
+                    scene.add( object );
+                  } );
+                  renderer = new THREE.WebGLRenderer();
+                  renderer.setPixelRatio( window.devicePixelRatio );
+                  // renderer.setSize( width, height );
+                  this.append( renderer.domElement );
+                  controls = new THREE.TrackballControls( camera, renderer.domElement );
+                  // console.log(window);
+                  $(window).on('resize', resize, false).emit('resize');
+                  setTimeout(() => {
+                    renderer.render( scene, camera );
+                  },200);
+                  if (options.hasControls) {
+                    animate();
+                  }
+                  // requestAnimationFrame( animate );
+                  // animate();
+                })();
+                function resize() {
+                  camera.aspect = width / height;
+                  camera.updateProjectionMatrix();
+                  renderer.setSize( width, height );
+                }
+                function animate() {
+                  controls.update();
+                  renderer.render( scene, camera );
+                  requestAnimationFrame( animate );
+                }
+                return this;
+              },},
+              treelist: { value: function (){
+                if (!Array.isArray(par.treelist)) return;
+                var treelist = treelist || {};
+                par.treelist.sort($.sort.index);
+                par.treelist.forEach(row => {
+                  var elLI = el.createElement('LI', 'col', treelist.li || {
+                    onmouseenter: e => elLI.hasAttribute('open') ? elLI.setAttribute('open', 1) : null,
+                    onmouseleave: e => elLI.hasAttribute('open') ? elLI.setAttribute('open', 0) : null,
+                    onclick: e => elLI.hasAttribute('open') ? elLI.setAttribute('open', 0) : null,
+                    draggable: 1
                   });
-                },},
-                ttext: { value: function (value){
-                  this.elem.innerText = [].concat(...arguments).map(s => __(s)).join(' ');
-                  return this;
-                },},
-                toggle: { value: function () {
-                  this.open(!this.open());
-                  return this;
-                },},
-                toHtml: { value: function () {
-                  return web.html(...arguments);
-                },},
-                type: { value: function (){
-                  return this.attr('type', ...arguments);
-                },},
-                openLinkInIframe: { value: function (src) {
-                  return this.append(
-                    this.iframePanelElem = $('div').class('col aco iframe').append(
-                      $('div').class('row top').append(
-                        $('button').class('abtn download').href(src).download().target("_blank"),
-                        $('button').class('abtn print').on('click', e => this.iframeElem.elem.contentWindow.print()),
-                        $('button').class('abtn close').on('click', e => this.iframePanelElem.remove()),
-                      ),
-                      this.iframeElem = $('iframe').class('aco').src(src),
-                    )
-                  );
-                },},
-                openHtmlInIframe: { value: function (html) {
-                  this.append(
-                    this.iframePanelElem = $('div').class('col aco iframe').append(
-                      $('div').class('row top').append(
-                        $('button').class('abtn download').href(src).download().target("_blank"),
-                        $('button').class('abtn print').on('click', e => this.iframeElem.elem.contentWindow.print()),
-                        $('button').class('abtn close').on('click', e => this.iframePanelElem.remove()),
-                      ),
-                      this.iframeElem = $('iframe').class('aco'),
-                    )
-                  );
-                  const doc = this.iframeElem.elem.contentWindow.document;
-                  doc.open();
-                  doc.write(html);
-                  doc.close();
-                  return this;
-                },},
-                window: { value: function (e) {
-                  this.url = apiorigin + "/" + $.config.$.domain + "/" + $.version + "/app/form/?select*&schema=" + this.schema + "&id=" + (this.detailID || this.id) + (this.uid ? "&uid=" + this.uid : "");
-                  if ($.his.handles[this.url]) {
-                    $.his.handles[this.url].focus();
+                  var elA = elLI.createElement('A', { href: `#${row.tag}`, href: '#/id/' + btoa(row['@id']), innerText: row.Title, });
+                  row.Children = row.Children || row.items;
+                  if (row.Children && row.Children.length) {
+                    elLI.setAttribute('open', treelist.opendefault || 0);
+                    elLI.createElement('UL', 'bg', {open: 1, treelist: row.Children});
                   }
-                  else {
-                    $.his.handles[this.url] = window.open(this.url, this.url, 'width=600, height=800, left=' + (e.screenX || 0) + ', top=' + (e.screenY || 0));
-                    $.his.handles[this.url].name = this.url;
-                    $.his.handles[this.url].onbeforeunload = function() { $.his.handles[this.name] = null };
-                  }
-                },},
-                sampleWindow: { value: function (url) {
-                  const height = 600;
-                  const width = 1200;
-                  let rect = document.body.getBoundingClientRect();
-                  let top = window.screenTop + window.innerHeight - height + 50 - 20;
-                  let left = window.screenLeft + window.innerWidth - width - 20;
-                  return window.open(url, 'sample', `top=${top},left=${left},width=${width},height=${height},toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes`);
-                },},
-                tileboard: { value: function (menuname) {
-                  if (menuname) return ($.$.menu.items[menuname]) ? $.tileboard.call($.$.menu.items[menuname]) : null;
-                  if (this.el) return $.elBrd.appendChild(this.el);
-                  with (this.el = $.elBrd.createElement('DIV', 'col aco start aimitems')) {
-                    with (createElement('DIV', 'row')) {
-                      for (var menuname in this.items) {
-                        var menuitem = this.items[menuname];
-                        if (menuitem) {
-                          with (menuitem.elTegel = createElement('DIV', { className: 'col card' })) {
-                            menuitem.get = menuitem.get || { bv: menuname };
-                            createElement('DIV', { className: 'row bgd' }).createElement('A', {
-                              name: menuname, className: 'row aco abtn icn ' + menuitem.className, innerText: menuitem.Title, menuitem: menuitem,
-                              par: menuitem.get,
-                              onclick: Element.onclick,
-                              //href: '#' + $.url.stringify(menuitem.get || { bv: menuname })
-                            });
-                            if (menuitem.showbody) menuitem.showbody();
-                            for (var itemname in menuitem.items) {
-                              var item = $.$.menu.items[itemname];
-                              if (item) {
-                                item.elLink = createElement('DIV', { className: 'row bgd' }).createElement('A', {
-                                  name: itemname, className: 'row aco abtn icn ' + item.className, innerText: item.Title, menuitem: item,
-                                  //par: { mn: this.name },
-                                  par: item.get,
-                                  onclick: Element.onclick,
-                                  //href: '#' + $.url.stringify({ mn: itemname })
-                                });
-                                if (item.showtitle) item.showtitle();
-                              }
+                });
+              },},
+              ttext: { value: function (value){
+                this.elem.innerText = [].concat(...arguments).map(s => __(s)).join(' ');
+                return this;
+              },},
+              toggle: { value: function () {
+                this.open(!this.open());
+                return this;
+              },},
+              toHtml: { value: function () {
+                return web.html(...arguments);
+              },},
+              type: { value: function (){
+                return this.attr('type', ...arguments);
+              },},
+              openLinkInIframe: { value: function (src) {
+                return this.append(
+                  this.iframePanelElem = $('div').class('col aco iframe').append(
+                    $('div').class('row top').append(
+                      $('button').class('abtn download').href(src).download().target("_blank"),
+                      $('button').class('abtn print').on('click', e => this.iframeElem.elem.contentWindow.print()),
+                      $('button').class('abtn close').on('click', e => this.iframePanelElem.remove()),
+                    ),
+                    this.iframeElem = $('iframe').class('aco').src(src),
+                  )
+                );
+              },},
+              openHtmlInIframe: { value: function (html) {
+                this.append(
+                  this.iframePanelElem = $('div').class('col aco iframe').append(
+                    $('div').class('row top').append(
+                      $('button').class('abtn download').href(src).download().target("_blank"),
+                      $('button').class('abtn print').on('click', e => this.iframeElem.elem.contentWindow.print()),
+                      $('button').class('abtn close').on('click', e => this.iframePanelElem.remove()),
+                    ),
+                    this.iframeElem = $('iframe').class('aco'),
+                  )
+                );
+                const doc = this.iframeElem.elem.contentWindow.document;
+                doc.open();
+                doc.write(html);
+                doc.close();
+                return this;
+              },},
+              window: { value: function (e) {
+                this.url = apiorigin + "/" + $.config.$.domain + "/" + $.version + "/app/form/?select*&schema=" + this.schema + "&id=" + (this.detailID || this.id) + (this.uid ? "&uid=" + this.uid : "");
+                if ($.his.handles[this.url]) {
+                  $.his.handles[this.url].focus();
+                }
+                else {
+                  $.his.handles[this.url] = window.open(this.url, this.url, 'width=600, height=800, left=' + (e.screenX || 0) + ', top=' + (e.screenY || 0));
+                  $.his.handles[this.url].name = this.url;
+                  $.his.handles[this.url].onbeforeunload = function() { $.his.handles[this.name] = null };
+                }
+              },},
+              sampleWindow: { value: function (url) {
+                const height = 600;
+                const width = 1200;
+                let rect = document.body.getBoundingClientRect();
+                let top = window.screenTop + window.innerHeight - height + 50 - 20;
+                let left = window.screenLeft + window.innerWidth - width - 20;
+                return window.open(url, 'sample', `top=${top},left=${left},width=${width},height=${height},toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes`);
+              },},
+              tileboard: { value: function (menuname) {
+                if (menuname) return ($.$.menu.items[menuname]) ? $.tileboard.call($.$.menu.items[menuname]) : null;
+                if (this.el) return $.elBrd.appendChild(this.el);
+                with (this.el = $.elBrd.createElement('DIV', 'col aco start aimitems')) {
+                  with (createElement('DIV', 'row')) {
+                    for (var menuname in this.items) {
+                      var menuitem = this.items[menuname];
+                      if (menuitem) {
+                        with (menuitem.elTegel = createElement('DIV', { className: 'col card' })) {
+                          menuitem.get = menuitem.get || { bv: menuname };
+                          createElement('DIV', { className: 'row bgd' }).createElement('A', {
+                            name: menuname, className: 'row aco abtn icn ' + menuitem.className, innerText: menuitem.Title, menuitem: menuitem,
+                            par: menuitem.get,
+                            onclick: Element.onclick,
+                            //href: '#' + $.url.stringify(menuitem.get || { bv: menuname })
+                          });
+                          if (menuitem.showbody) menuitem.showbody();
+                          for (var itemname in menuitem.items) {
+                            var item = $.$.menu.items[itemname];
+                            if (item) {
+                              item.elLink = createElement('DIV', { className: 'row bgd' }).createElement('A', {
+                                name: itemname, className: 'row aco abtn icn ' + item.className, innerText: item.Title, menuitem: item,
+                                //par: { mn: this.name },
+                                par: item.get,
+                                onclick: Element.onclick,
+                                //href: '#' + $.url.stringify({ mn: itemname })
+                              });
+                              if (item.showtitle) item.showtitle();
                             }
                           }
                         }
                       }
-                      for (var i = 0; i < 4; i++) createElement('DIV', { className: 'card ghost' });
                     }
+                    for (var i = 0; i < 4; i++) createElement('DIV', { className: 'card ghost' });
                   }
-                },},
-                panel: { value: function (parent) {
-                  return this.parent(parent || $('list')).class('col abs').append(
-                    this.elemBar = $('div').class('row top abs btnbar').append(
-                      $('span').class('aco'),
-                      $('button').class('abtn close').on('click', e => this.elem.remove()),
-                    ),
-                    this.elemMain = $('main').class('aco oa'),
-                  );
-                  // return this.parent($('list')).class('col abs').append(
-                  //   this.elemBar = $('div').class('row top abs btnbar').append(
-                  //     $('span').class('aco'),
-                  //     $('button').class('abtn close').on('click', e => this.elem.remove()),
-                  //   ),
-                  //   this.elemMain = $('main').class('aco oa'),
-                  // );
-                },},
-              });
-              [
-                'parentElement',
-                'nextSibling'
-              ].forEach(name => Object.defineProperty(Elem.prototype, name, {
-                enumerable: false,
-                get() {
-                  return this.elem[name] ? this.elem[name].is : null;
-                },
-              }));
-              [
-                'default',
-                'autoplay'
-              ].forEach(name => Object.defineProperty(Elem.prototype, name, {
-                enumerable: false,
-                value: function attr() {
-                  return this.attr(name, '');
                 }
-              }));
-              Object.defineProperties(Elem.prototype, {
-                query:{value(selector, fn){ fn($(this.elem.querySelector(selector))); return this;}},
-                querySelector:{value(){return $(this.elem.querySelector(...arguments))}},
-                querySelectorAll:{value(){return Array.from(this.elem.querySelectorAll(...arguments)).map($)}},
-              });
-              [
-                'focus',
-                'select',
-              ].forEach(name => Object.defineProperty(Elem.prototype, name, {
-                enumerable: false,
-                value: function fn() {
-                  // console.log(name, typeof this.elem[name]);
-                  this.elem[name](...arguments);
-                  // if (typeof this.elem[name] === 'function'){
-                  //   this.elem[name](...arguments);
-                  // }
-                  return this;
-                }
-              }));
-              [
-                'draggable'
-              ].forEach(name => Object.defineProperty(Elem.prototype, name, {
-                enumerable: false,
-                value: function attrTrue() {
-                  return this.attr(name, true);
-                }
-              }));
-              [
-                'checked',
-                'disabled',
-                'hasChildren',
-                'selected'
-              ].forEach(name => Object.defineProperty(Elem.prototype, name, {
-                enumerable: false,
-                value: function attrIfTrue(value) {
-                  return this.attr(name, value ? '' : null)
-                }
-              }));
-              [
-                'accept',
-                'accesskey',
-                'action',
-                'align',
-                'allow',
-                'alt',
-                'async',
-                'autocapitalize',
-                'autocomplete',
-                'autofocus',
-                'background',
-                'bgcolor',
-                'border',
-                'buffered',
-                'capture',
-                'challenge',
-                'charset',
-                'cite',
-                // 'class',
-                // 'code',
-                'codebase',
-                'color',
-                'cols',
-                'colspan',
-                'content',
-                'contenteditable',
-                // 'contextmenu',
-                'controls',
-                'coords',
-                'crossorigin',
-                'csp',
-                'data',
-                'datetime',
-                'decoding',
-                'defer',
-                'dir',
-                'dirname',
-                // 'displayvalue',
-                'download',
-                'enctype',
-                'enterkeyhint',
-                'for',
-                'form',
-                'formaction',
-                'formenctype',
-                'formmethod',
-                'formnovalidate',
-                'formtarget',
-                'headers',
-                'height',
-                'hidden',
-                'high',
-                'href',
-                'hreflang',
-                'hotkey',
-                'icon',
-                // 'id',
-                'importance',
-                'integrity',
-                'intrinsicsize',
-                'inputmode',
-                'ismap',
-                'itemprop',
-                'keytype',
-                'kind',
-                'label',
-                'lang',
-                'language',
-                'loading',
-                // 'list',
-                'loop',
-                'low',
-                'manifest',
-                'max',
-                'maxlength',
-                'minlength',
-                'media',
-                'method',
-                'min',
-                'multiple',
-                'muted',
-                'name',
-                'novalidate',
-                // 'open',
-                'optimum',
-                'pattern',
-                'ping',
-                'placeholder',
-                'poster',
-                'preload',
-                'radiogroup',
-                'readonly',
-                'referrerpolicy',
-                'rel',
-                'required',
-                'reversed',
-                'rows',
-                'rowspan',
-                'sandbox',
-                'scope',
-                'scoped',
-                'shape',
-                'size',
-                'sizes',
-                'slot',
-                'span',
-                'spellcheck',
-                'src',
-                'srcdoc',
-                'srclang',
-                'srcset',
-                'start',
-                'step',
-                'style',
-                'summary',
-                'tabindex',
-                'target',
-                // 'tag',
-                'title',
-                'translate',
-                // 'type',
-                'usemap',
-                'value',
-                'width',
-                'wrap'
-              ].forEach(name => Object.defineProperty(Elem.prototype, name, {
-                enumerable: false,
-                value: function attrValue() {
-                  return this.attr(name, ...arguments);
-                }
-              }));
-              [
-                'click',
-              ].forEach(name => Object.defineProperty(Elem.prototype, name, {
-                enumerable: false,
-                value: function exec() {
-                  this.elem[name](...arguments);
-                  return this;
-                }
-              }));
-              [
-                'submit',
-              ].forEach(name => Object.defineProperty(Elem.prototype, name, {
-                enumerable: false,
-                value: function emit() {
-                  this.emit(name, ...arguments);
-                  return this;
-                }
-              }));
-            }
+              },},
+              panel: { value: function (parent) {
+                return this.parent(parent || $('list')).class('col abs').append(
+                  this.elemBar = $('div').class('row top abs btnbar').append(
+                    $('span').class('aco'),
+                    $('button').class('abtn close').on('click', e => this.elem.remove()),
+                  ),
+                  this.elemMain = $('main').class('aco oa'),
+                );
+                // return this.parent($('list')).class('col abs').append(
+                //   this.elemBar = $('div').class('row top abs btnbar').append(
+                //     $('span').class('aco'),
+                //     $('button').class('abtn close').on('click', e => this.elem.remove()),
+                //   ),
+                //   this.elemMain = $('main').class('aco oa'),
+                // );
+              },},
+            });
+    [
+      'parentElement',
+      'nextSibling',
+      'previousSibling',
+      'nextElementSibling',
+      'previousElementSibling',
+    ].forEach(name => Object.defineProperty(Elem.prototype, name, {
+      enumerable: false,
+      get() {
+        return this.elem[name] ? this.elem[name].is : null;
+      },
+    }));
+    [
+      'default',
+      'autoplay'
+    ].forEach(name => Object.defineProperty(Elem.prototype, name, {
+      enumerable: false,
+      value: function attr() {
+        return this.attr(name, '');
+      }
+    }));
+    Object.defineProperties(Elem.prototype, {
+      query:{value(selector, fn){ fn($(this.elem.querySelector(selector))); return this;}},
+      querySelector:{value(){return $(this.elem.querySelector(...arguments))}},
+      querySelectorAll:{value(){return Array.from(this.elem.querySelectorAll(...arguments)).map($)}},
+    });
+    [
+      'focus',
+      'select',
+    ].forEach(name => Object.defineProperty(Elem.prototype, name, {
+      enumerable: false,
+      value: function fn() {
+        // console.log(name, typeof this.elem[name]);
+        this.elem[name](...arguments);
+        // if (typeof this.elem[name] === 'function'){
+        //   this.elem[name](...arguments);
+        // }
+        return this;
+      }
+    }));
+    [
+      'draggable'
+    ].forEach(name => Object.defineProperty(Elem.prototype, name, {
+      enumerable: false,
+      value: function attrTrue() {
+        return this.attr(name, true);
+      }
+    }));
+    [
+      'checked',
+      'disabled',
+      'hasChildren',
+      'selected'
+    ].forEach(name => Object.defineProperty(Elem.prototype, name, {
+      enumerable: false,
+      value: function attrIfTrue(value) {
+        return this.attr(name, value ? '' : null)
+      }
+    }));
+    [
+      'accept',
+      'accesskey',
+      'action',
+      'align',
+      'allow',
+      'alt',
+      'async',
+      'autocapitalize',
+      'autocomplete',
+      'autofocus',
+      'background',
+      'bgcolor',
+      'border',
+      'buffered',
+      'capture',
+      'challenge',
+      'charset',
+      'cite',
+      // 'class',
+      // 'code',
+      'codebase',
+      'color',
+      'cols',
+      'colspan',
+      'content',
+      'contenteditable',
+      // 'contextmenu',
+      'controls',
+      'coords',
+      'crossorigin',
+      'csp',
+      'data',
+      'datetime',
+      'decoding',
+      'defer',
+      'dir',
+      'dirname',
+      // 'displayvalue',
+      'download',
+      'enctype',
+      'enterkeyhint',
+      'for',
+      'form',
+      'formaction',
+      'formenctype',
+      'formmethod',
+      'formnovalidate',
+      'formtarget',
+      'headers',
+      'height',
+      'hidden',
+      'high',
+      'href',
+      'hreflang',
+      'hotkey',
+      'icon',
+      // 'id',
+      'importance',
+      'integrity',
+      'intrinsicsize',
+      'inputmode',
+      'ismap',
+      'itemprop',
+      'keytype',
+      'kind',
+      'label',
+      'lang',
+      'language',
+      'loading',
+      // 'list',
+      'loop',
+      'low',
+      'manifest',
+      'max',
+      'maxlength',
+      'minlength',
+      'media',
+      'method',
+      'min',
+      'multiple',
+      'muted',
+      'name',
+      'novalidate',
+      // 'open',
+      'optimum',
+      'pattern',
+      'ping',
+      'placeholder',
+      'poster',
+      'preload',
+      'radiogroup',
+      'readonly',
+      'referrerpolicy',
+      'rel',
+      'required',
+      'reversed',
+      'rows',
+      'rowspan',
+      'sandbox',
+      'scope',
+      'scoped',
+      'shape',
+      'size',
+      'sizes',
+      'slot',
+      'span',
+      'spellcheck',
+      'src',
+      'srcdoc',
+      'srclang',
+      'srcset',
+      'start',
+      'step',
+      'style',
+      'summary',
+      'tabindex',
+      'target',
+      // 'tag',
+      'title',
+      'translate',
+      // 'type',
+      'usemap',
+      'value',
+      'width',
+      'wrap'
+    ].forEach(name => Object.defineProperty(Elem.prototype, name, {
+      enumerable: false,
+      value: function attrValue() {
+        return this.attr(name, ...arguments);
+      }
+    }));
+    [
+      'click',
+    ].forEach(name => Object.defineProperty(Elem.prototype, name, {
+      enumerable: false,
+      value: function exec() {
+        this.elem[name](...arguments);
+        return this;
+      }
+    }));
+    [
+      'submit',
+    ].forEach(name => Object.defineProperty(Elem.prototype, name, {
+      enumerable: false,
+      value: function emit() {
+        this.emit(name, ...arguments);
+        return this;
+      }
+    }));
+  }
 
   function Om() {
     const om = this;
@@ -9588,29 +9604,41 @@
     },
     treeview(menu){
       function menuItem(key, obj){
+        const elem = $('summary')
+        .append(
+          $('span').text(key).on('click', e => {
+            var selectEl = document.querySelector('.col.tv [select]');
+            if (selectEl) {
+              selectEl.removeAttribute('select');
+            }
+            // console.log(selectEl);
+            // $('.col.tv>div').querySelectorAll('div').forEach(el => el.attr('select', null));
+            elem.attr('select', '');
+            if (typeof obj === 'function') {
+              obj();
+            } else if (obj && obj.metaData && obj.metaData.l) {
+              e.preventDefault();
+              const url = obj.metaData.l.url;
+              const entries = Object.entries(obj.metaData.l);
+              entries.shift();
+              const search = '?'+entries.map(e => e.join('=')).join('&').replace(/ /g,'+');
+              console.log(search);
+              document.location.hash = `#?l=${aim.urlToId(url + search)}`;
+            } else {
+              // e.preventDefault();
+              e.stopPropagation();
+            }
+          })
+        );
         // console.log(key,obj)
-        return $('details').open(1).append(
-          $('summary').append(
-            $('span').text(key).on('click', e => {
-              $('.col.tv>div').querySelectorAll('div').forEach(el => el.attr('select', null));
-              e.target.setAttribute('select', '');
-              if (typeof obj === 'function') {
-                obj();
-              } else if (obj && obj.metaData && obj.metaData.l) {
-                e.preventDefault();
-                const url = obj.metaData.l.url;
-                const entries = Object.entries(obj.metaData.l);
-                entries.shift();
-                const search = '?'+entries.map(e => e.join('=')).join('&').replace(/ /g,'+');
-                console.log(search);
-                document.location.hash = `#?l=${aim.urlToId(url + search)}`;
-              } else {
-                // e.preventDefault();
-                e.stopPropagation();
-              }
-            })
-          )
-        ).append(
+        return $('details')
+        .open(localStorage.getItem('treeview-'+key))
+        .on('toggle', e => {
+          // console.log(key, e.target.open);
+          localStorage.setItem('treeview-' + key, e.target.open ? 1 : '');
+        })
+        .append(
+          elem,
           Object.entries(obj||{}).filter(e => e[0]!=='metaData').map(e => menuItem(...e))
         )
       }
