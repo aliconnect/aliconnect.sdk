@@ -5593,10 +5593,10 @@
       pathname = pathname.replace(/\/blob\/main(.*?)\.md/, '$1');
       pathname = pathname.replace(/^\/(.*?)\/.*?\.(.*?)\//, '/@$1/$2/');
       console.log(pathname);
-      var fname = paths.map(path => path+pathname).find(fname => fs.existsSync(fname) && fs.statSync(fname).isFile()) || paths.map(path => path+pathname+'index.html').find(fs.existsSync);
+      var fname = config.paths.map(path => path+pathname).find(fname => fs.existsSync(fname) && fs.statSync(fname).isFile()) || config.paths.map(path => path+pathname+'index.html').find(fs.existsSync);
 
 
-      if (!fname && paths.map(path => path+pathname+'.md').find(fs.existsSync)) {
+      if (!fname && config.paths.map(path => path+pathname+'.md').find(fs.existsSync)) {
         return fs.readFile(module.path+'/../../public/md.html', (err, data) => {
           data = String(data)
           .replace(/\@\d+\.\d+\.\d+/g, '')
