@@ -5,15 +5,268 @@
   var config = {};
   const currentScript = document.currentScript;
   const scriptPath = currentScript.src.replace(/\/js\/.*/, '');
+  const searchParams = new URLSearchParams(document.location.search);
+  const url = new URL(document.location);
+  if (url.searchParams.get('aliconnect_token')){
+    sessionStorage.setItem('aliconnect_token', url.searchParams.get('aliconnect_token'));
+    url.searchParams.delete('aliconnect_token');
+    window.history.replaceState('page', '', url.href);
+  }
 
   Number.prototype.pad = function(size) {
     var s = String(this);
     while (s.length < (size || 2)) {s = "0" + s;}
     return s;
   }
+  function getItem(name, value) {
+    if (value !== undefined) {
+      localStorage.setItem(name, value);
+    }
+    return localStorage.getItem(name);
+  }
+  function search(s) {
+    document.location.hash = '?$search=';
+    document.location.hash = '?$search='+s;
+    return false;
+  }
 
   const libraries = {
     async page() {
+      $(document.documentElement).class(getItem('isApp') || 'page') ;
+      $(document.documentElement).attr('dark', localStorage.getItem('dark'));
+      $(document.body).append(
+        $('nav').append($('article').append(
+          $('button').class('abtn menu').on('click', e => $(document.documentElement).class(getItem('isApp', getItem('isApp') !== 'app' ? 'app' : 'page' ))),
+          $('form').class('search row aco')
+          .on('submit', e => {
+            e.preventDefault();
+            search(e.target.search.value);
+          })
+          .on('keyup', e => e.code === 'Enter' ? search(e.target.value) : null)
+          .append(
+            $('input').name('search').autocomplete('off').placeholder('zoeken').value(searchParams.get('$search')),
+            $('button').class('abtn icn search fr').title('Zoeken').on('click', e => search(e.target.previousElementSibling.value)),
+          ),
+
+          $('span').class('pagemenu'),
+          $('button').class('abtn dark').on('click', e => $(document.documentElement).attr('dark', getItem('dark', getItem('dark')^1))),
+          $('button').class('abtn shop'),
+          $('button').class('abtn account').append(
+            $('span').append(
+              $('span').class('company'),
+              $('span').class('user'),
+            ),
+            $('div').append(
+              $('button').text('aanmelden').on('click', signIn),
+              $('button').text('afmelden').on('click', signOut),
+              $('button').text('gegevens').on('click', e => {
+                dmsClient.api('/me').select('*').get().then(row => {
+                  row.schemaName = 'Contact';
+                  pageviewrow(row);
+                });
+              }),
+            )
+          ),
+        )),
+        $('header').append($('article')),
+        $('main').append($('article').append(
+          $('div').class('col tv left noselect np')
+          .css('min-width', $().storage('tree.width') || '200px')
+          .on('click', e => {
+            // this.asideLeft.elem.style.left = null;
+          })
+          .append(
+            $('nav').class('btnbar np').append(
+              $('button').class('abtn r popout').on('click', e => {
+                var url = document.location.origin;
+                // var url = 'about:blank';
+                const rect = this.elem.getBoundingClientRect();
+                console.log(this.win);
+                if (this.win) {
+                  console.log(this.win);
+                  return this.win.focus();
+                }
+                const win = this.win = window.open(url, null, `top=${window.screenTop},left=${window.screenLeft+document.body.clientWidth-rect.width},width=${rect.width},height=${rect.height}`);
+                window.addEventListener('beforeunload', e => win.close());
+                const doc = this.win.document;
+                doc.open();
+                doc.write(pageHtml);
+                doc.close();
+                const aim = $;
+                win.onload = function (e) {
+                  const $ = this.$;
+                  const document = win.document;
+                  $(document.documentElement).class('app');
+                  $(document.body).class('col aim om bg').id('body').append(
+                    // $('section').class('row aco main').id('section_main').append(
+                    $('section').tree().class('aco').style('max-width:auto;'),
+                    // ),
+                    $('footer').statusbar(),
+                  );
+                  (async function () {
+                    await $().translate();
+                    await $().getApi(document.location.origin+'/api/');
+                    await $().login();
+                    if (aim().menuChildren) {
+                      $().tree(...aim().menuChildren);
+                    }
+                    // await $(`/Contact(${aimClient.sub})`).details().then(item => $().tree($.user = item));
+                    // console.log(aim.user.data);
+                    $().tree(aim.user.data);
+                  })()
+                }
+              }),
+              $('button').class('abtn pin').on('click', e => {
+                $(document.body).attr('tv', $(document.body).attr('tv') ? null : 0);
+              }),
+              // $('button', 'abtn icn close'),
+            ),
+            $('div').class('oa list'),
+          ),
+          // .contextmenu(this.menu)
+          $('div').seperator(),
+          $('aside').class('left'),
+          $('section').class('pv doc-content').css('max-width', $().storage('view.width') || '700px'),
+          $('div').class('lv'),
+          $('div').class('dv'),
+          $('aside').class('right'),
+          $('div').class('prompt'),
+        )),
+        $('footer').class('page').append(
+          $('article'),
+        ),
+        $('footer').class('statusbar').append(
+          $('span').class('pos'),
+          $('span').class('main aco'),
+          $('span').class('is_checked'),
+          $('span').class('clipboard'),
+          $('span').class('source'),
+          $('span').class('target'),
+          $('span').class('http'),
+          $('span').class('ws'),
+          $('span').class('aliconnector'),
+          $('progress'),
+        ),
+      ).on('scroll', e => sessionStorage.setItem('scrollY', window.scrollY));
+      const aimConfig = {
+        client_id: aim.config.client_id,
+        scope: 'openid profile name email',
+        // storage: sessionStorage,
+      };
+      const aimClient = aim.aimClient = new aim.PublicClientApplication(aimConfig);
+
+
+
+      const config = await aimClient.getConfig();
+      Object.assign(aim.config, config);
+
+
+      // console.log('access_token', aimClient.store('access_token'), sessionStorage.getItem('access_token'));
+      // return;
+      const aimRequest = {
+        scopes: aimConfig.scope.split(' '),
+      };
+      const dmsConfig = aim.dmsConfig = {
+        // client_id: aimConfig.client_id,
+        servers: [{url: aim.dmsUrl}],
+      };
+      // let dmsClient;
+
+      const authProvider = new aimClient.AuthProvider(aimClient, {
+        // account: authResult.account,
+        scopes: aimRequest.scopes,
+      });
+      const dmsClient = aim.dmsClient = aim.Client.initWithMiddleware({authProvider}, aim.dmsConfig);
+
+      function signOut() {
+        // aimClient.storage.removeItem('aimAccount');
+        aimClient.logout().catch(console.error).then(e => document.location.reload());
+      }
+      async function signIn(){
+        const authResult = await aimClient.loginPopup(aimRequest);
+        // const authProvider = new aimClient.AuthProvider(aimClient, {
+        //   // account: authResult.account,
+        //   scopes: aimRequest.scopes,
+        // });
+
+        const user = await dmsClient
+        .api('/me')
+        // .select('id,displayName,mail,userPrincipalName,mailboxSettings')
+        .select('id,name,accountname')
+        .get();
+        console.log(user);
+        aimClient.store('aimUser', JSON.stringify(user));
+        $('.account span.user').text(user.name || user.accountname);
+        // sessionStorage.setItem('aimUser', JSON.stringify(user));
+      }
+      if (aimClient.store('aimUser')) {
+        const user = JSON.parse(aimClient.store('aimUser'));
+        // const authProvider = new aimClient.AuthProvider(aimClient, {
+        //   // account: authResult.account,
+        //   scopes: aimRequest.scopes,
+        // });
+        // dmsClient = aim.Client.initWithMiddleware({authProvider}, dmsConfig);
+        $('.account span.user').text(user.name || user.accountname);
+      }
+
+      // console.log(999, dmsClient);
+      // dmsClient = aim.Client.initWithMiddleware({authProvider}, dmsConfig);
+
+      window.addEventListener('blur', e => aim.send({path:'/connect', method:'blur'}));
+      window.addEventListener('focus', e => aim.send({path:'/connect', method:'focus'}));
+
+      // aim.webSocketClient.send({path: '/test'});
+
+
+      //
+      // // return signIn();
+      // // const user = JSON.parse(aimClient.store('aimUser'));
+      //
+      // const user = await dmsClient
+      // .api('/me')
+      // // .select('id,displayName,mail,userPrincipalName,mailboxSettings')
+      // .select('id,name,accountname,scope_accepted,scope_granted')
+      // .get();
+      // console.log(user);
+
+
+
+      const docs = [
+        // ['/page/menu.md', 'button.menu'],
+        // ['/page/top.md', '.pagemenu'],
+        // ['/page/footer.md', 'body>footer>article'],
+        ['/nav-left.md', 'button.menu'],
+        ['/nav-top.md', '.pagemenu'],
+        ['/footer.md', 'body>footer>article'],
+      ];
+      for ([filename, selector] of docs) {
+        // await aim.fetch(filename).then(res => console.log(res));
+        await aim.fetch(filename).then(res => res.status !== 200 ? null : res.text().then(body => {
+          $(selector).html(aim.markdown().render(body));
+        }));
+      }
+      aim.om = new Om();
+      aim.om.treeview(aim.config.navleft);
+      // if (searchParams.get('search')) {
+      //   search(searchParams.get('search'));
+      // } else
+      if (!searchParams.get('id')) {
+        const data = document.querySelector('data') ? JSON.parse(atob(document.querySelector('data').getAttribute('md'))) : {
+          md: await aim.fetch(document.location.pathname === '/' ? '/Home.md' : document.location.pathname+'.md').then(res => {
+            // console.log(res)
+            return res.text()
+          }),
+        };
+        let body = data.md;
+        // console.log(data, body)
+        $('.pv').text('')
+        // .attr('contenteditable','')
+        .html(aim.markdown().render(body));
+        $('aside.right').index('.pv');
+        window.scroll(0,sessionStorage.getItem('scrollY'));
+      }
+    },
+    async page1() {
       const searchParams = new URLSearchParams(document.location.search);
       const client_id = aim.config.client_id;
       const aimConfig = {
@@ -263,7 +516,7 @@
         $('footer').class('page').append(
           $('article'),
         ),
-        $('footer').class('statusBar').append(
+        $('footer').class('statusbar').append(
           $('span').class('ws'),
           $('span').class('aliconnector'),
           $('span').class('http'),
@@ -296,7 +549,7 @@
       // } else
       if (!searchParams.get('id')) {
         const data = document.querySelector('data') ? JSON.parse(atob(document.querySelector('data').getAttribute('md'))) : {
-          md: await fetch(document.location.pathname === '/' ? '/Home.md' : document.location.pathname+'.md').then(res => {
+          md: await aim.fetch(document.location.pathname === '/' ? '/Home.md' : document.location.pathname+'.md').then(res => {
             // console.log(res)
             return res.text()
           }),
@@ -477,7 +730,7 @@
         }
         function signDocument(name) {
           return new Promise((success, fail) => {
-            fetch(docBasePath + name + '.md').then(res => res.text().then(body => {
+            aim.fetch(docBasePath + name + '.md').then(res => res.text().then(body => {
               body = replaceFields(body,data);
               formElem.text('').html(aim.markdown().render(body)).append(
                 $('div').append(
@@ -730,9 +983,9 @@
     async import(){
 
       // const configYaml = await fetch('../config/import.yaml').then(res => res.text());
-      const config = await fetch('https://aliconnect.nl/yaml.php', {
+      const config = await aim.fetch('https://aliconnect.nl/yaml.php', {
         method: 'POST',
-        body: await fetch('import.yaml').then(res => res.text()),
+        body: await aim.fetch('import.yaml').then(res => res.text()),
       }).then(res => res.json());
       console.log(1, config);
       // return;
@@ -803,7 +1056,7 @@
                       if (1) {
                         tab.cols.filter(col => col.value).forEach(col => row[col.name] = col.value);
                         // infoElem.text(row.host, row.schema, row.keyname);
-                        var res = await fetch('import.php', {
+                        var res = await aim.fetch('import.php', {
                           method: 'POST',
                           body: JSON.stringify(row),
                         }).then(res => res.text());
@@ -833,9 +1086,9 @@
     },
     async _import0(){
       // const configYaml = await fetch('../config/import.yaml').then(res => res.text());
-      const config = await fetch('https://aliconnect.nl/yaml.php', {
+      const config = await aim.fetch('https://aliconnect.nl/yaml.php', {
         method: 'POST',
-        body: await fetch('import.yaml').then(res => res.text()),
+        body: await aim.fetch('import.yaml').then(res => res.text()),
       }).then(res => res.json());
       console.log(1, config);
       // return;
@@ -850,7 +1103,7 @@
           e.preventDefault();
           e.stopPropagation();
           const files = data.files;
-          const product = await fetch('../product.json').then( response => response.json() );
+          const product = await aim.fetch('../product.json').then( response => response.json() );
           console.log(files, product);
           Array.from(files).forEach(file => {
             config.import.filter(fileConfig => fileConfig.filename === file.name).forEach(fileConfig => {
@@ -953,7 +1206,7 @@
                   };
                 }
                 console.log(product);
-                await fetch("/import.php?data=product", {
+                await aim.fetch("/import.php?data=product", {
                   method: 'POST', // *GET, POST, PUT, DELETE, etc.
                   mode: 'cors', // no-cors, *cors, same-origin
                   cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
@@ -986,7 +1239,7 @@
   aim.orderChangeCell = function(col, row, isInput){
     if (isInput) {
       return $('input').text(col.title || col.name).on('change', e=>{
-        aim.api('/abis/data').input({
+        aim.api('/abis/data').body({
           request_type: 'order',
           id: row.id,
           name: col.name,
@@ -997,7 +1250,7 @@
       })
     }
     return $('button').text(col.title || col.name).on('click', e=>{
-      aim.api('/abis/data').input({
+      aim.api('/abis/data').body({
         request_type: 'order',
         id: row.id,
         name: col.name,
@@ -1139,26 +1392,25 @@
       .filter(col => col.header === i)
       .filter(col => row[col.name])
       .map(col => displayvalue(row,col))
-      .join(', ')
+      .join(', ').replace(/\r|\n/g,'')
     );
   }
   function list(selector, options={}, search){
-    console.log(selector, aim.config.components.schemas[selector]);
-    const args = Array.from(arguments);
-    const url = args.shift();
-    options.$select = aim.config.components.schemas[selector].cols.filter(col => col.header || col.filter).map(col => col.name).join(',')
-    // options.$search = '';
-    document.location.hash = `#?l=${aim.urlToId($().url('https://aliconnect.nl/api/'+selector).query(options).toString())}`;
-    // if (search) document.location.hash = `#?$search=` + search;
+    options.$select = aim.config.components.schemas[selector].cols.filter(col => col.header || col.filter).map(col => col.name).join(',');
+    const url = new URL(selector, aim.dmsUrl);
+    url.search = new URLSearchParams(options);
+    document.location.hash = `#?l=${aim.urlToId(url.href)}`;
   }
   function listShow(body) {
-    console.log('listShow', body);
+    // console.log('listShow', body);
     $('.lv').text('');
     if (body.rows && body.rows.length) {
       const rows = body.rows;
       const context = new URL(body['@context']);
-      const requestType = context.searchParams.get('request_type');
-      const schema = config.components.schemas[requestType];
+      const requestType = context.pathname.split('/')[2];
+      // console.log(requestType, aim.config.components.schemas);
+      // const requestType = context.searchParams.get('request_type');
+      const schema = aim.config.components.schemas[requestType];
       const docUrl = new URL(document.location);
       const listUrl = new URL(aim.idToUrl(docUrl.searchParams.get('l')), document.location);
       const $select = listUrl.searchParams.get('$select') || '';
@@ -1176,16 +1428,15 @@
     let filter = {}
     function focus(elem){
       clearTimeout(selectTimeout);
-      if (this.focusElem) this.focusElem.attr('focus', null);
+      document.querySelectorAll('[focus]').forEach(e => e.removeAttribute('focus'));
       this.focusElem = elem;
-      this.focusElem.attr('focus', '');
-      this.focusElem.scrollIntoView();
-      // const {row} = elem;
+      elem.attr('focus', '');
+      elem.scrollIntoView();
     }
     function select(elem){
       if (elem) focus(elem);
       if (this.selectElem !== this.focusElem) {
-        if (this.selectElem) this.selectElem.attr('select', null);
+        document.querySelectorAll('[select]').forEach(e => e.removeAttribute('select'));
         const {row} = this.selectElem = this.focusElem;
         this.selectElem.attr('select', '');
         if (row.id) {
@@ -1201,7 +1452,7 @@
       rows: () => {
         return $('div').class('cards',options.type).append(
           rowsVisible.map(row => {
-            const schema = config.components.schemas[row.schemaName];
+            const schema = aim.config.components.schemas[row.schemaName];
             const app = schema.app || {};
             const div = $('div')
             .on('click', e => select(div));
@@ -1213,7 +1464,7 @@
             return div.append(
               $('header').append(
                 $('div').class('icon').append(
-                  row.images && row.images[0] ? $('img').src(row.images[0]) : $('span').text((rowHeaders(row,config.components.schemas[row.schemaName].cols).join('').match(/([A-Z]).*?([A-Z])/)||[]).slice(1,3).join('')),
+                  row.images && row.images[0] ? $('img').src(row.images[0]) : $('span').text((rowHeaders(row,aim.config.components.schemas[row.schemaName].cols).join('').match(/([A-Z]).*?([A-Z])/)||[]).slice(1,3).join('')),
                 ),
                 $('div').class('aco').append(
                   row.headers.map((s,i)=>$('h'+(i+1)).text(s)),
@@ -1262,7 +1513,7 @@
     const navList = rows.map(row => row.schemaName).unique().map(schemaName => aim.config.components.schemas[schemaName] && aim.config.components.schemas[schemaName].app ? aim.config.components.schemas[schemaName].app.navList : null).filter(Boolean);
     const schemaNames = rows.map(row => row.schemaName).unique();
     schemaNames.forEach(schemaName => {
-      const schema = config.components.schemas[schemaName];
+      const schema = aim.config.components.schemas[schemaName];
       const cols = schema.cols;
       cols.filter(col => col.filter).forEach(col => {
         filter[col.name] = Object.assign({
@@ -1273,7 +1524,7 @@
       })
     })
     rows.forEach(row => {
-      const schema = config.components.schemas[row.schemaName];
+      const schema = aim.config.components.schemas[row.schemaName];
       const cols = schema.cols;
       if (schema.app) {
         if (schema.app.precompile) {
@@ -1682,6 +1933,137 @@
       listview(data.rows);
     }))
   }
+  function pageviewrow(row, editmode = false){
+    aim.pageTag = row.schemaName + row.id;
+    // console.log(ref,body.schemaName,body);
+    const schema = aim.config.components.schemas[row.schemaName];
+    const app = schema.app || {};
+    // console.log(app.header);
+    const data = {};
+    const cfg = {};
+    var legend = row.schemaName;
+    const images = row.images||[];
+    const [icon] = images;
+    if (!schema) console.log(row);
+    Object.entries(schema.properties).forEach(([name, metaData]) => {
+      metaData = metaData || {};
+      legend = metaData.legend = metaData.legend || legend;
+      metaData['@id'] = row['@id'];
+      // console.log(legend,name)
+      cfg[legend] = cfg[legend] || {};
+      cfg[legend][name] = {metaData};
+      data[legend] = data[legend] || {};
+      data[legend][name] = row[name];
+    });
+    const cols = aim.config.components.schemas[row.schemaName].cols;
+    const headers = rowHeaders(row, cols);
+    // console.log(headers.join('').match(/([A-Z]).*?([A-Z])/).slice(1,3));
+    const initials = (headers.join('').match(/([A-Z]).*?([A-Z])/)||[]).slice(1,3).join('');
+    // console.log(headers.map((s,i)=>[s,i]));
+    // console.log(111, data, body, cfg);
+
+    // return;
+    $('.pv')
+    .text('')
+    .append(
+      $('nav').append(
+        editmode ? [
+          $('span'),
+          $('button').class('icn-del'),
+          $('button').class('icn-close').on('click', e => pageviewrow(row)),
+        ] : [
+          app.nav ? app.nav(row) : null,
+          $('span'),
+          $('button').class('icn-edit').on('click', e => pageviewrow(row, true)),
+          $('button').class('icn-popout'),
+          $('button').class('icn-close').on('click', e => $('.pv').text('')),
+        ],
+        // $('button').text('select').on('click', e => {
+        //   sessionStorage.setItem('clientId', body.id);
+        //   document.location.href = '/';
+        // })
+      ),
+      $('header').append(
+        $('div').class('icon').append(
+          icon ? $('img').src(icon) : $('span').text(initials),
+        ),
+        $('div').class('aco').append(
+          headers.map((s,i)=>$('h'+(i+1)).text(s)),
+          app.header ? app.header(row) : null,
+        ),
+      ),
+      $('form').buildForm(data, cfg, editmode),
+      // (
+      //
+      // $('div').append(
+      //   Object.entries(schema.properties)
+      //   .filter(([name, property]) => aim.readOnly === false || data[name])
+      //   .map(([name, property]) => $('div').class('attr').append(
+      //     $('label').text(property.title || name),
+      //     $(aim.readOnly === false ? 'input' : 'span').text(data[name]).value(data[name] || ''),
+      //   ))
+      // )
+    )
+    // console.log(1, data);
+    // return;
+    // // sessionStorage.setItem('lv-data', JSON.stringify(data));
+    // const cols = [
+    //   { name: 'productTitle', title: 'Titel'},
+    //   { name: 'supplier', title: 'Leverancier', filter: true},
+    //   { name: 'brand', title: 'brand', filter: true},
+    //   // { name: 'productGroup', title: 'productGroup'},
+    //   // { name: 'description', title: 'description'},
+    //   { name: 'ordercode', title: 'ordercode'},
+    //   { name: 'salesPrice', title: 'salesPrice'},
+    //   { name: 'catalogPrice', title: 'catalogPrice'},
+    //   { name: 'orderQuantity', title: 'Bestellen', type: 'number'},
+    // ];
+    // const args = [
+    //   {name: 'Korrel', regexp: /P\d+/ },
+    //   // {name: 'diameter', values: [ '150mm', '50mm' ] },
+    //   // {name: 'type', values: [ 'abralon' ] },
+    //   // {name: 'verpakking', values: [ 'tube' ] },
+    //   // {name: 'Afmeting', regexp: /(\d+\s*?x\s*?\d+\s*?x\s*?\d+|\d+\s*?x\s*?\d+|\d+)(mm|cm|m|mtr)/ },
+    //   {name: 'Afmeting', regexp: /(\d+(mm|cm|m|mtr)?\s*?x\s*?\d+\s*?x\s*?\d+|\d+\s*?x\s*?\d+|\d+)(mm|cm|m|mtr)/ },
+    // ];
+    // var match;
+    // data.rows.forEach(row => {
+    //   if (row.description) {
+    //
+    //     for (let arg of args) {
+    //       if (match = row.productTitle.match(arg.regexp)) {
+    //         // console.log(match);
+    //         arg.col = arg.col || cols.push({
+    //           name: arg.name, filter: true,
+    //         })
+    //         row[arg.name] = match[0];
+    //         // row.productTitle = row.productTitle.replace(arg.regexp, '');
+    //       }
+    //       // for (let value of arg.values) {
+    //       //   const regexp = new RegExp(`${value}`);
+    //       //   if (row.description.match(regexp)) {
+    //       //     row.description = row.description.replace(regexp, '');
+    //       //     arg.col = arg.col || cols.push({
+    //       //       name: arg.name, filter: true,
+    //       //     })
+    //       //     row[arg.name] = value;
+    //       //   }
+    //       // }
+    //     }
+    //     // if (match = row.description.match(/\d+x\d+mm/)) {
+    //     //   console.log(match);
+    //     //   args.afm = args.afm || cols.push({
+    //     //     name: 'Afmeting', filter: true,
+    //     //   })
+    //     //   row.Afmeting = match[0];
+    //     //   row.description = row.description.replace(match[0], '');
+    //     // }
+    //
+    //   }
+    // });
+    // $('.pv').text('');
+    // listview(cols, data.rows);
+  }
   function pageview(ref, editmode = false){
     inputId = 0;
     // aim.isEdit = true;
@@ -1693,137 +2075,7 @@
     // console.log(aim.idfilter);
     client.api(ref)
     // .filter(aim.idfilter||'')
-    .get().then(row => {
-      aim.pageTag = row.schemaName+row.id;
-      // console.log(ref,body.schemaName,body);
-      const schema = config.components.schemas[row.schemaName];
-      const app = schema.app || {};
-      // console.log(app.header);
-      const data = {};
-      const cfg = {};
-      var legend = row.schemaName;
-      const images = row.images||[];
-      const [icon] = images;
-      if (!schema) console.log(row);
-      Object.entries(schema.properties).forEach(([name, metaData]) => {
-        metaData = metaData || {};
-        legend = metaData.legend = metaData.legend || legend;
-        metaData['@id'] = row['@id'];
-        // console.log(legend,name)
-        cfg[legend] = cfg[legend] || {};
-        cfg[legend][name] = {metaData};
-        data[legend] = data[legend] || {};
-        data[legend][name] = row[name];
-      });
-      const cols = config.components.schemas[row.schemaName].cols;
-      const headers = rowHeaders(row, cols);
-      // console.log(headers.join('').match(/([A-Z]).*?([A-Z])/).slice(1,3));
-      const initials = (headers.join('').match(/([A-Z]).*?([A-Z])/)||[]).slice(1,3).join('');
-      // console.log(headers.map((s,i)=>[s,i]));
-      // console.log(111, data, body, cfg);
-
-      // return;
-      $('.pv')
-      .text('')
-      .append(
-        $('nav').append(
-          editmode ? [
-            $('span'),
-            $('button').class('icn-del'),
-            $('button').class('icn-close').on('click', e => pageview(ref)),
-          ] : [
-            app.nav ? app.nav(row) : null,
-            $('span'),
-            $('button').class('icn-edit').on('click', e => pageview(ref, true)),
-            $('button').class('icn-popout'),
-            $('button').class('icn-close').on('click', e => $('.pv').text('')),
-          ],
-          // $('button').text('select').on('click', e => {
-          //   sessionStorage.setItem('clientId', body.id);
-          //   document.location.href = '/';
-          // })
-        ),
-        $('header').append(
-          $('div').class('icon').append(
-            icon ? $('img').src(icon) : $('span').text(initials),
-          ),
-          $('div').class('aco').append(
-            headers.map((s,i)=>$('h'+(i+1)).text(s)),
-            app.header ? app.header(row) : null,
-          ),
-        ),
-        $('form').buildForm(data, cfg, editmode),
-        // (
-        //
-        // $('div').append(
-        //   Object.entries(schema.properties)
-        //   .filter(([name, property]) => aim.readOnly === false || data[name])
-        //   .map(([name, property]) => $('div').class('attr').append(
-        //     $('label').text(property.title || name),
-        //     $(aim.readOnly === false ? 'input' : 'span').text(data[name]).value(data[name] || ''),
-        //   ))
-        // )
-      )
-      // console.log(1, data);
-      // return;
-      // // sessionStorage.setItem('lv-data', JSON.stringify(data));
-      // const cols = [
-      //   { name: 'productTitle', title: 'Titel'},
-      //   { name: 'supplier', title: 'Leverancier', filter: true},
-      //   { name: 'brand', title: 'brand', filter: true},
-      //   // { name: 'productGroup', title: 'productGroup'},
-      //   // { name: 'description', title: 'description'},
-      //   { name: 'ordercode', title: 'ordercode'},
-      //   { name: 'salesPrice', title: 'salesPrice'},
-      //   { name: 'catalogPrice', title: 'catalogPrice'},
-      //   { name: 'orderQuantity', title: 'Bestellen', type: 'number'},
-      // ];
-      // const args = [
-      //   {name: 'Korrel', regexp: /P\d+/ },
-      //   // {name: 'diameter', values: [ '150mm', '50mm' ] },
-      //   // {name: 'type', values: [ 'abralon' ] },
-      //   // {name: 'verpakking', values: [ 'tube' ] },
-      //   // {name: 'Afmeting', regexp: /(\d+\s*?x\s*?\d+\s*?x\s*?\d+|\d+\s*?x\s*?\d+|\d+)(mm|cm|m|mtr)/ },
-      //   {name: 'Afmeting', regexp: /(\d+(mm|cm|m|mtr)?\s*?x\s*?\d+\s*?x\s*?\d+|\d+\s*?x\s*?\d+|\d+)(mm|cm|m|mtr)/ },
-      // ];
-      // var match;
-      // data.rows.forEach(row => {
-      //   if (row.description) {
-      //
-      //     for (let arg of args) {
-      //       if (match = row.productTitle.match(arg.regexp)) {
-      //         // console.log(match);
-      //         arg.col = arg.col || cols.push({
-      //           name: arg.name, filter: true,
-      //         })
-      //         row[arg.name] = match[0];
-      //         // row.productTitle = row.productTitle.replace(arg.regexp, '');
-      //       }
-      //       // for (let value of arg.values) {
-      //       //   const regexp = new RegExp(`${value}`);
-      //       //   if (row.description.match(regexp)) {
-      //       //     row.description = row.description.replace(regexp, '');
-      //       //     arg.col = arg.col || cols.push({
-      //       //       name: arg.name, filter: true,
-      //       //     })
-      //       //     row[arg.name] = value;
-      //       //   }
-      //       // }
-      //     }
-      //     // if (match = row.description.match(/\d+x\d+mm/)) {
-      //     //   console.log(match);
-      //     //   args.afm = args.afm || cols.push({
-      //     //     name: 'Afmeting', filter: true,
-      //     //   })
-      //     //   row.Afmeting = match[0];
-      //     //   row.description = row.description.replace(match[0], '');
-      //     // }
-      //
-      //   }
-      // });
-      // $('.pv').text('');
-      // listview(cols, data.rows);
-    });
+    .get().then(row => pageviewrow(row, editmode));
   }
   function buildForm(data, config, editmode){
     // const metaData = cfg.metaData || { title: isNaN(key) ? key : Number(key)+1 };
@@ -1931,6 +2183,124 @@
     })(this, data, config);
     return this;
   };
+
+  function importScript(src) {
+    return new Promise((resolve, reject) => {
+      function loaded(e) {
+        e.target.loading = false;
+        for (let [key,value] of Object.entries(e.target)) {
+          if (typeof value === 'function') {
+            Elem.prototype[key] = value;
+          }
+        }
+        resolve();
+      }
+      for (let script of [...document.getElementsByTagName('SCRIPT')]) {
+        if (script.getAttribute('src') === src) {
+          return script.loading ? $(script).on('load', loaded) : resolve();
+        }
+      }
+      var el = $('script').src(src).parent(document.head).on('load', loaded);
+      el.elem.loading = true;
+    });
+  }
+  function prompt(selector, context) {
+    console.warn('PROMPT', selector, context);
+    if (selector instanceof Object) {
+      return Object.assign(prompts, selector);
+    } else if (context) {
+      return prompts[selector] = context;
+    }
+    const is = $('.prompt') || $('section').parent(document.body).class('prompt').append(
+      $('button').class('abtn abs close').attr('open', '').on('click', e => aim.prompt(''))
+    );
+    const currentSelector = is.attr('open');
+    const keys = Object.keys(prompts);
+    is.attr('open', selector ? selector : null);
+    if (prompts[selector]) {
+      const url = new URL(document.location);
+      url.searchParams.set('prompt', selector);
+      window.history.replaceState('page', '', url.href);
+      const prompt = prompts[selector];
+      context = prompts[selector];
+      const promptElem = promptElems[selector] = promptElems[selector] || (promptElems[selector] = $('div').parent(is).class('col', selector)).on('open', typeof context === 'function' ? context.bind(promptElems[selector]) : function () {
+        this.is.text('').append(
+          $('h1').ttext(selector),
+          $('form').class('col')
+          .properties(context.properties)
+          .btns(context.btns),
+        )
+      });
+      const index = keys.indexOf(selector);
+      Object.values(promptElems).forEach(elem => elem.attr('pos', ''));
+      var currentIndex = 0;
+      if (currentSelector) {
+        var currentIndex = keys.indexOf(currentSelector);
+        promptElems[currentSelector].attr('pos', currentIndex < index ? 'l' : 'r');
+      }
+      if (promptElem && promptElem.attr) {
+        promptElem.attr('pos', currentIndex > index ? 'l' : 'r');
+        clearTimeout(this.promptTimeout);
+        promptElem.emit('open');
+        this.promptTimeout = setTimeout(() => promptElem.attr('pos', 'm'),10);
+        return promptElem;
+      }
+    }
+    return this;
+  }
+  // function promptform(req, prompt, title = '', options = {}){
+  //   options.description = options.description || aim.his.translate.get('prompt-'+title+'-description') || '';
+  //   title = aim.his.translate.get('prompt-'+title+'-title') || title;
+  //   console.log([title, options.description]);
+  //   options.properties = options.properties || {};
+  //   // Object.entries(aim.sessionPost).forEach(([key,value])=>Object.assign(options.properties[key] = options.properties[key] || {type:'hidden'}, {value: value, checked: ''}));
+  //   aim.sessionPost = aim.sessionPost || {};
+  //   //console.log('aim.sessionPost', aim.sessionPost);
+  //   Object.entries(aim.sessionPost).forEach(([selector,value])=>Object.assign(selector = (options.properties[selector] = options.properties[selector] || {type:'hidden'}), {value: selector.value || value, checked: ''}));
+  //   return prompt.form = aim('form').parent(prompt.is.text('')).class('col aco').append(
+  //     aim('h1').ttext(title),
+  //     prompt.div = aim('div').md(options.description),
+  //   )
+  //   .properties(options.properties)
+  //   .append(options.append)
+  //   .btns(options.btns)
+  //   .on('submit', e => {
+  //     e.preventDefault();
+  //     req.query(document.location.search).post(e).then(body => {
+  //       console.log(body);
+  //       self.sessionStorage.setItem('post', JSON.stringify(aim.sessionPost = body));
+  //       // return;
+  //       // return console.log('aim.sessionPost', aim.sessionPost);
+  //       if (aim.sessionPost.id_token) {
+  //         localStorage.setItem('id_token', aim.sessionPost.id_token);
+  //         aim().send({ to: { nonce: aim.sessionPost.nonce }, id_token: aim.sessionPost.id_token });
+  //       }
+  //       if (aim.sessionPost.url) {
+  //         if (aim.messageHandler) {
+  //           console.log(aim.sessionPost.url);
+  //           aim.messageHandler.source.postMessage({url: aim.sessionPost.url}, aim.messageHandler.origin);
+  //           // self.close();
+  //           return;
+  //         }
+  //         document.location.href = aim.sessionPost.url;
+  //       }
+  //
+  //
+  //       if (aim.sessionPost.prompt) prompt = aim.prompt(aim.sessionPost.prompt);
+  //       if (aim.sessionPost.msg && prompt && prompt.div) {
+  //         prompt.div.text('').html(aim.sessionPost.msg);
+  //       }
+  //       if (aim.sessionPost.socket_id) {
+  //         return aim().send({to:{sid:aim.sessionPost.socket_id}, body:aim.sessionPost});
+  //       }
+  //     }).catch(err => {
+  //       console.error(err, prompt, prompt.div);
+  //       if (err.error && prompt && prompt.div) {
+  //         prompt.div.text('').html(err.error.message);
+  //       }
+  //     })
+  //   })
+  // }
 
   var inputId;
 
@@ -2274,6 +2644,60 @@
   };
   Elem.prototype = {
     buildForm,
+    promptForm(options){
+      options.description = options.description || aim.his.translate.get('prompt-'+options.title+'-description') || '';
+      options.title = aim.his.translate.get('prompt-'+options.title+'-title') || options.title;
+      console.log(options);
+      options.properties = options.properties || {};
+      // Object.entries(aim.sessionPost).forEach(([key,value])=>Object.assign(options.properties[key] = options.properties[key] || {type:'hidden'}, {value: value, checked: ''}));
+      aim.sessionPost = aim.sessionPost || {};
+      //console.log('aim.sessionPost', aim.sessionPost);
+      Object.entries(aim.sessionPost).forEach(([selector,value])=>Object.assign(selector = (options.properties[selector] = options.properties[selector] || {type:'hidden'}), {value: selector.value || value, checked: ''}));
+      return this.form = aim('form').parent(this.text('')).class('col aco').append(
+        aim('h1').ttext(options.title),
+        this.div = aim('div').md(options.description),
+      )
+      .properties(options.properties)
+      .append(options.append)
+      .btns(options.btns)
+      .on('submit', e => {
+        e.preventDefault();
+        aim.fetch(options.url).query(document.location.search).post(e).then(body => {
+          console.log(body);
+          self.sessionStorage.setItem('post', JSON.stringify(aim.sessionPost = body));
+          // return;
+          // return console.log('aim.sessionPost', aim.sessionPost);
+          if (aim.sessionPost.id_token) {
+            localStorage.setItem('id_token', aim.sessionPost.id_token);
+            aim().send({ to: { nonce: aim.sessionPost.nonce }, id_token: aim.sessionPost.id_token });
+          }
+          if (aim.sessionPost.url) {
+            if (aim.messageHandler) {
+              console.log(aim.sessionPost.url);
+              aim.messageHandler.source.postMessage({url: aim.sessionPost.url}, aim.messageHandler.origin);
+              // self.close();
+              return;
+            }
+            document.location.href = aim.sessionPost.url;
+          }
+
+
+          if (aim.sessionPost.prompt) prompt = aim.prompt(aim.sessionPost.prompt);
+          if (aim.sessionPost.msg && prompt && prompt.div) {
+            prompt.div.text('').html(aim.sessionPost.msg);
+          }
+          if (aim.sessionPost.socket_id) {
+            return aim().send({to:{sid:aim.sessionPost.socket_id}, body:aim.sessionPost});
+          }
+        }).catch(err => {
+          console.error(err, prompt, prompt.div);
+          if (err.error && prompt && prompt.div) {
+            prompt.div.text('').html(err.error.message);
+          }
+        })
+      })
+      return this;
+    },
     append(){
 			this.elem = this.elem || document.body;
       // const args = [].concat(...arguments);
@@ -2299,7 +2723,7 @@
         checked: 1,
       }]));
       properties.expire_time = {format: 'number', value: 3600};
-      const form = aim.promptform($().url(AUTHORIZATION_URL).query('socket_id', socket_id), this.elem, arguments.callee.name, {
+      const form = aim.promptform(aim.fetch(aim.oauthUrl).query('socket_id', socket_id), this.elem, arguments.callee.name, {
         properties: properties,
         btns: {
           deny: { name: 'accept', value:'deny', type:'button' },
@@ -2652,7 +3076,7 @@
     },
     printpdf(){
       console.log(this);
-      fetch("https://aliconnect.nl/api/abis/data?request_type=pdf", {
+      aim.fetch(aim.dmsUrl + "abis/data?request_type=pdf", {
         method: 'post',
         body: this.elem.innerHTML,
         // headers: new Headers({
@@ -3180,7 +3604,7 @@
         return this;
       }},
       editor: { value: function (lang) {
-        // const statusBar =
+        // const statusbar =
         // setTimeout(() => {
         //   console.log('EDITOR', this.parentElement);
         //   this.parentElement.insertBefore($('div').text('ja'), this.nextSibling)
@@ -4233,7 +4657,7 @@
           if (!elem.paths.includes(wikiPath)) {
             console.log(9, 'loadMenu', wikiPath, this.links);
             elem.paths.push(wikiPath);
-            await $().url(rawSrc(wikiPath+'_Sidebar.md')).accept('text/markdown').get().catch(console.error)
+            await aim.fetch(rawSrc(wikiPath+'_Sidebar.md')).accept('text/markdown').get().catch(console.error)
             .then(e => {
               this.doc.leftElem.md(e.target.responseText);
               Array.from(this.doc.leftElem.elem.getElementsByTagName('A')).forEach(elem => $(elem).href(hrefSrc(elem.getAttribute('href'), e.target.responseURL)));
@@ -4279,7 +4703,7 @@
         }
         this.src = src;
         this.scrollTop = this.scrollTop || new Map();
-        (this.url = $().url(src).accept('text/markdown').get()).then(async e => {
+        (this.url = aim.fetch(src).accept('text/markdown').get()).then(async e => {
           if (elem.pageElem && elem.pageElem.elem.parentElement) {
             elem.loadIndex = false;
             // console.log('elem.docElem', elem, elem.docElem && elem.docElem.elem.parentElement);
@@ -4322,7 +4746,7 @@
 
             // [...this.doc.docElem.elem.getElementsByTagName('code')].forEach(elem => {
             //   if (elem.hasAttribute('source')) {
-            //     $().url(hrefSrc(elem.getAttribute('source'), responseURL)).get()
+            //     aim.fetch(hrefSrc(elem.getAttribute('source'), responseURL)).get()
             //     .then(e => {
             //       var content = e.target.responseText.replace(/\r/g, '');
             //       if (elem.hasAttribute('id')) {
@@ -4461,7 +4885,7 @@
         renderCode: { value: function (responseURL) {
           Array.from(this.elem.getElementsByTagName('code')).forEach(elem => {
             if (elem.hasAttribute('source')) {
-              $().url(hrefSrc(elem.getAttribute('source'), responseURL)).get().then(e => {
+              aim.fetch(hrefSrc(elem.getAttribute('source'), responseURL)).get().then(e => {
                 var content = e.target.responseText.replace(/\r/g, '');
                 if (elem.hasAttribute('id')) {
                   var id = elem.getAttribute('id');
@@ -5073,7 +5497,7 @@
                       ['Country'].map(name => formElement[prefix + name].value).filter(Boolean).join('+'),
                     ].join(',');
                     // console.log(address, formElement);
-                    $().url('https://maps.googleapis.com/maps/api/geocode/json').query({
+                    aim.fetch('https://maps.googleapis.com/maps/api/geocode/json').query({
                       address: address,
                     }).get().then(e => {
                       let compnames = {
@@ -7064,7 +7488,7 @@
               },},
               text: { value: function (value) {
                 if (arguments.length) {
-                  this.elem.innerText = [].concat(...arguments).join(' ');
+                  this.elem.innerHTML = [].concat(...arguments).join(' ');
                   return this;
                 }
                 return this.elem.innerText;
@@ -9556,7 +9980,7 @@
         // $.his.items.sub = await $(`https://dms.aliconnect.nl/Contact(${aimAccount.sub})`).details();
 
         // console.log('a');
-        // await $().url('https://dms.aliconnect.nl/me').get();
+        // await aim.fetch('https://dms.aliconnect.nl/me').get();
         // console.log('a');
 
         const user = $.his.items.sub = await dmsClient.api('/me').get();
@@ -10139,151 +10563,6 @@
   // })()
 
 
-  function importScript(src) {
-    return new Promise((resolve, reject) => {
-      function loaded(e) {
-        e.target.loading = false;
-        for (let [key,value] of Object.entries(e.target)) {
-          if (typeof value === 'function') {
-            Elem.prototype[key] = value;
-          }
-        }
-        resolve();
-      }
-      for (let script of [...document.getElementsByTagName('SCRIPT')]) {
-        if (script.getAttribute('src') === src) {
-          return script.loading ? $(script).on('load', loaded) : resolve();
-        }
-      }
-      var el = $('script').src(src).parent(document.head).on('load', loaded);
-      el.elem.loading = true;
-    });
-  }
-  function prompt(selector, context) {
-    console.warn('PROMPT', selector, context);
-    if (selector instanceof Object) {
-      return Object.assign(prompts, selector);
-    } else if (context) {
-      return prompts[selector] = context;
-    }
-    const is = $('.prompt') || $('section').parent(document.body).class('prompt').append(
-      $('button').class('abtn abs close').attr('open', '').on('click', e => aim.prompt(''))
-    );
-    const currentSelector = is.attr('open');
-    const keys = Object.keys(prompts);
-    is.attr('open', selector ? selector : null);
-    if (prompts[selector]) {
-      const url = new URL(document.location);
-      url.searchParams.set('prompt', selector);
-      window.history.replaceState('page', '', url.href);
-      const prompt = prompts[selector];
-      context = prompts[selector];
-      const promptElem = promptElems[selector] = promptElems[selector] || $('div').parent(is).class('col', selector).on('open', typeof context === 'function' ? context : function () {
-        this.is.text('').append(
-          $('h1').ttext(selector),
-          $('form').class('col')
-          .properties(context.properties)
-          .btns(context.btns),
-        )
-      });
-      const index = keys.indexOf(selector);
-      Object.values(promptElems).forEach(elem => elem.attr('pos', ''));
-      var currentIndex = 0;
-      if (currentSelector) {
-        var currentIndex = keys.indexOf(currentSelector);
-        promptElems[currentSelector].attr('pos', currentIndex < index ? 'l' : 'r');
-      }
-      if (promptElem && promptElem.attr) {
-        promptElem.attr('pos', currentIndex > index ? 'l' : 'r');
-        clearTimeout(this.promptTimeout);
-        promptElem.emit('open');
-        this.promptTimeout = setTimeout(() => promptElem.attr('pos', 'm'),10);
-        return promptElem;
-      }
-    }
-    return this;
-  }
-  function promptform(url, prompt, title = '', options = {}){
-    options.description = options.description || aim.his.translate.get('prompt-'+title+'-description') || '';
-    title = aim.his.translate.get('prompt-'+title+'-title') || title;
-    console.log([title, options.description]);
-    options.properties = options.properties || {};
-    // Object.entries(aim.sessionPost).forEach(([key,value])=>Object.assign(options.properties[key] = options.properties[key] || {type:'hidden'}, {value: value, checked: ''}));
-    aim.sessionPost = aim.sessionPost || {};
-    //console.log('aim.sessionPost', aim.sessionPost);
-    Object.entries(aim.sessionPost).forEach(([selector,value])=>Object.assign(selector = (options.properties[selector] = options.properties[selector] || {type:'hidden'}), {value: selector.value || value, checked: ''}));
-    return prompt.form = aim('form').parent(prompt.is.text('')).class('col aco').append(
-      aim('h1').ttext(title),
-      prompt.div = aim('div').md(options.description),
-    )
-    .properties(options.properties)
-    .append(options.append)
-    .btns(options.btns)
-    .on('submit', e => url.query(document.location.search).post(e).then(e => {
-      console.log(e.body);
-
-      self.sessionStorage.setItem('post', JSON.stringify(aim.sessionPost = e.body));
-      // return;
-      // return console.log('aim.sessionPost', aim.sessionPost);
-      if (aim.sessionPost.id_token) {
-        localStorage.setItem('id_token', aim.sessionPost.id_token);
-        aim().send({ to: { nonce: aim.sessionPost.nonce }, id_token: aim.sessionPost.id_token });
-      }
-      if (aim.sessionPost.url) {
-        if (aim.messageHandler) {
-          console.log(aim.sessionPost.url);
-          aim.messageHandler.source.postMessage({url: aim.sessionPost.url}, aim.messageHandler.origin);
-          // self.close();
-          return;
-        }
-        document.location.href = aim.sessionPost.url;
-      }
-
-
-      if (aim.sessionPost.prompt) prompt = aim.prompt(aim.sessionPost.prompt);
-      if (aim.sessionPost.msg && prompt && prompt.div) {
-        prompt.div.text('').html(aim.sessionPost.msg);
-      }
-      if (aim.sessionPost.socket_id) {
-        return aim().send({to:{sid:aim.sessionPost.socket_id}, body:aim.sessionPost});
-      }
-      // return;
-      // // //console.log(e.target.responseText);
-      // if (!e.body) return;
-      // aim.sessionPost = e.body;
-      // aim.responseProperties = Object.fromEntries(Object.entries(aim.sessionPost).map(([key,value])=>[key,{format:'hidden',value:value}]));
-      //
-      // // //console.log('aim.sessionPost', aim.sessionPost);
-      // [...document.getElementsByClassName('AccountName')].forEach((element)=>{
-      //   element.innerText = aim.sessionPost.AccountName;
-      // });
-      // if (e.body.msg) {
-      //   e.target.formElement.messageElement.innerHTML = e.body.msg;
-      //   //console.log(e.target.formElement.messageElement);
-      // } else if (e.body.socket_id) {
-      //   //console.log('socket_id', e.body);
-      //   // return;
-      //   aim.WebsocketClient.request({
-      //     to: { sid: e.body.socket_id },
-      //     body: e.body,
-      //   });
-      //   self.close();
-      // } else if (e.body.url) {
-      //   // return //console.error(e.body.url);
-      //   // if ()
-      //
-      //   document.location.href = e.body.url;
-      // } else {
-      //   //console.log(e.body);
-      //   // document.location.href = '/api/oauth' + document.location.search;
-      // }
-    }).catch(err => {
-      console.error(err, prompt, prompt.div);
-      if (err.error && prompt && prompt.div) {
-        prompt.div.text('').html(err.error.message);
-      }
-    }))
-  }
 
   Object.assign(aim, {
     Clipboard,
@@ -10501,7 +10780,7 @@
       }
     },
     prompt,
-    promptform,
+    // promptform,
     // search,
     urlString: (s = '') => {
       return s.replace(/%2F/g, '/');
@@ -11419,7 +11698,7 @@
       })
 
       await (async function(){
-        const pdfBytes = await fetch('https://aliconnect.nl/api/Aim/Pdf', {
+        const pdfBytes = await aim.fetch(aim.dmsUrl + 'Aim/Pdf', {
           method: 'POST', // *GET, POST, PUT, DELETE, etc.
           // mode: 'cors', // no-cors, *cors, same-origin
           // cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
@@ -11472,7 +11751,7 @@
         firstPage.forEach((page) => pdfDoc.addPage(page));
 
 
-        const pdfBytes = await fetch(productie.href).then((res) => res.arrayBuffer());
+        const pdfBytes = await aim.fetch(productie.href).then((res) => res.arrayBuffer());
         const pdfLoad = await PDFDocument.load(pdfBytes);
         const pages = pdfLoad.getPages();
         for (let page of pages) {
@@ -11675,6 +11954,7 @@
     // })
     //console.log('web ready done')
   });
+
   // this.sw();
 
   [...currentScript.attributes].forEach(attribute => $.extend({config: minimist(['--'+attribute.name.replace(/^--/, ''), attribute.value])}));
@@ -11682,43 +11962,8 @@
 
   config = {};
   aim.searchParams = new URLSearchParams(document.location.search);
-  window.addEventListener('load', async function webLoad(e) {
-    // if (aim.config.client_id) {
-      config = await aim.api('/aliconnect/config').query({
-        path: 'https://aliconnect.nl/forms/config',
-        response_type: 'data',
-        hostname: document.location.hostname,
-        client_id: aim.config.client_id,
-      }).get().then(res => res.json());
-      // console.log(1, config, config.client);
-      // config = JSON.parse(config);
-      // console.log(JSON.parse(config));
-
-
-      if (config && config.components && config.components.schemas) {
-        Object.entries(config.components.schemas).forEach(([schemaName, schema]) => schema.cols = Object.entries(schema.properties||{}).map(([name,prop]) => Object.assign({name: name}, prop)));
-      }
-      // console.log(111, config, aim.config.client_id);
-      // return;
-    // }
-    Object.assign(aim.config, config);
-    aim.config.client_id = aim.config.client_id || aim.config.client.client_id;
-    // console.warn('START', aim.config)
-
-    var firstFolder = document.location.pathname.match(/(\w+)\//);
-    if (firstFolder && libraries[firstFolder[1]]) {
-      await libraries[firstFolder[1]]();
-    } else {
-      if (currentScript.attributes.libraries) {
-        for (lib of currentScript.attributes.libraries.value.split(',')) {
-          if (libraries[lib]) await libraries[lib]();
-        }
-      }
-    }
-    await $().emit('load');
-    await $().emit('ready');
-    let docsearchParams = new URLSearchParams();
-    function seturl(e){
+  let docsearchParams = new URLSearchParams();
+  function seturl(e){
       if (aim.href === document.location.href) return;
       aim.href = document.location.href;
       // e.stopPropagation();
@@ -11739,6 +11984,7 @@
       if (changed.l || changed.id || changed.$search) {
         // if (changed.l) {
         if (changed.l || changed.$search) {
+          // console.log(atob(docsearchParams.get('l')));
           const listUrl = new URL(aim.idToUrl(docsearchParams.get('l')));
           // console.log(8888, searchParams.get('l') !== curdocsearchParams.get('l'), searchParams.get('l'), curdocsearchParams.get('l'));
           [
@@ -11762,10 +12008,13 @@
             // }
           });
           // docsearchParams.set('l', aim.urlToId(listUrl));
+
+
           const hostname = new URL(listUrl).hostname;
           const client = aim.clients.get(hostname);
+          // console.log(12312, listUrl, aim.clients, client);
           if (client) {
-            console.log(listUrl.href);
+            // console.log(listUrl.href);
             client.api(listUrl.href).get().then(listShow);
           }
         }
@@ -11787,6 +12036,19 @@
         window.history.replaceState('','','?' + docsearchParams.toString());
       // }
     }
+  window.addEventListener('load', async function webLoad(e) {
+    var firstFolder = document.location.pathname.match(/(\w+)\//);
+    if (firstFolder && libraries[firstFolder[1]]) {
+      await libraries[firstFolder[1]]();
+    } else {
+      if (currentScript.attributes.libraries) {
+        for (lib of currentScript.attributes.libraries.value.split(',')) {
+          if (libraries[lib]) await libraries[lib]();
+        }
+      }
+    }
+    await $().emit('load');
+    await $().emit('ready');
     $(window).on('popstate', seturl)
     $(window).on('hashchange', seturl)
     await $(window).emit('popstate');

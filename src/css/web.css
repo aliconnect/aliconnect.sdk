@@ -533,7 +533,7 @@ main>.tv>div {
 body>*>article {
   display: flex;
   flex:1 0 0;
-  flex:1 0;
+  width: 0;
 }
 
 header h1 {
@@ -1557,7 +1557,7 @@ progress[color]::-webkit-progress-value {
 }
 
 
-footer.statusBar {
+footer.statusbar {
   display: flex;
   flex: 0 0 24px;
   line-height: 24px;
@@ -1567,10 +1567,10 @@ footer.statusBar {
   color: rgb(140,140,140);
   white-space: nowrap;
 }
-footer.statusBar span:not(:empty) {
+footer.statusbar span:not(:empty) {
   padding: 0 5px;
 }
-footer.statusBar progress {
+footer.statusbar progress {
   text-align: right;
   display: block;
   position: absolute;
@@ -1583,24 +1583,24 @@ footer.statusBar progress {
   /* box-shadow: inset 0px 11px 8px -10px var(--trans3), inset 0px -11px 8px -10px var(--trans3); */
   transition: all 500ms;
 }
-footer.statusBar progress:not([value]) {
+footer.statusbar progress:not([value]) {
   display: none;
 }
-footer.statusBar progress[context] {
+footer.statusbar progress[context] {
   -webkit-appearance: none;
   appearance: none;
   width:100%;
   height:100%;
 }
-footer.statusBar progress::-webkit-progress-bar {
+footer.statusbar progress::-webkit-progress-bar {
   background-color: transparent;
   background-color: red;
   /* box-shadow: inset 0 0 5px var(--trans3); */
 }
-footer.statusBar progress[value]::-webkit-progress-value {
+footer.statusbar progress[value]::-webkit-progress-value {
   /* transition: all 1s; */
 }
-footer.statusBar progress::-webkit-progress-value {
+footer.statusbar progress::-webkit-progress-value {
   background-color: transparent;
   background-color: green;
   /* background-image: linear-gradient(to right, transparent, var(--trans3)); */
@@ -1809,9 +1809,60 @@ pre code {
 
 table>tr:first-child{
   position:sticky;
-  top:36px;
+  top:0;
   font-size: 0.8em;
   font-weight: bold;
   background-color: var(--bg);
   z-index:1;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.2; }
+  100% { opacity: 1; }
+}
+.statusbar>span::before {
+  font-family: 'AliconnectIcon';
+  padding: 0 5px;
+  /* font-weight: bold; */
+}
+.statusbar>span::after {
+  /* font-size: 0.8em; */
+  content: attr(context);
+}
+.statusbar>.ws:before {
+  content: '\f172';
+}
+.statusbar>.ws[state='connecting']:before {
+  animation: pulse 1s infinite;
+  color: orange;
+}
+.statusbar>.ws[state='open']:before {
+  content: '\f173';
+  color: orange;
+}
+.statusbar>.ws[state='connected']:before {
+  content: '\f173';
+  color: yellow;
+}
+
+.statusbar>.ws[state='error']:before {
+  content: '\f172';
+  color: red;
+}
+.statusbar>.ws[state='authorized']:before {
+  content: '\f173';
+}
+.statusbar>.ws[state='unauthorized']:before {
+  content: '\f173';
+  color: red;
+}
+.statusbar>.ws[state='active']:before {
+  content: '\f173';
+  color: lightblue;
+}
+.statusbar>.ws[state='closed']:before {
+  animation: pulse 1s infinite;
+  content: '\f172';
+  color: red;
 }

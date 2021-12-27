@@ -25,7 +25,7 @@ sqlsrv_configure('ClientBufferMaxKBSize', 180240);
 use Aliconnect\Account;
 use Aliconnect\Mailer;
 use Aim\Jwt;
-// use Aliconnect\Item;
+use Aliconnect\Data\Server\Item;
 
 
 // function get_real_user_ip($default = NULL, $filter_options = 12582912) {
@@ -94,20 +94,27 @@ class Aim {
       'scope'=> 'guest.read',
     ];
     $this->access_token = request('access_token', $_GET);
-    if ($authorization = request('Authorization', $headers)) {
+
+    if ($authorization = get_item($headers, 'Authorization')) {
       $this->access_token = explode(' ', $authorization);
-      $this->access_token = request(1, $this->access_token, true);
+      $this->access_token = get_item($this->access_token, 1, true);
       // debug($this->access_token);
     }
     if ($this->access_token) {
+      // debug(1);
       $jwt = new jwt();
       $jwt->decode($this->access_token);
-      $payload = request('payload', $jwt);
-      $this->client_id = $payload['client_id'];
-      $this->get_client_config();
-      // $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$this->client_id.".secret.yaml") ? yaml_parse_file($fname) : []);
-      $jwt->validate(request('client_secret', $this->config['client']));
-      if (empty($jwt->valid) && 0) http_response(401);
+      $payload = get_item($jwt, 'payload');
+      // http_response(200, [1,$payload]);
+      if (get_item($payload, 'client_id')) {
+        $this->client_id = $payload['client_id'];
+        $this->get_client_config();
+        // $this->secret = array_replace_recursive($this->secret, is_file($fname = $_SERVER['DOCUMENT_ROOT']."/../config/".$this->client_id.".secret.yaml") ? yaml_parse_file($fname) : []);
+        $jwt->validate(get_item($this->config['client'], 'client_secret'));
+        if (empty($jwt->valid) && 0) http_response(401);
+        $this->access = $payload;
+      }
+      // http_response(200,[$payload]);
     } else {
       $this->get_client_config();
     }
@@ -146,13 +153,14 @@ class Aim {
     // aiminfo();
     // debug($this->path,basename($this->path),$this->method,$this->config);
     $basename = basename($this->path);
+    // http_response(200, getallheaders());
     if (isset($this->config['components']['schemas'][$basename])) {
       $schema = $this->config['components']['schemas'][$basename];
       if ($tablename = get_item($schema, 'tablename')) {
         // die('a');
         $dbname = get_item($schema,'dbname') ?: get_item($this->config,'dbname');
         $idname = get_item($schema,'idname') ?: 'id';
-        $this->filter = strtolower(request('$filter', $_GET) ?: request('filter', $_GET));
+        $this->filter = strtolower(get_item($_REQUEST, '$filter') ?: get_item($_REQUEST, 'filter'));
         if ($this->filter) {
           $operators = [
             " eq null "=>" IS NULL ",
@@ -178,7 +186,7 @@ class Aim {
           ];
           $this->filter = str_replace(array_keys($operators), array_values($operators), ' '.$this->filter.' ');
         }
-        if ($id = get_item($_GET, 'id')) {
+        if ($id = get_item($_REQUEST, 'id')) {
           $filter = $this->filter ? "AND $this->filter" : "";
           if ($this->method === 'post') {
             $value = $_POST['value'] === '' ? "NULL" : "'".str_replace("'","''",$_POST['value'])."'";
@@ -197,18 +205,18 @@ class Aim {
           $row->schemaName = $basename;
           http_response(200,$row);
         }
-        $this->select = request('$select', $_GET) ?: request('select', $_GET) ?: '*';
+        $this->select = get_item($_REQUEST, '$select') ?: get_item($_REQUEST, 'select') ?: '*';
 
         // debug($_GET);
 
-        $this->search = strtolower(request('$search', $_GET) ?: request('search', $_GET));
+        $this->search = strtolower(get_item($_REQUEST, '$search') ?: get_item($_REQUEST, 'search'));
         if (isset($_GET['$search']) && empty($_GET['$search'])) {
           http_response(200,[
             '@context'=>aim()->context,
             'rows'=>[],
           ]);
         };
-        $this->order = urldecode(strtolower(request('$order', $_GET) ?: request('order', $_GET)));
+        $this->order = urldecode(strtolower(get_item($_REQUEST, '$order') ?: get_item($_REQUEST, 'order')));
         $this->order = $this->order ? "ORDER BY $this->order" : "";
         $this->top = request('$top', $_GET) ?: request('top', $_GET) ?: 10000;
         $this->top = $this->top ? "TOP $this->top" : "";
@@ -232,6 +240,7 @@ class Aim {
         $q = str_replace('schemaName,','',$q);
         $q = str_replace('id,','',$q);
         // debug($q);
+        // http_response(200, [$q]);
         // die($q);
         if($res = aim()->sql_query($q)) {
           while ($row = sqlsrv_fetch_object($res)) {
@@ -300,6 +309,23 @@ class Aim {
     $scopes = explode(' ', $this->access['scope']);
     // debug($this->request_path,$this->base_path);
     // $api_path = preg_replace('/^\/api/', '', $this->request_path);
+
+
+    $path_arr = explode('/',$this->path);
+    $schemaname = get_item($path_arr,2);
+    // $id = get_item($path_arr,3);
+    // $id_path = get_item($path_arr,4);
+    if ($schemas = $this->config['components']['schemas']) {
+      if ($schema = get_item($schemas, $schemaname)) {
+        // new Item($schemaname)->get();
+        $item = new Item($schemaname);
+        $item->get(['id'=>get_item($path_arr,3)]);
+        http_response(200,$item);
+        // http_response(200,new Item($schemaname)->get(['id'=>$id]));
+      }
+      // http_response(200,[$schema]);
+    }
+
     if ($oas = $this->oas) {
       if ($paths = $oas['paths']) {
         // debug(1, $paths);
@@ -1205,6 +1231,9 @@ class Aim {
     return $this->sql_query($this->sql_exec_string($name, $args));
   }
   public function sql_query($query, $args = []) {
+    if (is_array($query)) {
+      $query = implode(PHP_EOL,$query);
+    }
     if ($args) {
       if (!is_array($args)) {
         $args = func_get_args();
@@ -1231,7 +1260,10 @@ class Aim {
       error_log($query."\n", 3, "\aliconnect\logs\sql.log");
 
       // http_response(501, $query); // DEBUG:
-      return sqlsrv_query ( $this->conn, $query , null, ['Scrollable' => 'buffered']);
+      if ($res = sqlsrv_query ( $this->conn, $query , null, ['Scrollable' => 'buffered'])) {
+        return $res;
+      }
+      http_response(400, $query);
     }
     catch (Exception $e) {
       echo 'Caught exception: ',  $e->getMessage(), "\n";
@@ -1791,7 +1823,6 @@ function http_response_post($arr) {
   http_response(200, array_replace($_POST, $arr));
 }
 function http_response_query($query, $args = []) {
-  if (is_array($query)) $query = implode(PHP_EOL,$query);
   http_response(200, aim()->sql_resultset($query, $args));
 }
 
@@ -1885,3 +1916,7 @@ function aim_uid($id){
   return implode('-', $id);
 }
 new Aim();
+
+// $uri = parse_url($_SERVER['REQUEST_URI']);
+// $uripath = $uri['path'];
+// $path = preg_replace('/^\/api/', '', $uripath);

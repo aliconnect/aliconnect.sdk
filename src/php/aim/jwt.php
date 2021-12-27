@@ -62,8 +62,8 @@ class Jwt {
   public function get($payload = null, $secret = null) {
     $this->set($payload);
     $this->secret($secret);
-    $this->payload['iat'] = $time = time();
-    $this->payload['exp'] = $time + $this->expires_after;
+    // $this->payload['iat'] = $time = time();
+    // $this->payload['exp'] = $time + $this->expires_after;
     return $this->token = implode('.',[
   		$this->base64UrlHeader = json_base64_encode(json_encode(['typ'=>'JWT', 'alg'=>$this->alg])),
   		$this->base64UrlPayload = json_base64_encode(json_encode($this->payload)),

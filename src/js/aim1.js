@@ -3,11 +3,10 @@
 
   const self = this;
   function aim(selector, context){
-    if (typeof selector === 'function'){
-      return aim().on('load', e => selector());
-    }
+    // console.error(1);
     if (aim.Elem && selector instanceof aim.Elem) return selector;
     if (!(this instanceof aim)) return new aim(...arguments);
+    // if (!selector) return new aim('aim');
     if (selector){
       if (self.Item && selector instanceof self.Item){
         return selector;
@@ -21,9 +20,16 @@
         if (context) aim(selector).extend(context);
         return selector;
       } else if (self.document) {
+        // selector = TAGNAMES.includes(selector) ? document.createElement(selector) : (document.getElementById(selector) || selector)
+        // const element = document.getElementById(selector);
+        // selector = element ? element : (aim.Elem && aim.Elem.tagnames.includes(selector) ? document.createElement(selector) : selector);
+        // console.log(7, selector);
         selector = aim.Elem ? new aim.Elem(...arguments) : selector;
+        // console.log(6, selector);
       }
     }
+    // console.warn(5, selector, self.Element, selector instanceof self.Element);
+    // console.log(selector, selector instanceof self.Element, aim.Elem);
     if (self.Element && selector instanceof self.Element) {
       if (aim.his.map.has(selector.id)) {
         return aim.his.map.get(selector.id);
@@ -38,6 +44,7 @@
       }
       return selector;
     }
+    // if(!(this instanceof aim)) return new aim(...arguments);
     if (typeof selector === 'string'){
       if (selector.match(/\w+\(\d+\)/)){
         return Item.get(selector);
@@ -61,11 +68,10 @@
   const $ = aim;
   const libUrl = 'https://aliconnect.nl/npm/@aliconnect/lib@0.0.0/dist';
   // const Elem = self.elem ? self.elem.Elem : null;
-  aim.dmsOrigin = 'https://aliconnect.nl';
-  aim.dmsUrl = 'https://dms.aliconnect.nl/api/v1/';
-  aim.sdkUrl = 'https://aliconnect.nl/sdk/src/';
-  aim.oauthUrl = 'https://login.aliconnect.nl/oauth';
-  aim.tokenUrl = 'https://login.aliconnect.nl/token';
+  const dmsOrigin = 'https://aliconnect.nl';
+  const dmsUrl = 'https://dms.aliconnect.nl';
+  const AUTHORIZATION_URL = 'https://login.aliconnect.nl/oauth';
+  const AUTHORIZATION_TOKEN_URL = 'https://login.aliconnect.nl/token';
   let aimClient;
   //use b in some fashion.
   // attach properties to the exports object to define
@@ -217,7 +223,9 @@
     "Samoa Standard Time": "Pacific/Apia",
     "Line Islands Standard Time": "Pacific/Kiritimati"
   };
-  const pageHtml = `<!DOCTYPE HTML><html><head><link href="${aim.sdkUrl}css/web_debug.css" rel="stylesheet"/><script src="${aim.sdkUrl}js/aim_debug.js" libraries="web"></script></head><body></body></html>`;
+
+  const pageHtml = `<!DOCTYPE HTML><html><head><link href="${dmsUrl}/css/web_debug.css" rel="stylesheet"/><script src="${dmsUrl}/js/aim_debug.js" libraries="web"></script></head><body></body></html>`;
+
   function messagePopup(msg){
     // self.messageElem = self.messageElem || $('div').class('message error');
     // console.log(msg);
@@ -235,6 +243,7 @@
       $('div').append($('button').text('Gezien').on('click', e => elem.remove())),
     )
   }
+
   minimist = function (args, opts){
     if (!opts) opts = {};
     var flags = { bools: {}, strings: {}, unknownFn: null };
@@ -490,11 +499,11 @@
     }
   }
   function uploadState(e){
-    aim.url(aim.oauthUrl)
+    aim.url(AUTHORIZATION_URL)
     .query({
       response_type: 'socket_id',
       state: e.type,
-      socket_id: aim.webSocketClient.socket_id,
+      socket_id: aim.WebsocketClient.socket_id,
       id_token: aim.his.cookie.id_token,
       // origin: document.location.href,
     })
@@ -511,7 +520,7 @@
   }
   function authSubmit(e) {
     aim()
-    .url(aim.oauthUrl + document.location.search)
+    .url(AUTHORIZATION_URL + document.location.search)
     .post(e.target)
     .then(checkResponse);
     return false;
@@ -582,11 +591,11 @@
         }
       }
       ////console.log(config);
-      // aim.fetch(aim.config.aim).post('/').input(config).res(e => {
+      // aim().url(aim.config.aim).post('/').input(config).res(e => {
       // 	////console.log(e.target.responseText);
       // 	// aim.SampleWindow('/om/?prompt=config_edit');
       // }).send();
-      new aim.HttpRequest(aim.config.aim, 'post', '/').query({append: true}).body(config).send().onload = e => {
+      new aim.HttpRequest(aim.config.aim, 'post', '/').query({append: true}).input(config).send().onload = e => {
         ////console.log(e.target.responseText);
       };
     }
@@ -666,6 +675,14 @@
   function getUid(id){
     return id.replace(/^\d+-/,'')
   }
+  // function defineProperties(obj, props) {
+  //   for (let [name, prop] of Object.entries(props)) {
+  //     Object.defineProperty(Date.prototype, name, typeof prop === 'function' ? {
+  //       value: prop,
+  //     } : prop );
+  //   }
+  // }
+
   Object.defineProperties(Array.prototype, {
     unique: { value: function () {
       return this.filter((e,i,arr) => arr.indexOf(e) === i)
@@ -866,6 +883,519 @@
       return JSON.parse(atob(a[1] || a[0]));
     },
   };
+  function Request(url, base){
+    if (!(this instanceof Request)) return new Request(...arguments);
+    this.url = this.url || new URL(url || '', base || (self.document ? self.document.location.href : dmsOrigin));
+    this.url.headers = this.url.headers || {};
+    this.input.data = null;
+  }
+  Request.prototype = {
+    get(){
+      this.method='get';
+      return this.http();
+    },
+    input(param, formData = false){
+      if (!param) {
+        return this.input.data;
+      }
+      //console.log(param.constructor.name);
+      switch(param.constructor.name) {
+        case 'CustomEvent':
+        case 'SubmitEvent': {
+          param.preventDefault();
+          this.input.data = new FormData(param.target);
+          if (param.submitter){
+            this.input.data.append(param.submitter.name, param.submitter.value);
+          };
+          break;
+        }
+        case 'HTMLFormElement': {
+          this.input.data = new FormData(param);
+          break;
+        }
+        case 'Elem': {
+          this.input.data = new FormData(param.elem);
+          break;
+        }
+        case 'Object': {
+          if (formData) {
+            this.input.data = new FormData();
+            Object.entries(param).forEach(entry => this.input.data.append(...entry));
+          } else {
+            this.headers('Content-Type', 'application/json');
+            this.input.data = JSON.stringifyReplacer(param);
+          }
+          break;
+        }
+        case 'Array': {
+          if (formData) {
+            this.input.data = new FormData();
+            Object.entries(param).forEach(entry => this.input.data.append(...entry));
+          } else {
+            this.headers('Content-Type', 'application/json');
+            this.input.data = JSON.stringifyReplacer(param);
+          }
+          break;
+        }
+        default: {
+          this.input.data = param;
+          break;
+        }
+      }
+      return this;
+    },
+    post(param){
+      this.method = 'post';
+      if (param){
+        this.input(param, true);
+      }
+      return this.http();
+    },
+    patch(data){
+      this.method='post';
+      this.input(data);
+      return this.http();
+    },
+    top(){
+      return this.query('$top', ...arguments);
+    },
+    order(){
+      return this.query('$order', ...arguments);
+    },
+    select(){
+      return this.query('$select', ...arguments);
+    },
+    query(selector, context){
+      // this.url();
+      if (selector instanceof Object){
+        Object.entries(selector).forEach(entry => this.query(...entry));
+      } else if (arguments.length === 1){
+        const search = new URLSearchParams(selector);
+        search.forEach((value,key) => this.url.searchParams.set(key,value));
+        // this.url.search = selector;
+      } else {
+        this.url.searchParams.set(selector, context === undefined ? '' : context);
+      }
+      return this;
+    },
+    delete(){
+      this.method = 'delete';
+      return this.http();
+    },
+    accept(selector){
+      return this.headers('Accept', selector);
+    },
+    headers(selector, context){
+      if (typeof selector === 'object'){
+        Object.assign(this.url.headers, selector)
+      } else {
+        this.url.headers[selector] = context;
+      }
+      return this;
+    },
+  }
+  Object.defineProperties(Request.prototype, {
+    body: { value: function(){
+      this.returnBody = true;
+      return this;
+    }},
+    exec: { value: function(){
+      for ([key, value] of this.url.searchParams) {
+        // //console.log(key, value);
+        if (typeof aim[key] === 'function'){
+          // aim.his.replaceUrl(new aim().url().query(req.query).toString());
+          // console.error('EXEC', key, value);
+          return aim[key].apply(aim, value ? value.split(', ') : []) || true;
+        }
+      };
+      console.error('EXEC', this.url.pathname);
+      // return;
+      const getPathname = path => {
+        var [dummy, basePath, folder, sep, id] = path.match(/(.*?\/om|\/api|^)(\/.*?)(\/id\/|aim)(.*)/);
+        return [basePath, folder, sep, id];
+      };
+      var basePath, path, sep, id, newPath = [basePath, path, sep, id] = getPathname(this.url.pathname);
+      if (path && path !== '/') {
+        var [root, tag, propertyName, attr] = path.match(/.*?\/(\w+\(\d+\))\/([\w_]+?)\((\.*?)\)/)||[];
+        // //console.log(tag, aim.his.map.has(tag));
+        const item = aim.his.map.get(tag)||{};
+        if (item[propertyName]) {
+          return item[propertyName].apply(item, attr.split(','));
+        }
+        if (aim().paths) {
+          const paths = aim().paths;
+          // console.debug('this.paths2', [basePath, path, sep, id]);
+          let replaceLocation = false;
+          if (id) {
+            replaceLocation = true;
+            try {
+              [id] = atob(aim.id = id.replace(/(\/.*)/, '')).match(/\/\w+\(.+?\)/);
+              // console.error(aim(id));
+              // dms.api(id).get().then(e => aim('view').show(e.body));
+              aim(id).details().then(item => aim('view').show(item));
+            } catch (err){
+              return console.error('Illegal requestPath.id', id, paths);
+            }
+          }
+          const method = this.method || 'get';
+          const folderTag = path.replace(/\(.*?\)/g,'()');
+          let pathKey = Object.keys(paths).find(key => key.replace(/\(.*?\)/g,'()') === folderTag);
+          let apiPath = paths[pathKey];
+          if (apiPath && apiPath.get){
+            replaceLocation = true;
+            aim().list([], path);
+            if (this.url.searchParams.has('$search') && !this.url.searchParams.get('$search')){
+              console.error('NO SEARCH');
+              // return;
+            }
+            aimClient.api(path).query(this.url.searchParams.toString())
+            .get().then(async body => {
+              if (body){
+                const items = body.value || await body.children;
+                aim().list(items);
+              }
+            });
+          }
+          if (replaceLocation && typeof document !== 'undefined'){
+            if (document.location.protocol === 'file:'){
+              var currentPath = getPathname(document.location.hash.substr(1));
+              [basePath, path, sep, id] = currentPath.map((value,i) => newPath[i] || value);
+              var replacePath = ['#', path, sep, id];
+            } else {
+              var currentPath = getPathname(document.location.pathname);
+              var replacePath = currentPath.map((value,i) => newPath[i] || value);
+            }
+            const search = this.url.searchParams.toString();
+            var replacePath = replacePath.join('') + (search ? '?' + search : '');
+            // console.debug(
+            // 	currentPath.join(''),
+            // 	replacePath,
+            // );
+            aim.his.replaceUrl( replacePath);
+          }
+        }
+        if (this.paths_){
+          // console.debug(req.path, pathKey);
+          var args = [];
+          let pathKey = path.replace(/\((.+?)\)/g, '()');
+          pathKey = Object.keys(aim.paths).find(key => key.replace(/\(([^\)]+)\)/g,'()') === pathKey);
+          if (pathKey){
+            const def = aim.paths[pathKey][req.method.toLowerCase()] || aim.paths[pathKey][req.method.toUpperCase()];
+            console.error('pathKey', pathKey, def);
+            if (!def){
+              return console.error(req.method.toUpperCase(), req.toString(), 'Method not allowed');
+            }
+            if (req.search){
+              req.search.forEach((value, key) => req.path = req.path.replace(key, value));
+            }
+            var args = path.match(/\(([^\)]+)\)/g);
+            for (var i=0, arr = def.operationId.split(/\/|\./), name, obj; name = arr[i]; i++){
+              var objName = name.split('(').shift();
+              console.error('objName', objName, obj, self[objName]);
+              var parentObj = obj ? obj : (self[objName] ? self : ( aim.operations && aim.operations[objName] ? aim.operations : Item.items ));
+              // console.error('objName', objName, parentObj, obj);
+              console.error('parentObj', objName, parentObj);
+              var nextArgument = args ? args.shift() : null;
+              var param = nextArgument ? nextArgument.replace(/\(|\)/g, '').split(', ') : [];
+              if (typeof parentObj[objName] === 'function'){
+                obj = parentObj[objName](...param);
+              } else {
+                obj = parentObj[objName];
+              }
+            }
+            if (obj){
+              console.debug('obj', obj);
+              return obj;
+            }
+          }
+        }
+      }
+      return;
+      return this;
+    },},
+    filter: { value: function(){
+      return this.query('$filter', ...arguments);
+    },},
+    getPath: { value: function(path){
+      path = path || (this.url ? this.url.pathname : '');
+      // console.debug([path])
+      var [dummy, basePath, folder, sep, id] = path.match(/(.*?\/om|\/api|^)(\/.*?)(\/id\/|aim)(.*)/) || [];
+      return [basePath, folder, sep, id];
+    },},
+    authProvider: { value: function(authProvider){
+      this.getAccessToken = authProvider.getAccessToken;
+      return this;
+    },},
+    http: { value: function(){
+      return aim.promise('http', async (resolve,reject) => {
+        if (this.getAccessToken) {
+          const access_token = await this.getAccessToken();
+          // //console.log('access_token', access_token);
+          this.headers('Authorization', 'Bearer ' + access_token);
+        }
+        return typeof XMLHttpRequest !== 'undefined' ? this.web(resolve,reject) : this.node(resolve,reject)
+      });
+    },},
+    // body(callback){
+    //   this.promise.then(e => callback(e.body));
+    //   return this;
+    // },
+    item: { value: function(callback){
+      this.promise.then(e => callback(e.body));
+      return this;
+    },},
+    data: { value: function(callback){
+      this.promise.then(e => callback(JSON.parse(e.target.responseText)));
+      return this;
+    },},
+    setmethod: { value: function(method) {
+      this.method = method;
+      return this;
+    },},
+    node: { value: function(resolve,reject){
+      // this.resolve = resolve;
+      const input = this.input();
+      if (input){
+        this.headers('Content-Length',input.length);
+      }
+      const options = {
+        method: this.method,
+        hostname: this.url.hostname,
+        // path: req.pathname,//[req.basePath, req.path, req.searchParams.toString()].filter(Boolean).join(''),
+        path: this.url.pathname+'?'+this.url.searchParams.toString(),
+        headers: this.url.headers,
+        patch: input,
+      };
+      // console.debug(this.url.headers);
+      const url = this.url.toString();
+      // const handleTag = this.method + url;
+      const protocol = url.split(':').shift();
+      // const path = [req.params.basePath, req.params.path, req.params.search].filter(Boolean).join('');
+      // const HTTP = self[protocol] = self[protocol] || require(protocol);
+      const HTTP = require(protocol);
+      // console.debug('NODE SEND');
+      // let options = req.options;
+      // { method: req.method, hostname:req.hostname, path: req.pathname, headers:req.headers};
+      // console.debug('OPTIONS', req.options);
+      const xhr = HTTP.request(options, e => {
+        e.target = xhr;
+        e.target.request = this;
+        e.target.responseText = '';
+        e.on('data', function (data){
+          // console.debug('data', data);
+          e.target.responseText += data;
+        }).on('end', () => {
+          // console.debug('end', Object.keys(xhr));
+          e.status = e.statusCode;
+          e.statusText = e.statusMessage;
+          try {
+            // console.debug(e.headers['content-type'], e.data);
+            e.body = e.headers['content-type'].includes('application/json')
+            ? JSON.parse(e.target.responseText)
+            : e.target.responseText;
+            e.response = e.body = e.body; // deprecated
+          } catch(err){
+            console.debug('ERROR JSON', err, e.target.responseText.substr(0,1000));
+            return reject(e);
+            // throw e.target.responseText;
+          }
+          if (e.status===200) {
+            return resolve(e.body);
+          }
+          return reject({
+            error: {
+              code: e.status,
+              message: e.statusMessage,
+            }
+          });
+          // if (req.params.then){
+          // 	req.params.then.call(e.target, e);
+          // }
+        });
+      }).on('error', e => {
+        console.debug('ERROR');
+        reject(error);
+      });
+      if (input){
+        xhr.write(input);
+      }
+      xhr.startTime = new Date();
+      xhr.end();
+      return xhr;
+    },},
+    onerror: { value: function(e){
+      console.msg('HTTP ON ERROR', e)
+    },},
+    onload: { value: function(e){
+      ((e.body||{}).responses || [e]).forEach(res => res.body = aim().evalData(res.body));
+
+      if (this.statusElem){
+        this.statusElem.remove();
+      }
+      // if (aim.config.debug && e.target.status < 400 || isModule){
+      if (aim.config.debug && e.target.status < 400){
+        console.log(
+          // e.target.sender,
+          this.method.toUpperCase(),
+          this.url.toString(),
+          e.target.status,
+          e.target.statusText,
+          e.target.responseText.length, 'bytes',
+          new Date().valueOf() - e.target.startTime.valueOf(), 'ms',
+          // [e.target.responseText],
+          // e.body || this.responseText,
+        );
+      }
+    },},
+    onprogress: { value: function(e){
+      // console.debug('onprogressssssssssssssssssssss', e.type, e);
+      var msg = `%c${this.method} ${this.responseURL} ${this.status} (${this.statusText}) ${this.response.length} bytes ${new Date().valueOf() - this.startTime.valueOf()}ms`;
+      if (this.elStatus){
+        this.elStatus.innerText = decodeURIComponent(this.msg) + ' ' + e.loaded + 'Bytes';
+      }
+    },},
+    setParam: { value: function(name, value){
+      this.props = this.props || [];
+      this.props[name] = value;
+    },},
+    servers: { value: function(servers){
+      if (servers && servers.length){
+        url(servers[0].url);
+      }
+    },},
+    toString: { value: function(){
+      return this.url.toString();
+    },},
+    // url(url, base){
+    //   this.url = this.url || new URL(url || '', base || (self.document ? document.location.href : dmsOrigin));
+    //   this.url.headers = this.url.headers || {};
+    //   this.input.data = null;
+    // },
+    web: { value: function(resolve,reject){
+      // //console.log('AAAAA',resolve,reject,this);
+      // this.resolve = resolve;
+      const xhr = new XMLHttpRequest();
+      xhr.request = this;
+      const url = this.url.toString();
+      // console.log(url);
+      xhr.open(this.method, url);
+      // xhr.addEventListener('error', e => {
+      //   console.error(111, `${xhr.method} ${xhr.src} ${xhr.status} ERROR ${xhr.statusText}`); // responseText is the server
+      // });
+      // xhr.addEventListener('error', err => {
+      //   console.error(99991, err);
+      // });
+      xhr.addEventListener('load', e => {
+        if (xhr.elLoadlog){
+          xhr.elLoadlog.appendTag('span', '', new Date().toLocaleString() );
+        }
+        if (xhr.waitfolder){
+          self.collist.setAttribute('wait', Number(self.collist.getAttribute('wait')) - 1);
+        }
+        e.body = xhr.response;
+        // console.log(this.url.headers);
+        if (xhr.status >= 400) {
+          // console.error(`${xhr.method} ${xhr.src} ${xhr.status} (${xhr.statusText})`, e.body); // responseText is the server
+          // //console.log(xhr);
+          try {
+            const arr = e.body.match(/(.*?)([\[|\{].*)/s
+            );
+            if (!arr[2]) {
+              console.error(e.body);
+            }
+            const data = JSON.parse(arr[2]);
+            const error = data.error || data;
+            messagePopup({
+              code: error.code,
+              status: error.status,
+              message: error.message,
+              duration: error.duration,
+              trace: error.trace,
+              body: arr[1],
+              url: this.method.toUpperCase() + ' ' + decodeURIComponent(xhr.request.url.href),
+            });
+          } catch (err) {
+            console.error(555, err);
+            messagePopup({
+              status: xhr.status, statusText: xhr.statusText,
+              url: this.method.toUpperCase() + ' ' + decodeURIComponent(xhr.request.url.href),
+              body: e.body && e.body.error ? e.body.error.message : '',
+            })
+          }
+          // console.error(xhr.getResponseHeader('content-type'), e.body, e);
+          return reject(e);
+          // throw 'FOUTJE';
+          // reject('STATUS', xhr.status);
+        } else if (this.url.headers.Accept === 'application/json' || xhr.getResponseHeader('content-type').includes('application/json')) {
+          try {
+            // console.log(e.body.replace(/.*?(?=\[|\{)/s, ''));
+            // e.body = JSON.parse(e.body.replace(/.*?(?=\[|\{)/s, ''));
+            // console.log(e);
+            const arr = e.body.match(/(.*?)([\[|\{].*)/s
+            );
+            e.body = JSON.parse(arr[2]);
+            if (arr[1]) {
+              messagePopup({
+                code: error.code,
+                status: error.status,
+                message: error.message,
+                duration: error.duration,
+                trace: error.trace,
+                body: arr[1],
+                url: this.method.toUpperCase() + ' ' + decodeURIComponent(xhr.request.url.href),
+              });
+              // const error = data.error || data;
+
+            }
+          } catch (err) {
+            messagePopup({
+              status: xhr.status, statusText: xhr.statusText,
+              url: this.method.toUpperCase() + ' ' + decodeURIComponent(xhr.request.url.href),
+              body: xhr.response.substr(0,5000),
+            })
+            console.error('JSON error', xhr, xhr.response.substr(0,5000));
+          }
+        }
+        this.onload(e);
+        resolve(this.returnBody ? e.body : e);
+      });
+      if (aim.his.elem.statusbar) {
+        xhr.total = xhr.loaded = 0;
+        xhr.addEventListener('loadend', e => {
+          aim().progress(-xhr.loaded,-xhr.total);
+        });
+        if (xhr.upload) {
+          xhr.addEventListener('progress', e => {
+            const loaded = e.loaded - xhr.loaded;
+            xhr.loaded = e.loaded;
+            if (!xhr.total){
+              aim().progress(0, xhr.total = e.total);
+            }
+            aim().progress(loaded)
+          });
+        }
+      }
+      // //console.log('this.url.headers', this.url.headers);
+      Object.entries(this.url.headers).forEach(entry => xhr.setRequestHeader(...entry));
+      xhr.startTime = new Date();
+      xhr.send(this.input.data);
+
+      // return xhr;
+      // aim().status('main', url);
+      // xhr.withCredentials = url.includes(document.location.origin);
+      // xhr.setCharacterEncoding("UTF-8");
+      // xhr.overrideMimeType('text/xml; charset=iso-8859-1');
+    },},
+  });
+  const clients = new Map();
+
+
+  // const aim = aim;
+  // self.aim = self.aim || aim;
+
+  // sessionStorage.clear();
+
+
   function replaceOutsideQuotes(codeString, callback, pre = '<span class=hl-string>', post = '</span>') {
     // const a = codeString.split(/((?<![\\])['"`])((?:.(?!(?<![\\])\1))*.?)\1/);
     const a = codeString.split(/(['"`])\1/);
@@ -1108,6 +1638,8 @@
       return false;
     },
   };
+
+
   aim.prototype = {
     accessToken(){
       return this.set('access_token', ...arguments);
@@ -1209,7 +1741,7 @@
           }
         }
         console.debug('COPY START', item);
-        aimClient.api(`/${schemaName}`).body(item).post().then(item => {
+        aimClient.api(`/${schemaName}`).input(item).post().then(item => {
           // console.debug('COPY DONE', e.target.responseText);
           item.details().then(async item => {
             console.debug('COPY START', item);
@@ -1407,7 +1939,7 @@
             aim('span').class('aco'),
             aim('button').class('abtn pdf').on('click', async e => {
               const html = '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>'+this.docElem.elem.innerHTML;
-              aim.fetch(aim.dmsUrl + '?request_type=pdf').post(html).then(e => {
+              aim().url(dmsUrl + '/?request_type=pdf').post(html).then(e => {
                 const elem = aim('div').parent(this.pageElem).class('col abs').append(
                   aim('div').class('row top btnbar').append(
                     aim('button').class('abtn close').on('click', e => elem.remove()),
@@ -1512,6 +2044,7 @@
       return data;
     },
   };
+
   Object.defineProperties(aim.prototype, {
     eventHandle: { value: null, },
     elements:{
@@ -1606,7 +2139,7 @@
       }
       self.history.replaceState('page', '', documentUrl.href);
 
-      // if (!aim.fetch(document.location.hash ? document.location.hash.substr(1) : document.location.href).exec()) {
+      // if (!aim().url(document.location.hash ? document.location.hash.substr(1) : document.location.href).exec()) {
       //   if (url.searchParams.get('p')) {
       //     return aim('list').load(url.searchParams.get('p'));
       //   }
@@ -1614,7 +2147,7 @@
       // if (url.searchParams.get('id')) {
       //   var refurl = new URL(atob(url.searchParams.get('id')));
       //   if (refurl.pathname.match(/^\/api\//)) {
-      //     aim.fetch(refurl.href).get().then(async e => {
+      //     aim().url(refurl.href).get().then(async e => {
       //       aim('view').show(e.body);
       //     });
       //   }
@@ -1698,7 +2231,7 @@
     },},
     login: {value: async function (){
       // const url = new URL(this.server.url, document.location);
-      var url = new URL(this.server ? this.server.url : '/api', aim.dmsOrigin);
+      var url = new URL(this.server ? this.server.url : '/api', dmsOrigin);
       if (this.authProvider().access && this.authProvider().access.iss) {
         url.hostname = this.authProvider().access.iss;
       }
@@ -2054,7 +2587,7 @@
                       to: { aud: aim.auth.access.aud },
                       path: path,
                       method: 'post',
-                      forward: aim.forward || aim.webSocketClient.socket_id,
+                      forward: aim.forward || aim.WebsocketClient.socket_id,
                     });
                   };//.bind({ path: '/' + tag + '/' + operationName  });
                 }
@@ -2164,7 +2697,7 @@
       aim().on({
         async load() {
           aim().server.url = aim().server.url || document.location.origin;
-          await aim.fetch(aim().server.url+'/api.json').get().then(e => aim().extend(e.body));
+          await aim().url(aim().server.url+'/api.json').get().then(e => aim().extend(e.body));
           await aim().login();
         }
       });
@@ -2181,16 +2714,18 @@
       return this.get(WebSocket, options ? Object.assign(options,{authProvider: options.authProvider || aim.client.authProvider}) : null);
     },},
   });
+
   function translate(lang) {
     lang = (lang || navigator.language || navigator.userLanguage).split(/-/)[0];
-    return aim.fetch(aim.dmsUrl + 'translate').query('lang', lang)
+    return req(dmsUrl + '/translate').query('lang', lang)
     .get().then(body => aim.his.translate = new Map(Object.entries(body)));
   }
+
   function Account(id_token) {
     console.warn(1, id_token);
     try {
       const id = this.idToken = JSON.parse(atob((this.id_token = id_token).split('.')[1]));
-      // aimClient.store('aimAccount', JSON.stringify(id));
+      aimClient.storage.setItem('aimAccount', JSON.stringify(id));
       // console.warn(2, id);
       this.sub = id.sub;
       this.name = id.name || id.email || id.sub;
@@ -2201,7 +2736,7 @@
     }
   };
   function clientAttr(options) {
-    return aim.fetch(aim.dmsUrl).query({
+    return aim().url(dmsUrl).query({
       request_type: 'client_attr',
       client_id: this.clientId,
       client_secret: this.clientSecret,
@@ -2246,7 +2781,7 @@
   function getAccessToken(options){
     return aim.promise('getAccessToken', resolve => {
       if (options){
-        aim.fetch(aim.tokenUrl).post(Object.assign({
+        aim().url(AUTHORIZATION_TOKEN_URL).post(Object.assign({
           grant_type: 'authorization_code',
           // code: options.code, // default, overide by params
           client_id: this.config.auth.client_id,
@@ -2280,9 +2815,9 @@
           state: state,
           prompt: 'consent',
           scope: options.scope || options.scopes.join(' ') || '',
-          // socket_id: aim.webSocketClient.socket_id,
+          // socket_id: aim.WebsocketClient.socket_id,
         };
-        const url = aim.fetch(this.config.auth.url).query(options).toString();
+        const url = aim().url(this.config.auth.url).query(options).toString();
         //console.log(url, this.config);
         if (document.location.protocol === 'file:'){
           options.socket_id = this.ws.socket_id;
@@ -2304,7 +2839,7 @@
           // als een nonce aanwezig is dan is het een inlog token.
           // controleer of token nog actief is, c.q. gebruiker is ingelogt
           if (access.nonce) {
-            aim.fetch(aim.oauthUrl).headers('Authorization', 'Bearer ' + this.access_token).post({
+            aim().url(AUTHORIZATION_URL).headers('Authorization', 'Bearer ' + this.access_token).post({
               request_type: 'access_token_verification',
               // access_token: aimClient.access_token,
             }).then(e => {
@@ -2334,7 +2869,7 @@
   }
   function loginPopup (options) {
     return aim.promise('LoginPopup', async (resolve, reject) => {
-      // console.log('options', options, this.config);
+      console.log('options', options, this.config);
       options = {
         // scope: 'name+email+phone_number',
         response_type: 'code',
@@ -2344,17 +2879,16 @@
         // state: state,
         prompt: 'consent',
         scope: options.scope || options.scopes.join(' ') || '',
-        // socket_id: aim.webSocketClient.socket_id,
+        // socket_id: aim.WebsocketClient.socket_id,
       };
-      const url = new URL(aim.oauthUrl);
-      url.search = new URLSearchParams(options);
+      const url = aim().url(AUTHORIZATION_URL).query(options).toString();
       const height = 600;
       const width = 400;
       let rect = document.body.getBoundingClientRect();
       let top = self.screenTop + (self.innerHeight - height) / 2;
       let left = self.screenLeft + (self.innerWidth - width) / 2;
       // const popup = self.open(url, 'loginPopup', `top=${top},left=${left},width=${width},height=${height},toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes`);
-      const popup = self.open(url.href, 'loginPopup');
+      const popup = self.open(url, 'loginPopup');
       const interval = setInterval(() => popup.postMessage({msg: 'loginPopup'}, 'https://login.aliconnect.nl'), 1000);
       self.removeEventListener('message', loginPopup.messageListener);
       loginPopup.messageListener = self.addEventListener('message', (event) => {
@@ -2366,20 +2900,16 @@
           const url = new URL(event.data.url, document.location);
           if (url.searchParams.has('token')) {
             const access_token = url.searchParams.get('token');
-            console.log(access_token);
+            console.log(this);
             this.store('access_token', access_token);
             const access = JSON.parse(atob((access_token).split('.')[1]));
-            console.log(1, access);
-            aim.fetch(aim.tokenUrl)
-            .query('client_id', this.config.client_id)
+            aim().url('https://login.aliconnect.nl/token')
+            .query('client_id', this.config.auth.client_id)
             .query('response_type', 'id_token')
             .headers('Authorization', 'Bearer ' + access_token)
-            .headers('Accept', 'application/json')
-            .get()
-            .then(body => {
-              console.log(2, body);
-              this.store('id_token', body.id_token);
-              this.account = new Account(body.id_token);
+            .get().then(e => {
+              this.store('id_token', e.body.id_token);
+              this.account = new Account(e.body.id_token);
               popup.postMessage({msg: 'close'}, 'https://login.aliconnect.nl');
               resolve({account: this.account});
             })
@@ -2414,6 +2944,12 @@
     });
     // this.authProvider.login(this.config.auth);
   }
+  // function setConfig(config){
+  //   aim.extend(this.config, config);
+  //   if (this.config.components && this.config.components.schemas) {
+  //     aim().schemas(this.config.components.schemas);
+  //   }
+  // }
   function logout(options){
     return new Promise((resolve, reject) => {
       // //console.log(sessionStorage('aim.id_token'));
@@ -2423,7 +2959,7 @@
         this.storage.removeItem('aim.access_token');
         return resolve();
         // aim.clipboard.reload();
-        aim.clipboard.reload(aim.fetch(aim.oauthUrl).query({
+        aim.clipboard.reload(aim().url(AUTHORIZATION_URL).query({
           prompt: 'logout',
           client_id: aim().client_id || '',
           redirect_uri: document.location.origin + document.location.pathname,
@@ -2441,7 +2977,7 @@
     return console.error('refreshToken');
     if (this.refreshTokenHandle) return;
     //console.log(aim.Client);
-    this.refreshTokenHandle = new aim.Client(aim.tokenUrl).post({
+    this.refreshTokenHandle = new aim.Client('https://login.aliconnect.nl/token/').post({
       grant_type: 'refresh_token',
       refresh_token: aim.his.cookie.refresh_token,
       client_id: aim().client_id,
@@ -2508,7 +3044,7 @@
     // aim.auth.id.iss = 'login.aliconnect.nl/api/oauth';
     // alert(1);
     arguments.callee.timeout = setTimeout(arguments.callee, aim.config.trackSessionTime);
-    arguments.callee.httpRequest = aim.fetch(authorizationUrl)
+    arguments.callee.httpRequest = aim().url(authorizationUrl)
     .query('request_type', 'check_access_token')
     .headers('Authorization', 'Bearer ' + auth.id_token)
     .get()
@@ -2542,227 +3078,111 @@
   function acquireTokenPopup(aimRequest) {
     return this.loginPopup(aimRequest);
   }
-
-  // async function acquireToken() {
-  //   const access_token = this.store('access_token');
-  //   await aim.fetch('https://login.aliconnect.nl/token')
-  //   .query({
-  //     client_id: aimClient.config.client_id,
-  //     response_type: 'access_token',
-  //     refresh_token: access_token,
-  //   })
-  //   .get()
-  //   .then(async body => {
-  //     console.log(body);
-  //     aimClient.store('access_token', body.access_token);
-  //     var time = new Date().getTime();
-  //     var [type,payload,signature] = access_token.split('.');
-  //     payload = JSON.parse(atob(payload));
-  //     timediff = payload.iat * 1000 - time;
-  //   });
-  // }
-
-  function aimfetch(url, setoptions = {}) {
-    options = {method: 'get'};
-    // console.log(url, self.document.location);
-    url = new URL(url, self.document ? self.document.location : aim.dmsUrl);
-
-
-    // const response = fetch(url, {
-    //   method: 'GET', // *GET, POST, PUT, DELETE, etc.
-    //   mode: 'cors', // no-cors, *cors, same-origin
-    //   cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-    //   credentials: 'same-origin', // include, *same-origin, omit
-    //   headers: {
-    //     'Content-Type': 'application/json'
-    //     // 'Content-Type': 'application/x-www-form-urlencoded',
-    //   },
-    //   redirect: 'follow', // manual, *follow, error
-    //   referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-    //   // body: JSON.stringify(data) // body data type must match "Content-Type" header
-    // }).then(console.warn);
-
-    // console.log(url.href);
+  function req(url, options = {}) {
+    options.method = 'get';
+    url = new URL(url, self.document ? self.document.location : 'https://dms1.aliconnect.nl');
     let xhr;
 
     function Request(){}
     Request.prototype = {
-      value: () => new Promise((resolve,fail) => {
-        if (!xhr.responseText) return resolve();
-        try {
-          const data = JSON.parse(xhr.responseText);
-          if (data.value) return resolve(data.value);
-          resolve(data);
-        } catch (err) {
-          console.error(xhr.responseText);
-          fail(err);
-        }
-      }),
       json: () => new Promise((resolve,fail) => {
-        // console.log(xhr.responseText);
         if (!xhr.responseText) return resolve();
         try {
           const data = JSON.parse(xhr.responseText);
           resolve(data);
         } catch (err) {
-          console.error(xhr.responseText);
           fail(err);
         }
       }),
       text: () => new Promise(resolve => resolve(xhr.responseText)),
-      get status(){ return xhr.status },
     };
     function query(selector, context) {
-      console.log(selector, context);
-      if (typeof selector instanceof Object){
+      if (typeof selector === 'object') {
         Object.entries(selector).forEach(entry => query(...entry));
-      } else if (arguments.length === 1){
-        const searchParams = new URLSearchParams(selector);
-        searchParams.forEach((value,key) => url.searchParams.set(key,value));
       } else {
-        url.searchParams.set(selector, context === undefined ? '' : context);
+        url.searchParams.set(selector, context);
       }
       return ret;
     }
-    function setOption(selector, context, body, isFormData) {
-      // console.log(selector, context, input, isFormData);
+    function setOption(selector, context, input) {
       options[selector] = context;
-      if (body) ret.body(body, isFormData);
-      return ret;
-      // return send().then(res => res.json());
-    }
-    function send() {
-      // console.warn(22);
-      clearTimeout(to);
-      return new Promise(async (resolve, reject) => {
-        const startTime = new Date();
-        if (options.authProvider) {
-          const access_token = await options.authProvider.getAccessToken();
-          // console.log(access_token);
-          ret.headers('Authorization', 'Bearer ' + access_token);
-        }
-        if (typeof module === "undefined") {
-          const statusMessage = new StatusMessage;
-          statusMessage.text('Wachten op ' + url);
-          // console.log(options.method, url.href);
-          xhr = new XMLHttpRequest();
-          xhr.open(options.method, url);
-          xhr.withCredentials = options.withCredentials;
-          xhr.addEventListener('load', async e => {
-            // console.log(e, xhr);
-            if (xhr.status < 400) {
-              statusMessage.remove();
-              resolve(new Request)
-            } else {
-              statusMessage.style('background-color:red;');
-              const req = new Request;
-              const {error} = await req.json();
-              console.error(error);
-              reject(error.message);
-            }
-          });
-          Object.entries(options.headers||{}).forEach(entry => xhr.setRequestHeader(...entry));
-          // console.log(options.input);
-          xhr.send(options.body);
-        } else {
-          const href = url.toString();
-          const protocol = href.split(':').shift();
-          options.hostname = url.hostname;
-          options.path = url.pathname+'?'+url.searchParams.toString();
-
-          const HTTP = require(protocol);
-          xhr = HTTP.request(options, e => {
-            e.on('data', data => xhr.responseText += data)
-            .on('end', () => resolve(new Request));
-          }).on('error', error => reject(error));
-          xhr.responseText = '';
-          xhr.end();
-        }
-      });
+      if (input) ret.input(input);
+      return ret.then(res => res.json());
     }
 
-    let to;
-    const ret = Object.assign(new Promise(async (resolve, reject) => {
-      to = setTimeout(() => send().then(resolve))
-    }), {
-      authProvider: context => setOption('authProvider', context),
-      delete: context => setOption('method', 'delete', context).send().then(res => res.value()),
+    const ret = Object.assign(new Promise((resolve, reject) => setTimeout( async () => {
+      if (options.authProvider) {
+        const access_token = await options.authProvider.getAccessToken();
+        console.log(access_token);
+        ret.headers('Authorization', 'Bearer ' + access_token);
+      }
+      if (typeof module === "undefined") {
+        const statusMessage = new StatusMessage;
+        statusMessage.text('Wachten op ' + url);
+        xhr = new XMLHttpRequest();
+        xhr.open(options.method, url);
+        xhr.addEventListener('load', async e => {
+          // console.log(e, xhr);
+          if (xhr.status < 400) {
+            statusMessage.remove();
+            resolve(new Request)
+          } else {
+            statusMessage.style('background-color:red;');
+            const req = new Request;
+            const {error} = await req.json();
+            console.error(error);
+            reject(error.message);
+          }
+        });
+        xhr.send(options.input);
+      } else {
+        const href = url.toString();
+        const protocol = href.split(':').shift();
+        options.hostname = url.hostname;
+        options.path = url.pathname+'?'+url.searchParams.toString();
+
+        const HTTP = require(protocol);
+        xhr = HTTP.request(options, e => {
+          e.on('data', data => xhr.responseText += data)
+          .on('end', () => resolve(new Request));
+        }).on('error', error => reject(error));
+        xhr.responseText = '';
+        xhr.end();
+      }
+    })), {
+      query,
       filter: context => query('filter', context),
-      get: context => setOption('method', 'get', context).send().then(res => res.value()),
+      select: context => query('$select', context),
+      top: context => query('$top', context),
+      search: context => query('$search', context),
+      order: context => query('$order', context),
+      query: (selector, context) => {
+        if (typeof selector === 'object') {
+          Object.entries(selector).forEach(entry => url.searchParams.set(...entry));
+        } else {
+          url.searchParams.set(selector, context);
+        }
+        return ret;
+      },
+      authProvider: context => setOption('authProvider', context),
+      get: context => setOption('method', 'get', context),
+      post: context => setOption('method', 'post', context),
+      delete: context => setOption('method', 'delete', context),
+      put: context => setOption('method', 'put', context),
+      patch: context => setOption('method', 'patch', context),
+      input: context => {
+        options.input = JSON.stringify(context);
+        return ret;
+      },
       headers: (selector,context) => {
         (options.headers = options.headers || {})[selector] = context;
         // xhr.setRequestHeader(selector,context);
         return ret;
-      },
-      body: (context, isFormData) => {
-        console.log(1, context, isFormData);
-        if (!context) {
-          return options.body;
-        }
-        switch(context.constructor.name) {
-          case 'CustomEvent':
-          case 'SubmitEvent': {
-            context.preventDefault();
-            options.body = new FormData(context.target);
-            if (context.submitter){
-              options.body.append(context.submitter.name, context.submitter.value);
-            };
-            break;
-          }
-          case 'HTMLFormElement': {
-            options.body = new FormData(context);
-            break;
-          }
-          case 'Elem': {
-            options.body = new FormData(context.elem);
-            break;
-          }
-          case 'Object': {
-            if (isFormData) {
-              options.body = new FormData();
-              Object.entries(context).forEach(entry => options.body.append(...entry));
-            } else {
-              this.headers('Content-Type', 'application/json');
-              options.body = JSON.stringifyReplacer(context);
-            }
-            break;
-          }
-          case 'Array': {
-            if (isFormData) {
-              options.body = new FormData();
-              Object.entries(context).forEach(entry => options.body.append(...entry));
-            } else {
-              this.headers('Content-Type', 'application/json');
-              options.body = JSON.stringifyReplacer(context);
-            }
-            break;
-          }
-          default: {
-            options.body = context;
-            break;
-          }
-        }
-        return ret;
-      },
-      top: context => query('$top', context),
-      order: context => query('$order', context),
-      patch: context => setOption('method', 'patch', context).send().then(res => res.value()),
-      post: context => setOption('method', 'post', context, true).send().then(res => res.value()),
-      put: context => setOption('method', 'put', context).send().then(res => res.value()),
-      withCredentials: context => setOption('withCredentials', context),
-      query,
-      search: context => query('$search', context),
-      select: context => query('$select', context),
-      send,
-      toString() {
-        clearTimeout(to);
-        return url.toString();
-      },
+      }
     });
-    // console.log('asasdfasd', setoptions);
-    Object.entries(setoptions).forEach(([key,value])=>ret[key](value));
     return ret;
   }
+
 
   async function init () {
     // //console.log('INIT');
@@ -2821,8 +3241,6 @@
       fs.writeFile('./store.json', JSON.stringify(store), err => err ? console.error(err) : null);
     }
     this.config = config;
-    WebSocket = require('ws');
-    this.webSocketClient = new WebSocketClient;
     // this.options = config;
     // aimClient = this;
     // aim.extend(aim.config, config);
@@ -2834,8 +3252,6 @@
   }
   function PublicClientApplication(config = {}) {
     this.config = config;
-    this.webSocketClient = new WebSocketClient;
-    console.log(this.webSocketClient);
     this.store = function(selector, context){
       if (context === undefined) return sessionStorage.getItem(selector);
       sessionStorage.setItem(selector, context);
@@ -2881,51 +3297,52 @@
 
     aim.his.items = {};
   };
+  // function api(src){
+  //   // const access_token = this.options.authProvider ? await this.options.authProvider.getAccessToken() : null;
+  //   // console.log(access_token);
+  //   return req(src[0] === '/' ? this.url + src : src)
+  //   .headers('Accept', 'application/json')
+  //   // .headers('Authorization', access_token ? 'Bearer ' + access_token : null)
+  //   // .then(res => resolve(res.json()))
+  // }
+  // function api1(src){
+  //   return new Promise(async (resolve,fail) => {
+  //     const access_token = this.options.authProvider ? await this.options.authProvider.getAccessToken() : null;
+  //     // console.log(access_token);
+  //     req(src[0] === '/' ? this.url + src : src)
+  //     .headers('Accept', 'application/json')
+  //     .headers('Authorization', access_token ? 'Bearer ' + access_token : null)
+  //     .then(res => resolve(res.json()))
+  //   })
+  // }
+  //
   let timediff = 0;
   function AuthProvider(aimClient, options){
-    this.aimClient = aimClient;
-    aim.getAccessToken = this.getAccessToken = async () => {
+    this.getAccessToken = async () => {
       var timeLeft = 0;
-      let access_token = aimClient.store('access_token');
-      if (access_token) {
-        var [type,payload,signature] = access_token.split('.');
-        payload = JSON.parse(atob(payload));
+      if (store.access_token) {
+        var [type,payload,signature] = store.access_token.split('.');
+        payload = JSON.parse(aim.atob(payload));
         var time = new Date().getTime();
         timeLeft = payload.exp * 1000 - time - timediff;
+        console.log('timeleft',timeLeft);
       }
-      // console.log('timeleft',timeLeft);
       if (timeLeft<=0){
-        await aim.fetch(aim.tokenUrl)
-        .query({
-          client_id: aimClient.config.client_id,
-          response_type: 'access_token',
-          refresh_token: access_token,
-        })
-        .get()
-        .then(body => {
-          console.log(1111, body);
-          access_token = body.access_token;
-        });
-        // console.log(888, access_token);
-        // var {access_token} = await aim.fetch('https://aliconnect.nl/api/abis/data')
-        // .query({ request_type: 'token', client_id: aimClient.config.client_id })
-        // .then(res => res.json());
-        aimClient.store('access_token', access_token);
-        // store.access_token = access_token;
+        var {access_token} = await aim.req('https://aliconnect.nl/api/abis/data')
+        .query({ request_type: 'token', client_id: aimClient.config.client_id })
+        .then(res => res.json());
+        store.access_token = access_token;
         // store.access_token = access_token;
         var time = new Date().getTime();
         var [type,payload,signature] = access_token.split('.');
-        // console.log(access_token);
-        // console.log(payload);
-        // console.log(atob(payload));
-        payload = JSON.parse(atob(payload));
+        payload = JSON.parse(aim.atob(payload));
         timediff = payload.iat * 1000 - time;
 
-        console.log('timediff',timediff,payload);
+        console.log('timediff',timediff);
         // fs.writeFile('./store.json', JSON.stringify(store), err => err ? console.error(err) : null);
       }
       // var ms = payload.exp - new Date();
-      return access_token;
+      return store.access_token;
 
 
       return aimClient.storage.getItem('accessToken');
@@ -2956,6 +3373,7 @@
       }
     }
   }
+
   async function getConfig() {
     const config = await this.api('/aliconnect/config').query({
       path: 'https://aliconnect.nl/forms/config',
@@ -2968,54 +3386,22 @@
     }
     return config;
   }
-  function api(src, options) {
-    const url = new URL(src.replace(/^\//, ''), aim.dmsUrl);
-    // this.url = this.url || 'https://aliconnect.nl/api';
-    const req = aim.fetch(url.href, options).headers('Accept', 'application/json');
+  function api(src) {
+    const req = aim.req('https://aliconnect.nl/api' + src).headers('Accept', 'application/json');
     if (this.config.authProvider) {
       req.authProvider(this.config.authProvider);
     }
     return req;
   }
-  function ws(path, options = {}) {
-    options.path = path;
-    const promise = new Promise((resolve,fail)=>{
-      setTimeout(() => {
-        this.webSocketClient.send(options);
-        console.log(this.webSocketClient);
-        resolve(options);
-      })
-    });
-    return Object.assign(promise, {
-      option(selector, context){
-        options[selector] = context;
-        return this;
-      },
-      headers(context){
-        options.headers = context;
-        return this;
-      },
-      method(context){
-        options.method = context;
-        return this;
-      },
-      resource(context){
-        options.resource = context;
-        return this;
-      },
-    })
-  }
+
   NodeApplication.prototype = {
-    ws,
     AuthProvider,
     init,
     getConfig,
     api,
   }
   PublicClientApplication.prototype = {
-    ws,
     AuthProvider,
-    // acquireToken,
     init,
     loginPopup,
     logout,
@@ -3023,18 +3409,16 @@
     api,
     getConfig,
   }
-  const clients = aim.clients = new Map();
-  const servers = new Map();
-  function Client () {
-    const config = this.config = Object.assign({}, ...arguments);
-    // const {authProvider} = config;
-    // const {aimClient} = authProvider;
-    // this.options = options;
+
+  aim.clients = new Map();
+  function Client (options, config) {
+    this.config = config;
+    this.options = options;
     config.servers = config.servers || [{url: aim.config.url}];
-    Array.from(config.servers).forEach(server => servers.set(server.url, this));
+    Array.from(config.servers).forEach(server => aimClient.servers.set(server.url, this));
     this.url = config.servers[0].url;
     this.hostname = new URL(this.url).hostname;
-    clients.set(this.hostname, this);
+    aim.clients.set(this.hostname, this);
   };
   Object.assign(Client, {
     initWithMiddleware: (options, config) => new Client(options, config),
@@ -3043,7 +3427,7 @@
     headers: {},
     loadConfig() {
       return new Promise((success, fail) => {
-        aim.fetch(this.url + '/aliconnect/config')
+        aim().url(this.url + '/aliconnect/config')
         .query('client_id', this.config.client_id)
         .get()
         .then(e => success(this.config = e.body))
@@ -3068,14 +3452,14 @@
       });
     }},
     // configGet() {
-    //   return aim.fetch(this.url+'/../config.json').get().then(e => {
+    //   return aim().url(this.url+'/../config.json').get().then(e => {
     //     console.warn('configGet', e.body);
     //     aim.extend(this.config, e.body);
     //     // aim.config = e.body;
     //   }).catch(console.error);
     // },
     // configUserGet() {
-    //   return aim.fetch(this.url+`/../config/${this.authProvider.sub}/config.json`).get().then(e => {
+    //   return aim().url(this.url+`/../config/${this.authProvider.sub}/config.json`).get().then(e => {
     //     aim.extend(this.config, e.body);
     //     // aim.extend(aim.config, JSON.parse(e.target.responseText));
     //     // aim(aim.config).extend(aimClient.api_user = e.body);
@@ -3419,7 +3803,7 @@
       this.callback = callback;
     }},
     ws_send_code: { value: function (socket_id, code){
-      aim.webSocketClient.request({
+      aim.WebsocketClient.request({
         to: {
           sid: socket_id,
         },
@@ -3431,6 +3815,8 @@
       self.close();
     }},
   });
+
+
   function His() {}
   His.prototype = {
     map: new Map(),
@@ -3474,6 +3860,7 @@
       }
     }},
   });
+
   Item = function () {};
   Object.defineProperties(Item, {
     get: { value: function itemGet (selector, schemaName){
@@ -4184,7 +4571,7 @@
                       };
                       console.debug('create',data);
                       // console.debug(targetId, sourceId, i, child.id, child.title, child.schemaName);
-                      await aimClient.api(`/${schemaName}`).body(data).post().then(body => clone(body.data.ID, child.itemId));
+                      await aimClient.api(`/${schemaName}`).input(data).post().then(body => clone(body.data.ID, child.itemId));
                     } else {
                       clone(child.cloneId, child.itemId)
                     }
@@ -5307,6 +5694,11 @@
     },
   });
 
+  function WebsocketClient(){
+    $(this).extend(...arguments);
+    this.clients = new Map();
+    // return this.connect(...arguments)
+  }
   function EventManager() {}
   Object.defineProperties(EventManager.prototype, {
     _events: {value: {}},
@@ -5321,62 +5713,404 @@
       }
     }},
   });
-  function forward(data, webSocket){
-    data = JSON.stringify(data);
-    Array.from(aim.webSocketServer.clients).filter(client => client !== webSocket).forEach(client => client.send(data));
+  function WebsocketClient(options = {}){
+    options.url = options.url || document.location.origin.replace(/^http/, 'ws');
+    this.options = options;
+    // this.ws = new window.WebSocket(url);
+    // const self = this;
+    // let ws;
+    // function send(msg) {
+    //   msg = JSON.stringify(msg);
+    //   ws.send(msg);
+    // }
+    // Object.defineProperties(this, {
+    //   send: {value: send },
+    // });
+    // (function connect() {
+    //
+    // })()
+    // // Object.defineProperties(this, EventManager);
+
   }
-  function getAccessToken(accessToken){
-    console.log(accessToken);
-    var [type,payload,signature] = accessToken.split('.');
-    payload = JSON.parse(atob(payload));
-    return aim.fetch(aim.tokenUrl)
-    .query({
-      client_id: payload.client_id,
-      response_type: 'access_token',
-      refresh_token: accessToken,
-    })
-    .get()
-  }
-  function onWebSocketMessage(e) {
-    var {data,target} = e;
-    data = JSON.parse(data);
-    data.target = target;
-    aim().emit('message',data);
-  }
-  function WebSocketClient(options = {}){
-    aim.webSocketClient = this;
-    options.url = options.url || 'wss://dms.aliconnect.nl:444';
-    const messages = [];
-    (function connect() {
-      webSocket = new WebSocket(options.url);
-      $('.statusbar>.ws').attr('state','connecting');
-      webSocket.addEventListener('open', e => {
-        $('.statusbar>.ws').attr('state','open');
-        send({path: '/connect',method: 'client_open'});
-      });
-      webSocket.addEventListener('error', console.error);
-      webSocket.addEventListener('close', e => {
-        $('.statusbar>.ws').attr('state','closed');
-        setTimeout(connect, 3000);
-      });
-      webSocket.addEventListener('message', onWebSocketMessage);
-      async function send (data) {
-        if (data) {
-          if (aim.getAccessToken) {
-            const accessToken = await aim.getAccessToken();
-            data.headers = data.headers || {};
-            data.headers.authorization = 'Bearer ' + accessToken;
+  WebsocketClient.prototype = new EventManager;
+  Object.defineProperties(WebsocketClient.prototype, {
+    // prop: {value: {}},
+    send: {value: function (msg){
+      msg = JSON.stringify(msg);
+      this.ws.send(msg);
+    }},
+
+    connect: {value: function () {
+      return new Promise((resolve, fail) => {
+        //console.log('WS CONNECT', this.options.url);
+        const ws = this.ws = new window.WebSocket(this.options.url);
+        ws.addEventListener('open', e => {
+          aimClient.getAccessToken().then(accessToken => {
+            // //console.log('accessToken', accessToken);
+            const msg = {
+              hostname: this.hostname || 'aliconnect',
+              // nonce: this.nonce,
+              // PHPSESSID: this.PHPSESSID,
+            };
+            if (accessToken) {
+              msg.headers = { Authorization: 'Bearer ' + accessToken }
+            }
+            this.send(msg);
+          })
+        });
+        ws.addEventListener('error', console.error);
+        ws.addEventListener('close', e => setTimeout(connect, 5000));
+        ws.addEventListener('message', e => {
+          console.debug('ws.onmessage', e.data);
+          try {
+            const data = JSON.parse(e.data);
+            // data = JSON.parse(e.data);
+            if (data.attr) {
+              if (data.attr.systemId) {
+                const system = systems[data.attr.systemId];
+                if (system) {
+                  const attr = system.data[data.attr.name];
+                  // //console.log(attr);
+                  const oldValue = attr.value;
+                  if (attr.state != data.attr.state) {
+                    setItemTypeValue(attr.item, data.attr.state, -1);
+                    setItemTypeValue(attr.item, attr.state, 1);
+                  }
+                  Object.assign(attr, data.attr);
+                  if (attr.AttributeType) {
+                    setItemTypeValue(system, attr.AttributeType, - Number(oldValue));
+                    setItemTypeValue(system, attr.AttributeType, Number(attr.value));
+                  }
+                  attributeRowUpdate(attr);
+                }
+              }
+            }
+
+            const ws = e.target;
+            // return;
+            // const config = this.config;
+            // let data = e.data;
+            // try {
+            //   this.data = data = JSON.parse(data);
+            //   // $().status('ws', `${new Date().toLocaleString()} ${data.from_id || ''}`);
+            // } catch (err){
+            //   return $().status('wsm', 'error');
+            //   // return console.error('ws.onmessage error', data.substr(0,1000));
+            // }
+
+            if (data.body) {
+              if (data.body.notify) {
+                //console.log('NOTIFY', window.document.hasFocus());
+                if (!window.document.hasFocus()) {
+                  if ("Notification" in window) {
+                    if (Notification.permission === "granted") {
+                      // var notification = new Notification(...Object.values(data.body.notify));
+                      // notification.onclick = function(e) {
+                      //   window.focus();
+                      //   //console.log('CLICKED', data.body.notify);
+                      // }
+                      new $().sw.showNotification(...Object.values(data.body.notify));
+                      // `test modified SW`, {
+                      //   body: `Bla Bla`,
+                      //   icon: 'https://aliconnect.nl/favicon.ico',
+                      //   image: 'https://aliconnect.nl/shared/265090/2020/07/09/5f0719fb8fa69.png',
+                      //   data: {
+                      //     url: document.location.href,
+                      //   },
+                      //   actions: [
+                      //     {
+                      //       action: 'new',
+                      //       title: 'New',
+                      //       // icon: 'https://aliconnect.nl/favicon.ico',
+                      //     },
+                      //     {
+                      //       action: 'open',
+                      //       title: 'Open',
+                      //       // icon: 'https://aliconnect.nl/favicon.ico',
+                      //     },
+                      //     // {
+                      //     //   action: 'gramophone-action',
+                      //     //   title: 'gramophone',
+                      //     //   icon: '/images/demos/action-3-128x128.png'
+                      //     // },
+                      //     // {
+                      //     //   action: 'atom-action',
+                      //     //   title: 'Atom',
+                      //     //   icon: '/images/demos/action-4-128x128.png'
+                      //     // }
+                      //   ]
+                      // });
+                    }
+                  }
+                }
+              }
+              if (data.body.accept) {
+                $().prompt('accept').accept_scope(data.body.accept.scopes, data.from_id);
+                // //console.log($().prompt('accept_scope'), $.his.map.get('accept_scope'));
+              }
+            }
+            if (data.state === 'disconnect') {
+              //console.log('disconnect', $().aliconnector_id, data.from_id);
+              // return;
+              if ($().aliconnector_id === data.from_id) {
+                $().status('aliconnector', 'offline');
+                $().aliconnector_id = null;
+              }
+            }
+            console.error(data);
+            if (data.id_token) {
+              const id = JSON.parse(atob(data.id_token.split('.')[1]));
+              //console.log(id, getId(id.sub), getUid(id.sub), aimClient.sub);
+              if (getId(id.sub) !== getId(aimClient.sub)) {
+                return $().logout();
+              }
+            }
+            // console.debug('ws.onmessage', data);
+
+
+            // if (this.clients.has(data.from_id)){
+            //   //console.log('REPLY FROM', data.from_id);
+            //   this.clients.get(data.from_id)(data.body);
+            //   this.clients.delete(data.from_id);
+            //   return
+            // }
+
+
+            if (data.from_id === $().aliconnector_id) {
+              if (data.param) {
+                if (data.param.filedownload) {
+                  //console.log('filedownload', data.param.filedownload);
+                }
+                if (data.param.fileupload) {
+                  //console.log('fileupload', data.param.fileupload);
+                }
+              }
+            }
+            if ('userstate' in data){
+              console.debug('userstate', data);
+              console.debug(Item.items, Item.items.filter(item => item.ID == data.sub));
+              Item.items
+              .filter(item => item.ID == data.sub)
+              .forEach(item => item.elements.forEach(element => element.hasAttribute('userstate') ? element.setAttribute('userstate', data.userstate) : null))
+            }
+            if ('socket_id' in data){
+              console.warn(this, 'socket_id', data);
+              this.socket_id = data.socket_id;
+              let currentState = ws.state;
+              if (data.socket_id === 1){
+                this.setState('UNAUTHORIZED');
+              } else if (data.payload){
+                this.setState('AUTHORIZED');
+                setState = (state) => {
+                  this.setState(state);
+                  // broadcast message with state
+                  // op ws server bijhouden alle connecties van gebruiker,
+                  // alleen als alle connecties offline zijn dan bericht sturen.
+                  // timeout opnemen in geval van omschakelen naar andere app
+                }
+                // window.addEventListener('focus', e => setTimeout(() => setState('focussed')))
+                // window.addEventListener('blur', e => setTimeout(() => setState('online')))
+              } else {
+                // this.setState('CONNECTED');
+                // ws.login();
+              }
+              resolve(this);
+              // this.resolve(this);
+              // self.emit("connect", self);
+              data.type = 'connect';
+              if (currentState === 'CONNECTING'){
+                $().emit('connect', data);
+              }
+              while (message = ws.messages.shift()){
+                console.debug('MESSAGE', message);
+                ws.send(message);
+              }
+            } else {
+              $.handleData(data);
+            }
+            return;
+            if (data.aliconnector) {
+              //console.log(data);
+              if (data.aliconnector === 'online') {
+                $().status('aliconnector', 'online');
+                this.sendto($().aliconnector_id = data.from_id, { path: 'sign_in' });
+              }
+              // console.debug('aliconnector', data, data.from_id);
+              // $.Aliconnector.state = 'online';
+              // if (ws.infoElement){
+              //   ws.infoElement.innerText = ws.state + '+';
+              // }
+            }
+            // if ('reply' in data){
+            //   $.Aliconnector.reply(data.reply);
+            // }
+            // if ('signin' in data){
+            //   console.debug('SIGNIN', data);
+            //   const sub = config.id ? config.id.sub : (config.access ? config.access.sub : null);
+            //   if (data.access.sub != sub){
+            //     $.clipboard.reload();
+            //   }
+            // }
+            return;
+            if (((data.ref && data.ref.itemsModified) || data.forward) && data.from_id && this.wsServer){
+              this.wsServer.forwardMessageFromClient(data, e.data, ws);
+            }
+          } catch (err) {
+            // return $().status('wsm', 'error');
+            return console.error(err);
           }
-          messages.push(JSON.stringify(data));
-        }
-        if (webSocket.readyState) {
-          messages.forEach(data => webSocket.send(data));
-          messages.length = 0;
-        }
+
+          // return;
+        });
+      });
+    }},
+
+
+    login: {value: function login(access_token){
+      return new Promise((resolve, fail) => {
+        this.connect().then(e => {
+          //console.log('CONNN', e);
+        });
+        return;
+        console.debug('WS LOGIN');
+        // this.resolve = resolve;
+        if (!access_token || !this.WebSocket) return resolve(this);
+        this.WebSocket.send(JSON.stringify({
+          headers: {
+            authorization: 'Bearer '+access_token,
+          }
+        }));
+      })
+    }},
+    message: {value: function message(par){
+      console.error('$.WebsocketRequest', par);
+      let message='';
+      if (par){
+        // let req=par;
+        // const request = new $().url(...arguments);
+        // const res = request.req.res;
+        // message = request.message;
+        console.error('WebsocketRequest', par);
+        // return;
+        // if (req.message_id){
+        // 	message.message_id = req.message_id;
+        // }
+        // if (res){
+        // 	message.id = req.id = req.id || new Date().valueOf();
+        // 	$.WebsocketClient.requests[message.id] = res;
+        // }
+        message = JSON.stringify(par);
+        $.WebsocketClient.messages.push(message);
+        // req.device_id = $.his.cookie ? $.his.cookie.device_id : 'test_max';
       }
-      aim.send = send;
-    })();
-  }
+      if (!$.WebsocketClient.conn){
+        // console.debug('STARTCONNECT',$.WebsocketClient);
+        return $.WebsocketClient.connect();
+      }
+      // console.debug('SERVER REQUEST', message);
+      if ($.WebsocketServer){
+        // console.debug('SERVER REQUEST', message);
+        $.WebsocketServer.clients.forEach(wsChild => wsChild.send(message));
+      }
+      if ($.WebsocketClient.conn.readyState !== 1){
+        return;
+      }
+      while (message = $.WebsocketClient.messages.shift()){
+        $.WebsocketClient.send(message);
+      }
+    }},
+    // onmessage: {value: onmessage},
+    reply: {value: function reply(message){
+      console.debug('repl', message);
+      return this.sendto(this.data.from_id, {body: message});
+    }},
+    sendto: {value: function sendto(sid, message = {}){
+      console.debug('send to', this.state);
+      $().status('ws', 'ACTIVE');
+      message.to = { sid: sid };
+      return $.promise( 'send to', resolve => {
+        $().status('ws', this.state);
+        this.clients.set(sid, resolve);
+        this.send(message);
+      });
+    }},
+    setState: {value: function setState(state, message){
+      $().status('ws', this.state = state);
+      // if (window.document){
+      //   this.procstate = this.procstate || $().procstate();
+      //   this.procstate.text(message || '');
+      // }
+    }},
+
+    send1: {value: function(message){
+      // console.debug('send', message);
+      if (!this.WebSocket) return;
+      $().status('ws', 'ACTIVE');
+      setTimeout(() => {
+        $().status('ws', this.state);
+      },100);
+      message = JSON.stringifyReplacer(message);
+      this.WebSocket.send(message);
+      if ($.server) {
+        $.server.clients.forEach(ws => ws.send(message));
+      }
+    }},
+
+
+    connect1: {value: function(){
+      return $.promise( 'connect', resolve => {
+        this.setState('CONNECTING', `Connecting ${this.url}`);
+        if (this.WebSocket) return resolve(this);
+        this.resolve = resolve;
+        // console.debug('connect', this.url);
+        Object.assign(this.WebSocket = new window.WebSocket(this.url), {
+          messages: [],
+          requests: {},
+          message: message => {
+            // alert('SEND'+JSON.stringify(message));
+            // console.debug('MESSAGE', ws.readyState, webSocket, this.ws, this);
+            webSocket.send(message);
+            if ($.wsServer && $.wsServer){
+              $.wsServer.forEach(ws => ws.send(message))
+            }
+          },
+          // onconnect: e => {
+          // 	console.debug('onconnect', ws, e.target);
+          // },
+          onmessage: e => this.onmessage(e),
+          onopen: e => {
+            this.setState('OPEN');
+            this.WebSocket.send(JSON.stringify({
+              hostname: this.hostname || 'aliconnect',
+              nonce: this.nonce,
+              PHPSESSID: this.PHPSESSID,
+              headers: aimClient.getAccessToken()
+              ? {
+                Authorization:'Bearer ' + aimClient.getAccessToken()
+              }
+              : null
+            }));
+            // console.debug('ONOPEN', e.target, webSocket, this.ws);
+            // resolve(webSocket);
+          },
+          onclose: e => {
+            this.setState('DISCONNECTED');
+            this.WebSocket = null;
+            setTimeout(() => this.connect(), 5000);
+            // clearTimeout(this.pingTimeout);
+            //this.pingTimeout=setTimeout(function, 1000);
+            // $().emit('wscClose');
+          },
+          onerror: e => {
+            this.setState('ERROR');
+            // $().emit('wscClose');
+          },
+        });
+        return this;
+      })
+    }},
+  });
+
   const now = new Date();
   Object.defineProperties(this, {
     defineClasses: { value: function (classes) {
@@ -5396,6 +6130,7 @@
   defineClasses.classes = {
     lastModifiedDateTime: now,
   };
+
   function extend (parent, selector, context) {
     if (!selector) {
       selector = parent;
@@ -5435,88 +6170,270 @@
     return parent;
   };
   function Server(config) {
+    // console.log(config.paths);
     const server = this;
     server.config = config;
     const events = require('events');
-    server.paths = [process.mainModule.path+'/public', process.mainModule.path];
+    const paths = [process.mainModule.path+'/public', process.mainModule.path];
     (function addpath(module) {
       if (module.parent) addpath(module.parent);
       //console.log(module.paths);
       // paths.push(...module.paths.map(path => path.replace(/node_modules$/,'public')));
-      server.paths.push(...module.paths);
+      paths.push(...module.paths);
     })(module);
-    server.paths = server.paths.unique().filter(path => fs.existsSync(path));
+    server.paths = paths.unique().filter(path => fs.existsSync(path));
     // console.log(server.paths);
 
-    function onconnection (webSocket, req) {
+    function onconnection (wsc, req) {
       //console.log('connect');
-      webSocket.remoteAddress = req.connection.remoteAddress.split(':').pop();
-      webSocket.sid = Crypto.btoaToJson(req.headers['sec-websocket-key']);
-      webSocket.access = {sid: webSocket.sid};
-      console.msg('CONNECTION1', webSocket.sid, webSocket.remoteAddress);
-      webSocket.on('close', connection => {
-        if (webSocket.access) {
-          const message = JSON.stringify({ origin: webSocket.sid, path: '/connect', method: 'disconnect' });
-          Array.from(webSocketServer.clients)
-          .filter(client => client !== webSocket && client.access && (client.access.sub === webSocket.access.sub || client.access.aud === webSocket.access.aud || client.access.nonce === webSocket.access.nonce))
-          .forEach(client => client.send(message));
+      wsc.remoteAddress = req.connection.remoteAddress.split(':').pop();
+      wsc.sid = Crypto.btoaToJson(req.headers['sec-websocket-key']);
+      wsc.access = {sid: wsc.sid};
+      console.msg('CONNECTION', wsc.sid, wsc.remoteAddress);
+      wsc.on('close', connection => {
+        if (wsc.access) {
+          const message = JSON.stringify({from_id: wsc.sid, state: 'disconnect'});
+          Array.from(wsServer.clients)
+          .filter(ws => ws !== wsc && ws.access && (ws.access.sub === wsc.access.sub || ws.access.aud === wsc.access.aud || ws.access.nonce === wsc.access.nonce))
+          .forEach(ws => ws.send(message));
         }
-        console.msg('DISCONNECT', webSocket.sid, webSocket.remoteAddress, webSocket.access.sub);
+        console.msg('DISCONNECT', wsc.sid, wsc.remoteAddress, wsc.access.sub);
         // console.debug(userConnected);
 
-        // webSocketServer.clients.forEach(wsChild => {
+        // wsServer.clients.forEach(wsChild => {
         // 	console.msg('DISCONNECT CHILDS', wsChild.sid);
         // });
-        // webSocketServer.clients.splice(webSocketServer.clients.indexOf(wsc), 1);
+        // wsServer.clients.splice(wsServer.clients.indexOf(wsc), 1);
       });
-      // wsc.addEventListener('message', e => aim().emit('message',e));
-      webSocket.addEventListener('message', async e => {
-        var {data,target} = e;
-        data = JSON.parse(data);
-        const {origin,headers,path,method,body} = data;
-        data.target = target;
-        if (headers) {
-          var accessToken;
-          const {authorization} = Object.fromEntries(Object.entries(headers).map(entry => [entry[0].toLowerCase(),entry[1]]));
-          const apiKey = Object.keys(headers).find(key => ['api_key','api-key','x-api-key'].includes(key.toLowerCase()));
-          if (apiKey) {
-            var accessToken = headers[apiKey];
-          } else if (authorization) {
-            var [tokeType,accessToken] = authorization.split(' ');
+      wsc.on('message', data => {
+
+        try {
+          data = JSON.parse(data);
+        } catch (err) {
+          console.error('json_error', data.substr(0,1000));
+        }
+        if (data && typeof data === 'object') {
+          //console.log(wsc.sid);
+          /** check user state
+            *
+            */
+          (function userstate(){
+            if (userstate) {
+              const states = [
+                'unknown',
+                'offline',
+                'blocked',
+                'busy_inactive',
+                'inactive',
+                'appear_away',
+                'urgentonly',
+                'donotdisturb',
+                'busy',
+                'available',
+              ];
+              const userstate = states.indexOf(data.userstate);
+              var clients = Array.from(wsServer.clients).filter(ws => ws.access && ws.access.aud === wsc.access.aud);
+              var subclients = clients.filter(ws => ws.access.sub === wsc.access.sub);
+              const currentState = Math.max(...subclients.map(ws => ws.userstate || 0));
+              wsc.userstate = userstate;
+              // var sub = wsc.access.sub;
+              const newState = Math.max(...subclients.map(ws => ws.userstate || 0));
+              if (currentState !== newState) {
+                //console.log('state set', data.userstate, currentState, newState, subclients.map(ws => ws.userstate));
+                data.userstate = states[newState];
+                const msg = JSON.stringify(data);
+                clients.forEach(ws => ws.send(msg));
+              }
+
+
+              // if (subclients.every(ws => ws.userstate < userstate)) {
+              // 	//console.log('newstate', userstate, data.userstate);
+              // 	var clients = wsServer.clients.filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud);
+              // 	clients.forEach(ws => ws.send(event.data));
+              // }
+
+
+              // if (!subclients.some(ws => ws.userstate > userstate)) {
+              // 	//console.log('newstate', userstate, data.userstate);
+              // 	var clients = wsServer.clients.filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud);
+              // 	clients.forEach(ws => ws.send(event.data));
+              // }
+              // if (!subclients.some(ws => ws.userstate < userstate)) {
+              // 	//console.log('newstate some');
+              // 	var clients = wsServer.clients.filter(ws => ws.access && ws.access.aud && ws.access.aud === wsc.access.aud && ws.userstate);
+              // 	clients.forEach(ws => ws.send(event.data));
+              // }
+
+              // var a = subclients.map(ws => ws.userstate);
+              // console.debug(data.userstate);
+              // //console.log(subclients.filter(ws => ws.userstate === data.userstate).map(ws => ws.userstate));
+              // //console.log(data.userstate, a, a.every(userstate => userstate == data.userstate));
+              // //console.log(['ja','ja','ja','ja'].every(ws => ws === 'ja'));
+
+              // if (data.userstate === 'available' && !subclients.some(ws => ws.userstate === data.userstate)) {
+              // 	clients.forEach(ws => ws.send(event.data));
+              // 	console.debug('send', data.userstate);
+              // }
+              // wsc.userstate = data.userstate;
+              // if (data.userstate === 'inactive' && subclients.every(ws => ws.userstate === data.userstate)) {
+              // 	clients.forEach(ws => ws.send(event.data));
+              // 	console.debug('send', data.userstate);
+              // }
+
+
+              // if (data.userstate === 'available' && !subclients.some(ws => ws.userstate === data.userstate)) {
+              // 	clients.forEach(ws => ws.send(event.data));
+              // 	console.debug('send', data.userstate);
+              // }
+              // wsc.userstate = data.userstate;
+              // if (data.userstate === 'inactive' && subclients.every(ws => ws.userstate === data.userstate)) {
+              // 	clients.forEach(ws => ws.send(event.data));
+              // 	console.debug('send', data.userstate);
+              // }
+              return;
+
+              // console.debug(wsServer.clients.map(ws => ws.access));
+
+              // console.debug('userstate',data,clients,sub);
+            }
+          })();
+
+          if (data.attr) {
+            attr(...data.attr);
           }
-          if (accessToken && webSocket.accessToken !== accessToken) {
-            webSocket.accessToken = null;
-            var {access_token} = await getAccessToken(accessToken);
-            console.log(access_token,accessToken);
-            if (!access_token) {
-              console.log('un authorized');
-              return webSocket.send(JSON.stringify({
-                error: {
-                  code: "un_authorized",
-                  message: "Authorization not successfull",
-                  target: "access_token",
-                }
-              }));
-            } else {
-              webSocket.accessToken = accessToken;
-              var [type,payload,signature] = accessToken.split('.');
-              webSocket.access = JSON.parse(atob(payload));
-              console.log(webSocket.access);
-              webSocket.send(JSON.stringify({path, method: 'authorized'}));
+          if (data.itemsModified) {
+            // //console.log('response.itemsModified FROM CLIENT');
+            if (data.body && data.body.requests) {
+              aim.saveRequests(data.body.requests);
+            }
+            if (aim.ws) {
+              aim.ws.send(event.data);
             }
           }
-        }
-        aim().emit('message',data);
-      });
 
-      // wsc.on('message', data => onWebSocketMessage(data,wsc));
+          if (data.forward && aim.WebsocketClient && aim.WebsocketClient.conn) {
+            // console.debug('FORWARD TO SERVER', response.forward, aim.WebsocketClient.socket_id);
+            aim.WebsocketClient.conn.send(event.data);
+            // forwardMessageFromClient(response, responseText, aim.WebsocketClient.conn);
+          }
+
+
+          // CHAT ROOM
+          if (data.message_type) {
+            var { message_type, content, to } = data;
+            if (message_type === 'OPTIONS') {
+              wsc.options = content;
+              // return;
+            }
+            data.from = wsc.sid;
+            data.options = wsc.options;
+            let message = JSON.stringify(data);
+            if (to) {
+              var clients = wsServer.clients
+              .filter(ws => ws.options && ws.options.wall === wsc.options.wall && wsc !== ws && ws.readyState && ws.sid === to);
+            } else {
+              var clients = wsServer.clients
+              .filter(ws => ws.options && ws.options.wall === wsc.options.wall && wsc !== ws && ws.readyState && ws.sid);
+            }
+            clients.forEach(ws => {
+              console.msg('SEND', message_type, ws.sid);
+              ws.send(message);
+            });
+            return;
+          }
+
+          // console.debug('server ws client');
+          // aim.onmessage.call(wsc, event);
+
+          if (this.response) {
+            try {
+              data = this.response = JSON.parse(this.responseText);
+            } catch (err) {
+              console.error('json_error', String(this.responseText).substr(0,1000));
+            }
+          }
+
+          if (data.headers) {
+            const headers = Object.fromEntries(Object.entries(data.headers).map(([key, value]) => [key.toLowerCase(), value]));
+            //console.log('headers', headers);
+            // this.hostname = this.response.hostname;
+            let apiKey = Object.keys(headers).find(key => ['api_key','api-key','x-api-key'].includes(key.toLowerCase()));
+            let accessToken;
+            if (apiKey) {
+              accessToken = headers[apiKey];
+            } else {
+              let authorizationKey = Object.keys(headers).find(key => ['authorization'].includes(key.toLowerCase()));
+              if (authorizationKey) {
+                accessToken = headers[authorizationKey].split(' ')[1];
+              }
+            }
+
+            if (accessToken) {
+              //console.log('accessToken', accessToken);
+              let accessTokenArray = accessToken.split('.');
+              try {
+                var data = wsc.response = JSON.parse(data);
+              } catch (err) {
+                console.error('json_error');
+              }
+              try {
+                let payload = wsc.access = JSON.parse(atob(accessTokenArray[1]));
+                let domainName = payload.iss.split('.').shift();
+                aim().url('https://' + payload.iss + '/api/').query({
+                  request_type:'check_access_token',
+                  headers: {
+                    Authorization: 'Bearer ' + accessToken,
+                  },
+                }).get().then(event => {
+                  console.msg('SIGNIN', wsc.sid );
+                  if (payload.nonce) {
+                    const message = JSON.stringify({signin: wsc.sid, access:wsc.access });
+                    wsServer.clients
+                    .filter(ws => ws !== wsc && ws.access.nonce === payload.nonce)
+                    .forEach(ws => ws.send(message));
+                  }
+                  wsc.send(JSON.stringify({ socket_id: wsc.sid, payload: payload }));
+                  return;
+                });
+              } catch (err) {
+                console.error(err, accessTokenArray)
+              }
+              return;
+            }
+          }
+          if (data.hostname) {
+            // console.msg('CONNECT', wsc.sid, wsc.remoteAddress, wsc.response.hostname, wsc.response);
+            console.msg('CONNECT', wsc.sid, wsc.remoteAddress, data.hostname);
+            wsc.access = data;
+            wsc.access.socket_id = wsc.sid;
+            return wsc.send(JSON.stringify(wsc.access));
+          }
+
+
+
+          // if (!this.access) return;
+          // console.debug('wsc.access && wsServer.clients');
+          if (wsc.access && wsServer.clients) {
+            data.from_id = wsc.sid;
+            data.nonce = wsc.access.nonce;
+            responseText = JSON.stringify(data);
+            var sendto = [];
+            // console.debug('server onmessage clients', this.response.path, this.response.form_id, 'aud', wsc.access.aud, 'sub', wsc.access.sub);
+            // console.msg('clients', response.to, this.responseText);
+            forwardMessageFromClient(data, responseText, wsc);
+          }
+
+
+        }
+      });
+      //var a = 2;
     };
     const host = config.host || config.http;
     const protocol = host.ca ? "https" : "http";
     const options = host.ca ? {
-      key: fs.readFileSync(host.key),
-      cert: fs.readFileSync(host.cert),
-      ca: host.ca ? fs.readFileSync(host.ca) : null,
+      key: fs.readFileSync(process.cwd() + host.key),
+      cert: fs.readFileSync(process.cwd() + host.cert),
+      ca: host.ca ? fs.readFileSync(process.cwd() + host.ca) : null,
     } : null;
     console.log('host active', protocol, host.port, options);
     const http = require(protocol);
@@ -5635,10 +6552,10 @@
     };
     const httpServer = http.createServer(options, processRequest).listen(host.port);
     const ws = require('ws');
-    const webSocketServer = aim.webSocketServer = new ws.Server({server: httpServer}).on('connection', onconnection);
-    const clients = this.clients = webSocketServer.clients;
+    const wsServer = new ws.Server({server: httpServer}).on('connection', onconnection);
+    const clients = this.clients = wsServer.clients;
     function forwardMessageFromClient(response, responseText, wsc) {
-      Array.from(webSocketServer.clients).filter(ws => ws !== wsc).forEach(ws => {
+      Array.from(wsServer.clients).filter(ws => ws !== wsc).forEach(ws => {
         ws.access.sid = ws.sid;
         // if (wsChild.readyState !== 1 || wsc === wsChild || !wsChild.access || wsChild.sid === response.forward) return;
         if (ws.readyState !== 1 || wsc === ws || !ws.access ) return;
@@ -6170,6 +7087,7 @@
       }
     },
   }
+
   function clean_code(content){
     return content
     .replace(/\\\*.*?\*\\/gs,'')
@@ -6184,6 +7102,7 @@
   function toLink(s){
     return s.replace(/\(|\)|\[|\]|,|\.|\=|\{|\}/g,'').replace(/ /g,'-').toLowerCase();
   }
+
   function Dist() {
     this.all = [];
   }
@@ -6307,64 +7226,109 @@
       });
     },
   }
+
+  // function Api(url, options) {
+  //   // console.warn(url);
+  //   this.options = options || {};
+  //   this.url = new URL(url, document.location);
+  // }
+  // Api.prototype = {
+  //   query(selector, context){
+  //     if (typeof selector === 'object') Object.entries(selector).forEach(entry => this.query(...entry))
+  //     else this.url.searchParams.set(selector, context);
+  //     return this;
+  //   },
+  //   headers(selector, context){
+  //     if (typeof selector === 'object') Object.entries(selector).forEach(entry => this.headers(...entry))
+  //     else this.options.headers[selector] = context;
+  //     return this;
+  //   },
+  //   get(){
+  //     return this.fetch();
+  //   },
+  //   post(data){
+  //     this.input(data);
+  //     this.options.method = 'POST';
+  //     return this.fetch();
+  //   },
+  //   input(data){
+  //     this.options.body = JSON.stringify(data);
+  //     return this;
+  //   },
+  //   fetch(){
+  //     return new Promise((resolve, reject) => {
+  //       // console.log(111, this.url.toString(), this.options);
+  //       fetch(this.url, this.options).then(resolve).catch(reject);
+  //     })
+  //   },
+  // }
+  //
+
   function StatusMessage(context){
-    const statusbarMain = document.querySelector('.statusbar>.main');
-    return statusElem = statusbarMain
-    ? $('span').parent(statusbarMain).on('click', e => statusElem.remove())
+    const statusBarMain = document.querySelector('.statusBar>.main');
+    return statusElem = statusBarMain
+    ? $('span').parent(statusBarMain).on('click', e => statusElem.remove())
     : {
       text(){
         console.log(context);
-      },
-      remove(){},
-      style(){},
+      }
     };
   }
+
+
+
+
   Object.assign(aim, {
-    // Jwt: {
-    //   fromHeaders(headers){
-    //     if (!headers) return {};
-    //     const {authorization} = Object.fromEntries(Object.entries(headers).map(entry => [entry[0].toLowerCase(),entry[1]]));
-    //     if (!authorization) return {};
-    //     const [tokentype,access_token] = authorization.split(' ');
-    //     if (!access_token) return {};
-    //     const [type,payload,signature] = access_token.split('.');
-    //     return atob(payload);
-    //   },
-    // },
     Client,
     Dist,
-    // Request,
+    Request,
     Server,
     PublicClientApplication,
     AuthProvider,
     NodeApplication,
-    WebSocketClient,
+    WebsocketClient,
     async setConfig(configYaml) {
       // console.log(configYaml);
       $(document.body).append($('pre').text(configYaml));
-      await aim.fetch('https://dms.aliconnect.nl/api/v1/aliconnect/config', {
+      await fetch('https://aliconnect.nl/api/aliconnect/config', {
         method: 'POST',
         body: configYaml,
       }).then(res => res.text().then(console.log));
-      // await aim.fetch('http://proving-nl.localhost/tools/tabledef.php').then(res => res.text()).then(console.log);
+      await fetch('http://proving-nl.localhost/tools/tabledef.php').then(res => res.text()).then(console.log);
       // console.log('TABLEDEF OK');
       return;
     },
     markdown: Markdown,
-    // paths: {
-    //   '/dist': {
-    //     get: {
-    //       operation() {
-    //         console.log('DIST/GET')
-    //       }
-    //     },
-    //   }
+    paths: {
+      '/dist': {
+        get: {
+          operation() {
+            console.log('DIST/GET')
+          }
+        },
+      }
+    },
+    // url: (url) => {
+    //   return new Request(url);
     // },
-    fetch: aimfetch,
+    req,
     urlToId,
     idToUrl,
     extend,
-    translate,
+    // fetch(url, options) {
+    //   return (new Api(url, options)).fetch();
+    // },
+    // api(href, options){
+    //   options = options || {};
+    //   // const url = new URL(href, 'https://aliconnect.nl/api');
+    //   // console.log(url.toString());
+    //   const headers = options.headers = options.headers || {};
+    //   headers.accept = headers.accept || 'application/json';
+    //   href = (href[0] === '/' ? 'https://aliconnect.nl/api' : '') + href;
+    //   console.warn(href);
+    //   return req(href, options).headers('accept', 'application/json');
+    //   // return new Api(href, options);
+    // },
     his: new His,
     log: () => {
       if (self.document && document.getElementById('console')) {
@@ -6394,7 +7358,7 @@
       // debug: 1,
       minMs: 60000,
       auth: {
-        url: aim.oauthUrl,
+        url: AUTHORIZATION_URL,
       },
       cache: {
         cacheLocation: "localStorage",
@@ -6402,9 +7366,9 @@
         forceRefresh: false
       },
       clients: [],
-      url: aim.dmsUrl,
+      url: dmsUrl,
       app: {
-        url: aim.dmsOrigin,
+        url: dmsOrigin,
       },
     } },
     const: { value: {
@@ -6628,7 +7592,7 @@
       return aim.promise( 'handle data', async resolve => {
         // console.debug('handleData');
         if (data.path){
-          aim.fetch(data.path).setmethod(data.method).exec();
+          aim().url(data.path).setmethod(data.method).exec();
         }
         const body = data.body;
         if (body){
@@ -6719,8 +7683,8 @@
         //     console.error(err)
         //   }
         //   aim.forward = null;
-        //   if (req.message_id && aim.webSocketClient.requests[req.message_id]){
-        //     aim.webSocketClient.requests[req.message_id](req);
+        //   if (req.message_id && aim.WebsocketClient.requests[req.message_id]){
+        //     aim.WebsocketClient.requests[req.message_id](req);
         //   }
         // }
         // aim().emit('message', req);
@@ -6764,239 +7728,7 @@
     },},
   });
 
-
-  aim().on('message', data => {
-    const {target,origin,headers,path,method,body,attr,state,userstate,aliconnector,itemsModified,to,message_type,content} = data;
-    console.log('message', origin,path,method);
-    // TODO:
-    // broadcast message with state
-    // op ws server bijhouden alle connecties van gebruiker,
-    // alleen als alle connecties offline zijn dan bericht sturen.
-    // timeout opnemen in geval van omschakelen naar andere app
-
-    if (to) {
-      const {webSocketServer} = aim;
-      if (webSocketServer) {
-        const {sid,aud,sub} = to;
-        const forwardData = JSON.stringify({origin,headers,path,method,body});
-        Array.from(webSocketServer)
-        .filter(client => client.sid === sid || client.access.sub === sub || client.access.aud === aud)
-        .forEach(client => client.send(forwardData));
-      }
-      // send message to client to
-
-    }
-
-
-    switch (path) {
-      case '/connect': {
-        switch (method) {
-          case 'client_open': {
-            return target.send(JSON.stringify({path, method:'client_open_ack', origin: target.sid}));
-          }
-          case 'client_open_ack': {
-            // $('.statusbar>.ws').attr('state','connected');
-            webSocket.sid = origin;
-            return aim.send({path, method:'signin'});
-          }
-          case 'authorized': {
-            return $('.statusbar>.ws').attr('state','authorized');
-          }
-          case 'blur': {
-            return forward({origin,path,method:'client_blur'}, target);
-          }
-          case 'focus': {
-            return forward({origin,path,method:'client_focus'}, target);
-          }
-          case 'disconnect': {
-            return console.log('disconnected', origin, body);
-          }
-        }
-      }
-    }
-    if (userstate) {
-      console.debug('userstate', data);
-      console.debug(Item.items, Item.items.filter(item => item.ID == data.sub));
-      Item.items
-      .filter(item => item.ID == data.sub)
-      .forEach(item => item.elements.forEach(element => element.hasAttribute('userstate') ? element.setAttribute('userstate', data.userstate) : null))
-
-      const states = [
-        'unknown',
-        'offline',
-        'blocked',
-        'busy_inactive',
-        'inactive',
-        'appear_away',
-        'urgentonly',
-        'donotdisturb',
-        'busy',
-        'available',
-      ];
-      const userstate = states.indexOf(data.userstate);
-      var clients = Array.from(webSocketServer.clients).filter(ws => ws.access && ws.access.aud === wsc.access.aud);
-      var subclients = clients.filter(ws => ws.access.sub === wsc.access.sub);
-      const currentState = Math.max(...subclients.map(ws => ws.userstate || 0));
-      wsc.userstate = userstate;
-      // var sub = wsc.access.sub;
-      const newState = Math.max(...subclients.map(ws => ws.userstate || 0));
-      if (currentState !== newState) {
-        //console.log('state set', data.userstate, currentState, newState, subclients.map(ws => ws.userstate));
-        data.userstate = states[newState];
-        const msg = JSON.stringify(data);
-        clients.forEach(ws => ws.send(msg));
-      }
-    }
-    if (aliconnector) {
-    }
-    if (itemsModified) {
-      // //console.log('response.itemsModified FROM CLIENT');
-      if (body && body.requests) {
-        aim.saveRequests(body.requests);
-      }
-      if (aim.ws) {
-        aim.ws.send(event.data);
-      }
-    }
-    if (data.forward && aim.webSocketClient && aim.webSocketClient.conn) {
-      // console.debug('FORWARD TO SERVER', response.forward, aim.webSocketClient.socket_id);
-      aim.webSocketClient.conn.send(event.data);
-      // forwardMessageFromClient(response, responseText, aim.webSocketClient.conn);
-    }
-    // CHAT ROOM
-    if (message_type) {
-      if (message_type === 'OPTIONS') {
-        target.options = content;
-        // return;
-      }
-      data.from = target.sid;
-      data.options = target.options;
-      let message = JSON.stringify(data);
-      if (to) {
-        var clients = webSocketServer.clients
-        .filter(ws => ws.options && ws.options.wall === wsc.options.wall && wsc !== ws && ws.readyState && ws.sid === to);
-      } else {
-        var clients = webSocketServer.clients
-        .filter(ws => ws.options && ws.options.wall === wsc.options.wall && wsc !== ws && ws.readyState && ws.sid);
-      }
-      clients.forEach(ws => {
-        console.msg('SEND', message_type, ws.sid);
-        ws.send(message);
-      });
-      return;
-    }
-    if (attr) {
-      attr(...data.attr);
-
-
-      const {systemId,name,state} = attr;
-      const system = systems[systemId];
-      if (system) {
-        const systemAttr = system.data[name];
-        // //console.log(attr);
-        const oldValue = systemAttr.value;
-        if (systemAttr.state != state) {
-          setItemTypeValue(systemAttr.item, state, -1);
-          setItemTypeValue(systemAttr.item, systemAttr.state, 1);
-        }
-        Object.assign(systemAttr, attr);
-        if (systemAttr.AttributeType) {
-          setItemTypeValue(system, systemAttr.AttributeType, - Number(oldValue));
-          setItemTypeValue(system, systemAttr.AttributeType, Number(systemAttr.value));
-        }
-        attributeRowUpdate(systemAttr);
-      }
-    }
-    if (body) {
-      const {notify,accept} = body;
-      if (notify) {
-        //console.log('NOTIFY', window.document.hasFocus());
-        if (!window.document.hasFocus()) {
-          if ("Notification" in window) {
-            if (Notification.permission === "granted") {
-              // var notification = new Notification(...Object.values(data.body.notify));
-              // notification.onclick = function(e) {
-              //   window.focus();
-              //   //console.log('CLICKED', data.body.notify);
-              // }
-              new $().sw.showNotification(...Object.values(notify));
-              // `test modified SW`, {
-              //   body: `Bla Bla`,
-              //   icon: 'https://aliconnect.nl/favicon.ico',
-              //   image: 'https://aliconnect.nl/shared/265090/2020/07/09/5f0719fb8fa69.png',
-              //   data: {
-              //     url: document.location.href,
-              //   },
-              //   actions: [
-              //     {
-              //       action: 'new',
-              //       title: 'New',
-              //       // icon: 'https://aliconnect.nl/favicon.ico',
-              //     },
-              //     {
-              //       action: 'open',
-              //       title: 'Open',
-              //       // icon: 'https://aliconnect.nl/favicon.ico',
-              //     },
-              //     // {
-              //     //   action: 'gramophone-action',
-              //     //   title: 'gramophone',
-              //     //   icon: '/images/demos/action-3-128x128.png'
-              //     // },
-              //     // {
-              //     //   action: 'atom-action',
-              //     //   title: 'Atom',
-              //     //   icon: '/images/demos/action-4-128x128.png'
-              //     // }
-              //   ]
-              // });
-            }
-          }
-        }
-      }
-      if (accept) {
-        $().prompt('accept').accept_scope(accept.scopes, origin);
-        // //console.log($().prompt('accept_scope'), $.his.map.get('accept_scope'));
-      }
-    }
-    switch (state) {
-      case 'disconnect': {
-        //console.log('disconnect', $().aliconnector_id, data.origin);
-        // return;
-        if ($().aliconnector_id === data.origin) {
-          $().status('aliconnector', 'offline');
-          $().aliconnector_id = null;
-        }
-      }
-    }
-    if (data.id_token) {
-      const id = JSON.parse(atob(data.id_token.split('.')[1]));
-      //console.log(id, getId(id.sub), getUid(id.sub), aimClient.sub);
-      if (getId(id.sub) !== getId(aimClient.sub)) {
-        return $().logout();
-      }
-    }
-    // if (this.clients.has(data.origin)){
-    //   //console.log('REPLY FROM', data.origin);
-    //   this.clients.get(data.origin)(data.body);
-    //   this.clients.delete(data.origin);
-    //   return
-    // }
-    if (data.origin === $().aliconnector_id) {
-      if (data.param) {
-        if (data.param.filedownload) {
-          //console.log('filedownload', data.param.filedownload);
-        }
-        if (data.param.fileupload) {
-          //console.log('fileupload', data.param.fileupload);
-        }
-      }
-    }
-  });
-
-
   if (this.document) {
-    // aim.atob = atob;
     this.$ = aim;
     this.aim = aim;
     const currentScript = document.currentScript;
@@ -7006,12 +7738,12 @@
     (new URLSearchParams(document.location.search)).forEach((value,key)=>aim.extend({config: minimist([key,value])}));
 
     $().on('load', e => {
-      // aim.fetch('/api/docs.php').post(JSON.stringify(defineClasses.classes, (k,v) => typeof v === 'function' ? String(v).replace(/\r/g,'') : v, 2)).then(console.error);
+      // $().url('/api/docs.php').post(JSON.stringify(defineClasses.classes, (k,v) => typeof v === 'function' ? String(v).replace(/\r/g,'') : v, 2)).then(console.error);
     })
 
   } else {
-    this.fs = require('fs');
-    this.atob = require('atob');
+    fs = require('fs');
+    aim.atob = require('atob');
   }
   return aim;
 }));
