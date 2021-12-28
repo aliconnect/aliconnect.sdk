@@ -3076,7 +3076,7 @@
     },
     printpdf(){
       console.log(this);
-      aim.fetch(aim.dmsUrl + "abis/data?request_type=pdf", {
+      fetch(aim.dmsUrl + "abis/data?request_type=pdf", {
         method: 'post',
         body: this.elem.innerHTML,
         // headers: new Headers({

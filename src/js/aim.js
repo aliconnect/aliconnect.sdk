@@ -2567,7 +2567,6 @@
     // console.log(url, self.document.location);
     url = new URL(url, self.document ? self.document.location : aim.dmsUrl);
 
-
     // const response = fetch(url, {
     //   method: 'GET', // *GET, POST, PUT, DELETE, etc.
     //   mode: 'cors', // no-cors, *cors, same-origin
@@ -2644,7 +2643,7 @@
         if (typeof module === "undefined") {
           const statusMessage = new StatusMessage;
           statusMessage.text('Wachten op ' + url);
-          // console.log(options.method, url.href);
+          console.log(options.method, url.href, options.body);
           xhr = new XMLHttpRequest();
           xhr.open(options.method, url);
           xhr.withCredentials = options.withCredentials;
@@ -2760,7 +2759,7 @@
       },
     });
     // console.log('asasdfasd', setoptions);
-    Object.entries(setoptions).forEach(([key,value])=>ret[key](value));
+    Object.entries(setoptions).forEach(([key,value])=>ret[key] ? ret[key](value) : null);
     return ret;
   }
 
