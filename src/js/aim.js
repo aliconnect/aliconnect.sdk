@@ -2563,8 +2563,8 @@
   // }
 
   function aimfetch(url, setoptions = {}) {
-    options = {method: 'get'};
-    // console.log(url, self.document.location);
+    const options = {method: 'get'};
+    console.log('aimfetch', url);
     url = new URL(url, self.document ? self.document.location : aim.dmsUrl);
 
     // const response = fetch(url, {
