@@ -2564,7 +2564,7 @@
 
   function aimfetch(url, setoptions = {}) {
     const options = {method: 'get'};
-    console.log('aimfetch', url);
+    console.log('AIM aimfetch', url);
     url = new URL(url, self.document ? self.document.location : aim.dmsUrl);
 
     // const response = fetch(url, {
@@ -2643,7 +2643,7 @@
         if (typeof module === "undefined") {
           const statusMessage = new StatusMessage;
           statusMessage.text('Wachten op ' + url);
-          console.log(options.method, url.href, options.body);
+          // console.log(options.method, url.href, options.body);
           xhr = new XMLHttpRequest();
           xhr.open(options.method, url);
           xhr.withCredentials = options.withCredentials;
@@ -2661,7 +2661,7 @@
             }
           });
           Object.entries(options.headers||{}).forEach(entry => xhr.setRequestHeader(...entry));
-          // console.log(options.input);
+          // console.log('BODY', options.body);
           xhr.send(options.body);
         } else {
           const href = url.toString();
@@ -2694,7 +2694,6 @@
         return ret;
       },
       body: (context, isFormData) => {
-        console.log(1, context, isFormData);
         if (!context) {
           return options.body;
         }
@@ -2717,11 +2716,13 @@
             break;
           }
           case 'Object': {
+            // console.log(1111, context, isFormData, context.constructor.name, options);
             if (isFormData) {
               options.body = new FormData();
               Object.entries(context).forEach(entry => options.body.append(...entry));
             } else {
-              this.headers('Content-Type', 'application/json');
+              // console.log(11112, context, isFormData, context.constructor.name, options);
+              ret.headers('Content-Type', 'application/json');
               options.body = JSON.stringifyReplacer(context);
             }
             break;
@@ -2731,7 +2732,7 @@
               options.body = new FormData();
               Object.entries(context).forEach(entry => options.body.append(...entry));
             } else {
-              this.headers('Content-Type', 'application/json');
+              ret.headers('Content-Type', 'application/json');
               options.body = JSON.stringifyReplacer(context);
             }
             break;
