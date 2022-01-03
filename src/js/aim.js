@@ -2643,7 +2643,7 @@
         if (typeof module === "undefined") {
           const statusMessage = new StatusMessage;
           statusMessage.text('Wachten op ' + url);
-          // console.log(options.method, url.href, options.body);
+          console.log(options.method, url.href, options.body);
           xhr = new XMLHttpRequest();
           xhr.open(options.method, url);
           xhr.withCredentials = options.withCredentials;
