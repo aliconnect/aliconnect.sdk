@@ -7488,7 +7488,7 @@
               },},
               text: { value: function (value) {
                 if (arguments.length) {
-                  this.elem.innerHTML = [].concat(...arguments).join(' ');
+                  this.elem.innerText = [].concat(...arguments).join(' ');
                   return this;
                 }
                 return this.elem.innerText;
@@ -11956,6 +11956,9 @@
   });
 
   // this.sw();
+
+
+  // console.log(1111,Elem.prototype.text);
 
   [...currentScript.attributes].forEach(attribute => $.extend({config: minimist(['--'+attribute.name.replace(/^--/, ''), attribute.value])}));
   (new URLSearchParams(document.location.search)).forEach((value,key)=>$.extend({config: minimist([key,value])}));
