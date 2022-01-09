@@ -30,6 +30,10 @@ html {
   --yellow: rgb(255,192,0);
   --yellow-bg: rgba(255,192,0,0.1);
 
+  --price: lightblue;
+  --discountprice: orange;
+  --lt: green;
+
   --btbg: var(--blue);
   --lighGray: rgb(120,120,120);
   --trans05: rgba(140,140,140,0.05);
