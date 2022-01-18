@@ -1402,8 +1402,9 @@
     document.location.hash = `#?l=${aim.urlToId(url.href)}`;
   }
   function listShow(body) {
-    // console.log('listShow', body);
+    console.log('listShow', body);
     $('.lv').text('');
+    // $('.pv').text('');
     if (body.rows && body.rows.length) {
       const rows = body.rows;
       const context = new URL(body['@context']);
@@ -3125,7 +3126,7 @@
               this.elem[selector] = context;
               // } else if (selector in this.elem) {
               //   this.elem[selector] = context;
-            } else {
+            } else if (this.elem) {
               this.elem.setAttribute(selector.replace(/ |%/g, ''), [].concat(context).join(' '))
             }
           }
@@ -7488,7 +7489,9 @@
               },},
               text: { value: function (value) {
                 if (arguments.length) {
-                  this.elem.innerText = [].concat(...arguments).join(' ');
+                  if (this.elem) {
+                    this.elem.innerText = [].concat(...arguments).join(' ');
+                  }
                   return this;
                 }
                 return this.elem.innerText;
@@ -11987,15 +11990,12 @@
       if (changed.l || changed.id || changed.$search) {
         // if (changed.l) {
         if (changed.l || changed.$search) {
-          // console.log(atob(docsearchParams.get('l')));
-          const listUrl = new URL(aim.idToUrl(docsearchParams.get('l')));
+          console.log(docsearchParams.get('l'));
+          const l = docsearchParams.get('l');
+          const idToUrl = l ? aim.idToUrl(l) : '/api/v1/product?$filter=klantNaam+eq+null';
+          const listUrl = new URL(idToUrl, 'https://dms.aliconnect.nl');
           // console.log(8888, searchParams.get('l') !== curdocsearchParams.get('l'), searchParams.get('l'), curdocsearchParams.get('l'));
-          [
-            'top',
-            'select',
-            'search',
-            'filter'
-          ].forEach(key => {
+          ['top','select','search','filter'].forEach(key => {
             if (changed[key]) {
               listUrl.searchParams.set('$'+key, changed[key]);
             }
@@ -12015,9 +12015,11 @@
 
           const hostname = new URL(listUrl).hostname;
           const client = aim.clients.get(hostname);
+
+          console.log(123, listUrl.href);
+
           // console.log(12312, listUrl, aim.clients, client);
           if (client) {
-            // console.log(listUrl.href);
             client.api(listUrl.href).get().then(listShow);
           }
         }

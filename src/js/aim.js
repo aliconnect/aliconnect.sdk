@@ -32,8 +32,8 @@
         return new aim.Elem(selector);
       }
     }
-    if (aim.Elem && selector instanceof aim.Elem) {
-      if (selector.elem.id) {
+    if (aim.Elem && (selector instanceof aim.Elem)) {
+      if (selector.elem && selector.elem.id) {
         aim.his.map.set(selector.elem.id, selector);
       }
       return selector;
@@ -2649,7 +2649,7 @@
         if (typeof module === "undefined") {
           const statusMessage = new StatusMessage;
           statusMessage.text('Wachten op ' + url);
-          console.log(options.method, url.href, options.body);
+          console.log(options.method, url.href, options.headers, options.body);
           xhr = new XMLHttpRequest();
           xhr.open(options.method, url);
           xhr.withCredentials = options.withCredentials;
@@ -2659,7 +2659,7 @@
               statusMessage.remove();
               resolve(new Request)
             } else {
-              statusMessage.style('background-color:red;');
+              statusMessage.style('background-color:#721313;');
               const req = new Request;
               const {error} = await req.json();
               console.error(error);
@@ -5527,6 +5527,7 @@
     console.log('host active', protocol, host.port, options);
     const http = require(protocol);
     function processRequest (req, res) {
+      const paths = config.paths;
       function end(statusCode, body, header) {
         // console.log(statusCode, body, header);
         res.writeHead(res.statusCode = statusCode, header);
@@ -5599,10 +5600,10 @@
       pathname = pathname.replace(/\/blob\/main(.*?)\.md/, '$1');
       pathname = pathname.replace(/^\/(.*?)\/.*?\.(.*?)\//, '/@$1/$2/');
       console.log(pathname);
-      var fname = config.paths.map(path => path+pathname).find(fname => fs.existsSync(fname) && fs.statSync(fname).isFile()) || config.paths.map(path => path+pathname+'index.html').find(fs.existsSync);
+      var fname = paths.map(path => path+pathname).find(fname => fs.existsSync(fname) && fs.statSync(fname).isFile()) || paths.map(path => path+pathname+'index.html').find(fs.existsSync);
 
 
-      if (!fname && config.paths.map(path => path+pathname+'.md').find(fs.existsSync)) {
+      if (!fname && paths.map(path => path+pathname+'.md').find(fs.existsSync)) {
         return fs.readFile(module.path+'/../../public/md.html', (err, data) => {
           data = String(data)
           .replace(/\@\d+\.\d+\.\d+/g, '')

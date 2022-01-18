@@ -114,9 +114,13 @@ html[dark='1'] ::-webkit-calendar-picker-indicator {
   position: relative;
   z-index: 0;
 }
+html {
+  min-height: 100vh;
+}
 body {
   font-family: "Segoe UI", "Segoe WP", sans-serif, Tahoma, Arial;
   margin:0;
+  min-height: 100vh;
 }
 .app body>div {
   display: flex;
@@ -1218,8 +1222,8 @@ header>.icon {
   /* padding:5px; */
   outline:none;
 
-  border:solid 1px rgb(40,40,40);
-  background-color: rgb(40,40,40);
+  /* border:solid 1px rgb(40,40,40);
+  background-color: rgb(40,40,40); */
 
   margin-bottom: 5px;
 }
@@ -1561,71 +1565,6 @@ progress[color]::-webkit-progress-value {
 }
 
 
-footer.statusbar {
-  display: flex;
-  flex: 0 0 24px;
-  line-height: 24px;
-  /* background-color: #22252B; */
-  background-color: rgb(10,10,10);
-  font-size: 14px;
-  color: rgb(140,140,140);
-  white-space: nowrap;
-}
-footer.statusbar span:not(:empty) {
-  padding: 0 5px;
-}
-footer.statusbar progress {
-  text-align: right;
-  display: block;
-  position: absolute;
-  z-index: 1;
-  width: 100%;
-  height: 3px;
-  bottom: 0;
-  background-color: transparent;
-  color: inherit;
-  /* box-shadow: inset 0px 11px 8px -10px var(--trans3), inset 0px -11px 8px -10px var(--trans3); */
-  transition: all 500ms;
-}
-footer.statusbar progress:not([value]) {
-  display: none;
-}
-footer.statusbar progress[context] {
-  -webkit-appearance: none;
-  appearance: none;
-  width:100%;
-  height:100%;
-}
-footer.statusbar progress::-webkit-progress-bar {
-  background-color: transparent;
-  background-color: red;
-  /* box-shadow: inset 0 0 5px var(--trans3); */
-}
-footer.statusbar progress[value]::-webkit-progress-value {
-  /* transition: all 1s; */
-}
-footer.statusbar progress::-webkit-progress-value {
-  background-color: transparent;
-  background-color: green;
-  /* background-image: linear-gradient(to right, transparent, var(--trans3)); */
-  box-shadow: inset -20px 0px 20px -5px var(--trans3);
-
-}
-/* footer progress::after {
-  position: absolute;
-  margin:auto;
-  top:0;
-  right:0;
-  height: inherit;
-  text: inherit;
-  padding: inherit;
-  content: 'Uploading (' attr(proc) '%)';
-  color: inherit;
-  padding: 0 5px;
-} */
-
-
-
 footer>article ul {
   list-style: none;
   padding: 0;
@@ -1825,6 +1764,74 @@ table>tr:first-child{
   50% { opacity: 0.2; }
   100% { opacity: 1; }
 }
+
+.statusbar {
+  display: flex;
+  flex: 0 0 24px;
+  line-height: 24px;
+  /* background-color: #22252B; */
+  background-color: rgb(10,10,10);
+  font-size: 14px;
+  color: rgb(140,140,140);
+  white-space: nowrap;
+  /* position: absolute;
+  bottom: 0;
+  left:0;
+  right:0; */
+}
+.statusbar span:not(:empty) {
+  padding: 0 5px;
+}
+.statusbar progress {
+  text-align: right;
+  display: block;
+  position: absolute;
+  z-index: 1;
+  width: 100%;
+  height: 3px;
+  bottom: 0;
+  background-color: transparent;
+  color: inherit;
+  /* box-shadow: inset 0px 11px 8px -10px var(--trans3), inset 0px -11px 8px -10px var(--trans3); */
+  transition: all 500ms;
+}
+.statusbar progress:not([value]) {
+  display: none;
+}
+.statusbar progress[context] {
+  -webkit-appearance: none;
+  appearance: none;
+  width:100%;
+  height:100%;
+}
+.statusbar progress::-webkit-progress-bar {
+  background-color: transparent;
+  background-color: red;
+  /* box-shadow: inset 0 0 5px var(--trans3); */
+}
+.statusbar progress[value]::-webkit-progress-value {
+  /* transition: all 1s; */
+}
+.statusbar progress::-webkit-progress-value {
+  background-color: transparent;
+  background-color: green;
+  /* background-image: linear-gradient(to right, transparent, var(--trans3)); */
+  box-shadow: inset -20px 0px 20px -5px var(--trans3);
+
+}
+/* footer progress::after {
+  position: absolute;
+  margin:auto;
+  top:0;
+  right:0;
+  height: inherit;
+  text: inherit;
+  padding: inherit;
+  content: 'Uploading (' attr(proc) '%)';
+  color: inherit;
+  padding: 0 5px;
+} */
+
 .statusbar>span::before {
   font-family: 'AliconnectIcon';
   padding: 0 5px;
