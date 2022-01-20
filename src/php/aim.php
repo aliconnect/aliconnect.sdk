@@ -279,7 +279,9 @@ class Aim {
             // $row->id = $id = $row->{$idname};
             $id = $row->id;
             $row->{'@id'}=$this->origin . $this->request_path . "?id=$id";
-            $row->schemaName = $basename;
+            // if (empty($row->schemaName)) {
+            //   $row->schemaName = $basename;
+            // }
             $items[] = $row;
           }
         }

@@ -16,7 +16,7 @@ html {
   --bg-trans: rgba(180,180,180,0.1);
   --form-bg: rgba(200,180,180,0.3);
 
-  --header-font-family: "Segoe UI Light";
+  --header-font-family: "Segoe UI Light", sans-serif, Tahoma, Arial;
   --bg: white;
   --heighligth: #fafafa;
   --fg: black;
@@ -190,8 +190,8 @@ nav button::after, nav a::after {
 }
 
 nav {
-  --border: solid 1px rgba(140,140,140,0.8);
-  --border: solid 1px white;
+  /* --border: solid 1px rgba(140,140,140,0.8);
+  --border: solid 1px white; */
   --bg-button-hover: var(--trans5);
   display:flex;
   flex: 0 0 36px;
@@ -200,6 +200,7 @@ nav {
   background-color: var(--bg-trans);
 }
 nav form {
+  --radius: 5px;
   line-height: 36px;
   padding: 5px 0;
   margin-right: auto;
@@ -209,21 +210,21 @@ nav form input {
   border-left: var(--border);
   border-top: var(--border);
   border-bottom: var(--border);
-  border-top-left-radius: 20px;
-  border-bottom-left-radius: 20px;
+  border-top-left-radius: var(--radius);
+  border-bottom-left-radius: var(--radius);
   outline: none;
   font: inherit;
   background-color: var(--trans1);
   color: inherit;
-  padding: 0 20px;
+  padding: 0 var(--radius);
   margin: 0;
 }
 nav form input+.abtn {
   border-right: var(--border);
   border-top: var(--border);
   border-bottom: var(--border);
-  border-top-right-radius: 20px;
-  border-bottom-right-radius: 20px;
+  border-top-right-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
 }
 
 ::placeholder {
@@ -308,9 +309,9 @@ nav .menu {
 /* nav .menu::before {
   content:'...';
 } */
-nav .menu:not(:hover)>ul {
+/* nav .menu:not(:hover)>ul {
   display: none;
-}
+} */
 
 nav .menu>ul {
   position: absolute;
@@ -362,7 +363,6 @@ nav .menu>ul>li>ul>li>ul {
   padding:0;
   right: 0;
 }
-
 
 body>header{
   display: flex;
@@ -587,7 +587,7 @@ header h3 {
 .lv nav .filter {
   margin-right: auto;
 }
-.lv aside.filter {
+aside.filter {
   background-color: var(--trans05);
   padding: 5px;
 }
@@ -1161,6 +1161,7 @@ nav span {
   background-color: var(--trans1);
   display: flex;
   overflow: hidden;
+  flex: 0 0 auto;
   /* height:120px; */
   /* position: sticky; */
   /* top: 0px; */
@@ -1401,7 +1402,6 @@ header>.icon {
     padding: 3px 0;
   }
 }
-
 .oa{
   overflow: overlay;
 }
@@ -1661,9 +1661,6 @@ aside.filter div[more='1'] div.more::before {
 aside.filter div[more='1'] div.more::after {
   content: "Bekijk minder";
 }
-.lv[hidefilter='1'] aside.filter {
-  display: none;
-}
 
 code {
   /* font-family: SFMono-Regular,Consolas,Liberation Mono,Menlo,Courier,monospace; */
@@ -1876,4 +1873,84 @@ table>tr:first-child{
   animation: pulse 1s infinite;
   content: '\f172';
   color: red;
+}
+
+
+aside.filter:empty{
+  display:none;
+}
+
+@media (min-width: 400px) {
+  .lv[hidefilter='1'] aside.filter {
+    display: none;
+  }
+}
+
+@media only screen and (max-width: 400px) {
+  .lv:not([hidefilter='1']) aside.filter {
+    display: none;
+  }
+  .tv[hide='1']{
+    display: none;
+  }
+
+  .account>span {
+    display:none;
+  }
+  .pagemenu {
+    display:none;
+  }
+  .pv:not(:empty)+.lv{
+    display:none;
+  }
+  .pv {
+    max-width: 100% !important;
+  }
+  .pv .attr {
+    flex-direction: column;
+  }
+  .pv .attr label.title {
+    flex-basis: auto;
+  }
+  .pv .attr>label {
+    opacity: 0.6;
+    flex-basis: auto;
+    margin-left: 0;
+    line-height: 24px;
+  }
+  .pv>form{
+    overflow: unset;
+  }
+  .pv{
+    overflow: overlay;
+  }
+  .pv>nav{
+    position: sticky;
+    top: 0;
+  }
+  .tv {
+    overflow: overlay;
+    position: fixed;
+    height:100%;
+    width:100%;
+    background: black;
+    z-index: 10;
+  }
+  aside.filter {
+    overflow: overlay;
+    position: fixed;
+    top: 80px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: black;
+    z-index: 10;
+  }
+  html, body {
+    overflow: hidden;
+    position: fixed;
+    height:100%;
+    width:100%;
+    z-index: 1;
+  }
 }

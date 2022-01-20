@@ -25,6 +25,21 @@
     return localStorage.getItem(name);
   }
   function search(s) {
+    $('.pv').text('');
+    aim.searchString = s;
+    if (aim.listselector === 'product') {
+      const clientName = localStorage.getItem('clientName');
+      aim.list('product',{
+        // $filter: clientName ? `klantnaam eq '${clientName}'` : 'klantnaam eq null',
+        //$filter: '',
+        $search: s,
+      })
+      const url = new URL(document.location);
+      url.searchParams.set('$search', s);
+      window.history.replaceState('','',url.href);
+      console.log(url.href);
+      return false;
+    }
     document.location.hash = '?$search=';
     document.location.hash = '?$search='+s;
     return false;
@@ -32,11 +47,12 @@
 
   const libraries = {
     async page() {
+      console.log(searchParams.get('$search'));
       $(document.documentElement).class(getItem('isApp') || 'page') ;
       $(document.documentElement).attr('dark', localStorage.getItem('dark'));
       $(document.body).append(
         $('nav').append($('article').append(
-          $('button').class('abtn menu').on('click', e => $(document.documentElement).class(getItem('isApp', getItem('isApp') !== 'app' ? 'app' : 'page' ))),
+          $('button').class('abtn menu').on('dblclick', e => $(document.documentElement).class(getItem('isApp', getItem('isApp') !== 'app' ? 'app' : 'page' ))),
           $('form').class('search row aco')
           .on('submit', e => {
             e.preventDefault();
@@ -44,7 +60,7 @@
           })
           .on('keyup', e => e.code === 'Enter' ? search(e.target.value) : null)
           .append(
-            $('input').name('search').autocomplete('off').placeholder('zoeken').value(searchParams.get('$search')),
+            $('input').name('search').autocomplete('off').placeholder('zoeken').value(searchParams.get('$search')).on('focus', e => e.target.select()),
             $('button').class('abtn icn search fr').title('Zoeken').on('click', e => search(e.target.previousElementSibling.value)),
           ),
 
@@ -155,8 +171,6 @@
       };
       const aimClient = aim.aimClient = new aim.PublicClientApplication(aimConfig);
 
-
-
       const config = await aimClient.getConfig();
       Object.assign(aim.config, config);
 
@@ -215,6 +229,9 @@
       window.addEventListener('blur', e => aim.send({path:'/connect', method:'blur'}));
       window.addEventListener('focus', e => aim.send({path:'/connect', method:'focus'}));
 
+      $('button.menu').on('click', e => $('.tv').attr('hide', $('.tv').attr('hide') ^ 1));
+      $('.tv').on('click', e => !['summary'].includes(e.target.localName) ? $('.tv').attr('hide',1) : null);
+
       // aim.webSocketClient.send({path: '/test'});
 
 
@@ -235,7 +252,7 @@
         // ['/page/menu.md', 'button.menu'],
         // ['/page/top.md', '.pagemenu'],
         // ['/page/footer.md', 'body>footer>article'],
-        ['/nav-left.md', 'button.menu'],
+        // ['/nav-left.md', 'button.menu'],
         ['/nav-top.md', '.pagemenu'],
         ['/footer.md', 'body>footer>article'],
       ];
@@ -1396,6 +1413,7 @@
     );
   }
   function list(selector, options={}, search){
+    aim.listselector = selector;
     options.$select = aim.config.components.schemas[selector].cols.filter(col => col.header || col.filter).map(col => col.name).join(',');
     const url = new URL(selector, aim.dmsUrl);
     url.search = new URLSearchParams(options);
@@ -1408,6 +1426,10 @@
     if (body.rows && body.rows.length) {
       const rows = body.rows;
       const context = new URL(body['@context']);
+      aim.listselector = context.pathname.split('/').pop();
+
+      console.log(4444,aim.listselector);
+
       const requestType = context.pathname.split('/')[2];
       // console.log(requestType, aim.config.components.schemas);
       // const requestType = context.searchParams.get('request_type');
@@ -1418,11 +1440,12 @@
       const select = $select ? $select.split(',') : Object.keys(rows[0]);
       // console.log(select);
       const cols = select.map(name => Object.assign({name: name}, schema && schema.properties && schema.properties[name] ? schema.properties[name] : {title: name}));
-
+      console.log(1111,rows);
       aim.om.listview(rows);
     }
   }
   function listview(rows, options = {}){
+    $('.tv').attr('hide',1);
     rows = this.rows = rows || this.rows;
     // console.log('startlist');
     rows = rows.map(row => row.data ? Object.assign(row,JSON.parse(row.data)) : row);
@@ -1448,6 +1471,7 @@
         $('span.pos').text(rows.length + (rowsVisible.length === rows.length ? '' : '/' + rowsVisible.length) + ':' + ( rowsVisible.indexOf(row) + 1));
       }
     }
+
     let selectTimeout;
     const types = {
       rows: () => {
@@ -1456,7 +1480,7 @@
             const schema = aim.config.components.schemas[row.schemaName];
             const app = schema.app || {};
             const div = $('div')
-            .on('click', e => select(div));
+            .on('click', e => select(div))
             if (aim.pageTag === row.schemaName+row.id) {
               console.log(aim.pageTag, row.schemaName+row.id);
               div.attr('focus', '');
@@ -1468,7 +1492,7 @@
                   row.images && row.images[0] ? $('img').src(row.images[0]) : $('span').text((rowHeaders(row,aim.config.components.schemas[row.schemaName].cols).join('').match(/([A-Z]).*?([A-Z])/)||[]).slice(1,3).join('')),
                 ),
                 $('div').class('aco').append(
-                  row.headers.map((s,i)=>$('h'+(i+1)).text(s)),
+                  row.headers.map((s,i)=>$('h'+(i+1)).html(searchRegExp ? s.replace(searchRegExp,'<b>$1</b>') : s)),
                   app.header ? app.header(row) : null,
                   row.options ? $('div').append(
                     Object.entries(row.options).map(entry => [
@@ -1535,6 +1559,15 @@
       row.headers = rowHeaders(row, cols);
     });
 
+    const searchString = new URL(document.location).searchParams.get('$search');
+    var searchRegExp;
+    if (searchString) {
+      var searchRegExp = new RegExp(`(${searchString.replace(/\s/g,'|')})`,'ig');
+      var wordRegExp = new RegExp(`\\b(${searchString.replace(/\s/g,'|')})\\b`,'ig');
+      console.log(searchString, rows.map(a => (a.headers||[''])[0].match(wordRegExp)));
+      rows.sort((a,b) => ( (b.headers||[''])[0].match(wordRegExp) ? 1 : 0) - ((a.headers||[''])[0].match(wordRegExp)?1:0));
+    }
+
     function displayvalue(value, col){
       // console.log(col, value)
       if (col.type === 'boolean') {
@@ -1546,13 +1579,13 @@
     filter = Object.values(filter);
     filter.forEach(attribute => {
       attribute.values = rows
-      .map(row => attribute.name in row ? (isNaN(row[attribute.name]) ? String(row[attribute.name]).toLowerCase().trim() : row[attribute.name]) : '')
+      .map(row => attribute.name in row ? (isNaN(row[attribute.name]) ? String(row[attribute.name]).trim() : row[attribute.name]) : '')
       .unique()
       .sort((a,b) => String(a).localeCompare(String(b), undefined, {numeric: true}))
       .map(value => Object({
         value: value,
         title: displayvalue(value, attribute),
-        rows: rows.filter(row => attribute.name in row && String(row[attribute.name]).toLowerCase() == value )
+        rows: rows.filter(row => attribute.name in row && String(row[attribute.name]).toLowerCase() == String(value||'').toLowerCase() )
       }))
     });
 
@@ -1781,6 +1814,8 @@
       // .map(col => Object({name: col.name, values:col.values.filter(val => val.checked).map(val => val.value) }));
       .map(col => Object({name: col.name, values:col.values.filter(val => val.checked) }));
 
+      // console.log(filter);
+
       // aim.listRows = rowsVisible = rows.filter(row => !checkedFilters.some(val => !val.values.includes(row[val.name])));
 
       // aim.listRows = rowsVisible = rows.filter(row => !checkedFilters.some(val => !val.values.find(value => value == String(row[val.name]).toLowerCase())));
@@ -1793,7 +1828,7 @@
       // console.log(checkedFilters, rows, rowsVisible);
       $('span.pos').text(rows.length + (rowsVisible.length === rows.length ? '' : '/' + rowsVisible.length));
       navElem.text('').append(
-        $('button').class('abtn filter').on('click', e => $('.lv').attr('hidefilter', aim.showfilter ^= 1)),
+        filter.length ? $('button').class('abtn filter').on('click', e => $('.lv').attr('hidefilter', aim.showfilter ^= 1)) : null,
         ...navList.map(fn => fn()),
         $('button').class('abtn view').append(
           $('div').append(
@@ -12016,7 +12051,7 @@
           const hostname = new URL(listUrl).hostname;
           const client = aim.clients.get(hostname);
 
-          console.log(123, listUrl.href);
+          // console.log(123, listUrl.href);
 
           // console.log(12312, listUrl, aim.clients, client);
           if (client) {
