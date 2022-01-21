@@ -69,8 +69,8 @@
           $('button').class('abtn shop'),
           $('button').class('abtn account').append(
             $('span').append(
-              $('span').class('company'),
               $('span').class('user'),
+              $('span').class('company'),
             ),
             $('div').append(
               $('button').text('aanmelden').on('click', signIn),

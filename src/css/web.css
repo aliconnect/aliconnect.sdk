@@ -644,7 +644,7 @@ aside.filter {
   transform: rotate(0deg);
 }
 .lv td, .lv th {
-  padding: 0 5px;
+  /* padding: 0 5px; */
 }
 .grid-crm td{
   white-space: nowrap;
@@ -667,7 +667,8 @@ aside.filter {
   padding: 0 4px;
 }
 .lv table input {
-  max-width:80px;
+  /* max-width:80px; */
+  width:100%;
 }
 .lv tbody, .lv td, .lv tfoot, .lv th, .lv thead, .lv tr {
   border-color: inherit;
@@ -1153,7 +1154,7 @@ details>summary:only-child::after{
   /* background-color: inherit; */
 }
 nav span {
-  flex: 1 0 auto;
+  /* flex: 1 0 auto; */
 }
 .pv>header {
   padding: 10px;
@@ -1875,6 +1876,17 @@ table>tr:first-child{
   color: red;
 }
 
+.account>span {
+  display: inline-block;
+  text-align: left;
+  vertical-align: middle;
+}
+.account>span>span {
+  display: block;
+  font-size: 0.9em;
+  line-height: 1em;
+}
+
 
 aside.filter:empty{
   display:none;
@@ -1953,4 +1965,16 @@ aside.filter:empty{
     width:100%;
     z-index: 1;
   }
+}
+
+table td>span.input {
+  display: block;
+  overflow: hidden;
+}
+table td>span.input>input {
+  width: 100%;
+}
+.orderlist table tr>:nth-child(4),
+.orderlist table tr>:nth-child(2) {
+  text-align: right
 }
