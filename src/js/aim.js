@@ -672,6 +672,9 @@
     for (var i=0; i<s.length; i++) view[i] = s.charCodeAt(i) & 0xFF; //convert to octet
     return buf;
   };
+  function num(value, dig = 2){
+    return new Intl.NumberFormat('nl-NL', { minimumFractionDigits: dig, maximumFractionDigits: dig }).format(value);
+  }
   Object.defineProperties(Array.prototype, {
     unique: { value: function () {
       return this.filter((e,i,arr) => arr.indexOf(e) === i)
@@ -6327,6 +6330,7 @@
     };
   }
   Object.assign(aim, {
+    num,
     // Jwt: {
     //   fromHeaders(headers){
     //     if (!headers) return {};
