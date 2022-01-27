@@ -2597,6 +2597,11 @@
     Request.prototype = {
       value: () => new Promise((resolve,fail) => {
         if (!xhr.responseText) return resolve();
+        const contentType = xhr.getResponseHeader("Content-Type");
+        if (!contentType.includes('json')) {
+          return resolve(xhr.responseText);
+        }
+        // console.log(xhr.getResponseHeader("Content-Type"));
         try {
           const data = JSON.parse(xhr.responseText);
           if (data.value) return resolve(data.value);
@@ -2652,7 +2657,8 @@
         if (typeof module === "undefined") {
           const statusMessage = new StatusMessage;
           statusMessage.text('Wachten op ' + url);
-          console.log(options.method, url.href, options.headers, options.body);
+          // console.log(options.method, url.href, options.headers, options.body);
+          console.log(options.method, url.href);
           xhr = new XMLHttpRequest();
           xhr.open(options.method, url);
           xhr.withCredentials = options.withCredentials;
