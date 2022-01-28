@@ -2597,7 +2597,7 @@
     Request.prototype = {
       value: () => new Promise((resolve,fail) => {
         if (!xhr.responseText) return resolve();
-        const contentType = xhr.getResponseHeader("Content-Type");
+        const contentType = xhr.getResponseHeader ? xhr.getResponseHeader("Content-Type") : 'application/json';
         if (!contentType.includes('json')) {
           return resolve(xhr.responseText);
         }
@@ -5536,7 +5536,7 @@
     console.log('host active', protocol, host.port, options);
     const http = require(protocol);
     function processRequest (req, res) {
-      const paths = config.paths;
+      const paths = config.paths || [];
       function end(statusCode, body, header) {
         // console.log(statusCode, body, header);
         res.writeHead(res.statusCode = statusCode, header);
