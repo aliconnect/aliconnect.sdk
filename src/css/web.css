@@ -1,10 +1,16 @@
 @font-face {
-  font-family: barcode;
+  font-family: barcode1;
   src:
   url('../font/Code39Azalea.eot') format('embedded-opentype'),
   url('../font/Code39Azalea.woff') format('woff'),
   url('../font/Code39Azalea.ttf') format('truetype'),
   url('../font/Code39Azalea.svg#Code39Azalea') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: barcode;
+  src: url('../font/free3of9.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
@@ -1765,7 +1771,7 @@ pre code {
 }
 
 .bc{
-  font-family:barcode;
+  font-family:bc;
   /* font-size:10mm; */
   /* display:inline-block; */
   /* height:8mm; */
@@ -1793,7 +1799,7 @@ table>tr:first-child{
   line-height: 24px;
   /* background-color: #22252B; */
   background-color: rgb(10,10,10);
-  font-size: 14px;
+  /* font-size: 14px; */
   color: rgb(140,140,140);
   white-space: nowrap;
   /* position: absolute;
@@ -1803,6 +1809,7 @@ table>tr:first-child{
 }
 .statusbar span:not(:empty) {
   padding: 0 5px;
+  font-size: 9pt;
 }
 .statusbar progress {
   text-align: right;

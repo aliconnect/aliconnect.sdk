@@ -130,6 +130,9 @@ class Aim {
     //   $this->oas = yaml_parse_file($fname);
     // }
     $this->oas  = $this->oas($this->config);
+
+    // http_response(200, $this->oas['paths']);
+
     // debug($this->config);
     // $this->oas = $this->oas($this->config);
 
@@ -315,6 +318,23 @@ class Aim {
 
     $path_arr = explode('/',$this->path);
     $schemaname = get_item($path_arr,2);
+
+    if (preg_match('/\/(.*)?\((\d+)\)\/children/', $this->path, $matches)) {
+      http_response_query_value(["SELECT 'Webpage' AS schemaName,id,title FROM item.dt WHERE masterId=$matches[2]"]);
+
+
+      // http_response(200,$matches);
+      // $item = new \Aliconnect\Data\Server\Item($matches[1]);
+      // http_response(200,$item->children($matches[2]));
+      // http_response(200, (new $matches[1](...explode(',',$matches[2]))->$matches[3]());
+      // http_response(200, $item);
+
+    }
+    // http_response(200, $this->path);
+
+
+
+
     // $id = get_item($path_arr,3);
     // $id_path = get_item($path_arr,4);
     if ($schemas = $this->config['components']['schemas']) {
@@ -351,10 +371,13 @@ class Aim {
             // http_response(400);
             // $path_method_security = request('security', $path_method);
 
-            // http_response(200, 'JA');
             $operationId = request('operationId', $path_method) ?: str_replace("/","\\",$path_name);
 
+            // http_response(200, class_exists($operationId));
+
             http_response(200, (new $operationId)->$method());
+
+
             // debug($operationId, class_exists($path_name));
             // // : $path_method['operationId'];
             //
@@ -941,7 +964,7 @@ class Aim {
     return $this->oas = $api;
   }
   public function oas($config) {
-    $item_classname = '\Aliconnect\Server\Data\Item';
+    $item_classname = '\Aliconnect\Data\Server\Item';
     foreach($config['components']['schemas'] as $schema_name => $schema) {
       if (!$schema) continue;
       $all_schema = [];
@@ -1826,6 +1849,11 @@ function http_response_post($arr) {
 }
 function http_response_query($query, $args = []) {
   http_response(200, aim()->sql_resultset($query, $args));
+}
+function http_response_query_value($query, $args = []) {
+  http_response(200, [
+    "value"=> aim()->sql_resultset($query, $args),
+  ]);
 }
 
 function debug() {

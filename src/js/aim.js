@@ -2656,7 +2656,7 @@
         }
         if (typeof module === "undefined") {
           const statusMessage = new StatusMessage;
-          statusMessage.text('Wachten op ' + url);
+          statusMessage.text('Wachten op',url.origin+url.pathname);
           // console.log(options.method, url.href, options.headers, options.body);
           console.log(options.method, url.href);
           xhr = new XMLHttpRequest();
