@@ -25,7 +25,7 @@
     return localStorage.getItem(name);
   }
   function search(s) {
-    $('.pv').text('');
+    // $('.pv').text('');
     aim.searchString = s;
     if (aim.listselector === 'product') {
       const clientName = localStorage.getItem('clientName');
