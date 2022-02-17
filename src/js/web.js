@@ -1585,7 +1585,7 @@
       .map(value => Object({
         value: value,
         title: displayvalue(value, attribute),
-        rows: rows.filter(row => attribute.name in row && String(row[attribute.name]).toLowerCase() == String(value||'').toLowerCase() )
+        rows: rows.filter(row => attribute.name in row && String(row[attribute.name]).toLowerCase().trim() == String(value||'').toLowerCase().trim() )
       }))
     });
 
@@ -1825,7 +1825,7 @@
 
       // aim.listRows = rowsVisible = rows.filter(row => !checkedFilters.some(val => !val.rows.includes(row)));
 
-      // console.log(checkedFilters, rows, rowsVisible);
+      console.log('checkedFilters', checkedFilters, rows, rowsVisible);
       $('span.pos').text(rows.length + (rowsVisible.length === rows.length ? '' : '/' + rowsVisible.length));
       navElem.text('').append(
         filter.length ? $('button').class('abtn filter').on('click', e => $('.lv').attr('hidefilter', aim.showfilter ^= 1)) : null,
@@ -1837,8 +1837,7 @@
         ),
       )
       filterElem.text('').append(
-        filter
-        .filter(col => col.checked)
+        filter.filter(col => col.checked)
         .map(col => $('div').append(
           $('span').text(col.title),
           $('i').class('icn-cross-mark-small').on('click', e => {
@@ -2219,6 +2218,36 @@
     })(this, data, config);
     return this;
   };
+  function s2ab(s) {
+    var buf = new ArrayBuffer(s.length); //convert s to arrayBuffer
+    var view = new Uint8Array(buf);  //create uint8array as viewer
+    for (var i=0; i<s.length; i++) view[i] = s.charCodeAt(i) & 0xFF; //convert to octet
+    return buf;
+  };
+  function createExcel(props) {
+    const wb = XLSX.utils.book_new();
+    const {Title,Subject,Author,sheets} = props;
+    wb.Props = {Title,Subject,Author,CreatedDate: new Date()};
+    for (let sheet of sheets) {
+      wb.SheetNames.push(sheet.name);
+      const ws = XLSX.utils.aoa_to_sheet(sheet.rows);
+      ws['!cols'] = sheet.cols;
+      wb.Sheets[sheet.name] = ws;
+    }
+    return XLSX.write(wb, {bookType:'xlsx',  type: 'binary'});
+
+    // return URL.createObjectURL(new Blob([s2ab(wbout)],{type:"application/octet-stream"}));
+    // saveAs(new Blob([s2ab(wbout)],{type:"application/octet-stream"}), ws_title + ' Proving.xlsx');
+  }
+  function downloadExcel(props) {
+    $('a')
+    .download(`${Title} ${Subject}.xlsx`.toLowerCase().replace(/ /g,'-'))
+    .rel('noopener')
+    // .href(createExcel(props))
+    .href(URL.createObjectURL(new Blob([s2ab(createExcel(props))],{type:"application/octet-stream"})))
+    .click()
+    .remove();
+  }
 
   function importScript(src) {
     return new Promise((resolve, reject) => {
@@ -2284,59 +2313,59 @@
     }
     return this;
   }
-  // function promptform(req, prompt, title = '', options = {}){
-  //   options.description = options.description || aim.his.translate.get('prompt-'+title+'-description') || '';
-  //   title = aim.his.translate.get('prompt-'+title+'-title') || title;
-  //   console.log([title, options.description]);
-  //   options.properties = options.properties || {};
-  //   // Object.entries(aim.sessionPost).forEach(([key,value])=>Object.assign(options.properties[key] = options.properties[key] || {type:'hidden'}, {value: value, checked: ''}));
-  //   aim.sessionPost = aim.sessionPost || {};
-  //   //console.log('aim.sessionPost', aim.sessionPost);
-  //   Object.entries(aim.sessionPost).forEach(([selector,value])=>Object.assign(selector = (options.properties[selector] = options.properties[selector] || {type:'hidden'}), {value: selector.value || value, checked: ''}));
-  //   return prompt.form = aim('form').parent(prompt.is.text('')).class('col aco').append(
-  //     aim('h1').ttext(title),
-  //     prompt.div = aim('div').md(options.description),
-  //   )
-  //   .properties(options.properties)
-  //   .append(options.append)
-  //   .btns(options.btns)
-  //   .on('submit', e => {
-  //     e.preventDefault();
-  //     req.query(document.location.search).post(e).then(body => {
-  //       console.log(body);
-  //       self.sessionStorage.setItem('post', JSON.stringify(aim.sessionPost = body));
-  //       // return;
-  //       // return console.log('aim.sessionPost', aim.sessionPost);
-  //       if (aim.sessionPost.id_token) {
-  //         localStorage.setItem('id_token', aim.sessionPost.id_token);
-  //         aim().send({ to: { nonce: aim.sessionPost.nonce }, id_token: aim.sessionPost.id_token });
-  //       }
-  //       if (aim.sessionPost.url) {
-  //         if (aim.messageHandler) {
-  //           console.log(aim.sessionPost.url);
-  //           aim.messageHandler.source.postMessage({url: aim.sessionPost.url}, aim.messageHandler.origin);
-  //           // self.close();
-  //           return;
-  //         }
-  //         document.location.href = aim.sessionPost.url;
-  //       }
-  //
-  //
-  //       if (aim.sessionPost.prompt) prompt = aim.prompt(aim.sessionPost.prompt);
-  //       if (aim.sessionPost.msg && prompt && prompt.div) {
-  //         prompt.div.text('').html(aim.sessionPost.msg);
-  //       }
-  //       if (aim.sessionPost.socket_id) {
-  //         return aim().send({to:{sid:aim.sessionPost.socket_id}, body:aim.sessionPost});
-  //       }
-  //     }).catch(err => {
-  //       console.error(err, prompt, prompt.div);
-  //       if (err.error && prompt && prompt.div) {
-  //         prompt.div.text('').html(err.error.message);
-  //       }
-  //     })
-  //   })
-  // }
+  function __promptform(req, prompt, title = '', options = {}){
+    options.description = options.description || aim.his.translate.get('prompt-'+title+'-description') || '';
+    title = aim.his.translate.get('prompt-'+title+'-title') || title;
+    console.log([title, options.description]);
+    options.properties = options.properties || {};
+    // Object.entries(aim.sessionPost).forEach(([key,value])=>Object.assign(options.properties[key] = options.properties[key] || {type:'hidden'}, {value: value, checked: ''}));
+    aim.sessionPost = aim.sessionPost || {};
+    //console.log('aim.sessionPost', aim.sessionPost);
+    Object.entries(aim.sessionPost).forEach(([selector,value])=>Object.assign(selector = (options.properties[selector] = options.properties[selector] || {type:'hidden'}), {value: selector.value || value, checked: ''}));
+    return prompt.form = aim('form').parent(prompt.is.text('')).class('col aco').append(
+      aim('h1').ttext(title),
+      prompt.div = aim('div').md(options.description),
+    )
+    .properties(options.properties)
+    .append(options.append)
+    .btns(options.btns)
+    .on('submit', e => {
+      e.preventDefault();
+      req.query(document.location.search).post(e).then(body => {
+        console.log(body);
+        self.sessionStorage.setItem('post', JSON.stringify(aim.sessionPost = body));
+        // return;
+        // return console.log('aim.sessionPost', aim.sessionPost);
+        if (aim.sessionPost.id_token) {
+          localStorage.setItem('id_token', aim.sessionPost.id_token);
+          aim().send({ to: { nonce: aim.sessionPost.nonce }, id_token: aim.sessionPost.id_token });
+        }
+        if (aim.sessionPost.url) {
+          if (aim.messageHandler) {
+            console.log(aim.sessionPost.url);
+            aim.messageHandler.source.postMessage({url: aim.sessionPost.url}, aim.messageHandler.origin);
+            // self.close();
+            return;
+          }
+          document.location.href = aim.sessionPost.url;
+        }
+
+
+        if (aim.sessionPost.prompt) prompt = aim.prompt(aim.sessionPost.prompt);
+        if (aim.sessionPost.msg && prompt && prompt.div) {
+          prompt.div.text('').html(aim.sessionPost.msg);
+        }
+        if (aim.sessionPost.socket_id) {
+          return aim().send({to:{sid:aim.sessionPost.socket_id}, body:aim.sessionPost});
+        }
+      }).catch(err => {
+        console.error(err, prompt, prompt.div);
+        if (err.error && prompt && prompt.div) {
+          prompt.div.text('').html(err.error.message);
+        }
+      })
+    })
+  }
 
   var inputId;
 
@@ -10818,6 +10847,9 @@
       }
     },
     prompt,
+    downloadExcel,
+    createExcel,
+    s2ab,
     // promptform,
     // search,
     urlString: (s = '') => {

@@ -239,7 +239,8 @@ class Aim {
         }
         // debug("SELECT $this->top * FROM abisingen.api.$selector WHERE (". implode(') AND (', $and) . ") $this->order");
         $where = $and ? "WHERE (". implode(') AND (', $and) . ")" : "";
-        $q = "SELECT $this->top '$basename' AS [schemaName],[$idname] AS [id],$this->select FROM [$dbname].$tablename $where $this->order";
+        // unset();
+        $q = "SELECT $this->top '{$basename}' AS [schemaName],[{$idname}] AS [id],$this->select FROM [$dbname].$tablename $where $this->order";
         $q = str_replace('schemaName,','',$q);
         $q = str_replace('id,','',$q);
         // debug($q);

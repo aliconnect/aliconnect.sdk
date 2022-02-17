@@ -666,12 +666,6 @@
   function getUid(id){
     return id.replace(/^\d+-/,'')
   }
-  function s2ab(s) {
-    var buf = new ArrayBuffer(s.length); //convert s to arrayBuffer
-    var view = new Uint8Array(buf);  //create uint8array as viewer
-    for (var i=0; i<s.length; i++) view[i] = s.charCodeAt(i) & 0xFF; //convert to octet
-    return buf;
-  };
   function num(value, dig = 2){
     return new Intl.NumberFormat('nl-NL', { minimumFractionDigits: dig, maximumFractionDigits: dig }).format(value);
   }
@@ -6382,7 +6376,7 @@
     idToUrl,
     extend,
     translate,
-    s2ab,
+    // s2ab,
     his: new His,
     log: () => {
       if (self.document && document.getElementById('console')) {
