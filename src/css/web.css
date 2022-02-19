@@ -1997,3 +1997,7 @@ aside.filter:empty{
     z-index: 1;
   }
 }
+
+tr .nr {
+  /* text-align: right; */
+}
