@@ -47,7 +47,7 @@
 
   const libraries = {
     async page() {
-      console.log(searchParams.get('$search'));
+      // console.error(searchParams.get('$search'));
       $(document.documentElement).class(getItem('isApp') || 'page') ;
       $(document.documentElement).attr('dark', localStorage.getItem('dark'));
       $(document.body).append(
@@ -173,7 +173,7 @@
 
       const config = await aimClient.getConfig();
       Object.assign(aim.config, config);
-
+      // console.error(sessionStorage.getItem('access_token'));
 
       // console.log('access_token', aimClient.store('access_token'), sessionStorage.getItem('access_token'));
       // return;
@@ -1466,6 +1466,7 @@
         if (row.id) {
           const url = new URL(document.location);
           const ref = row['@id'];//`${row.schemaName}(${row.id})`;
+          console.log(999, ref);
           document.location.hash = `#?id=${btoa(ref)}`;
         }
         $('span.pos').text(rows.length + (rowsVisible.length === rows.length ? '' : '/' + rowsVisible.length) + ':' + ( rowsVisible.indexOf(row) + 1));
@@ -1579,7 +1580,7 @@
     filter = Object.values(filter);
     filter.forEach(attribute => {
       attribute.values = rows
-      .map(row => attribute.name in row ? (isNaN(row[attribute.name]) ? String(row[attribute.name]).trim() : row[attribute.name]) : '')
+      .map(row => attribute.name in row ? (isNaN(row[attribute.name]) ? String(row[attribute.name]).trim().toLowerCase() : row[attribute.name]) : '')
       .unique()
       .sort((a,b) => String(a).localeCompare(String(b), undefined, {numeric: true}))
       .map(value => Object({
@@ -1589,7 +1590,6 @@
       }))
     });
 
-    // rows.sort((a,b) => a.headers[0].localeCompare(b.headers[0]));
     let rowsVisible = aim.listRows = rows || [];
     if (rows.some(row => row.geolocatie)) {
       types.map = () => {
@@ -1722,7 +1722,6 @@
         return mapelem;
       }
     }
-    // filter = filter.filter(attribute => attribute.values.length>1 && attribute.values.some(value => value.rows.length>1))
     filter = filter.filter(attribute => attribute.values.length>1)
 
     function valueTag(col,row){
@@ -1787,7 +1786,6 @@
     const rowsElem = $('div')
     .parent(listContainerElem)
     .tabindex(0)
-    // .on('focus', console.log)
     .on('keydown', e => {
       switch (e.key) {
         case 'ArrowDown': {
@@ -1802,29 +1800,14 @@
       // console.log(e);
     })
     .on('keyup', e => selectTimeout = setTimeout(() => select(), 300));
-
-
     (function buildlist(type) {
       // console.log('buildlist');
       type = options.type = type || options.type || sessionStorage.getItem('listType') || 'rows';
       sessionStorage.setItem('listType', type);
-
       const checkedFilters = filter
       .filter(col => col.checked = col.values.some(val => val.checked))
-      // .map(col => Object({name: col.name, values:col.values.filter(val => val.checked).map(val => val.value) }));
       .map(col => Object({name: col.name, values:col.values.filter(val => val.checked) }));
-
-      // console.log(filter);
-
-      // aim.listRows = rowsVisible = rows.filter(row => !checkedFilters.some(val => !val.values.includes(row[val.name])));
-
-      // aim.listRows = rowsVisible = rows.filter(row => !checkedFilters.some(val => !val.values.find(value => value == String(row[val.name]).toLowerCase())));
-
-      // aim.listRows = rowsVisible = rows.filter(row => !checkedFilters.some(val => !val.values.some(value => value == String(row[val.name]).toLowerCase())));
       aim.listRows = rowsVisible = rowsFiltered(checkedFilters);
-
-      // aim.listRows = rowsVisible = rows.filter(row => !checkedFilters.some(val => !val.rows.includes(row)));
-
       console.log('checkedFilters', checkedFilters, rows, rowsVisible);
       $('span.pos').text(rows.length + (rowsVisible.length === rows.length ? '' : '/' + rowsVisible.length));
       navElem.text('').append(
@@ -9922,7 +9905,7 @@
       const aimRequest = {
         scopes: aimConfig.scope.split(' '),
       };
-      console.log('aimConfig', aimConfig);
+      console.error('aimConfig', aimConfig);
       // aimClient.storage.clear();
       if (aimConfig.access_token) {
         aimClient.setAccessToken(aimConfig.access_token);

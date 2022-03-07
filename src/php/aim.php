@@ -155,12 +155,16 @@ class Aim {
   public function api(){
     // aiminfo();
     // debug($this->path,basename($this->path),$this->method,$this->config);
+    $scopes = explode(' ', $this->access['scope']);
     $basename = basename($this->path);
     // http_response(200, getallheaders());
     if (isset($this->config['components']['schemas'][$basename])) {
       $schema = $this->config['components']['schemas'][$basename];
       if ($tablename = get_item($schema, 'tablename')) {
         // die('a');
+        // if (empty(array_intersect($schema['security'],$scopes))) http_response(401);
+        if (empty(array_intersect($schema['security'],$scopes))) http_response(200,[$schema['security'],$scopes]);
+
         $dbname = get_item($schema,'dbname') ?: get_item($this->config,'dbname');
         $idname = get_item($schema,'idname') ?: 'id';
         $this->filter = strtolower(get_item($_REQUEST, '$filter') ?: get_item($_REQUEST, 'filter'));
@@ -195,12 +199,16 @@ class Aim {
             $value = $_POST['value'] === '' ? "NULL" : "'".str_replace("'","''",$_POST['value'])."'";
             // $q = "UPDATE [$dbname].$tablename SET [$_POST[name]] = '$value' WHERE $idname = $id";
             // die($q);
-            aim()->sql_query("UPDATE [$dbname].$tablename SET [$_POST[name]] = $value WHERE $idname = $id $filter");
+            aim()->sql_query("UPDATE $tablename SET [$_POST[name]] = $value WHERE $idname = $id $filter");
             http_response(200);
             // die('POST');
           }
-          $keys = implode(',',array_keys($schema['properties']));
-          $row = sqlsrv_fetch_object(aim()->sql_query("SELECT TOP 1 [$idname] AS [id],$keys FROM [$dbname].$tablename WHERE [$idname] = $id $filter"));
+          $keys = array_keys($schema['properties']);
+          if (($index = array_search("id", $keys)) !== false) {
+            unset($keys[$index]);
+          }
+          $keys = implode(',',$keys);
+          $row = sqlsrv_fetch_object(aim()->sql_query("SELECT TOP 1 ".($idname!=="id"?"[$idname] AS ":"")."[id],$keys FROM $tablename WHERE [$idname] = $id $filter"));
           // debug($row);
           $id = $row->id;// = $row->{$idname};
           $row->schemaName = $basename;
@@ -209,6 +217,11 @@ class Aim {
           http_response(200,$row);
         }
         $this->select = get_item($_REQUEST, '$select') ?: get_item($_REQUEST, 'select') ?: '*';
+        $keys = explode(',',$this->select);
+        if (($index = array_search("id", $keys)) !== false) {
+          unset($keys[$index]);
+        }
+        $keys = implode(',',$keys);
 
         // debug($_GET);
 
@@ -240,9 +253,9 @@ class Aim {
         // debug("SELECT $this->top * FROM abisingen.api.$selector WHERE (". implode(') AND (', $and) . ") $this->order");
         $where = $and ? "WHERE (". implode(') AND (', $and) . ")" : "";
         // unset();
-        $q = "SELECT $this->top '{$basename}' AS [schemaName],[{$idname}] AS [id],$this->select FROM [$dbname].$tablename $where $this->order";
+        $q = "SELECT $this->top '{$basename}' AS [schemaName],".($idname!=="id"?"[$idname] AS ":"")."[id],$keys FROM $tablename $where $this->order";
         $q = str_replace('schemaName,','',$q);
-        $q = str_replace('id,','',$q);
+        // $q = str_replace('id,','',$q);
         // debug($q);
         // http_response(200, [$q]);
         // die($q);
@@ -312,7 +325,6 @@ class Aim {
         }
       }
     }
-    $scopes = explode(' ', $this->access['scope']);
     // debug($this->request_path,$this->base_path);
     // $api_path = preg_replace('/^\/api/', '', $this->request_path);
 

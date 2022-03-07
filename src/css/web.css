@@ -9,10 +9,21 @@
   font-style: normal;
 }
 @font-face {
-  font-family: barcode;
+  font-family: 'barcode';
   src: url('../font/free3of9.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
+}
+@font-face {
+  font-family: 'mono';
+  src: url('https://aliconnect.nl/sdk@0.0.8/dist/font/AlmaMono-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+
+body {
+  /* font-family: mono !important; */
 }
 
 html {
