@@ -3104,9 +3104,29 @@
       body.innerHTML = this.elem.innerHTML;
       setTimeout(e => {
         iframe.elem.contentWindow.print();
-        setTimeout(e => iframe.elem.remove(), 500);
+        iframe.elem.remove();
       }, 500);
       return this;
+    },
+    printp() {
+      console.log('print', 1);
+      return new Promise((success,fail) => {
+        const iframe = $('iframe')
+        .parent(document.body)
+        .style('width:0;height:0;position:absolute;visibility:hidden;');
+        const doc = iframe.elem.contentWindow.document;
+        const body = document.createElement('body');
+        doc.open();
+        doc.appendChild(body);
+        doc.close();
+        body.innerHTML = this.elem.innerHTML;
+        setTimeout(e => {
+          console.log('print', 2);
+          iframe.elem.contentWindow.print();
+          iframe.elem.remove();
+          success();
+        }, 1000);
+      })
     },
     printbody() {
       this.parent(document.body).style('display:none');
