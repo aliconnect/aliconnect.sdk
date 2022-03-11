@@ -2912,7 +2912,7 @@
         })
         .get()
         .then(body => {
-          console.log(1111, body);
+          // console.log(1111, body);
           access_token = body.access_token;
         });
         // console.log(888, access_token);
@@ -2930,7 +2930,7 @@
         payload = JSON.parse(atob(payload));
         timediff = payload.iat * 1000 - time;
 
-        console.log('timediff',timediff,payload);
+        // console.log('timediff',timediff,payload);
         // fs.writeFile('./store.json', JSON.stringify(store), err => err ? console.error(err) : null);
       }
       // var ms = payload.exp - new Date();

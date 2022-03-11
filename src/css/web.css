@@ -756,7 +756,7 @@ table td>span.input {
 .lv .cards>div {
   padding: 10px;
   overflow: hidden;
-  white-space: pre-wrap;
+  /* white-space: pre-wrap; */
   border-bottom: solid 1px var(--trans05);
 }
 .lv .cards>div {

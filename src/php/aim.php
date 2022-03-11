@@ -251,9 +251,14 @@ class Aim {
           }
         }
         // debug("SELECT $this->top * FROM abisingen.api.$selector WHERE (". implode(') AND (', $and) . ") $this->order");
-        $where = $and ? "WHERE (". implode(') AND (', $and) . ")" : "";
+        $where = $and ? "(". implode(') AND (', $and) . ")" : "";
+        if ($contains = get_item($schema, 'contains')) {
+          $where .= ($where ? " OR " : "").$contains;
+        }
+        $where = $where ? "WHERE $where" : "";
         // unset();
-        $q = "SELECT $this->top '{$basename}' AS [schemaName],".($idname!=="id"?"[$idname] AS ":"")."[id],$keys FROM $tablename $where $this->order";
+        $q = "DECLARE @search VARCHAR(100);SET @search='\"".str_replace(' ','"AND"',trim($this->search))."\"';";
+        $q .= "SELECT $this->top '{$basename}' AS [schemaName],".($idname!=="id"?"[$idname] AS ":"")."[id],$keys FROM $tablename $where $this->order";
         $q = str_replace('schemaName,','',$q);
         // $q = str_replace('id,','',$q);
         // debug($q);

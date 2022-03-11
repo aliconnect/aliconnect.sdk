@@ -25,21 +25,22 @@
     return localStorage.getItem(name);
   }
   function search(s) {
+    console.log('SEARCH', s);
     // $('.pv').text('');
     aim.searchString = s;
-    if (aim.listselector === 'product') {
-      const clientName = localStorage.getItem('clientName');
-      aim.list('product',{
-        // $filter: clientName ? `klantnaam eq '${clientName}'` : 'klantnaam eq null',
-        //$filter: '',
-        $search: s,
-      })
-      const url = new URL(document.location);
-      url.searchParams.set('$search', s);
-      window.history.replaceState('','',url.href);
-      console.log(url.href);
-      return false;
-    }
+    // if (aim.listselector === 'product') {
+    //   const clientName = localStorage.getItem('clientName');
+    //   aim.list('product',{
+    //     // $filter: clientName ? `klantnaam eq '${clientName}'` : 'klantnaam eq null',
+    //     //$filter: '',
+    //     $search: s,
+    //   })
+    //   const url = new URL(document.location);
+    //   url.searchParams.set('$search', s);
+    //   window.history.replaceState('','',url.href);
+    //   // console.log(url.href);
+    //   return false;
+    // }
     document.location.hash = '?$search=';
     document.location.hash = '?$search='+s;
     return false;
@@ -58,10 +59,11 @@
             e.preventDefault();
             search(e.target.search.value);
           })
-          .on('keyup', e => e.code === 'Enter' ? search(e.target.value) : null)
+          // .on('keyup', e => e.code === 'Enter' ? search(e.target.value) : null)
           .append(
             $('input').name('search').autocomplete('off').placeholder('zoeken').value(searchParams.get('$search')).on('focus', e => e.target.select()),
-            $('button').class('abtn icn search fr').title('Zoeken').on('click', e => search(e.target.previousElementSibling.value)),
+            // $('button').class('abtn icn search fr').title('Zoeken').on('click', e => search(e.target.previousElementSibling.value)),
+            $('button').class('abtn icn search fr').title('Zoeken'),
           ),
 
           $('span').class('pagemenu'),
@@ -1420,7 +1422,7 @@
     document.location.hash = `#?l=${aim.urlToId(url.href)}`;
   }
   function listShow(body) {
-    console.log('listShow', body);
+    console.error('listShow', body);
     $('.lv').text('');
     // $('.pv').text('');
     if (body.rows && body.rows.length) {
@@ -1428,7 +1430,7 @@
       const context = new URL(body['@context']);
       aim.listselector = context.pathname.split('/').pop();
 
-      console.log(4444,aim.listselector);
+      // console.log(4444,aim.listselector);
 
       const requestType = context.pathname.split('/')[2];
       // console.log(requestType, aim.config.components.schemas);
@@ -1440,7 +1442,6 @@
       const select = $select ? $select.split(',') : Object.keys(rows[0]);
       // console.log(select);
       const cols = select.map(name => Object.assign({name: name}, schema && schema.properties && schema.properties[name] ? schema.properties[name] : {title: name}));
-      console.log(1111,rows);
       aim.om.listview(rows);
     }
   }
@@ -1493,7 +1494,7 @@
                   row.images && row.images[0] ? $('img').src(row.images[0]) : $('span').text((rowHeaders(row,aim.config.components.schemas[row.schemaName].cols).join('').match(/([A-Z]).*?([A-Z])/)||[]).slice(1,3).join('')),
                 ),
                 $('div').class('aco').append(
-                  row.headers.map((s,i)=>$('h'+(i+1)).html(searchRegExp ? s.replace(searchRegExp,'<b>$1</b>') : s)),
+                  row.headers.map((s,i)=>$('h'+(i+1)).html(wordRegExp ? s.replace(wordRegExp,'<b>$1</b>') : s)),
                   app.header ? app.header(row) : null,
                   row.options ? $('div').append(
                     Object.entries(row.options).map(entry => [
@@ -1565,7 +1566,7 @@
     if (searchString) {
       var searchRegExp = new RegExp(`(${searchString.replace(/\s/g,'|')})`,'ig');
       var wordRegExp = new RegExp(`\\b(${searchString.replace(/\s/g,'|')})\\b`,'ig');
-      console.log(searchString, rows.map(a => (a.headers||[''])[0].match(wordRegExp)));
+      // console.log(searchString, rows.map(a => (a.headers||[''])[0].match(wordRegExp)));
       rows.sort((a,b) => ( (b.headers||[''])[0].match(wordRegExp) ? 1 : 0) - ((a.headers||[''])[0].match(wordRegExp)?1:0));
     }
 
@@ -1808,7 +1809,7 @@
       .filter(col => col.checked = col.values.some(val => val.checked))
       .map(col => Object({name: col.name, values:col.values.filter(val => val.checked) }));
       aim.listRows = rowsVisible = rowsFiltered(checkedFilters);
-      console.log('checkedFilters', checkedFilters, rows, rowsVisible);
+      // console.log('checkedFilters', checkedFilters, rows, rowsVisible);
       $('span.pos').text(rows.length + (rowsVisible.length === rows.length ? '' : '/' + rowsVisible.length));
       navElem.text('').append(
         filter.length ? $('button').class('abtn filter').on('click', e => $('.lv').attr('hidefilter', aim.showfilter ^= 1)) : null,
@@ -12042,74 +12043,51 @@
   function seturl(e){
       if (aim.href === document.location.href) return;
       aim.href = document.location.href;
-      // e.stopPropagation();
-      // const docsearchParams = new URLSearchParams(document.location.search);
-      // const curdocsearchParams = new URLSearchParams(document.location.search);
+      const listSearchparams = new URLSearchParams(
+        aim.searchParams.get('l')
+        ? new URL(aim.idToUrl(aim.searchParams.get('l')), 'https://dms.aliconnect.nl').searchParams
+        : ''
+      );
       const searchParams = new URLSearchParams(document.location.hash ? document.location.hash.substr(1) : document.location.search);
-      // console.log('seturl', searchParams.toString());
-      // console.log('seturl', docsearchParams.toString());
       const changed = {};
       const params = {};
-      // console.log('seturl', searchParams);
-
       searchParams.forEach((value,key) => value !== docsearchParams.get(key) ? docsearchParams.set(key,changed[key] = value) : null);
       searchParams.forEach((value,key) => aim[key] ? aim[key](value) : null);
-      // console.log(changed, changed.l);
-      // console.log(aim.searchParams.get('l'), searchParams.get('l'));
-
       if (changed.l || changed.id || changed.$search) {
-        // if (changed.l) {
         if (changed.l || changed.$search) {
-          console.log(docsearchParams.get('l'));
           const l = docsearchParams.get('l');
-          const idToUrl = l ? aim.idToUrl(l) : '/api/v1/product?$filter=klantNaam+eq+null';
+          const idToUrl = aim.idToUrl(l);
           const listUrl = new URL(idToUrl, 'https://dms.aliconnect.nl');
-          // console.log(8888, searchParams.get('l') !== curdocsearchParams.get('l'), searchParams.get('l'), curdocsearchParams.get('l'));
-          ['top','select','search','filter'].forEach(key => {
+          ['top','select','search','filter','order'].forEach(key => {
+            if (listSearchparams.has('$'+key)) {
+              listUrl.searchParams.set('$'+key, listSearchparams.get('$'+key));
+            }
             if (changed[key]) {
               listUrl.searchParams.set('$'+key, changed[key]);
             }
             if (changed['$'+key]) {
               listUrl.searchParams.set('$'+key, changed['$'+key]);
             }
-
-            // if (docsearchParams.has(key)) {
-            //   listUrl.searchParams.set('$'+key, docsearchParams.get(key));
-            // }
-            // if (docsearchParams.has('$'+key)) {
-            //   listUrl.searchParams.set('$'+key, docsearchParams.get('$'+key));
-            // }
           });
           // docsearchParams.set('l', aim.urlToId(listUrl));
-
-
           const hostname = new URL(listUrl).hostname;
           const client = aim.clients.get(hostname);
-
-          // console.log(123, listUrl.href);
-
-          // console.log(12312, listUrl, aim.clients, client);
           if (client) {
             client.api(listUrl.href).get().then(listShow);
           }
         }
         if (changed.id) {
-          // console.warn(page)
           pageview(atob(searchParams.get('id')));
         }
       }
-      // console.log(aim.searchParams);
       if (aim.searchParams) {
-        // console.log(aim.searchParams.get('id'), docsearchParams.get('id'));
         if (aim.searchParams.get('id') && !docsearchParams.get('id')) {
           $('.pv').text('');
         }
       }
       docsearchParams.hash = '';
       aim.searchParams = docsearchParams;
-      // if (e.type === 'hashchange') {
-        window.history.replaceState('','','?' + docsearchParams.toString());
-      // }
+      window.history.replaceState('','','?' + docsearchParams.toString());
     }
   window.addEventListener('load', async function webLoad(e) {
     var firstFolder = document.location.pathname.match(/(\w+)\//);
