@@ -1563,7 +1563,7 @@
 
     const searchString = new URL(document.location).searchParams.get('$search');
     var searchRegExp;
-    if (searchString) {
+    if (searchString && searchString!=='*') {
       var searchRegExp = new RegExp(`(${searchString.replace(/\s/g,'|')})`,'ig');
       var wordRegExp = new RegExp(`\\b(${searchString.replace(/\s/g,'|')})\\b`,'ig');
       // console.log(searchString, rows.map(a => (a.headers||[''])[0].match(wordRegExp)));
@@ -1987,14 +1987,14 @@
     .append(
       $('nav').append(
         editmode ? [
-          $('span'),
           $('button').class('icn-del'),
+          $('span'),
           $('button').class('icn-close').on('click', e => pageviewrow(row)),
         ] : [
+          $('button').class('icn-edit').on('click', e => pageviewrow(row, true)),
           app.nav ? app.nav(row) : null,
           $('span'),
-          $('button').class('icn-edit').on('click', e => pageviewrow(row, true)),
-          $('button').class('icn-popout'),
+          // $('button').class('icn-popout'),
           $('button').class('icn-close').on('click', e => $('.pv').text('')),
         ],
         // $('button').text('select').on('click', e => {
@@ -2214,7 +2214,12 @@
     wb.Props = {Title,Subject,Author,CreatedDate: new Date()};
     for (let sheet of sheets) {
       wb.SheetNames.push(sheet.name);
-      const ws = XLSX.utils.aoa_to_sheet(sheet.rows);
+      // sheet.rows.unshift(sheet.cols.map(r => Object({v:r.v})));
+      // const ws = XLSX.utils.aoa_to_sheet(sheet.rows.map(row => Object.assign(row,sheet.cols)));
+      // const ws = XLSX.utils.aoa_to_sheet([cols].concat(rows.map(row => cols.map(col => Object.assign({v: String(row[col.n] !== null ? row[col.n] : '').trim() }, col.f)))));
+      sheet.rows.forEach(row => row.forEach(cell => cell.v = cell.v === null ? '' : cell.v));
+      // console.log(sheet.rows);
+      const ws = XLSX.utils.aoa_to_sheet([sheet.cols].concat(sheet.rows));
       ws['!cols'] = sheet.cols;
       wb.Sheets[sheet.name] = ws;
     }
@@ -2225,7 +2230,7 @@
   }
   function downloadExcel(props) {
     $('a')
-    .download(`${Title} ${Subject}.xlsx`.toLowerCase().replace(/ /g,'-'))
+    .download(`${props.Title} ${props.Subject}.xlsx`.toLowerCase().replace(/ /g,'-'))
     .rel('noopener')
     // .href(createExcel(props))
     .href(URL.createObjectURL(new Blob([s2ab(createExcel(props))],{type:"application/octet-stream"})))
@@ -3144,8 +3149,8 @@
       return elem;
     },
     printpdf(){
-      console.log(this);
-      fetch(aim.dmsUrl + "abis/data?request_type=pdf", {
+      console.log(this,aim.dmsUrl);
+      fetch(aim.dmsUrl + "abis/pdf", {
         method: 'post',
         body: this.elem.innerHTML,
         // headers: new Headers({
@@ -12059,15 +12064,29 @@
           const idToUrl = aim.idToUrl(l);
           const listUrl = new URL(idToUrl, 'https://dms.aliconnect.nl');
           ['top','select','search','filter','order'].forEach(key => {
-            if (listSearchparams.has('$'+key)) {
-              listUrl.searchParams.set('$'+key, listSearchparams.get('$'+key));
-            }
+            // if (listSearchparams.has('$'+key)) {
+            //   listUrl.searchParams.set('$'+key, listSearchparams.get('$'+key));
+            // }
+            // if (searchParams.has('$'+key)) {
+            //   listUrl.searchParams.set('$'+key, searchParams.get('$'+key));
+            // }
             if (changed[key]) {
               listUrl.searchParams.set('$'+key, changed[key]);
             }
             if (changed['$'+key]) {
               listUrl.searchParams.set('$'+key, changed['$'+key]);
             }
+
+            // if (changed[key]) {
+            //   listUrl.searchParams.set('$'+key, changed[key]);
+            // } else if (changed['$'+key]) {
+            //   listUrl.searchParams.set('$'+key, changed['$'+key]);
+            // } else if (searchParams.has('$'+key)) {
+            //   listUrl.searchParams.set('$'+key, searchParams.get('$'+key));
+            // } else if (listSearchparams.has('$'+key)) {
+            //   listUrl.searchParams.set('$'+key, listSearchparams.get('$'+key));
+            // }
+
           });
           // docsearchParams.set('l', aim.urlToId(listUrl));
           const hostname = new URL(listUrl).hostname;

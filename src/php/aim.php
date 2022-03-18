@@ -237,9 +237,13 @@ class Aim {
         $this->top = request('$top', $_GET) ?: request('top', $_GET) ?: 10000;
         $this->top = $this->top ? "TOP $this->top" : "";
         $items=[];
-        $and = $this->filter ? [$this->filter] : [];
+        // $and = $this->filter ? [$this->filter] : [];
         $search_fields = get_item($schema, 'searchFields');
+
+        $where='';
+
         if ($search_fields && $this->search && $this->search!=='*') {
+          $and = [];
           $search_fields = explode(',', $search_fields);
           // http_response(200,$search_fields);
           foreach(explode(' ', $this->search) as $keyword) {
@@ -249,11 +253,16 @@ class Aim {
             }
             $and[]=implode(' OR ', $or);
           }
+          if (!empty($and)) {
+            $where = "(".implode(')AND(', $and).")";
+          }
+          if ($contains = get_item($schema, 'contains')) {
+            $where .= ($where ? "OR" : "")."($contains)";
+          }
         }
         // debug("SELECT $this->top * FROM abisingen.api.$selector WHERE (". implode(') AND (', $and) . ") $this->order");
-        $where = $and ? "(". implode(') AND (', $and) . ")" : "";
-        if ($contains = get_item($schema, 'contains')) {
-          $where .= ($where ? " OR " : "").$contains;
+        if ($this->filter) {
+          $where = "($this->filter)" . ($where ? "AND($where)" : "");
         }
         $where = $where ? "WHERE $where" : "";
         // unset();

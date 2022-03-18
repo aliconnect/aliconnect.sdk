@@ -2620,7 +2620,7 @@
       get status(){ return xhr.status },
     };
     function query(selector, context) {
-      console.log(selector, context);
+      // console.log(selector, context);
       if (typeof selector instanceof Object){
         Object.entries(selector).forEach(entry => query(...entry));
       } else if (arguments.length === 1){
