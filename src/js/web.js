@@ -68,7 +68,14 @@
 
           $('span').class('pagemenu'),
           $('button').class('abtn dark').on('click', e => $(document.documentElement).attr('dark', getItem('dark', getItem('dark')^1))),
-          $('button').class('abtn shop'),
+          $('button').class('abtn shop').on('click', e => aim.showBag()).append(
+            $('div').append(
+              $('button').text('bestellen').on('click', e => {
+                e.stopPropagation();
+                aim.orderBag();
+              }),
+            ),
+          ),
           $('button').class('abtn account').append(
             $('span').append(
               $('span').class('user'),

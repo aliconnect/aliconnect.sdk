@@ -706,6 +706,7 @@ aside.filter {
   border: solid 1px rgba(180,180,180,0.3);
   padding: 0 3px;
   white-space: initial;
+  white-space: pre-wrap;
   vertical-align: top;
 }
 .orderlist table {
