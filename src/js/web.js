@@ -46,6 +46,9 @@
     return false;
   }
 
+  const openwindows = [];
+  window.addEventListener('beforeunload', e => openwindows.filter(win => win.window).forEach(win => win.close()));
+
   const libraries = {
     async page() {
       // console.error(searchParams.get('$search'));
@@ -61,7 +64,7 @@
           })
           // .on('keyup', e => e.code === 'Enter' ? search(e.target.value) : null)
           .append(
-            $('input').name('search').autocomplete('off').placeholder('zoeken').value(searchParams.get('$search')).on('focus', e => e.target.select()),
+            $('input').name('search').autocomplete('off').placeholder('Typ hier om te zoeken').value(searchParams.get('$search')).on('focus', e => e.target.select()),
             // $('button').class('abtn icn search fr').title('Zoeken').on('click', e => search(e.target.previousElementSibling.value)),
             $('button').class('abtn icn search fr').title('Zoeken'),
           ),
@@ -181,6 +184,7 @@
       const aimClient = aim.aimClient = new aim.PublicClientApplication(aimConfig);
 
       const config = await aimClient.getConfig();
+
       Object.assign(aim.config, config);
       // console.error(sessionStorage.getItem('access_token'));
 
@@ -199,6 +203,12 @@
         // account: authResult.account,
         scopes: aimRequest.scopes,
       });
+
+      /** Er is nu een getAccessToken() beschikbaar, nu inloggen bij socketserver */
+      aim.send('/connect/signin');
+      window.addEventListener('blur', e => aim.send('/connect/blur'));
+      window.addEventListener('focus', e => aim.send('/connect/focus'));
+
       const dmsClient = aim.dmsClient = aim.Client.initWithMiddleware({authProvider}, aim.dmsConfig);
 
       function signOut() {
@@ -235,8 +245,6 @@
       // console.log(999, dmsClient);
       // dmsClient = aim.Client.initWithMiddleware({authProvider}, dmsConfig);
 
-      window.addEventListener('blur', e => aim.send({path:'/connect', method:'blur'}));
-      window.addEventListener('focus', e => aim.send({path:'/connect', method:'focus'}));
 
       $('button.menu').on('click', e => $('.tv').attr('hide', $('.tv').attr('hide') ^ 1));
       $('.tv').on('click', e => !['summary'].includes(e.target.localName) ? $('.tv').attr('hide',1) : null);
@@ -1286,6 +1294,7 @@
       });
     })
   };
+  aim.sdkUrl = document.currentScript.src.replace(/js\/web\.js.*/,'');
 
   function displayvalue(row,col){
     if (col.format === 'date') return new Date(row[col.name]).toLocaleDateString();
@@ -1489,6 +1498,8 @@
             const schema = aim.config.components.schemas[row.schemaName];
             const app = schema.app || {};
             const div = $('div')
+            .class(row.schemaName+row.id)
+            .on('focus', e => focus(div))
             .on('click', e => select(div))
             if (aim.pageTag === row.schemaName+row.id) {
               console.log(aim.pageTag, row.schemaName+row.id);
@@ -1960,8 +1971,14 @@
     }))
   }
   function pageviewrow(row, editmode = false){
-    aim.pageTag = row.schemaName + row.id;
-    // console.log(ref,body.schemaName,body);
+    const tag = aim.pageTag = row.schemaName + row.id;
+
+
+    // const elem = document.body.querySelector(`.lv .`+aim.pageTag);
+    if (document.body.querySelector(`.lv .`+aim.pageTag)) $(`.lv .`+aim.pageTag).emit('focus');
+
+    // console.log(aim.pageTag,elem,$(`.lv .`+aim.pageTag));
+
     const schema = aim.config.components.schemas[row.schemaName];
     const app = schema.app || {};
     // console.log(app.header);
@@ -1987,49 +2004,66 @@
     const initials = (headers.join('').match(/([A-Z]).*?([A-Z])/)||[]).slice(1,3).join('');
     // console.log(headers.map((s,i)=>[s,i]));
     // console.log(111, data, body, cfg);
+    document.title = headers[0];
+    (function createPage(elem){
+      return elem.append(
+        $('nav').append(
+          editmode ? [
+            $('button').class('icn-del'),
+            $('span'),
+            $('button').class('icn-close').on('click', e => pageviewrow(row)),
+          ] : [
+            $('button').class('icn-edit').on('click', e => pageviewrow(row, true)),
+            app.nav ? app.nav(row) : null,
+            $('span'),
+            $('button').class('icn-popout').on('click', e => {
+              const [top,left,width,height] = [0,0,600,600];
+              // const win = window.open(null, null, `top=${top},left=${left},width=${width},height=${height}`);
+              var win = openwindows.find(win => win.name == tag);
+              if (win) return win.focus();
+              win = window.open('card.html', tag, `scrollbars=no,resizable=yes,toolbar=no,width=${width},height=${height}`);
+              openwindows.push(win);
+              const main = $('main').append($('article').append(
+                createPage($('section').class('pv doc-content').css('max-width', 'none')),
+              ));
+              win.onload = function () {
+                win.document.title = headers[0];
+                win.document.body.append(main.elem);
+              }
+            }),
+            $('button').class('icn-close').on('click', e => elem.text('')),
+          ],
+          // $('button').text('select').on('click', e => {
+          //   sessionStorage.setItem('clientId', body.id);
+          //   document.location.href = '/';
+          // })
+        ),
+        $('header').append(
+          $('div').class('icon').append(
+            icon ? $('img').src(icon) : $('span').text(initials),
+          ),
+          $('div').class('aco').append(
+            headers.map((s,i)=>$('h'+(i+1)).text(s)),
+            app.header ? app.header(row) : null,
+          ),
+        ),
+        $('form').buildForm(data, cfg, editmode),
+        // (
+        //
+        // $('div').append(
+        //   Object.entries(schema.properties)
+        //   .filter(([name, property]) => aim.readOnly === false || data[name])
+        //   .map(([name, property]) => $('div').class('attr').append(
+        //     $('label').text(property.title || name),
+        //     $(aim.readOnly === false ? 'input' : 'span').text(data[name]).value(data[name] || ''),
+        //   ))
+        // )
+      )
+    })($('.pv').text(''));
+    if (editmode) $('.pv input').focus();
 
-    // return;
-    $('.pv')
-    .text('')
-    .append(
-      $('nav').append(
-        editmode ? [
-          $('button').class('icn-del'),
-          $('span'),
-          $('button').class('icn-close').on('click', e => pageviewrow(row)),
-        ] : [
-          $('button').class('icn-edit').on('click', e => pageviewrow(row, true)),
-          app.nav ? app.nav(row) : null,
-          $('span'),
-          // $('button').class('icn-popout'),
-          $('button').class('icn-close').on('click', e => $('.pv').text('')),
-        ],
-        // $('button').text('select').on('click', e => {
-        //   sessionStorage.setItem('clientId', body.id);
-        //   document.location.href = '/';
-        // })
-      ),
-      $('header').append(
-        $('div').class('icon').append(
-          icon ? $('img').src(icon) : $('span').text(initials),
-        ),
-        $('div').class('aco').append(
-          headers.map((s,i)=>$('h'+(i+1)).text(s)),
-          app.header ? app.header(row) : null,
-        ),
-      ),
-      $('form').buildForm(data, cfg, editmode),
-      // (
-      //
-      // $('div').append(
-      //   Object.entries(schema.properties)
-      //   .filter(([name, property]) => aim.readOnly === false || data[name])
-      //   .map(([name, property]) => $('div').class('attr').append(
-      //     $('label').text(property.title || name),
-      //     $(aim.readOnly === false ? 'input' : 'span').text(data[name]).value(data[name] || ''),
-      //   ))
-      // )
-    )
+
+
     // console.log(1, data);
     // return;
     // // sessionStorage.setItem('lv-data', JSON.stringify(data));
@@ -2091,12 +2125,16 @@
     // listview(cols, data.rows);
   }
   function pageview(ref, editmode = false){
+
     inputId = 0;
     // aim.isEdit = true;
     // const [s,schemaName,id] = ref.match(/(\w+)\((\d+)\)/);
     // console.log(schemaName,id);
-    const hostname = new URL(ref).hostname;
+    const url = new URL(ref);
+    editmode = url.searchParams.has('edit') || editmode;
+    const hostname = url.hostname;
     const client = aim.clients.get(hostname);
+    // console.log(ref, editmode);
     // console.log(ref);
     // console.log(aim.idfilter);
     client.api(ref)
@@ -3223,7 +3261,7 @@
         return this;
       }},
       btns: { value: function (selector, context) {
-        const elem = $('div').parent(this).class('row btns');
+        const elem = $('nav').parent(this).class('row btns');
         function btn(selector, context) {
           if (typeof selector === 'object') {
             return Object.entries(selector).forEach(entry => btn(...entry));
@@ -10110,50 +10148,198 @@
       }
     },
     treeview(menu){
-      function menuItem(key, obj){
-        const elem = $('summary')
-        .append(
-          $('span').text(key).on('click', e => {
-            var selectEl = document.querySelector('.col.tv [select]');
-            if (selectEl) {
-              selectEl.removeAttribute('select');
-            }
-            // console.log(selectEl);
-            // $('.col.tv>div').querySelectorAll('div').forEach(el => el.attr('select', null));
-            elem.attr('select', '');
-            if (typeof obj === 'function') {
-              obj();
-            } else if (obj && obj.metaData && obj.metaData.l) {
-              e.preventDefault();
-              const url = obj.metaData.l.url;
-              const entries = Object.entries(obj.metaData.l);
-              entries.shift();
-              const search = '?'+entries.map(e => e.join('=')).join('&').replace(/ /g,'+');
-              console.log(search);
-              document.location.hash = `#?l=${aim.urlToId(url + search)}`;
-            } else {
-              // e.preventDefault();
-              e.stopPropagation();
-            }
-          })
-        );
-        // console.log(key,obj)
-        return $('details')
-        .open(localStorage.getItem('treeview-'+key))
-        .on('toggle', e => {
-          // console.log(key, e.target.open);
-          localStorage.setItem('treeview-' + key, e.target.open ? 1 : '');
-        })
-        .append(
-          elem,
-          Object.entries(obj||{}).filter(e => e[0]!=='metaData').map(e => menuItem(...e))
-        )
-      }
+      (function adobject(elem, menu) {
+        if (menu) {
+          for (let [name,obj] of Object.entries(menu)) {
 
-      // console.log(menu);
+            function menuelem() {
+              var title = aim.displayName(obj.title||name);
+              if (obj.href) {
+                title = $('a').text(title).href(obj.href);
+                delete obj.href;
+              }
+              return [
+                $('summary').append(title),
+              ].concat();
+
+              // const summary = $('summary');
+              // if (typeof obj === 'function') {
+              //   elem.append($('summary').text(title).on('click', obj));
+              // } else {
+              //   for (var name in obj) {
+              //     if (name === 'href') {
+              //       elem.append(
+              //         $('summary').append(
+              //           $('a').text(title).href(obj.href)
+              //         ),
+              //       );
+              //     } else {
+              //       elem.append(
+              //         $('summary').text(title).href(obj.href)));
+              //     }
+              //   }
+              // }
+              // else if (obj.href) {
+              // } else {
+              //   summary.append($('span').text(title));
+              // }
+              // return summary;
+            }
+
+            elem.append(
+              $('details')
+              .open(localStorage.getItem('treeview-'+name))
+              .on('toggle', e => {
+                // console.log(key, e.target.open);
+                localStorage.setItem('treeview-' + name, e.target.open ? 1 : '');
+              })
+              .append(
+                menuelem(),
+
+                // $('summary').append(
+                //   $('span').text(aim.displayName(obj.title||name)).on('click', e => {
+                //     var selectEl = document.querySelector('.col.tv [select]');
+                //     if (selectEl) {
+                //       selectEl.removeAttribute('select');
+                //     }
+                //     // console.log(selectEl);
+                //     // $('.col.tv>div').querySelectorAll('div').forEach(el => el.attr('select', null));
+                //     // elem.attr('select', '');
+                //     if (typeof obj.value === 'function') {
+                //       obj.value();
+                //     } else if (obj.value.list) {
+                //       aim.list(obj.value.list.name, obj.value.list.query);
+                //     } else if (obj.value.exec) {
+                //       aim[obj.value.exec](...obj.value.args);
+                //     } else if (obj && obj.metaData && obj.metaData.l) {
+                //       e.preventDefault();
+                //       const url = obj.metaData.l.url;
+                //       const entries = Object.entries(obj.metaData.l);
+                //       entries.shift();
+                //       const search = '?'+entries.map(e => e.join('=')).join('&').replace(/ /g,'+');
+                //       console.log(search);
+                //       document.location.hash = `#?l=${aim.urlToId(url + search)}`;
+                //     } else {
+                //       // e.preventDefault();
+                //       e.stopPropagation();
+                //     }
+                //   }),
+                // ),
+                // menuChilds(obj.value),
+              )
+            )
+          }
+        }
+      })($('.col.tv>div'), menu)
+      return;
       $('.col.tv>div').append(
-        Array.from(Object.entries(menu||{})).map(e => menuItem(...e)),
-      )
+        (function menuChilds(menu) {
+          if (menu) {
+            if (!Array.isArray(menu)) {
+              menu = Array.from(Object.entries(menu)).filter(([name,value]) => !['list', 'exec', 'args', 'href'].includes(name)).map(([name,value]) => Object({name,value}));
+            }
+            return menu.map(obj => {
+              const elem = $('summary').append(
+                $('span').text(aim.displayName(obj.title||obj.name)).on('click', e => {
+                  var selectEl = document.querySelector('.col.tv [select]');
+                  if (selectEl) {
+                    selectEl.removeAttribute('select');
+                  }
+                  // console.log(selectEl);
+                  // $('.col.tv>div').querySelectorAll('div').forEach(el => el.attr('select', null));
+                  elem.attr('select', '');
+                  if (typeof obj.value === 'function') {
+                    obj.value();
+                  } else if (obj.value.list) {
+                    aim.list(obj.value.list.name, obj.value.list.query);
+                  } else if (obj.value.exec) {
+                    aim[obj.value.exec](...obj.value.args);
+                  } else if (obj && obj.metaData && obj.metaData.l) {
+                    e.preventDefault();
+                    const url = obj.metaData.l.url;
+                    const entries = Object.entries(obj.metaData.l);
+                    entries.shift();
+                    const search = '?'+entries.map(e => e.join('=')).join('&').replace(/ /g,'+');
+                    console.log(search);
+                    document.location.hash = `#?l=${aim.urlToId(url + search)}`;
+                  } else {
+                    // e.preventDefault();
+                    e.stopPropagation();
+                  }
+                })
+              );
+              return $('details')
+              .open(localStorage.getItem('treeview-'+obj.name))
+              .on('toggle', e => {
+                // console.log(key, e.target.open);
+                localStorage.setItem('treeview-' + obj.name, e.target.open ? 1 : '');
+              })
+              .append(
+                elem,
+                menuChilds(obj.value),
+              )
+            });
+          }
+        })(menu),
+      );
+    },
+    treeview(menu){
+      $('.col.tv>div').append(
+        (function menuChilds(menu) {
+          if (menu) {
+            if (!Array.isArray(menu)) {
+              menu = Array.from(Object.entries(menu)).filter(([name,value]) => !['list', 'exec', 'args', 'href', 'send'].includes(name)).map(([name,value]) => Object({name,value}));
+            }
+            return menu.map(obj => {
+              const elem = $('summary').append(
+                obj.value && obj.value.href
+                ? $('a').text(aim.displayName(obj.title||obj.name)).href(obj.value.href)
+                : $('span').text(aim.displayName(obj.title||obj.name)).on('click', e => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  var selectEl = document.querySelector('.col.tv [select]');
+                  if (selectEl) {
+                    selectEl.removeAttribute('select');
+                  }
+                  // console.log(selectEl);
+                  // $('.col.tv>div').querySelectorAll('div').forEach(el => el.attr('select', null));
+                  elem.attr('select', '');
+                  if (typeof obj.value === 'function') {
+                    obj.value();
+                  } else if (obj.value.list) {
+                    aim.list(obj.value.list.name, obj.value.list.query);
+                  } else if (obj.value.exec) {
+                    aim[obj.value.exec](...obj.value.args);
+                  } else if (obj.value.send) {
+                    aim.send('/aliconnector/execute', { body: obj.value.send })
+                  } else if (obj && obj.metaData && obj.metaData.l) {
+                    e.preventDefault();
+                    const url = obj.metaData.l.url;
+                    const entries = Object.entries(obj.metaData.l);
+                    entries.shift();
+                    const search = '?'+entries.map(e => e.join('=')).join('&').replace(/ /g,'+');
+                    console.log(search);
+                    document.location.hash = `#?l=${aim.urlToId(url + search)}`;
+                  // } else {
+                  //   e.preventDefault();
+                  //   e.stopPropagation();
+                  }
+                })
+              );
+              return $('details')
+              .open(localStorage.getItem('treeview-'+obj.name))
+              .on('toggle', e => {
+                // console.log(key, e.target.open);
+                localStorage.setItem('treeview-' + obj.name, e.target.open ? 1 : '');
+              })
+              .append(
+                elem,
+                menuChilds(obj.value),
+              )
+            });
+          }
+        })(menu),
+      );
     },
     listview,
   }

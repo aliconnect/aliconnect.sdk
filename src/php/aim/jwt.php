@@ -10,12 +10,13 @@ class Jwt {
   private $base64UrlPayload;
   private $secret;
   private $base64UrlSignature;
+  public $valid = false;
   public function __construct ($jwt = null, $secret = null) {
     $this->alg = 'sha256';
     $this->expires_after = 3600;
     $this->payload = null;
-    $this->decode($jwt);
-    $this->validate($secret);
+    $this->decode($jwt, $secret);
+    // $this->validate($secret);
   	// $result = [
   	// 	// 'header'=> json_decode(base64_decode($base64UrlHeader = array_shift($arr))),
   	// 	'payload'=> $payload = json_decode(base64_decode($base64UrlPayload)),
@@ -32,7 +33,7 @@ class Jwt {
     $this->expires_after = $expires_after;
     return $this;
   }
-  public function decode($jwt) {
+  public function decode($jwt, $secret = null) {
     if ($jwt) {
       $this->token = $jwt;
       $arr = explode('.', $jwt);
@@ -43,6 +44,9 @@ class Jwt {
         $this->not_expired = isset($this->payload['exp']) ? $this->payload['exp'] >= time() : null;
         $this->expired = !$this->not_expired;
         $this->base64UrlSignature = $arr[2];
+      }
+      if ($secret) {
+        $this->validate($secret);
       }
     }
     return $this;
@@ -71,6 +75,7 @@ class Jwt {
   	]);
   }
   public function validate($secret = null) {
+    $this->valid = false;
     $this->secret($secret);
     if (
       !empty($this->token) &&

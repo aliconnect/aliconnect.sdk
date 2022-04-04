@@ -4,9 +4,19 @@
   font-weight: normal;
   font-style: normal;
 }
-[class^="icn-"] {
+[class^="icn-"]:before {
   font-family: AliconnectIcon;
   font-style: normal;
+  vertical-align: text-bottom;
+  display: inline-block;
+  /* height:100%; */
+}
+[class^="icn-"][caption]:after {
+  content: attr(caption);
+  vertical-align: text-bottom;
+  /* vertical-align: top; */
+  display: inline-block;
+  /* height:100%; */
 }
 .icn-menu::before,.abtn.menu::before{content:'\f05c';}
 .icn-more::before,.abtn.more::before{content:'\f01b';}

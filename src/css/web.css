@@ -2019,3 +2019,15 @@ aside.filter:empty{
 tr .nr {
   /* text-align: right; */
 }
+
+
+.lv a:hover, .lv a:hover * {
+  cursor:pointer;
+  text-decoration: underline;
+}
+
+.tv summary a {
+  flex: 1 1 auto;
+  color: inherit;
+  text-decoration: inherit;
+}

@@ -164,6 +164,21 @@ class Aim {
         // die('a');
         // if (empty(array_intersect($schema['security'],$scopes))) http_response(401);
         if (empty(array_intersect($schema['security'],$scopes))) http_response(200,[$schema['security'],$scopes]);
+        $id = get_item($_REQUEST, 'id');
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($id)) {
+          if (!empty($schema['setid'])) {
+            // $row = sqlsrv_fetch_object(aim()->sql_query());
+            http_response_query([
+              "DECLARE @id BIGINT;",
+              "SELECT @id = MAX({$schema['idname']}) FROM {$schema['tablename']}",
+              "SELECT @id = ISNULL(@id,0)+1",
+              "INSERT INTO {$schema['tablename']} ([{$schema['idname']}],[".implode("],[",array_keys($_POST))."]) VALUES (@id,'".implode("','",array_values($_POST))."')",
+              "SELECT @id AS id,'$basename' AS schemaName",
+            ]);
+            // $_REQUEST['id'] = $row->id;
+          }
+          // http_response(200,$schema['setid']);
+        }
 
         $dbname = get_item($schema,'dbname') ?: get_item($this->config,'dbname');
         $idname = get_item($schema,'idname') ?: 'id';
@@ -193,13 +208,13 @@ class Aim {
           ];
           $this->filter = str_replace(array_keys($operators), array_values($operators), ' '.$this->filter.' ');
         }
-        if ($id = get_item($_REQUEST, 'id')) {
+        if ($id) {
           $filter = $this->filter ? "AND $this->filter" : "";
-          if ($this->method === 'post') {
+          if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $value = $_POST['value'] === '' ? "NULL" : "'".str_replace("'","''",$_POST['value'])."'";
             // $q = "UPDATE [$dbname].$tablename SET [$_POST[name]] = '$value' WHERE $idname = $id";
             // die($q);
-            aim()->sql_query("UPDATE $tablename SET [$_POST[name]] = $value WHERE $idname = $id $filter");
+            aim()->sql_query("UPDATE $tablename SET [{$_POST['name']}] = $value WHERE $idname = $id $filter");
             http_response(200);
             // die('POST');
           }
@@ -1527,7 +1542,12 @@ function get_real_user_ip($default = NULL, $filter_options = 12582912) {
   }
 
 function request($selector, $context = null, $required = false) {
-  $context = $context ? (array)$context : $_REQUEST;
+  if (is_bool($context)) {
+    $required = $context;
+    $context = $_REQUEST;
+  } else {
+    $context = $context ? (array)$context : $_REQUEST;
+  }
   if (isset($context[$selector])) {
     return $context[$selector];
   }

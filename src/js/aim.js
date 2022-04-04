@@ -1,6 +1,5 @@
 (function(global, factory) { typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, global.aim = factory()); }(this, function (exports) {
   eol = '\n';
-
   const self = this;
   function aim(selector, context){
     if (typeof selector === 'function'){
@@ -53,7 +52,7 @@
     } else if (typeof Window !== 'undefined' && selector instanceof Window) {
       return this;
     } else if (selector.ID || selector.LinkID || selector.tag) {
-      // //console.log(selector, selector.ID, selector.LinkID, selector.tag);
+      // //console.debug(selector, selector.ID, selector.LinkID, selector.tag);
       return Item.get(selector);
     }
     this.extend(context)
@@ -220,7 +219,7 @@
   const pageHtml = `<!DOCTYPE HTML><html><head><link href="${aim.sdkUrl}css/web_debug.css" rel="stylesheet"/><script src="${aim.sdkUrl}js/aim_debug.js" libraries="web"></script></head><body></body></html>`;
   function messagePopup(msg){
     // self.messageElem = self.messageElem || $('div').class('message error');
-    // console.log(msg);
+    // console.debug(msg);
     const elem = $('div')
     .parent(self.messageElem = self.messageElem || $('div').parent(document.body).class('message error'))
     .append(
@@ -569,10 +568,10 @@
             break;
           }
           properties[cell.v] = properties[cell.v] || { type: types[cell.t] || 'string' }
-          // ////console.log(cellstr, cell);
+          // ////console.debug(cellstr, cell);
         }
         // var irows = Number(aim.his.match(/\d+/g));
-        // ////console.log(sheetname, wbsheet, ref, irows);
+        // ////console.debug(sheetname, wbsheet, ref, irows);
       }
       for (let sheetname in workbook.Sheets) {
         importSheet(sheetname);
@@ -581,13 +580,13 @@
           href: '#/' + sheetname,
         }
       }
-      ////console.log(config);
+      ////console.debug(config);
       // aim.fetch(aim.config.aim).post('/').input(config).res(e => {
-      // 	////console.log(e.target.responseText);
+      // 	////console.debug(e.target.responseText);
       // 	// aim.SampleWindow('/om/?prompt=config_edit');
       // }).send();
       new aim.HttpRequest(aim.config.aim, 'post', '/').query({append: true}).body(config).send().onload = e => {
-        ////console.log(e.target.responseText);
+        ////console.debug(e.target.responseText);
       };
     }
   }
@@ -669,6 +668,11 @@
   function num(value, dig = 2){
     return new Intl.NumberFormat('nl-NL', { minimumFractionDigits: dig, maximumFractionDigits: dig }).format(value);
   }
+  function displayName(s){
+    return String(s||'').replace(/^\w/,v => v.toUpperCase()).replace(/([a-z])([A-Z|\d])(\w|)/g, (v,p1,p2,p3) => p1+' '+(p3.match(/[A-Z]/) ? p2 : p2.toLowerCase())+p3).replace(/_/g, ' ');
+  }
+
+
   Object.defineProperties(Array.prototype, {
     unique: { value: function () {
       return this.filter((e,i,arr) => arr.indexOf(e) === i)
@@ -820,15 +824,14 @@
       .replace(/^\s*\n/gms, '')
     },
   };
-
   __ = function (){
     const translate = aim.his.translate || new Map();
     // console.debug(arguments, translate);
     // return '';
     return [].concat(...arguments).map(text => {
-      // //console.log([text, translate[text]]);
+      // //console.debug([text, translate[text]]);
       if (translate.has(text)) return translate.get(text);
-      text = String(text||'').replace(/^\w/,v => v.toUpperCase()).replace(/([a-z])([A-Z])/g, (v,p1,p2) => p1+' '+p2.toLowerCase()).replace(/_/g, ' ');
+      text = displayName(text);
       return text && translate.has(text) ? translate.get(text) : (text || '');
     }).join(' ');
   };
@@ -1098,7 +1101,7 @@
         }
         return s
       });
-      // console.log(s);
+      // console.debug(s);
       return s
       .replace(/<P>[\s|\n]*<\/P>/gs,'')
       .trim();
@@ -1122,7 +1125,7 @@
       const tabControl = aim('div').parent(panel).class('row top btnbar');
       const pageControl = aim('div').parent(panel).class('row aco').style('height:100%;');
       function upload() {
-        // //console.log('UPLOAD', page);
+        // //console.debug('UPLOAD', page);
         configInput.elem.value = configText.elem.innerText;
         aimClient.api('/').post(panel).then(body => {
           console.debug("API", body);
@@ -1331,7 +1334,7 @@
       });
     },
     cookies() {
-      //console.log('COOKIES');
+      //console.debug('COOKIES');
       aim().on({
         async load() {
           if (!localStorage.getItem('cookieSettings')) {
@@ -1532,7 +1535,7 @@
       return this;
     },},
     extendConfig: {value: function (yaml){
-      // //console.log(yaml);
+      // //console.debug(yaml);
       return aimClient.api('/').query('extend', true).post({config: yaml});
     },},
     execQuery: {value: function (selector, context, replace){
@@ -1550,11 +1553,11 @@
         this.execUrl(url_string(url.href));
         // if (url.searchParams.get('l')) {
         //   url.searchParams.set('l', decodeURIComponent(url.searchParams.get('l')));
-        //   //console.log(url.searchParams.get('l'));
+        //   //console.debug(url.searchParams.get('l'));
         //
         // }
         // var href = url.href;
-        // //console.log(href);
+        // //console.debug(href);
         if (replace) {
           // console.error('REPLACE');
           self.history.replaceState('page', '', url_string(url.href));
@@ -1572,7 +1575,7 @@
       // aim.url = aim.url || new URL(document.location.origin);
       url = new URL(url, document.location);
 
-      // //console.log(url.hash, url.searchParams.get('l'), aim.url.searchParams.get('l'));
+      // //console.debug(url.hash, url.searchParams.get('l'), aim.url.searchParams.get('l'));
       if (url.hash) {
         if (this.execUrl(url.hash.substr(1))) {
           aim.his.mergeState(url.hash.substr(1));
@@ -1583,7 +1586,7 @@
         // }
         // this.execUrl(url.hash.substr(1));
       }
-      // //console.log(url.searchParams.get('l'));
+      // //console.debug(url.searchParams.get('l'));
       // if (url.searchParams.get('l')) {// && url.searchParams.get('l') !== aim.url.searchParams.get('l')) {
       //   documentUrl.searchParams.set('l', url.searchParams.get('l'));
       //
@@ -1623,7 +1626,7 @@
       //   }
       // }
       // return;
-      // //console.log('POPSTATE2', document.location.pathname);
+      // //console.debug('POPSTATE2', document.location.pathname);
     }},
     forEach: {value: function (selector, context, fn){
       if (selector instanceof Object){
@@ -1645,7 +1648,7 @@
       const name = selector.name || selector;
       if (!this.props.has(name)){
         options = typeof options === 'string' ? aim(options) : options;
-        // //console.log(selector);
+        // //console.debug(selector);
         // this.props.set(name, typeof selector === 'function' && selector.prototype ? new selector(options) : options);
       }
       return this.props.get(name)
@@ -1821,7 +1824,7 @@
           };
           var notification = new Notification(title, options);
           notification.onclick = function (e) {
-            //console.log('CLICKED', options);
+            //console.debug('CLICKED', options);
             // self.open("http://www.stackoverflow.com");
             // self.location.href = 'https://aliconnect.nl';
           }
@@ -1891,7 +1894,7 @@
           // pagesProgress.max = pdf.numPages;
           aim().progress(0, pdf.numPages);
           (function getPage(pageNumber) {
-            // //console.log(pageNumber);
+            // //console.debug(pageNumber);
             pdf.getPage(pageNumber).then(function (page) {
               page.getTextContent({
                 normalizeWhitespace: true,
@@ -1909,7 +1912,7 @@
           })(1);
         }
         if (selector instanceof File) {
-          //console.log('is file', selector);
+          //console.debug('is file', selector);
           var fileReader = new FileReader();
           fileReader.onload = function (e){
             const array = new Uint8Array(e.target.result);
@@ -1977,16 +1980,16 @@
           context.allOf = context.allOf || ['Item'];
           const allOf = context.allOf || [];
           var allContext = {};
-          // //console.log(selector, context);
+          // //console.debug(selector, context);
           allOf.forEach(name => {
             if (schemas.has(name)) {
               allContext = extend(allContext, schemas.get(name));
-              // //console.log(selector, name,schemas.get(name),allContext);
+              // //console.debug(selector, name,schemas.get(name),allContext);
             }
           });
           context = extend(allContext, context);
           this.schemas[selector] = context = extend(allContext, context);
-          // //console.log(selector, context);
+          // //console.debug(selector, context);
           schemas.set(selector, context);
           if (selector !== 'Item') {
             // constructor.prototype = Object.create(Object.getPrototypeOf(Item.prototype), Object.getOwnPropertyDescriptors(Item.prototype));
@@ -2180,7 +2183,7 @@
       return aim.auth && aim.auth.id ? aim.auth.id.name : ''
     },},
     ws: {value: function (options){
-      // //console.log('MAXXXX');
+      // //console.debug('MAXXXX');
       return this.get(WebSocket, options ? Object.assign(options,{authProvider: options.authProvider || aim.client.authProvider}) : null);
     },},
   });
@@ -2190,11 +2193,11 @@
     .get().then(body => aim.his.translate = new Map(Object.entries(body)));
   }
   function Account(id_token) {
-    console.warn(1, id_token);
+    // console.warn(1, id_token);
     try {
       const id = this.idToken = JSON.parse(atob((this.id_token = id_token).split('.')[1]));
       // aimClient.store('aimAccount', JSON.stringify(id));
-      // console.warn(2, id);
+      console.debug(JSON.stringify(id,null,2));
       this.sub = id.sub;
       this.name = id.name || id.email || id.sub;
       this.username = id.preferred_username || this.name;
@@ -2209,7 +2212,7 @@
       client_id: this.clientId,
       client_secret: this.clientSecret,
     }).post(options).then(e => {
-      //console.log(e.target.responseText);
+      //console.debug(e.target.responseText);
     })
   }
   function getAccount() {
@@ -2269,12 +2272,12 @@
   }
   function login(options){
     return aim.promise('Login', async (resolve, fail) => {
-      // //console.log('LOGIN', options);
+      // //console.debug('LOGIN', options);
       // return;
 
       if (options !== undefined){
         let state = Math.ceil(Math.random() * 99999);
-        //console.log(99999, options);
+        //console.debug(99999, options);
         options = {
           // scope: 'name+email+phone_number',
           response_type: 'code',
@@ -2286,7 +2289,7 @@
           // socket_id: aim.webSocketClient.socket_id,
         };
         const url = aim.fetch(this.config.auth.url).query(options).toString();
-        //console.log(url, this.config);
+        //console.debug(url, this.config);
         if (document.location.protocol === 'file:'){
           options.socket_id = this.ws.socket_id;
           this.loginWindow = self.open(
@@ -2302,7 +2305,7 @@
 
       self.addEventListener('focus', e => {
         if (this.access_token) {
-          // //console.log('JE BENT INGELOGT, DUS CONTROLEREN OF TOKEN NOG OK IS ALS HET EEN INLOG TOKEN IS');
+          // //console.debug('JE BENT INGELOGT, DUS CONTROLEREN OF TOKEN NOG OK IS ALS HET EEN INLOG TOKEN IS');
           const access = this.access;
           // als een nonce aanwezig is dan is het een inlog token.
           // controleer of token nog actief is, c.q. gebruiker is ingelogt
@@ -2316,11 +2319,11 @@
               }
             });
           }
-          // //console.log(aimClient);
+          // //console.debug(aimClient);
         }
       });
 
-      // //console.log(this);
+      // //console.debug(this);
       if (this.account) {
         resolve(this.account);
       } else {
@@ -2337,7 +2340,7 @@
   }
   function loginPopup (options) {
     return aim.promise('LoginPopup', async (resolve, reject) => {
-      // console.log('options', options, this.config);
+      // console.debug('options', options, this.config);
       options = {
         // scope: 'name+email+phone_number',
         response_type: 'code',
@@ -2356,12 +2359,13 @@
       let rect = document.body.getBoundingClientRect();
       let top = self.screenTop + (self.innerHeight - height) / 2;
       let left = self.screenLeft + (self.innerWidth - width) / 2;
-      // const popup = self.open(url, 'loginPopup', `top=${top},left=${left},width=${width},height=${height},toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes`);
-      const popup = self.open(url.href, 'loginPopup');
+      const popup = self.open(url, 'loginPopup', `top=${top},left=${left},width=${width},height=${height},toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes`);
+      // const popup = self.open(url.href, 'loginPopup');
       const interval = setInterval(() => popup.postMessage({msg: 'loginPopup'}, 'https://login.aliconnect.nl'), 1000);
-      self.removeEventListener('message', loginPopup.messageListener);
-      loginPopup.messageListener = self.addEventListener('message', (event) => {
-        console.log(event.data);
+      // console.debug(loginPopupMessageListener);
+      self.removeEventListener('message', loginPopup.MessageListener);
+      loginPopup.MessageListener = event => {
+        console.debug(event.data);
         if (event.data.msg === 'loginPopupAck') {
           clearInterval(interval);
         }
@@ -2369,10 +2373,10 @@
           const url = new URL(event.data.url, document.location);
           if (url.searchParams.has('token')) {
             const access_token = url.searchParams.get('token');
-            console.log(access_token);
+            console.debug(access_token);
             this.store('access_token', access_token);
             const access = JSON.parse(atob((access_token).split('.')[1]));
-            console.log(1, access);
+            console.debug(1, access);
             aim.fetch(aim.tokenUrl)
             .query('client_id', this.config.client_id)
             .query('response_type', 'id_token')
@@ -2380,7 +2384,7 @@
             .headers('Accept', 'application/json')
             .get()
             .then(body => {
-              console.log(2, body);
+              console.debug(2, body);
               this.store('id_token', body.id_token);
               this.account = new Account(body.id_token);
               popup.postMessage({msg: 'close'}, 'https://login.aliconnect.nl');
@@ -2390,7 +2394,7 @@
             this.getAccessToken({
               code: url.searchParams.get('code')
             }).then(e => {
-              //console.log(3333);
+              //console.debug(3333);
               resolve({
                 accessToken: this.storage.getItem('aim.access_token'),
                 account: this.account,
@@ -2412,14 +2416,15 @@
             });
           }
         }
-      }, false);
+      };
       // win.onbeforeunload = e => resolve();
+      self.addEventListener('message', loginPopup.MessageListener, false);
     });
     // this.authProvider.login(this.config.auth);
   }
   function logout(options){
     return new Promise((resolve, reject) => {
-      // //console.log(sessionStorage('aim.id_token'));
+      // //console.debug(sessionStorage('aim.id_token'));
       if (this.storage.getItem('aim.id_token')) {
         this.storage.removeItem('aim.id_token');
         this.storage.removeItem('aim.refresh_token');
@@ -2443,7 +2448,7 @@
   function refreshToken(){
     return console.error('refreshToken');
     if (this.refreshTokenHandle) return;
-    //console.log(aim.Client);
+    //console.debug(aim.Client);
     this.refreshTokenHandle = new aim.Client(aim.tokenUrl).post({
       grant_type: 'refresh_token',
       refresh_token: aim.his.cookie.refresh_token,
@@ -2526,7 +2531,7 @@
     });
   }
   function getAccountByUsername(name) {
-    // //console.log(name);
+    // //console.debug(name);
     return this.account;
   }
   function acquireTokenSilent(silentRequest) {
@@ -2536,7 +2541,7 @@
     */
     return aim.promise('acquireTokenSilent', async (resolve, fail) => {
       // check token exppired, if yes get new token.
-      // //console.log(this);
+      // //console.debug(this);
       resolve({
         accessToken: this.storage.getItem(`aim.${this.clientId}.access_token`),
       });
@@ -2556,7 +2561,7 @@
   //   })
   //   .get()
   //   .then(async body => {
-  //     console.log(body);
+  //     console.debug(body);
   //     aimClient.store('access_token', body.access_token);
   //     var time = new Date().getTime();
   //     var [type,payload,signature] = access_token.split('.');
@@ -2567,7 +2572,7 @@
 
   function aimfetch(url, setoptions = {}) {
     const options = {method: 'get'};
-    console.log('AIM aimfetch', url);
+    // console.debug('AIM aimfetch', url);
     url = new URL(url, self.document ? self.document.location : aim.dmsUrl);
 
     // const response = fetch(url, {
@@ -2584,7 +2589,7 @@
     //   // body: JSON.stringify(data) // body data type must match "Content-Type" header
     // }).then(console.warn);
 
-    // console.log(url.href);
+    // console.debug(url.href);
     let xhr;
 
     function Request(){}
@@ -2595,7 +2600,7 @@
         if (!contentType.includes('json')) {
           return resolve(xhr.responseText);
         }
-        // console.log(xhr.getResponseHeader("Content-Type"));
+        // console.debug(xhr.getResponseHeader("Content-Type"));
         try {
           const data = JSON.parse(xhr.responseText);
           if (data.value) return resolve(data.value);
@@ -2606,12 +2611,19 @@
         }
       }),
       json: () => new Promise((resolve,fail) => {
-        // console.log(xhr.responseText);
+        // console.debug(xhr.responseText);
         if (!xhr.responseText) return resolve();
         try {
-          const data = JSON.parse(xhr.responseText);
+          const [s,preErr,json] = xhr.responseText.match(/(.*?)([\{|\[].*)/s,'');
+          // console.debug(s,preErr,json);
+          const data = JSON.parse(json);
+          // console.error(data.error);
+          // if (data.error) {
+          //   alert(typeof data.error.message === 'string' ? data.error.message : JSON.stringify(data.error.message,null,2));
+          // }
           resolve(data);
         } catch (err) {
+          alert(xhr.responseText);
           console.error(xhr.responseText);
           fail(err);
         }
@@ -2620,7 +2632,7 @@
       get status(){ return xhr.status },
     };
     function query(selector, context) {
-      // console.log(selector, context);
+      // console.debug(selector, context);
       if (typeof selector instanceof Object){
         Object.entries(selector).forEach(entry => query(...entry));
       } else if (arguments.length === 1){
@@ -2632,7 +2644,7 @@
       return ret;
     }
     function setOption(selector, context, body, isFormData) {
-      // console.log(selector, context, input, isFormData);
+      // console.debug(selector, context, input, isFormData);
       options[selector] = context;
       if (body) ret.body(body, isFormData);
       return ret;
@@ -2644,20 +2656,20 @@
       return new Promise(async (resolve, reject) => {
         const startTime = new Date();
         if (options.authProvider) {
+          // console.debug(options.authProvider.getAccessToken);
           const access_token = await options.authProvider.getAccessToken();
-          // console.log(access_token);
           ret.headers('Authorization', 'Bearer ' + access_token);
         }
         if (typeof module === "undefined") {
           const statusMessage = new StatusMessage;
           statusMessage.text('Wachten op',url.origin+url.pathname);
-          // console.log(options.method, url.href, options.headers, options.body);
-          console.log(options.method, url.href);
+          // console.debug(options.method, url.href, options.headers, options.body);
+          // console.debug(options.method, url.href);
           xhr = new XMLHttpRequest();
           xhr.open(options.method, url);
           xhr.withCredentials = options.withCredentials;
           xhr.addEventListener('load', async e => {
-            // console.log(e, xhr);
+            // console.debug(e, xhr);
             if (xhr.status < 400) {
               statusMessage.remove();
               resolve(new Request)
@@ -2670,7 +2682,7 @@
             }
           });
           Object.entries(options.headers||{}).forEach(entry => xhr.setRequestHeader(...entry));
-          // console.log('BODY', options.body);
+          console.warn('headers', options.headers);
           xhr.send(options.body);
         } else {
           const href = url.toString();
@@ -2695,10 +2707,11 @@
     }), {
       authProvider: context => setOption('authProvider', context),
       delete: context => setOption('method', 'delete', context).send().then(res => res.value()),
-      filter: context => query('filter', context),
+      filter: context => query('$filter', context),
       get: context => setOption('method', 'get', context).send().then(res => res.value()),
       headers: (selector,context) => {
-        (options.headers = options.headers || {})[selector] = context;
+        if (typeof selector === 'object') Object.entries(selector).forEach(e => ret.headers(...e));
+        else (options.headers = options.headers || {})[selector] = context;
         // xhr.setRequestHeader(selector,context);
         return ret;
       },
@@ -2725,12 +2738,12 @@
             break;
           }
           case 'Object': {
-            // console.log(1111, context, isFormData, context.constructor.name, options);
+            // console.debug(1111, context, isFormData, context.constructor.name, options);
             if (isFormData) {
               options.body = new FormData();
               Object.entries(context).forEach(entry => options.body.append(...entry));
             } else {
-              // console.log(11112, context, isFormData, context.constructor.name, options);
+              // console.debug(11112, context, isFormData, context.constructor.name, options);
               ret.headers('Content-Type', 'application/json');
               options.body = JSON.stringifyReplacer(context);
             }
@@ -2768,13 +2781,13 @@
         return url.toString();
       },
     });
-    // console.log('asasdfasd', setoptions);
+    // console.debug('asasdfasd', setoptions);
     Object.entries(setoptions).forEach(([key,value])=>ret[key] ? ret[key](value) : null);
     return ret;
   }
 
   async function init () {
-    // //console.log('INIT');
+    // //console.debug('INIT');
     const url = new URL(document.location);
     if (url.searchParams.has('code')){
       // return console.error(url.searchParams.get('code'));
@@ -2794,7 +2807,7 @@
     // self.sessionStorage.clear();
     // localStorage.clear();
     const access_token = auth.api_key || auth.access_token || auth.id_token;
-    // //console.log([access_token, auth.api_key, auth.access_token, auth.id_token]);
+    // //console.debug([access_token, auth.api_key, auth.access_token, auth.id_token]);
     if (access_token){
       try {
         // console.error(access_token);
@@ -2822,6 +2835,390 @@
   }
 
 
+  async function onClientMessage(data) {
+    const {method,path,body,target,origin,headers,attr,state,userstate,aliconnector,itemsModified,to,message_type,content} = data;
+    // console.debug('message', origin,path,method);
+    // TODO:
+    // broadcast message with state
+    // op ws server bijhouden alle connecties van gebruiker,
+    // alleen als alle connecties offline zijn dan bericht sturen.
+    // timeout opnemen in geval van omschakelen naar andere app
+
+    if (to) {
+      const {webSocketServer} = aim;
+      if (webSocketServer) {
+        const {sid,aud,sub} = to;
+        const forwardData = JSON.stringify({origin,headers,path,method,body});
+        Array.from(webSocketServer)
+        .filter(client => client.sid === sid || client.access.sub === sub || client.access.aud === aud)
+        .forEach(client => client.send(forwardData));
+      }
+      // send message to client to
+
+    }
+
+    // console.debug(path, method, body, target);
+
+    // function response(code, body = {}){
+    //   console.debug(path, code, body);
+    //   target.send(JSON.stringify({path, code, body}));
+    // }
+    // function send(path, options = {}){
+    //   console.debug('send', path, options);
+    //   target.send(JSON.stringify(Object.assign({method, path, origin},options)));
+    // }
+
+    switch (path) {
+      case '/connect/client_open': {
+        target.sid = (body||{}).sid;
+      }
+      case '/connect/signin': {
+        return $('.statusbar>.ws').attr('state','authorized');
+      }
+      case '/aliconnector/connector/init': {
+        return $('.statusbar>.ws').style('color:green;');
+      }
+      case '/aliconnector/connector/close': {
+        return $('.statusbar>.ws').style('color:red;');
+      }
+      // case '/connect/client_open': {
+      //   return response(200, { sid: target.sid } );
+      // }
+      // case '/connect/client_open_ack': {
+      //   target.sid = origin;
+      //   return response(200);
+      // }
+      // case '/connect': {
+      //   switch (method) {
+      //     case 'client_open': {
+      //       return target.send(JSON.stringify({path, method:'client_open_ack', origin: target.sid}));
+      //     }
+      //     case 'client_open_ack': {
+      //       // $('.statusbar>.ws').attr('state','connected');
+      //       webSocket.sid = origin;
+      //       return aim.send({path, method:'signin'});
+      //     }
+      //     // case 'authorized': {
+      //     //   return $('.statusbar>.ws').attr('state','authorized');
+      //     // }
+      //     case 'blur': {
+      //       return forward({origin,path,method:'client_blur'}, target);
+      //     }
+      //     case 'focus': {
+      //       return forward({origin,path,method:'client_focus'}, target);
+      //     }
+      //     case 'disconnect': {
+      //       return console.debug('disconnected', origin, body);
+      //     }
+      //   }
+      // }
+    }
+
+
+
+
+
+    if (userstate) {
+      console.debug('userstate', data);
+      console.debug(Item.items, Item.items.filter(item => item.ID == data.sub));
+      Item.items
+      .filter(item => item.ID == data.sub)
+      .forEach(item => item.elements.forEach(element => element.hasAttribute('userstate') ? element.setAttribute('userstate', data.userstate) : null))
+
+      const states = [
+        'unknown',
+        'offline',
+        'blocked',
+        'busy_inactive',
+        'inactive',
+        'appear_away',
+        'urgentonly',
+        'donotdisturb',
+        'busy',
+        'available',
+      ];
+      const userstate = states.indexOf(data.userstate);
+      var clients = Array.from(webSocketServer.clients).filter(ws => ws.access && ws.access.aud === wsc.access.aud);
+      var subclients = clients.filter(ws => ws.access.sub === wsc.access.sub);
+      const currentState = Math.max(...subclients.map(ws => ws.userstate || 0));
+      wsc.userstate = userstate;
+      // var sub = wsc.access.sub;
+      const newState = Math.max(...subclients.map(ws => ws.userstate || 0));
+      if (currentState !== newState) {
+        //console.debug('state set', data.userstate, currentState, newState, subclients.map(ws => ws.userstate));
+        data.userstate = states[newState];
+        const msg = JSON.stringify(data);
+        clients.forEach(ws => ws.send(msg));
+      }
+    }
+    if (aliconnector) {
+    }
+    if (itemsModified) {
+      // //console.debug('response.itemsModified FROM CLIENT');
+      if (body && body.requests) {
+        aim.saveRequests(body.requests);
+      }
+      if (aim.ws) {
+        aim.ws.send(event.data);
+      }
+    }
+    if (data.forward && aim.webSocketClient && aim.webSocketClient.conn) {
+      // console.debug('FORWARD TO SERVER', response.forward, aim.webSocketClient.socket_id);
+      aim.webSocketClient.conn.send(event.data);
+      // forwardMessageFromClient(response, responseText, aim.webSocketClient.conn);
+    }
+    // CHAT ROOM
+    if (message_type) {
+      if (message_type === 'OPTIONS') {
+        target.options = content;
+        // return;
+      }
+      data.from = target.sid;
+      data.options = target.options;
+      let message = JSON.stringify(data);
+      if (to) {
+        var clients = webSocketServer.clients
+        .filter(ws => ws.options && ws.options.wall === wsc.options.wall && wsc !== ws && ws.readyState && ws.sid === to);
+      } else {
+        var clients = webSocketServer.clients
+        .filter(ws => ws.options && ws.options.wall === wsc.options.wall && wsc !== ws && ws.readyState && ws.sid);
+      }
+      clients.forEach(ws => {
+        console.msg('SEND', message_type, ws.sid);
+        ws.send(message);
+      });
+      return;
+    }
+    if (attr) {
+      attr(...data.attr);
+
+
+      const {systemId,name,state} = attr;
+      const system = systems[systemId];
+      if (system) {
+        const systemAttr = system.data[name];
+        // //console.debug(attr);
+        const oldValue = systemAttr.value;
+        if (systemAttr.state != state) {
+          setItemTypeValue(systemAttr.item, state, -1);
+          setItemTypeValue(systemAttr.item, systemAttr.state, 1);
+        }
+        Object.assign(systemAttr, attr);
+        if (systemAttr.AttributeType) {
+          setItemTypeValue(system, systemAttr.AttributeType, - Number(oldValue));
+          setItemTypeValue(system, systemAttr.AttributeType, Number(systemAttr.value));
+        }
+        attributeRowUpdate(systemAttr);
+      }
+    }
+    if (body) {
+      const {notify,accept} = body;
+      if (notify) {
+        //console.debug('NOTIFY', window.document.hasFocus());
+        if (!window.document.hasFocus()) {
+          if ("Notification" in window) {
+            if (Notification.permission === "granted") {
+              // var notification = new Notification(...Object.values(data.body.notify));
+              // notification.onclick = function(e) {
+              //   window.focus();
+              //   //console.debug('CLICKED', data.body.notify);
+              // }
+              new $().sw.showNotification(...Object.values(notify));
+              // `test modified SW`, {
+              //   body: `Bla Bla`,
+              //   icon: 'https://aliconnect.nl/favicon.ico',
+              //   image: 'https://aliconnect.nl/shared/265090/2020/07/09/5f0719fb8fa69.png',
+              //   data: {
+              //     url: document.location.href,
+              //   },
+              //   actions: [
+              //     {
+              //       action: 'new',
+              //       title: 'New',
+              //       // icon: 'https://aliconnect.nl/favicon.ico',
+              //     },
+              //     {
+              //       action: 'open',
+              //       title: 'Open',
+              //       // icon: 'https://aliconnect.nl/favicon.ico',
+              //     },
+              //     // {
+              //     //   action: 'gramophone-action',
+              //     //   title: 'gramophone',
+              //     //   icon: '/images/demos/action-3-128x128.png'
+              //     // },
+              //     // {
+              //     //   action: 'atom-action',
+              //     //   title: 'Atom',
+              //     //   icon: '/images/demos/action-4-128x128.png'
+              //     // }
+              //   ]
+              // });
+            }
+          }
+        }
+      }
+      if (accept) {
+        $().prompt('accept').accept_scope(accept.scopes, origin);
+        // //console.debug($().prompt('accept_scope'), $.his.map.get('accept_scope'));
+      }
+    }
+    switch (state) {
+      case 'disconnect': {
+        //console.debug('disconnect', $().aliconnector_id, data.origin);
+        // return;
+        if ($().aliconnector_id === data.origin) {
+          $().status('aliconnector', 'offline');
+          $().aliconnector_id = null;
+        }
+      }
+    }
+    if (data.id_token) {
+      console.debug('AAAA',data);
+      const id = JSON.parse(atob(data.id_token.split('.')[1]));
+      //console.debug(id, getId(id.sub), getUid(id.sub), aimClient.sub);
+      if (getId(id.sub) !== getId(aimClient.sub)) {
+        return $().logout();
+      }
+    }
+    // if (this.clients.has(data.origin)){
+    //   //console.debug('REPLY FROM', data.origin);
+    //   this.clients.get(data.origin)(data.body);
+    //   this.clients.delete(data.origin);
+    //   return
+    // }
+    if (data.origin === $().aliconnector_id) {
+      if (data.param) {
+        if (data.param.filedownload) {
+          //console.debug('filedownload', data.param.filedownload);
+        }
+        if (data.param.fileupload) {
+          //console.debug('fileupload', data.param.fileupload);
+        }
+      }
+    }
+  }
+  async function onServerMessage(data) {
+    function response(code, body = {}){
+      console.debug(path, code, body);
+      target.send(JSON.stringify({path, code, body}));
+    }
+    function forward(data){
+      data = JSON.stringify(data);
+      Array.from(aim.webSocketServer.clients).filter(client => client !== target).forEach(client => client.send(data));
+    }
+    const {method,path,body,origin,sid,headers,target,attr,state,userstate,aliconnector,itemsModified,to,message_type,content} = data;
+    data = JSON.stringify(data);
+
+    // console.debug({method,path,body,origin,headers,to});
+    if (to) {
+      Array.from(aim.webSocketServer.clients).forEach(client => {
+        if (client.client_open) {
+          for (var a of to) {
+            if (Array.from(Object.entries(a)).every(([k,v]) => client.client_open[k] === v)) {
+              console.log(path, a);
+              client.send(data);
+            }
+            // for (var name in a) {
+            //   console.log(name, a[name], client.client_open);
+            //   if (client.client_open && client.client_open[name] !== a[name]) {
+            //     return;
+            //   }
+            // }
+          }
+        }
+        //return true;
+      });//.forEach(client => client.send(data));
+      return;
+
+    }
+    if (headers) {
+      var accessToken;
+      const {authorization} = Object.fromEntries(Object.entries(headers).map(entry => [entry[0].toLowerCase(),entry[1]]));
+      const apiKey = Object.keys(headers).find(key => ['api_key','api-key','x-api-key'].includes(key.toLowerCase()));
+      if (apiKey) {
+        var accessToken = headers[apiKey];
+      } else if (authorization) {
+        var [tokenType,accessToken] = authorization.split(' ');
+      }
+      if (accessToken && target.accessToken !== accessToken) {
+        target.accessToken = null;
+        var {access_token} = await getAccessToken(accessToken);
+        // console.debug(access_token,accessToken);
+        if (!access_token) {
+          // console.debug('un authorized');
+          return target.send(JSON.stringify({
+            error: {
+              code: "un_authorized",
+              message: "Authorization not successfull",
+              target: "access_token",
+            }
+          }));
+        } else {
+          target.accessToken = accessToken;
+          var [type,payload,signature] = accessToken.split('.');
+          target.access = JSON.parse(atob(payload));
+          // console.debug(target.access);
+          target.send(JSON.stringify({path}));
+        }
+      }
+    }
+    switch (path) {
+      case '/connect/client_open': {
+        // console.log('aaaa', body);
+        target.client_open = body;
+        return response(200, { sid: target.sid } );
+      }
+      case '/connect/signin': {
+        /** geen acties, alleen voor verwerken access_token */
+      }
+      case '/connect/blur': {
+        return forward({sid,path});
+      }
+      case '/connect/focus': {
+        return forward({sid,path});
+      }
+
+      case '/aliconnector/client/init': {
+        target.connectorClient = body;
+        break;
+        // return Array.from(aim.webSocketServer.clients)
+        // .filter(client => client.connector && client.connector.nonce === body.nonce)
+        // .forEach(client => client.send(data));
+      }
+
+      case '/aliconnector/connector/init': {
+        target.connector = body || target.connector;
+        break;
+        // return Array.from(aim.webSocketServer.clients)
+        // .filter(client => client.connectorClient && client.connectorClient.nonce === target.connector.nonce)
+        // .forEach(client => client.send(data));
+      }
+      // case '/aliconnector/connector/close': {
+      //   return Array.from(aim.webSocketServer.clients)
+      //   .filter(client => client.connectorClient && client.connectorClient.nonce === target.connector.nonce)
+      //   .forEach(client => client.send(data));
+      // }
+
+      case '/aliconnector/request': {
+        console.log(body);
+        return;
+      }
+    }
+    if (path.match('/aliconnector')) {
+      if (target.connectorClient) {
+        return Array.from(aim.webSocketServer.clients)
+        .filter(client => client.connector && client.connector.nonce === target.connectorClient.nonce)
+        .forEach(client => client.send(data));
+      }
+      if (target.connector) {
+        return Array.from(aim.webSocketServer.clients)
+        .filter(client => client.connectorClient && client.connectorClient.nonce === target.connector.nonce)
+        .forEach(client => client.send(data));
+      }
+      console.log(path);
+    }
+  }
   function NodeApplication(config = {}) {
     const store = require(process.mainModule.path + '/store.json');
     this.store = function(selector, context){
@@ -2832,6 +3229,7 @@
     this.config = config;
     WebSocket = require('ws');
     this.webSocketClient = new WebSocketClient;
+    aim().on('message', onClientMessage);
     // this.options = config;
     // aimClient = this;
     // aim.extend(aim.config, config);
@@ -2844,23 +3242,23 @@
   function PublicClientApplication(config = {}) {
     this.config = config;
     this.webSocketClient = new WebSocketClient;
-    console.log(this.webSocketClient);
+    // console.debug(this.webSocketClient);
     this.store = function(selector, context){
       if (context === undefined) return sessionStorage.getItem(selector);
       sessionStorage.setItem(selector, context);
     }
     // NodeApplication.call(this, ...arguments);
     // if (!config.client_id) throw 'Missing client_id';
-    // //console.log('WEB CONSTRUCTOR');
+    // //console.debug('WEB CONSTRUCTOR');
     // this.storage.clear();
     // config.auth.scopes = config.scope.split(' ');
     // this.clientSecret = config.client_secret = this.storage.getItem('client_secret');
     if (this.store('aim.id_token')) {
       this.account = new Account(this.store('aim.id_token'));
-      // //console.log(111, this.account);
+      // //console.debug(111, this.account);
     }
     if (this.store('aim.access_token')) {
-      // //console.log(this.storage.getItem('access_token'));
+      // //console.debug(this.storage.getItem('access_token'));
     }
     const url = new URL(document.location);
     if (url.searchParams.has('token')) {
@@ -2876,7 +3274,7 @@
           if (typeof value === 'object') {
             loadpar(value, `${path}${key}-`);
           } else {
-            // //console.log(`%${path}${key}%`,value);
+            // //console.debug(`%${path}${key}%`,value);
             aim.his.api_parameters[`%${path}${key}%`] = value;
           }
         }
@@ -2889,21 +3287,23 @@
 
 
     aim.his.items = {};
+    aim().on('message', onClientMessage);
   };
+
   let timediff = 0;
   function AuthProvider(aimClient, options){
     this.aimClient = aimClient;
     aim.getAccessToken = this.getAccessToken = async () => {
       var timeLeft = 0;
-      let access_token = aimClient.store('access_token');
+      let access_token = localStorage.getItem('access_token');
       if (access_token) {
         var [type,payload,signature] = access_token.split('.');
         payload = JSON.parse(atob(payload));
         var time = new Date().getTime();
         timeLeft = payload.exp * 1000 - time - timediff;
       }
-      // console.log('timeleft',timeLeft);
       if (timeLeft<=0){
+        console.error('timeleft',timeLeft);
         await aim.fetch(aim.tokenUrl)
         .query({
           client_id: aimClient.config.client_id,
@@ -2912,25 +3312,25 @@
         })
         .get()
         .then(body => {
-          // console.log(1111, body);
+          // console.debug(1111, body);
           access_token = body.access_token;
         });
-        // console.log(888, access_token);
+        // console.debug(888, access_token);
         // var {access_token} = await aim.fetch('https://aliconnect.nl/api/abis/data')
         // .query({ request_type: 'token', client_id: aimClient.config.client_id })
         // .then(res => res.json());
-        aimClient.store('access_token', access_token);
+        localStorage.setItem('access_token', access_token);
         // store.access_token = access_token;
         // store.access_token = access_token;
         var time = new Date().getTime();
         var [type,payload,signature] = access_token.split('.');
-        // console.log(access_token);
-        // console.log(payload);
-        // console.log(atob(payload));
+        // console.debug(access_token);
+        // console.debug(payload);
+        // console.debug(atob(payload));
         payload = JSON.parse(atob(payload));
         timediff = payload.iat * 1000 - time;
 
-        // console.log('timediff',timediff,payload);
+        // console.debug('timediff',timediff,payload);
         // fs.writeFile('./store.json', JSON.stringify(store), err => err ? console.error(err) : null);
       }
       // var ms = payload.exp - new Date();
@@ -2991,7 +3391,7 @@
     const promise = new Promise((resolve,fail)=>{
       setTimeout(() => {
         this.webSocketClient.send(options);
-        console.log(this.webSocketClient);
+        console.debug(this.webSocketClient);
         resolve(options);
       })
     });
@@ -3014,6 +3414,7 @@
       },
     })
   }
+
   NodeApplication.prototype = {
     ws,
     AuthProvider,
@@ -3032,6 +3433,7 @@
     api,
     getConfig,
   }
+
   const clients = aim.clients = new Map();
   const servers = new Map();
   function Client () {
@@ -3044,6 +3446,8 @@
     this.url = config.servers[0].url;
     this.hostname = new URL(this.url).hostname;
     clients.set(this.hostname, this);
+
+
   };
   Object.assign(Client, {
     initWithMiddleware: (options, config) => new Client(options, config),
@@ -3509,16 +3913,16 @@
         };
       }
       let match = (selector['@id'] || selector['@odata.id'] || selector.tag || '').match(/(\w+)\((\d+)\)/);
-      // //console.log(selector.schema);
+      // //console.debug(selector.schema);
       if (match && !selector.schema && !selector.schemaName) {
         selector.schema = match[1];
         selector.ID = match[2];
       }
       const ID = selector.ID = selector.ID ? selector.ID.Value || selector.ID : String('item'+(selector.nr = Item.nr = Item.nr ? ++Item.nr : 1));
-      // //console.log(selector.ID);
+      // //console.debug(selector.ID);
       // if (selector.schemaPath) console.debug(selector.schemaPath)
       // if (!selector.schema) console.error(selector.schemaPath, selector)
-      // //console.log(selector.schema);
+      // //console.debug(selector.schema);
       schemaName = validSchemaName(selector.schema = selector.schema || selector.schemaName || schemaName || 'Item');
 
       const tag = `${schemaName}(${ID})`;
@@ -3533,11 +3937,11 @@
         // console.debug(schemaName, self[schemaName]);
         // if (!self[schemaName]) return console.warn(schemaName, 'not exists');
 
-        // //console.log('NEW ITEM', schemaName, self[schemaName].prototype);
+        // //console.debug('NEW ITEM', schemaName, self[schemaName].prototype);
 
         var item = self[schemaName] ? new self[schemaName]() : new Item();
         // console.debug(selector, item.schema, self[schemaName].prototype);
-        console.log(selector, item);
+        console.debug(selector, item);
         item.properties = Object.fromEntries(
           Object.entries(selector.properties || item.schema.properties)
           .map(([propertyName, property]) => [
@@ -3573,7 +3977,7 @@
       }
       return item;
       Object.entries(item.data).forEach(([propertyName,property]) => {
-        // //console.log(propertyName,property, item.hasOwnProperty(propertyName));
+        // //console.debug(propertyName,property, item.hasOwnProperty(propertyName));
         if (!item.hasOwnProperty(propertyName)) {
           Object.defineProperty(item, propertyName, {
             get(){
@@ -3665,7 +4069,7 @@
   Object.defineProperties(Item.prototype, {
     api: {value: function (selector = '') {
       const url = this.data['@id'];
-      //console.log(6666, url + selector);
+      //console.debug(6666, url + selector);
       const hostname = new URL(url).hostname;
       const client = aim.clients.get(hostname);
       return client.api(url + selector)
@@ -3702,7 +4106,7 @@
               if (aim.his.map.has(selector)) return aim.his.map.get(selector);
             }
             if (value.target) {
-              //console.log(value.target);
+              //console.debug(value.target);
               value.LinkID = getItem(value.target).ID;
             }
             if (value.current) {
@@ -3771,7 +4175,7 @@
             } else if (currentJson === newJson){
               return resolve(item);
             } else {
-              // //console.log(attributeName,currentJson,newJson,value,data);
+              // //console.debug(attributeName,currentJson,newJson,value,data);
             }
             // console.debug(attributeName, value);
             if (aim.threeObjects && aim.threeObjects[item.tag] && aim.threeObjects[item.tag].obj.onchange){
@@ -3864,7 +4268,7 @@
                 // 	// console.debug('DONE', item.tag, e.request );
                 // }
               };
-              // //console.log(itemModified);
+              // //console.debug(itemModified);
               const updateProperty = itemModified.body[attributeName] = itemModified.body[attributeName] || {};
               Object.assign(updateProperty, (({ AttributeID, Value, HostID, UserID, LinkID, Data }) => ({ AttributeID, Value, HostID, UserID, LinkID, Data }))(data));
               if ('max' in property && !('max' in value)) {
@@ -4005,7 +4409,7 @@
         newItem.selectall = true;
         const index = previousItem ? previousItem.index + 1 : this.children.length;
         // TODO: index meenemen in aanroep => een api call, => na aanroep wel sorteren.
-        ////console.log(index, previousItem);
+        ////console.debug(index, previousItem);
         await newItem.movetoidx(this, index);
         return newItem;
         // await this.open();
@@ -4013,7 +4417,7 @@
     },
     bccRecipients: {
       get(){
-        //console.log(this);
+        //console.debug(this);
         return this.data.bccRecipients || 0;
       },
     },
@@ -4028,7 +4432,7 @@
         const api = this.api(`/children`).filter('FinishDateTime eq NULL')
         .select(aim.config.listAttributes).get().then(body => {
           // const children = Array.isArray(this.data.Children) ? this.data.Children : this.data.children;
-          //console.log('children_then', body);
+          //console.debug('children_then', body);
           const children = body.Children || body.children;
           this.items = [].concat(children).filter(Boolean).map(aim).unique();
           // console.warn('BODY', this.items);
@@ -4091,7 +4495,7 @@
           let catElement = aim.createElement('DIV', 'cat');
           var cats = categories.split(',');
           cats.forEach((cat)=>{
-            // ////console.log(cat, this.Categories.options[cat].color);
+            // ////console.debug(cat, this.Categories.options[cat].color);
             catElement.createElement('SPAN').style.backgroundColor = this.Categories.options[cat].color;
           });
           return catElement;
@@ -4125,9 +4529,9 @@
         })
         : null;
         // writeprice: function (el, index) {
-        // ////console.log('CatalogPrice', this.CatalogPrice);
-        // ////console.log('SalesDiscount', this.SalesDiscount);
-        // ////console.log('AccountDiscount', this.AccountDiscount);
+        // ////console.debug('CatalogPrice', this.CatalogPrice);
+        // ////console.debug('SalesDiscount', this.SalesDiscount);
+        // ////console.debug('AccountDiscount', this.AccountDiscount);
         if (accountDiscount) {
           parentElement.createElement('DIV', 'tagAccountDiscount', __('Account discount'));
         }
@@ -4141,13 +4545,13 @@
           ]],
           ['DIV', 'shopbag', [
             ['INPUT', 'addbag', {type:'number', value:this.amount = product ? product.Data : '', onchange: (e)=>{
-              return // ////console.log(this.tag, e.target.value);
+              return // ////console.debug(this.tag, e.target.value);
               aim.shop.add(this.row, e.target.value);
             }}],
             ['BUTTON', 'abtn icn bagAdd', {type:'button', tabindex: -1, onclick: (e)=>{
               e.stopPropagation();
               e.preventDefault();
-              return // ////console.log(this.tag);
+              return // ////console.debug(this.tag);
               aim.shop.add(
                 this.id,
                 aim.shop.data && aim.shop.data[this.id]
@@ -4427,7 +4831,7 @@
           data.find(value => typeof value === 'object' && value.SrcID == this.data.ID && 'Value' in value) ||
           data.find(value => typeof value === 'object' && 'Value' in value) ||
           data.shift();
-          // //console.log(value);
+          // //console.debug(value);
           // // console.debug(name, this.data[name]);
           // value = value
           // .filter(value => value.Value)
@@ -4503,7 +4907,7 @@
     header0: {
       get() {
         // return this.getValue('header0') || this.getValue('Title') || this.getValue('Name') || this.title || this.name || this.tag || '';
-        // //console.log(this.data);
+        // //console.debug(this.data);
         // return this.data.header0.value;
         var value = this.headerValue(0,'header0') || this.getValue('header0') || this.getValue('Title') || this.getValue('Name') || this.title || this.name || this.tag || '';
         return (typeof value === 'object' ? value.value || value.Value : value);
@@ -4755,7 +5159,7 @@
             }
           })])
         );
-        // //console.log(this);
+        // //console.debug(this);
         // return this.schema.properties;
       },
     },
@@ -4773,10 +5177,10 @@
           return item.popoutWindow.focus();
         }
         const win = item.popoutWindow = self.open(url, item.tag, `top=${top},left=${left},width=${width},height=${height}`);
-        // ////console.log(self.innerHeight,self.outerHeight,self.outerHeight-self.innerHeight,self.screen,this.elem.getBoundingClientRect());
+        // ////console.debug(self.innerHeight,self.outerHeight,self.outerHeight-self.innerHeight,self.screen,this.elem.getBoundingClientRect());
         self.addEventListener('beforeunload', e => win.close());
         const doc = win.document;
-        ////console.log(pageHtml);
+        ////console.debug(pageHtml);
         doc.open();
         doc.write(pageHtml);
         doc.close();
@@ -4788,7 +5192,7 @@
               aim('section').class('col aco apv printcol').id('view'),
             ),
           );
-          //console.log(item);
+          //console.debug(item);
           aim('view').show(item);
           win.addEventListener('beforeunload', e => item.popoutWindow = null);
         }
@@ -5142,7 +5546,7 @@
             // item: this,
             contextmenu: this.properties.state.options,
             onselect: e => {
-              ////console.log(e);
+              ////console.debug(e);
               let el = [...e.path].find(el => el.value);
               this.state = el.value;
             },
@@ -5252,7 +5656,7 @@
             query: { reindex: 1 },
           }).send();
         }, 10, item);
-        // ////console.log(this);
+        // ////console.debug(this);
         // this.remove();
       },
     },
@@ -5320,7 +5724,7 @@
   Object.defineProperties(EventManager.prototype, {
     _events: {value: {}},
     on: {value: function on(selector, context) {
-      // //console.log('ON', selector, context)
+      // //console.debug('ON', selector, context)
       // const events = this._events = this._events || {};
       (this._events[selector] = this._events[selector] || []).push(context);
     }},
@@ -5330,12 +5734,10 @@
       }
     }},
   });
-  function forward(data, webSocket){
-    data = JSON.stringify(data);
-    Array.from(aim.webSocketServer.clients).filter(client => client !== webSocket).forEach(client => client.send(data));
-  }
+
+
   function getAccessToken(accessToken){
-    console.log(accessToken);
+    // console.debug(accessToken);
     var [type,payload,signature] = accessToken.split('.');
     payload = JSON.parse(atob(payload));
     return aim.fetch(aim.tokenUrl)
@@ -5346,12 +5748,14 @@
     })
     .get()
   }
+
   function onWebSocketMessage(e) {
     var {data,target} = e;
     data = JSON.parse(data);
     data.target = target;
     aim().emit('message',data);
   }
+
   function WebSocketClient(options = {}){
     aim.webSocketClient = this;
     options.url = options.url || 'wss://dms.aliconnect.nl:444';
@@ -5361,7 +5765,7 @@
       $('.statusbar>.ws').attr('state','connecting');
       webSocket.addEventListener('open', e => {
         $('.statusbar>.ws').attr('state','open');
-        send({path: '/connect',method: 'client_open'});
+        send('/connect/client_open');
       });
       webSocket.addEventListener('error', console.error);
       webSocket.addEventListener('close', e => {
@@ -5369,20 +5773,42 @@
         setTimeout(connect, 3000);
       });
       webSocket.addEventListener('message', onWebSocketMessage);
-      async function send (data) {
-        if (data) {
+      async function send (path, options = {}) {
+        // console.debug(1, path, options);
+        options.headers = options.headers || {};
+        if (path) {
           if (aim.getAccessToken) {
             const accessToken = await aim.getAccessToken();
-            data.headers = data.headers || {};
-            data.headers.authorization = 'Bearer ' + accessToken;
+            // console.debug(2, path, options, accessToken);
+            options.headers.authorization = 'Bearer ' + accessToken;
           }
-          messages.push(JSON.stringify(data));
+          options.path = path;
+          messages.push(options);
         }
         if (webSocket.readyState) {
-          messages.forEach(data => webSocket.send(data));
+          messages.forEach(data => {
+            data.sid = webSocket.sid;
+            // console.warn('send', data, webSocket);
+            webSocket.send(JSON.stringify(data))
+          });
           messages.length = 0;
         }
       }
+
+      // async function send1 (data) {
+      //   if (data) {
+      //     if (aim.getAccessToken) {
+      //       const accessToken = await aim.getAccessToken();
+      //       data.headers = data.headers || {};
+      //       data.headers.authorization = 'Bearer ' + accessToken;
+      //     }
+      //     messages.push(JSON.stringify(data));
+      //   }
+      //   if (webSocket.readyState) {
+      //     messages.forEach(data => webSocket.send(data));
+      //     messages.length = 0;
+      //   }
+      // }
       aim.send = send;
     })();
   }
@@ -5398,7 +5824,7 @@
           Object.defineProperty(fn.prototype, name, property);
         }
         Object.defineProperty(this, selector, { value: fn });
-        // console.log(document.currentScript, context);
+        // console.debug(document.currentScript, context);
       }
     }},
   })
@@ -5410,7 +5836,7 @@
       selector = parent;
       parent = this;
     }
-    // //console.log(111, parent, selector);
+    // //console.debug(111, parent, selector);
     const objects = [];
     if (context) {
       Object.entries(context).forEach(entry => Object.defineProperty(parent, ...entry))
@@ -5420,7 +5846,7 @@
         if (parent && selector && selector instanceof Object) {
           for (let [key, value] of Object.entries(selector)) {
             if (typeof parent[key] === 'function' && typeof value !== 'function') {
-              // //console.log(key, value, parent[key]);
+              // //console.debug(key, value, parent[key]);
               parent[key](value)
             } else if (typeof value === 'function' && !parent.hasOwnProperty(key)) {
               parent[key] = value;
@@ -5443,34 +5869,110 @@
     }
     return parent;
   };
+
   function Server(config) {
+
+    const color = {
+      black: "\x1b[30m",
+      red: "\x1b[31m",
+      green: "\x1b[32m",
+      yellow: "\x1b[33m",
+      blue: "\x1b[34m",
+      magenta: "\x1b[35m",
+      steelblue: "\x1b[36m",
+      white: "\x1b[37m",
+      debug: "\x1b[33m",
+      error: "\x1b[31m",
+    };
+    const bgColor = {
+      black: "\x1b[40m",
+      red: "\x1b[41m",
+      green: "\x1b[42m",
+      yellow: "\x1b[43m",
+      blue: "\x1b[44m",
+      magenta: "\x1b[45m",
+      steelblue: "\x1b[46m",
+      white: "\x1b[47m",
+      debug: "\x1b[40m",
+      error: "\x1b[47m",
+    };
+    const codeColor = {
+      reset: "\x1b[0m",
+      bright: "\x1b[1m",
+      dim: "\x1b[2m",
+      underscore: "\x1b[4m",
+      blink: "\x1b[5m",
+      reverse: "\x1b[7m",
+      hidden: "\x1b[8m",
+    };
+
+    ['debug','error'].forEach(name => {
+    	console[name] = function () {
+    		var args = [...arguments];
+    		args = args.filter(val => val != null);
+    		var initiator = 'unknown place';
+    		try { throw new Error(); }
+    		catch (event) {
+    			if (typeof event.stack === 'string') {
+    				let isFirst = true;
+    				for (var line of event.stack.split('\n')) {
+    					const matches = line.match(/^\s+at\s+(.*)/);
+    					if (matches) {
+    						if (!isFirst) {
+    							initiator = matches[1];
+    							break;
+    						}
+    						isFirst = false;
+    					}
+    				}
+    			}
+    		}
+    		initiator = initiator.split('\\').pop().split('/').pop().split(':').slice(0, 2).join(':').replace('.js', '').padEnd(12, ' ');
+    		process.stdout.write(bgColor[name] + color[name]);
+    		console.log.apply(console, [initiator, ...args]);
+    		process.stdout.write(codeColor.reset);
+    	};
+    });
+
     const server = this;
     server.config = config;
     const events = require('events');
     server.paths = [process.mainModule.path+'/public', process.mainModule.path];
     (function addpath(module) {
       if (module.parent) addpath(module.parent);
-      //console.log(module.paths);
+      //console.debug(module.paths);
       // paths.push(...module.paths.map(path => path.replace(/node_modules$/,'public')));
       server.paths.push(...module.paths);
     })(module);
     server.paths = server.paths.unique().filter(path => fs.existsSync(path));
-    // console.log(server.paths);
+    // console.debug(server.paths);
 
     function onconnection (webSocket, req) {
-      //console.log('connect');
+      //console.debug('connect');
       webSocket.remoteAddress = req.connection.remoteAddress.split(':').pop();
-      webSocket.sid = Crypto.btoaToJson(req.headers['sec-websocket-key']);
+      const sid = webSocket.sid = Crypto.btoaToJson(req.headers['sec-websocket-key']);
       webSocket.access = {sid: webSocket.sid};
-      console.msg('CONNECTION1', webSocket.sid, webSocket.remoteAddress);
+      // console.msg('CONNECTION1', webSocket.sid, webSocket.remoteAddress);
       webSocket.on('close', connection => {
-        if (webSocket.access) {
-          const message = JSON.stringify({ origin: webSocket.sid, path: '/connect', method: 'disconnect' });
-          Array.from(webSocketServer.clients)
-          .filter(client => client !== webSocket && client.access && (client.access.sub === webSocket.access.sub || client.access.aud === webSocket.access.aud || client.access.nonce === webSocket.access.nonce))
-          .forEach(client => client.send(message));
+        // const {sid} = webSocket;
+        // console.msg('DISCONNECT', sid, webSocket.remoteAddress, webSocket.access.sub);
+        console.msg('DISCONNECT', sid);
+        const message = JSON.stringify({ sid, path: '/connect/disconnect' });
+        Array.from(webSocketServer.clients).forEach(client => client.send(message));
+        if (webSocket.connector) {
+          return Array.from(aim.webSocketServer.clients)
+          .filter(client => client.connectorClient && client.connectorClient.nonce === webSocket.connector.nonce)
+          .forEach(client => client.send(JSON.stringify({path:'/aliconnector/connector/close'})));
         }
-        console.msg('DISCONNECT', webSocket.sid, webSocket.remoteAddress, webSocket.access.sub);
+
+
+        //
+        // if (webSocket.access) {
+        //   const message = JSON.stringify({ origin: webSocket.sid, path: '/connect', method: 'disconnect' });
+        //   Array.from(webSocketServer.clients)
+        //   .filter(client => client !== webSocket && client.access && (client.access.sub === webSocket.access.sub || client.access.aud === webSocket.access.aud || client.access.nonce === webSocket.access.nonce))
+        //   .forEach(client => client.send(message));
+        // }
         // console.debug(userConnected);
 
         // webSocketServer.clients.forEach(wsChild => {
@@ -5480,42 +5982,44 @@
       });
       // wsc.addEventListener('message', e => aim().emit('message',e));
       webSocket.addEventListener('message', async e => {
-        var {data,target} = e;
+        let {data,target} = e;
         data = JSON.parse(data);
-        const {origin,headers,path,method,body} = data;
-        data.target = target;
-        if (headers) {
-          var accessToken;
-          const {authorization} = Object.fromEntries(Object.entries(headers).map(entry => [entry[0].toLowerCase(),entry[1]]));
-          const apiKey = Object.keys(headers).find(key => ['api_key','api-key','x-api-key'].includes(key.toLowerCase()));
-          if (apiKey) {
-            var accessToken = headers[apiKey];
-          } else if (authorization) {
-            var [tokeType,accessToken] = authorization.split(' ');
-          }
-          if (accessToken && webSocket.accessToken !== accessToken) {
-            webSocket.accessToken = null;
-            var {access_token} = await getAccessToken(accessToken);
-            console.log(access_token,accessToken);
-            if (!access_token) {
-              console.log('un authorized');
-              return webSocket.send(JSON.stringify({
-                error: {
-                  code: "un_authorized",
-                  message: "Authorization not successfull",
-                  target: "access_token",
-                }
-              }));
-            } else {
-              webSocket.accessToken = accessToken;
-              var [type,payload,signature] = accessToken.split('.');
-              webSocket.access = JSON.parse(atob(payload));
-              console.log(webSocket.access);
-              webSocket.send(JSON.stringify({path, method: 'authorized'}));
-            }
-          }
-        }
-        aim().emit('message',data);
+        const {origin,headers,path,method,body,to} = data;
+        return aim().emit('message',{path,method,body,headers,origin,to,target});
+        //
+        // data.target = target;
+        // if (headers) {
+        //   var accessToken;
+        //   const {authorization} = Object.fromEntries(Object.entries(headers).map(entry => [entry[0].toLowerCase(),entry[1]]));
+        //   const apiKey = Object.keys(headers).find(key => ['api_key','api-key','x-api-key'].includes(key.toLowerCase()));
+        //   if (apiKey) {
+        //     var accessToken = headers[apiKey];
+        //   } else if (authorization) {
+        //     var [tokenType,accessToken] = authorization.split(' ');
+        //   }
+        //   if (accessToken && webSocket.accessToken !== accessToken) {
+        //     webSocket.accessToken = null;
+        //     var {access_token} = await getAccessToken(accessToken);
+        //     console.debug(access_token,accessToken);
+        //     if (!access_token) {
+        //       console.debug('un authorized');
+        //       return webSocket.send(JSON.stringify({
+        //         error: {
+        //           code: "un_authorized",
+        //           message: "Authorization not successfull",
+        //           target: "access_token",
+        //         }
+        //       }));
+        //     } else {
+        //       webSocket.accessToken = accessToken;
+        //       var [type,payload,signature] = accessToken.split('.');
+        //       webSocket.access = JSON.parse(atob(payload));
+        //       console.debug(webSocket.access);
+        //       webSocket.send(JSON.stringify({path, method: 'authorized'}));
+        //     }
+        //   }
+        // }
+        // aim().emit('message',data);
       });
 
       // wsc.on('message', data => onWebSocketMessage(data,wsc));
@@ -5527,12 +6031,12 @@
       cert: fs.readFileSync(host.cert),
       ca: host.ca ? fs.readFileSync(host.ca) : null,
     } : null;
-    console.log('host active', protocol, host.port, options);
+    console.debug('host active', protocol, host.port, options);
     const http = require(protocol);
     function processRequest (req, res) {
       const paths = config.paths || [];
       function end(statusCode, body, header) {
-        // console.log(statusCode, body, header);
+        // console.debug(statusCode, body, header);
         res.writeHead(res.statusCode = statusCode, header);
         res.end(body);
       }
@@ -5543,18 +6047,18 @@
       res.setHeader('Access-Control-Request-Method', '*');
 
       var url = new URL(req.url, 'http://localhost');
-      //console.log(url.pathname, fname);
+      //console.debug(url.pathname, fname);
       if (config.paths) {
         if (config.paths[url.pathname]) {
           if (config.paths[url.pathname].get) {
             if (config.paths[url.pathname].get.operationId) {
               const operationId = config.paths[url.pathname].get.operationId;
-              // console.log(operationId, server[operationId]);
+              // console.debug(operationId, server[operationId]);
               if (server[operationId]) {
                 (async function () {
                   const res = await server[operationId]();
                   // const body = JSON.stringify(res);
-                  // console.log(res);
+                  // console.debug(res);
                   // return end(200, 'AOK', {});
                   return end(res.code, res.body, res.headers);
                 })()
@@ -5572,7 +6076,7 @@
         const sql = `SELECT TOP 1000 * FROM his.attr WHERE ${url.searchParams.get('filter')}`;
         debug(sql);
         return new mssql.Request().query(sql, (err, res) => {
-          if (err) //console.log(err);
+          if (err) //console.debug(err);
           end(200, JSON.stringify(res.recordsets), { 'Content-Type': 'application/json' });
         })
       }
@@ -5602,7 +6106,7 @@
 
       pathname = pathname.replace(/\/blob\/main(.*?)\.md/, '$1');
       pathname = pathname.replace(/^\/(.*?)\/.*?\.(.*?)\//, '/@$1/$2/');
-      console.log(pathname);
+      console.debug(pathname);
       var fname = paths.map(path => path+pathname).find(fname => fs.existsSync(fname) && fs.statSync(fname).isFile()) || paths.map(path => path+pathname+'index.html').find(fs.existsSync);
 
 
@@ -5628,12 +6132,12 @@
             .replace(/=".*aliconnect.sdk/g, '="/@aliconnect/sdk')
             .replace(/="\/\/.*?\.github\.io\/(.*?)\./g, '="/@$1/')
           }
-          // //console.log('JA');
+          // //console.debug('JA');
           end(200, data, headers[ext]);
         })
       }
       return end(404, `404 Not Found 1 ${req.url}`, { 'Content-Type': 'text/html' });
-      // //console.log(url.pathname, fname);
+      // //console.debug(url.pathname, fname);
       //
       //
       //
@@ -5696,8 +6200,8 @@
     var setItems = [];
 
     function debug(s){
-      console.log(s);
-      fs.appendFile("logger.log", `${new Date().toISOString()}: ${s}\n`, err => console.log);
+      console.debug(s);
+      fs.appendFile("logger.log", `${new Date().toISOString()}: ${s}\n`, err => console.debug);
     }
     function exit(s){
       debug(s);
@@ -5742,7 +6246,7 @@
       const conn = server.conn = new tedious.Connection(options);
       conn.on('connect', err => {
         if (err) throw err;
-        console.log('SQL ONN');
+        console.debug('SQL ONN');
         server.query(
           `IF OBJECT_ID('his.attr') IS NULL
           BEGIN
@@ -5759,7 +6263,7 @@
           END`
         );
         // items = config.items;
-        // console.log(config.items);
+        // console.debug(config.items);
 
         // config.items.forEach(function addItem(item) {
         //   if (item) {
@@ -5812,7 +6316,7 @@
         };
 
         // items.forEach(item => {
-        //   console.log(1, item.name);
+        //   console.debug(1, item.name);
         // })
         // const osUtils = require('os-utils');
         // const checkDiskSpace = require('check-disk-space');
@@ -5822,7 +6326,7 @@
         //   attr(systemId, 'MEMORY_USED_SPACE', Math.round(100 - osUtils.freememPercentage() * 100));
         //   checkDiskSpace('C:/').then((diskSpace) => { attr(systemId, 'HDD_USED_SPACE', Math.round((diskSpace.size - diskSpace.free) / diskSpace.size * 100)); });
         //   nodeCmd.get('w32tm /query /status', (err, data, stderr) => {
-        //     console.log(data);
+        //     console.debug(data);
         //     var value = Number(data.split(/\n/).shift().split(':').pop().split('(').shift().trim());
         //     attr(systemId, 'TIME_SYNC', value);
         //   });
@@ -5833,7 +6337,7 @@
         Array.from(config.items).forEach(function addChildren(item) {
           if (item) {
             if (systemAttributes[item.name]) {
-              // console.log(111, item);
+              // console.debug(111, item);
               systemAttributes[item.name](item);
             }
             if (item.Enumeration) {
@@ -5845,7 +6349,7 @@
         });
 
         // items.forEach((item,i) => item.id = i);
-        // return console.log(config.items, items);
+        // return console.debug(config.items, items);
         //
         // items.forEach(item => {
         //   if (item.parent) {
@@ -5853,12 +6357,12 @@
         //     if (!parent) {
         //
         //     }
-        //     console.log(item.parent, parent ? 1 : 0);
+        //     console.debug(item.parent, parent ? 1 : 0);
         //   }
         // })
         //
         //
-        // // console.log(items);
+        // // console.debug(items);
         // return;
 
         // initSystemAttributes(config.items[0].id);
@@ -5868,6 +6372,9 @@
       });
       conn.connect();
     }
+
+    aim().on('message', onServerMessage);
+
   }
   Server.prototype = {
     query(sql) {
@@ -5898,7 +6405,7 @@
     attrSet(attribute, name, value) {
       if (attribute[name] !== value) {
         attribute[name] = value;
-        // console.log(name,value);
+        // console.debug(name,value);
         this.attributes.emit('change', attribute);
       }
     },
@@ -5965,11 +6472,11 @@
         const hyst = Number(attribute.Hysteresis || 0);
         if (value < curValue - hyst || value > curValue + hyst || !('value' in attribute)) {
 
-          // console.log(1, attribute.name, attribute.SystemId);
+          // console.debug(1, attribute.name, attribute.SystemId);
           // if (attribute.systemId)
           if (attribute.SystemId) {
             const name = path.concat(attribute.name).join('.');
-            // console.log(attribute.SystemId, attribute.parent, name, value);
+            // console.debug(attribute.SystemId, attribute.parent, name, value);
 
             attribute.modifiedDT = new Date().toISOString();
             server.attrSet(attribute, 'value', value);
@@ -5990,14 +6497,14 @@
 
         // // OnlineHours
         // if (attribute.Calc == 'OnlineHours') {
-        //   //console.log('OnlineHours event',item.title, item.Value);
+        //   //console.debug('OnlineHours event',item.title, item.Value);
         //   attribute.deltaTimeS = 3600;
         //   (attribute.OnlineHours = function () {
         //     clearTimeout(timers[attribute.id]);
         //     var master = items[this.masterID];
         //     var masterOn = Number(master.Value);
         //     //masterOn = 1; // MKA
-        //     //console.log('OnlineHours', masterOn, this.masterStart);
+        //     //console.debug('OnlineHours', masterOn, this.masterStart);
         //     if (this.masterStart) {
         //       attr(this.id, 'Value', Number(this.Value || 0) + ((new Date().valueOf() - this.masterStart.valueOf()) / 1000 / 3600), true);
         //     }
@@ -6030,8 +6537,8 @@
       }
       const modbusDevices = items.filter(item => item.Device === 'MODBUS' && item.IPAddress);
       const snmpDevices = items.filter(item => item.Device === 'SNMP' && item.IPAddress);
-      // console.log(modbusDevices);
-      // console.log(snmpDevices);
+      // console.debug(modbusDevices);
+      // console.debug(snmpDevices);
       if (modbusDevices) {
         const net = require('net');
         const jsmodbus = require('jsmodbus');
@@ -6044,7 +6551,7 @@
           //   readLength += d.children.filter(c => ['Float'].includes(c.type)).length;
           // })
           const attributes = initAttributes(item);
-          // console.log(attributes);
+          // console.debug(attributes);
           function setSate(state){
             attributes.forEach(attr => server.attrSet(attr, 'state', state));
           }
@@ -6080,7 +6587,7 @@
 
           socket.on('connect', e => {
             setSate('connected');
-            console.log('MODBUS', item.IPAddress, 'CONNECTED');
+            console.debug('MODBUS', item.IPAddress, 'CONNECTED');
             // function readRegister(readAddress, readLength) {
             //   return new Promise((succes, reject) => {
             //     client.readInputRegisters(readAddress, readLength)
@@ -6099,7 +6606,7 @@
                   const type = types[device.type];
                   const bitLength = type.bitLength;
                   const readLength = Math.ceil(bitLength/16);
-                  // console.log(item.IPAddress, child.name, readAddress, readLength);
+                  // console.debug(item.IPAddress, child.name, readAddress, readLength);
                   // continue;
 
                   await client.readInputRegisters(readAddress, readLength).then(resp => {
@@ -6116,7 +6623,7 @@
                     const children = device.children || [];
                     children.forEach((child,i) => {
                       if (child && child.type) {
-                        // console.log('aaa', item.IPAddress, device.readAddress, device.ReadAddress, child.type, readValue, byteArray, readAddress, readLength);
+                        // console.debug('aaa', item.IPAddress, device.readAddress, device.ReadAddress, child.type, readValue, byteArray, readAddress, readLength);
                         switch(child.type) {
                           case 'UInt': return server.attrSetValue(child, readValue);
                           case 'Bool': return server.attrSetValue(child, bitArray[i]);
@@ -6125,7 +6632,7 @@
                     })
                   })
                   .catch(err => {
-                    console.log('modbus read error', item.IPAddress);
+                    console.debug('modbus read error', item.IPAddress);
                     attributes.forEach(attr => server.attrSet(attr, 'state', 'error'));
                     setTimeout(connect, 20000);
                   })
@@ -6201,23 +6708,23 @@
     doc(objectname, topobj) {
       return new Promise((success, fail) => {
         // this[objectname] = require(`../${objectname}/src/${objectname}.js`);
-        // console.log(aim.om)
+        // console.debug(aim.om)
         const all = this.all;
         let filename = `docs/api/${objectname}.md`;
-        console.log('doc', objectname);
+        console.debug('doc', objectname);
         fs.readFile(filename, (err, data) => {
           if (err) throw err;
           const content = String(data);
           const index = ['**Table of contents**'];
           function addIndex(level, title, link){
             index.push(s = '                        '.slice(0,(level-1)*4) + `- [${title}](#${toLink(`${link}`)})`)
-            // console.log(s);
+            // console.debug(s);
           }
           const doc = [];
           var chapters = Object.fromEntries(content.split(/[#]+ /).map(c => [c.split(/\r|\n/)[0], c]));
-          // console.log(chapters);
+          // console.debug(chapters);
           (function docObj(name, obj, level) {
-            // console.log(1, name, all.includes(obj));
+            // console.debug(1, name, all.includes(obj));
             if (obj !== topobj && all.includes(obj)) return;
             all.push(obj);
             const h = '#########'.slice(0,level-1 );
@@ -6246,9 +6753,9 @@
               ).replace(
                 /\/\/.*?(?=\n|$)/gs,''
               ).replace(/\r/,'').split(/\n/).filter(l => l.trim());
-              // console.log(content);
+              // console.debug(content);
               var header = content.shift();
-              // console.log(header);
+              // console.debug(header);
               var params = header.match(/\((.*)\)/)[1] || '';
               content.pop();
               var ident = content[0] && content[0][0] === ' ' ? content[0].match(/^ +/)[0].length : 0;
@@ -6275,7 +6782,7 @@
               if (obj.prototype) {
                 getProperties(obj.prototype, obj.name.replace(/\w/, s => s.toLowerCase()));
               }
-              // Object.getOwnPropertyDescriptors(obj).forEach(console.log);
+              // Object.getOwnPropertyDescriptors(obj).forEach(console.debug);
               // Object.entries(Object.getOwnPropertyDescriptors(obj)).forEach(entry => docObj(name+'.'+entry[0], entry[1], level+1));
               // doc.push("```\n"+content+"\n```");
             } else if (Array.isArray(obj)) {
@@ -6303,14 +6810,14 @@
     src(source) {
       const dest = source.replace(/src/, 'dist')
       fs.readFile(source, (err, data) => {
-        console.log(source);
+        console.debug(source);
         if (err) throw err;
         // data = clean_code(String(data));
         fs.writeFile(dest, data = clean_code(String(data)), (err) => {
           if (err) throw err;
           fs.writeFile(dest.replace(/(\.\w+)$/,'.min$1'), minimize_code(data), (err) => {
             if (err) throw err;
-            console.log(`saved ${dest}`);
+            console.debug(`saved ${dest}`);
             // doc(objectname);
           });
         });
@@ -6323,13 +6830,14 @@
     ? $('span').parent(statusbarMain).on('click', e => statusElem.remove())
     : {
       text(){
-        console.log(context);
+        console.debug(context);
       },
       remove(){},
       style(){},
     };
   }
   Object.assign(aim, {
+    displayName,
     num,
     // Jwt: {
     //   fromHeaders(headers){
@@ -6351,14 +6859,14 @@
     NodeApplication,
     WebSocketClient,
     async setConfig(configYaml) {
-      // console.log(configYaml);
+      // console.debug(configYaml);
       $(document.body).append($('pre').text(configYaml));
       await aim.fetch('https://dms.aliconnect.nl/api/v1/aliconnect/config', {
         method: 'POST',
         body: configYaml,
-      }).then(res => res.text().then(console.log));
-      // await aim.fetch('http://proving-nl.localhost/tools/tabledef.php').then(res => res.text()).then(console.log);
-      // console.log('TABLEDEF OK');
+      }).then(res => res.text().then(console.debug));
+      // await aim.fetch('http://proving-nl.localhost/tools/tabledef.php').then(res => res.text()).then(console.debug);
+      // console.debug('TABLEDEF OK');
       return;
     },
     markdown: Markdown,
@@ -6366,7 +6874,7 @@
     //   '/dist': {
     //     get: {
     //       operation() {
-    //         console.log('DIST/GET')
+    //         console.debug('DIST/GET')
     //       }
     //     },
     //   }
@@ -6775,237 +7283,6 @@
       })
     },},
   });
-
-
-  aim().on('message', data => {
-    const {target,origin,headers,path,method,body,attr,state,userstate,aliconnector,itemsModified,to,message_type,content} = data;
-    console.log('message', origin,path,method);
-    // TODO:
-    // broadcast message with state
-    // op ws server bijhouden alle connecties van gebruiker,
-    // alleen als alle connecties offline zijn dan bericht sturen.
-    // timeout opnemen in geval van omschakelen naar andere app
-
-    if (to) {
-      const {webSocketServer} = aim;
-      if (webSocketServer) {
-        const {sid,aud,sub} = to;
-        const forwardData = JSON.stringify({origin,headers,path,method,body});
-        Array.from(webSocketServer)
-        .filter(client => client.sid === sid || client.access.sub === sub || client.access.aud === aud)
-        .forEach(client => client.send(forwardData));
-      }
-      // send message to client to
-
-    }
-
-
-    switch (path) {
-      case '/connect': {
-        switch (method) {
-          case 'client_open': {
-            return target.send(JSON.stringify({path, method:'client_open_ack', origin: target.sid}));
-          }
-          case 'client_open_ack': {
-            // $('.statusbar>.ws').attr('state','connected');
-            webSocket.sid = origin;
-            return aim.send({path, method:'signin'});
-          }
-          case 'authorized': {
-            return $('.statusbar>.ws').attr('state','authorized');
-          }
-          case 'blur': {
-            return forward({origin,path,method:'client_blur'}, target);
-          }
-          case 'focus': {
-            return forward({origin,path,method:'client_focus'}, target);
-          }
-          case 'disconnect': {
-            return console.log('disconnected', origin, body);
-          }
-        }
-      }
-    }
-    if (userstate) {
-      console.debug('userstate', data);
-      console.debug(Item.items, Item.items.filter(item => item.ID == data.sub));
-      Item.items
-      .filter(item => item.ID == data.sub)
-      .forEach(item => item.elements.forEach(element => element.hasAttribute('userstate') ? element.setAttribute('userstate', data.userstate) : null))
-
-      const states = [
-        'unknown',
-        'offline',
-        'blocked',
-        'busy_inactive',
-        'inactive',
-        'appear_away',
-        'urgentonly',
-        'donotdisturb',
-        'busy',
-        'available',
-      ];
-      const userstate = states.indexOf(data.userstate);
-      var clients = Array.from(webSocketServer.clients).filter(ws => ws.access && ws.access.aud === wsc.access.aud);
-      var subclients = clients.filter(ws => ws.access.sub === wsc.access.sub);
-      const currentState = Math.max(...subclients.map(ws => ws.userstate || 0));
-      wsc.userstate = userstate;
-      // var sub = wsc.access.sub;
-      const newState = Math.max(...subclients.map(ws => ws.userstate || 0));
-      if (currentState !== newState) {
-        //console.log('state set', data.userstate, currentState, newState, subclients.map(ws => ws.userstate));
-        data.userstate = states[newState];
-        const msg = JSON.stringify(data);
-        clients.forEach(ws => ws.send(msg));
-      }
-    }
-    if (aliconnector) {
-    }
-    if (itemsModified) {
-      // //console.log('response.itemsModified FROM CLIENT');
-      if (body && body.requests) {
-        aim.saveRequests(body.requests);
-      }
-      if (aim.ws) {
-        aim.ws.send(event.data);
-      }
-    }
-    if (data.forward && aim.webSocketClient && aim.webSocketClient.conn) {
-      // console.debug('FORWARD TO SERVER', response.forward, aim.webSocketClient.socket_id);
-      aim.webSocketClient.conn.send(event.data);
-      // forwardMessageFromClient(response, responseText, aim.webSocketClient.conn);
-    }
-    // CHAT ROOM
-    if (message_type) {
-      if (message_type === 'OPTIONS') {
-        target.options = content;
-        // return;
-      }
-      data.from = target.sid;
-      data.options = target.options;
-      let message = JSON.stringify(data);
-      if (to) {
-        var clients = webSocketServer.clients
-        .filter(ws => ws.options && ws.options.wall === wsc.options.wall && wsc !== ws && ws.readyState && ws.sid === to);
-      } else {
-        var clients = webSocketServer.clients
-        .filter(ws => ws.options && ws.options.wall === wsc.options.wall && wsc !== ws && ws.readyState && ws.sid);
-      }
-      clients.forEach(ws => {
-        console.msg('SEND', message_type, ws.sid);
-        ws.send(message);
-      });
-      return;
-    }
-    if (attr) {
-      attr(...data.attr);
-
-
-      const {systemId,name,state} = attr;
-      const system = systems[systemId];
-      if (system) {
-        const systemAttr = system.data[name];
-        // //console.log(attr);
-        const oldValue = systemAttr.value;
-        if (systemAttr.state != state) {
-          setItemTypeValue(systemAttr.item, state, -1);
-          setItemTypeValue(systemAttr.item, systemAttr.state, 1);
-        }
-        Object.assign(systemAttr, attr);
-        if (systemAttr.AttributeType) {
-          setItemTypeValue(system, systemAttr.AttributeType, - Number(oldValue));
-          setItemTypeValue(system, systemAttr.AttributeType, Number(systemAttr.value));
-        }
-        attributeRowUpdate(systemAttr);
-      }
-    }
-    if (body) {
-      const {notify,accept} = body;
-      if (notify) {
-        //console.log('NOTIFY', window.document.hasFocus());
-        if (!window.document.hasFocus()) {
-          if ("Notification" in window) {
-            if (Notification.permission === "granted") {
-              // var notification = new Notification(...Object.values(data.body.notify));
-              // notification.onclick = function(e) {
-              //   window.focus();
-              //   //console.log('CLICKED', data.body.notify);
-              // }
-              new $().sw.showNotification(...Object.values(notify));
-              // `test modified SW`, {
-              //   body: `Bla Bla`,
-              //   icon: 'https://aliconnect.nl/favicon.ico',
-              //   image: 'https://aliconnect.nl/shared/265090/2020/07/09/5f0719fb8fa69.png',
-              //   data: {
-              //     url: document.location.href,
-              //   },
-              //   actions: [
-              //     {
-              //       action: 'new',
-              //       title: 'New',
-              //       // icon: 'https://aliconnect.nl/favicon.ico',
-              //     },
-              //     {
-              //       action: 'open',
-              //       title: 'Open',
-              //       // icon: 'https://aliconnect.nl/favicon.ico',
-              //     },
-              //     // {
-              //     //   action: 'gramophone-action',
-              //     //   title: 'gramophone',
-              //     //   icon: '/images/demos/action-3-128x128.png'
-              //     // },
-              //     // {
-              //     //   action: 'atom-action',
-              //     //   title: 'Atom',
-              //     //   icon: '/images/demos/action-4-128x128.png'
-              //     // }
-              //   ]
-              // });
-            }
-          }
-        }
-      }
-      if (accept) {
-        $().prompt('accept').accept_scope(accept.scopes, origin);
-        // //console.log($().prompt('accept_scope'), $.his.map.get('accept_scope'));
-      }
-    }
-    switch (state) {
-      case 'disconnect': {
-        //console.log('disconnect', $().aliconnector_id, data.origin);
-        // return;
-        if ($().aliconnector_id === data.origin) {
-          $().status('aliconnector', 'offline');
-          $().aliconnector_id = null;
-        }
-      }
-    }
-    if (data.id_token) {
-      const id = JSON.parse(atob(data.id_token.split('.')[1]));
-      //console.log(id, getId(id.sub), getUid(id.sub), aimClient.sub);
-      if (getId(id.sub) !== getId(aimClient.sub)) {
-        return $().logout();
-      }
-    }
-    // if (this.clients.has(data.origin)){
-    //   //console.log('REPLY FROM', data.origin);
-    //   this.clients.get(data.origin)(data.body);
-    //   this.clients.delete(data.origin);
-    //   return
-    // }
-    if (data.origin === $().aliconnector_id) {
-      if (data.param) {
-        if (data.param.filedownload) {
-          //console.log('filedownload', data.param.filedownload);
-        }
-        if (data.param.fileupload) {
-          //console.log('fileupload', data.param.fileupload);
-        }
-      }
-    }
-  });
-
 
   if (this.document) {
     // aim.atob = atob;
