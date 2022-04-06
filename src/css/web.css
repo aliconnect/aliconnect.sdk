@@ -718,10 +718,10 @@ table td>span.input {
   display: block;
   overflow: hidden;
 }
-.orderlist table tr>:nth-child(4),
+/* .orderlist table tr>:nth-child(4),
 .orderlist table tr>:nth-child(2) {
   text-align: right
-}
+} */
 
 .lv .cards{
   display: flex;
