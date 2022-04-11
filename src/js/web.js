@@ -719,6 +719,7 @@
       // console.log(elements[0]);
 
     },
+
     async forms(){
       aim.readOnly = false;
       $(document.body).append(
@@ -729,8 +730,8 @@
       );
       // console.log('FORMS', 'https://aliconnect.nl/api/aliconnect/config?path='+document.location.href);
       // const formDefinitions = await fetch(aim.url('/aliconnect/config',{query:{path:document.location.href}}).then(res => res.json());
-      const formDefinitions = await aim.api('/aliconnect/config').query('path', document.location.href).get().then(res => res.json());
-      // console.log(1111, formDefinitions);
+      // const formDefinitions = await aim.fetch('https://dms.aliconnect.nl/api/v1/aliconnect/config').query('path', document.location.href).get();
+
       let data = {
         info: {
           title: '',
@@ -1014,6 +1015,394 @@
         start();
       }
     },
+    async forms(){
+      Elem.prototype.buildForm = function (config, data, editmode){
+        const types = {
+          boolean: 'checkbox',
+          number: 'number',
+          string: 'text',
+          object: 'object',
+        };
+        // const metaData = cfg.metaData || { title: isNaN(key) ? key : Number(key)+1 };
+        // var dataObj = data;
+        const elem = this;
+        (function buildForm(properties, data) {
+          properties.forEach(property => {
+            console.log(property.name, data[property.name], property);
+            if (property.properties) {
+              // console.log(property.properties);
+              $('details').parent(elem)
+              .open(localStorage.getItem(property.name + 'Open'))
+              .on('toggle', e => localStorage.setItem(property.name + 'Open', e.target.open ? 1 : ''))
+              .append($('summary').text(property.title || property.name))
+              .buildForm(property.properties, data[property.name]);
+            } else {
+              $('div').class('attr').parent(elem).append(
+                property.description ? $('i').title(property.description) : null,
+                $('label').class('title').text(property.title || nameToTitle(key)),
+                // editmode ? inputelem(data, property, data) : viewelem(data, property),
+                inputelem(data, property, data),
+                $('i'),
+              );
+            }
+          });
+          // return;
+
+          // console.log('buildForm',data,config)
+          // if (obj) {
+          //   Object.entries(obj).forEach(([key,value]) => {
+          //     if (!config[key]) {
+          //       if (value && typeof value === 'object') {
+          //         // console.log(value);
+          //         config[key] = Object.fromEntries(
+          //           Object.entries(value).map(([key,value]) => {
+          //             return [key, typeof value === 'object' ? {} : ''];
+          //           })
+          //         )
+          //       } else {
+          //         config[key] = {metaData:{type:typeof value}};
+          //       }
+          //     }
+          //   });
+          // }
+          // const configEntries = Object.entries(config);
+          // const properties = configEntries.filter(
+          //   ([key,property]) => property.metaData &&
+          //   Object.keys(property).length === 1 &&
+          //   (property.metaData.type = property.metaData.type || types[property.value ? typeof property.value : 'string']) &&
+          //   ['text','blob','number','string','boolean'].includes(property.metaData.type || 'text')
+          // )
+          // const children = configEntries.filter(entry => entry[0] !== 'metaData' && !properties.includes(entry));
+          //
+          // // console.log(111, properties);
+          // properties
+          // .filter(([key,property]) => editmode || obj[key])
+          // .forEach(([key,property]) => {
+          //   // console.warn(key,property);
+          //   const metaData = config && config[key] && config[key].metaData ? config[key].metaData : {};
+          //   metaData.name = key;
+          //   parent.append(
+          //     $('div').class('attr').append(
+          //       metaData.description ? $('i').title(metaData.description) : null,
+          //       $('label').class('title').text(metaData.title || nameToTitle(key)),
+          //       editmode ? inputelem(obj, metaData, data) : viewelem(obj, metaData),
+          //       $('i'),
+          //     )
+          //   )
+          // })
+          // children.forEach(([key,value]) => {
+          //   const metaData = value.metaData = value.metaData || {
+          //     title: nameToTitle(key)
+          //   }
+          //   // console.log(key, localStorage.getItem(key+'Open'));
+          //   buildForm(
+          //     $('details')
+          //     .parent(parent)
+          //     .open(localStorage.getItem(key+'Open'))
+          //     .on('toggle', e => localStorage.setItem(key+'Open', e.target.open ? 1 : ''))
+          //     .append($('summary').text(metaData.title)),
+          //     obj[key] || {},
+          //     value || {},
+          //     path.concat(key),
+          //   );
+          // });
+        })(config, data);
+        return this;
+      };
+
+      aim.readOnly = false;
+      $(document.body).append(
+        $('nav').append($('div').append()),
+        $('main').append(
+          $('div').class('col pv'),
+        ),
+      );
+      const formDefinitions = await aim.fetch('https://dms.aliconnect.nl/api/v1/app/config_form').query('path', new URL(document.location.href).pathname).get();
+      data = {
+        info: {
+          title: '',
+          contact: {
+            email: '',
+            // phone_number: '',
+          },
+          // description: 'sdfas',
+        },
+        client: {
+          name: '',
+          client_id: sessionStorage.getItem('client_id') || '',
+          client_secret: sessionStorage.getItem('client_secret') || '',
+        }
+      };
+      data = await aim.fetch('https://dms.aliconnect.nl/api/v1/app/config_data').query('path', new URL(document.location.href).pathname).get();
+      console.log(1111, formDefinitions, data);
+      // sessionStorage.clear();
+      let activeField;
+      const formElem = $('form').autocomplete("off").parent('.pv').on('submit', postForm);
+      function postForm(e){
+        activeField = document.activeElement.name;
+        const submit = e && e.submitter ? e.submitter.value : 'post';
+        const docBasePath = 'https://aliconnect.nl/aliconnect/aliconnect.sdk/wiki/';
+        function replaceFields(body,data){
+          (function replaceFields(data,path = []){
+            for (let [name,value] of Object.entries(data)) {
+              if (value && typeof value === 'object') replaceFields(value, path.concat(name));
+              else body = body.replace(new RegExp('{'+path.concat(name).join('-')+'}','g'), value);
+            }
+          })(data)
+          return body;
+        }
+        function signDocument(name) {
+          return new Promise((success, fail) => {
+            aim.fetch(docBasePath + name + '.md').then(res => res.text().then(body => {
+              body = replaceFields(body,data);
+              formElem.text('').html(aim.markdown().render(body)).append(
+                $('div').append(
+                  // $('button').value('save').text('Opslaan').default(true),
+                  $('button').type('button').value('prev').text('Terug').on('click', e => start(data)),
+                  $('button').type('button').value('next').text('Verder').on('click', e => {
+                    const elem = formElem.elem;//document.querySelector(".pv");
+                    const canvas = document.querySelector("canvas");
+                    var image = new Image();
+                    image.src = canvas.toDataURL();
+                    canvas.parentElement.insertBefore(image, canvas);
+                    canvas.remove();
+                    // console.log(elem.innerHTML);
+                    // document.getElementById('image_for_crop').appendChild(image);
+                    aim.api('/aliconnect/config').query('path', document.location.href).post({
+                      client: { client_id: data.client.client_id, },
+                      savepdf: name,
+                      html: elem.innerHTML,
+                    })
+                    .then(success);
+                    // return console.log(res);
+                  }),
+                )
+              ).query('canvas', elem => elem.paint())
+            }));
+          })
+        }
+        // console.log(data);
+        // return false;
+        aim.api('/aliconnect/config')
+        .query('path', document.location.href)
+        .query('response_type', 'config')
+        .query('client_id', data.client.client_id)
+        .query('client_secret', data.client.client_secret)
+        .query('submitter', submit)
+        .post(data).then(e => e.json().then(body => {
+          data = body;
+          if (submit === 'next') {
+            signDocument('Explore-Legal-Verwerkers-overeenkomst').then(e => {
+              signDocument('Explore-Legal-Protocol-meldplicht-datalekken').then(e => {
+                signDocument('Explore-Legal-Verwerkingsregister').then(e => {
+                  start(data);
+                })
+              })
+            })
+            return;
+          }
+          start(data);
+        }))
+        return false;
+      }
+      function __start(){
+        $(document.body).text('').class('aim-config doc-content');
+        // var focusElement;
+        // const config = e.body;
+        sessionStorage.setItem('client_id', data.client.client_id || '');
+        sessionStorage.setItem('client_secret', data.client.client_secret || '');
+        // config.client_secret = $.config.client_secret;
+        console.log('START', data, sessionStorage);
+        const formElem = $('form').autocomplete("off").parent(document.body).on('submit', postForm);
+        var contentElem = formElem;
+        // $('details').open(1).parent(formElem).append(
+        //   $('summary').text('Config')
+        // );
+        let inputId=0;
+        function build(key, cfg, path){
+          const metaData = cfg.metaData || { title: isNaN(key) ? key : Number(key)+1 };
+          var dataObj = data;
+          for (let p of path.concat(key)) {
+            if (!(p in dataObj)) {
+              dataObj = ''; break;
+              return;
+            }
+            dataObj = dataObj[p];
+          }
+          // console.log(path,key,cfg,dataObj);
+          const types = {
+            boolean: 'checkbox',
+            number: 'number',
+            string: 'text',
+            object: 'object',
+          }
+
+          // var inputElem;') Object.keys(cfg).length === 1) {
+          if (cfg.metaData && Object.keys(cfg).length === 1 && (cfg.metaData.type = cfg.metaData.type || types[dataObj ? typeof dataObj : 'string']) && ['text','number','string','boolean'].includes(cfg.metaData.type || 'text')) {
+            const name = path.concat(key).join('-');
+            // console.log(name, typeof dataObj);
+            var placeholder = metaData.placeholder || (metaData.required || dataObj === null ? metaData.title || key : ' ');
+            if (typeof dataObj === 'string' && dataObj.match(/^  .*  $/)) {
+              placeholder = dataObj.trim();
+              dataObj = null;
+            }
+            if (metaData.format === 'cam') {
+              let userMedia;
+              const video = $('video').style('background:white;flex-base: 50px;').autoplay().elem;
+              const pausePlayElem = $('button').type('button').class('pause').text('Pause/Play').on('click', e => video.paused ? video.play() : video.pause());
+              function toggleCam() {
+                const rect = video.getBoundingClientRect();
+                video.width = rect.width;
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                  if (video.srcObject) {
+                    video.srcObject.getTracks().forEach(track => track.stop());
+                    pausePlayElem.disabled(true);
+                    video.srcObject = null;
+                  } else {
+                    navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+                      try {
+                        video.srcObject = stream;
+                      } catch (error) {
+                        video.src = window.URL.createObjectURL(stream);
+                      }
+                      video.play();
+                      pausePlayElem.disabled(false);
+                    });
+                  }
+                }
+              }
+              contentElem.append(
+                $('div').class('input').append(
+                  $('span').class('info').title(metaData.description),
+                  $('label').class('title').text(metaData.title || key),
+                  $('div').class('aco col').append(
+                    $('div').class('row').append(
+                      $('button').type('button').class('clear').text('Clear'),
+                      $('button').type('button').class('on').text('On/Off').on('click', toggleCam),
+                      pausePlayElem.disabled(true),
+                      $('button').type('button').class('share').text('Share'),
+                      $('button').type('button').class('save').text('Save'),
+                      $('button').type('button').class('paint').text('Paint'),
+                    ),
+                    video,
+                  )
+                ),
+              );
+            } else if (metaData.format === 'draw') {
+              const canvasElem = $('canvas').style('background:white;height:150px;').paint();
+              contentElem.append(
+                $('div').class('input').append(
+                  $('span').class('info').title(metaData.description),
+                  $('label').class('title').text(metaData.title || key),
+                  $('div').class('aco col').append(
+                    $('div').class('row').append(
+                      $('button').type('button').class('clear').text('Clear').on('click', e => canvasElem.paint.clear()),
+                    ),
+                    canvasElem,
+                    // $('canvas').class('aco').style('background:white;height:150px;').paint(),
+                  )
+                ),
+              );
+            } else {
+              contentElem.append(
+                $('div').class('input').append(
+                  $('span').class('info').title(metaData.description),
+                  $('label').class('title').text(metaData.title || key),
+                  $('input').id('input'+inputId)
+                  .name(name)
+                  .value(dataObj === null ? metaData.defaultValue || '' : dataObj)
+                  .type(types[typeof dataObj])
+                  // .autofocus(name === activeField ? '' : null)
+                  .required(metaData.required || dataObj === null ? '' : null)
+                  .placeholder(placeholder)
+                  .pattern(metaData.pattern)
+                  .on('change', e => {
+                    let obj = data;
+                    path.forEach(key => obj = obj[key] = obj[key] || {});
+                    obj[key] = e.target.value;
+                  }),
+                  // $('label').class('caption').for('input'+inputId),
+                  $('label').class('ico').for('input'+inputId),
+                )
+              )
+            }
+            inputId++;
+            // console.log(inputElem, focusElement);
+            // focusElement = focusElement || inputElem;
+            // if (name === activeField || metaData.required || dataObj === null || !dataObj) {
+            //   focusElement = inputElem;
+            // }
+
+            // if (cfg === null) {
+            //   for (var p = contentElem; p; p = p.parentElement) p.open(1);
+            // }
+          } else {
+            const parent = contentElem;
+            contentElem = $('details').open(1).parent(contentElem).append(
+              $('summary').text(metaData.title)
+            );
+            if (metaData.description) {
+              contentElem.append($('div').html(metaData.description))
+            }
+            Object.entries(cfg).filter(([key,cfg])=>key !== 'metaData').forEach(entry => {
+              build(...entry, path.concat(key));
+            });
+            contentElem = parent;
+          }
+        }
+        Object.entries(formDefinitions).filter(([key,cfg])=>key !== 'metaData').forEach(entry => build(...entry, []));
+        // console.log(1, focusElement)
+        formElem.append(
+          $('button').value('save').text('Opslaan').default(true),
+          $('button').value('next').text('Verder'),
+        )
+        const elems = Array.from(formElem.elem.elements);
+        const activeElement = elems.find(el => el.required) || elems.find(el => el.name === activeField) || elems.find(el => !el.value) || elems[0];
+        // console.log(elems, activeElement)
+        document.querySelectorAll('details').forEach(el => el.open = false);
+        Array.from(formElem.elem.elements).forEach(el => {
+          if (el.required || el.value) {
+            for (var p = el; p; p = p.parentElement) {
+              if ('open' in p) {
+                p.open = true;
+              }
+            }
+          }
+        })
+        // console.log(formElem.elem.elements);
+        activeElement.focus();
+
+        // focusElement.elem.focus();
+      }
+      function start(){
+        sessionStorage.setItem('client_id', data.client.client_id || '');
+        sessionStorage.setItem('client_secret', data.client.client_secret || '');
+        var contentElem = formElem;
+        inputId=0;
+        formElem.text('').buildForm(formDefinitions,data,true).append(
+          $('button').value('save').text('Opslaan').default(true),
+          $('button').value('next').text('Verder'),
+        )
+        const elems = Array.from(formElem.elem.elements);
+        const activeElement = elems.find(el => el.required) || elems.find(el => el.name === activeField) || elems.find(el => !el.value) || elems[0];
+        // document.querySelectorAll('details').forEach(el => el.open = false);
+        Array.from(formElem.elem.elements).forEach(el => {
+          if (el.required || el.value) {
+            for (var p = el; p; p = p.parentElement) {
+              if ('open' in p) {
+                p.open = true;
+              }
+            }
+          }
+        })
+        activeElement.focus();
+      }
+      if (data.client.client_secret) {
+        // postForm();
+      } else {
+      }
+      start();
+    },
     async import(){
 
       // const configYaml = await fetch('../config/import.yaml').then(res => res.text());
@@ -1296,6 +1685,14 @@
   };
   aim.sdkUrl = document.currentScript.src.replace(/js\/web\.js.*/,'');
 
+  const types = {
+    boolean: 'checkbox',
+    number: 'number',
+    string: 'text',
+    object: 'object',
+  };
+
+
   function displayvalue(row,col){
     if (col.format === 'date') return new Date(row[col.name]).toLocaleDateString();
     if (col.type === 'blob') return 'IS BLOB';
@@ -1330,7 +1727,7 @@
           console.log(3333, body);
         })
       } else {
-        path.forEach(key => obj = obj[key] = obj[key] || {});
+        // path.forEach(key => obj = obj[key] = obj[key] || {});
         console.log(col);
       }
     }
@@ -1398,7 +1795,7 @@
       .id('input'+inputId)
       .class('input')
       .name(key)
-      .type(col.format || col.type || types[typeof property.value])
+      .type(col.format || col.type || 'text' || types[typeof property.value])
       .value(value)
       .readonly(col.readOnly)
       .required(col.required)
@@ -1478,9 +1875,11 @@
       if (elem) focus(elem);
       if (this.selectElem !== this.focusElem) {
         document.querySelectorAll('[select]').forEach(e => e.removeAttribute('select'));
+        // console.log(this.focusElem);
         const {row} = this.selectElem = this.focusElem;
         this.selectElem.attr('select', '');
-        if (row.id) {
+
+        if (row && row.id) {
           const url = new URL(document.location);
           const ref = row['@id'];//`${row.schemaName}(${row.id})`;
           console.log(999, ref);
@@ -1971,11 +2370,14 @@
     }))
   }
   function pageviewrow(row, editmode = false){
+    aim.pageRow = row;
     const tag = aim.pageTag = row.schemaName + row.id;
 
 
     // const elem = document.body.querySelector(`.lv .`+aim.pageTag);
-    if (document.body.querySelector(`.lv .`+aim.pageTag)) $(`.lv .`+aim.pageTag).emit('focus');
+    if (document.body.querySelector(`.lv .`+aim.pageTag)) {
+      // $(`.lv .`+aim.pageTag).emit('focus');
+    }
 
     // console.log(aim.pageTag,elem,$(`.lv .`+aim.pageTag));
 

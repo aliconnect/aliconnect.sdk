@@ -2682,7 +2682,7 @@
             }
           });
           Object.entries(options.headers||{}).forEach(entry => xhr.setRequestHeader(...entry));
-          console.warn('headers', options.headers);
+          // console.warn('headers', options.headers);
           xhr.send(options.body);
         } else {
           const href = url.toString();

@@ -58,7 +58,6 @@ class Aim {
   public function __construct() {
     // debug(getcwd());
 
-
     $GLOBALS['aim'] = $this;
 
     $this->origin = $_SERVER['HTTP_ORIGIN'];
@@ -1312,7 +1311,7 @@ class Aim {
     try {
       if (!isset($this->conn)) {
         $dbs = $this->secret['config']['dbs'];
-        $this->conn = sqlsrv_connect($dbs['server'],[
+        $this->conn = sqlsrv_connect( empty($dbs['server']) ? 'localhost' : $dbs['server'], [
           'Database' => $dbs['database'],
           'UID' => $dbs['user'],
           'PWD' => $dbs['password'],
@@ -1992,6 +1991,8 @@ function aim_uid($id){
   $id = array_slice($id, -5, 5, true);
   return implode('-', $id);
 }
+
+
 new Aim();
 
 // $uri = parse_url($_SERVER['REQUEST_URI']);
