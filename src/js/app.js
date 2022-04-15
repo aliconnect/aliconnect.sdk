@@ -4,58 +4,10 @@ $().on('load', async e => {
       Authorization: 'bearer ' + localStorage.getItem('access_token'),
     } : {});
   }
-  // function login() {
-  //   localStorage.setItem('access_token', '');
-  //   $(document.body).text('').append(
-  //     $('form').on('submit', async e => {
-  //       e.preventDefault();
-  //       // localStorage.setItem('client_id', e.target.client_id.value);
-  //       try {
-  //         // console.log(await api('/login').post(e.target));
-  //         const {access_token} = await api('/app/login').post(e.target);
-  //         localStorage.setItem('access_token', access_token);
-  //         location.reload();
-  //       } catch (err) {
-  //         alert(err);
-  //       }
-  //     }).append(
-  //       $('div').text('Inlognaam'),
-  //       $('input').name('accountname'),
-  //       $('div').text('Wachtwoord'),
-  //       $('input').name('password').type('password'),
-  //       // $('div').text('Client ID'),
-  //       // $('input').name('client_id').value(localStorage.getItem('client_id')),
-  //       $('div').append(
-  //         $('button').text('Login'),
-  //       ),
-  //     )
-  //   )
-  // }
-
-
-
-
   let nav;
-  // function list(title) {
-  //   $(document.body).style('height:100%;').text('').append(
-  //     $('div').class('card'),
-  //     $('nav').append(
-  //       $('div').class('title').text(title),
-  //       $('a').class('icn-back').caption('Terug').on('click', e => menu()),
-  //     ),
-  //     $('div').class('search').append(
-  //       $('input').placeholder('Typ hier om te zoeken').value(localStorage.getItem('search'+title)).on('change', e => {
-  //         localStorage.setItem('search'+title, e.target.value);
-  //         searchfunction(e.target.value);
-  //       }),
-  //     ),
-  //     $('div').class('list'),
-  //   );
-  // }
-
+  const docBasePath = 'https://aliconnect.nl/';
   function contact(organisatieId,contactpersoonId) {
     const elem = $('div').class('card').parent(document.body);
-
     const config = {
       contactNames: [
         'Titel',
@@ -125,11 +77,9 @@ $().on('load', async e => {
         ],
       ]
     };
-
     function options(a,v) {
       return a.map(k => $('option').text(k).selected(k==v))
     }
-
     (async function show() {
       const [[detail]] = await api('/app/contacten').query({
         select: `*`,
@@ -316,7 +266,73 @@ $().on('load', async e => {
           $('button').text('Bestellijst').on('click', e => {
             window.history.replaceState('page', '', '?klant_id='+detail.organisatie_id);
             methods.bestellijst();
-          })
+          }),
+          $('button').text('Overeenkomst').on('click', async e => {
+            Word.run(async context => {
+              const body = aim.replaceFields(await aim.fetch(docBasePath + 'Explore-Legal-Contract-Voorbeeld.md').get(),detail);
+              console.log(body);
+              var range = context.document.getSelection();
+              range.insertHtml(aim.markdown().render(body), Word.InsertLocation.end);
+              // range.insertHtml('<ol><li>a<ul><li>b</li></ul></li><li>TEST</li></ol>', Word.InsertLocation.end);
+
+              // range.insertHtml(`
+              //   <ol>
+              //     <li>First Item</li>
+              //     <li>Second Item</li>
+              //     <li>Third Item
+              //         <ol type="a">
+              //           <li>Third Item - One</li>
+              //           <li>Third Item - Two
+              //               <ol type="I">
+              //                 <li>Sample Item A</li>
+              //                 <li>Sample Item A</li>
+              //               </ol>
+              //           </li>
+              //         </ol>
+              //     </li>
+              //     <li>Fourth Item</li>
+              //   </ol>
+              //   `, Word.InsertLocation.end);
+
+              // for (var i = 0, line; line = wrlines[i]; i++) {
+              //   var html = [];
+              //   if (line.html) range.insertHtml(line.html, Word.InsertLocation.end);
+              //   if (line.Base64String) range.insertInlinePictureFromBase64(line.Base64String, Word.InsertLocation.end);
+              // }
+              await context.sync();
+            });
+          }),
+          $('button').text('Verzenden').on('click', e => {
+            Word.run(async context => {
+              e.target.disabled = true;
+              var body = context.document.body;
+              var bodyHTML = body.getHtml();
+              await context.sync();
+              var html = bodyHTML.value.replace(/.*?<body.*?>(.*?)<\/body>.*/s,'$1');
+              var html = html
+              .replace(/<(\w+)\s.*?>/sg,'<$1>')
+              .replace(/&nbsp;/g,' ')
+              .replace(/\r\n/g,'')
+              .replace(/\s+/g,' ')
+              .replace(/>\s</g,'><')
+              // context.document.innerHtml;
+              await aim.fetch('https://dms.aliconnect.nl/api/v1/abis/send').body({
+                from: "mailer@alicon.nl",
+                // from: "max.van.kampen@alicon.nl",
+                // to: 'max.van.kampen@outlook.com',
+                to: "max.van.kampen@alicon.nl",
+                chapters: [
+                  { title:"Contract", content: 'Hierbij contract' },
+                  // { title:"Aliconnect Configuratie bijgewerkt", content: 'test' },
+                ],
+                attachements: [
+                  { name: `Contract-${new Date().toLocaleString()}.pdf`, content: '<link href="https://proving-nl.aliconnect.nl/assets/css/print.css" rel="stylesheet"/>'+html },
+                  // { name: `Contract-${new Date().toLocaleString()}.pdf`, content: html },
+                ],
+              }).post();
+              e.target.disabled = false;
+            });
+          }),
         )
       );
       window.scrollTo(0,0);
@@ -626,16 +642,13 @@ $().on('load', async e => {
       ),
     );
   }
-
   function start(){
     let searchfunction;
 
     // contacten();
   }
   config = await aim.fetch('https://dms.aliconnect.nl/api/v1/app/config').get();
-
   console.log(config);
-
   $(document.body).append(
     $('form').on('submit', async e => {
       e.preventDefault();
@@ -698,16 +711,6 @@ $().on('load', async e => {
       ),
     )
   }
-
-  // $(document.body).style(`
-  //   background-color: rgb(
-  //     ${config.opties.gebruikerOpties.schermkleuren.algemeen.kleurAchtergrond.r},
-  //     ${config.opties.gebruikerOpties.schermkleuren.algemeen.kleurAchtergrond.g},
-  //     ${config.opties.gebruikerOpties.schermkleuren.algemeen.kleurAchtergrond.b}
-  //   );
-  // `)
-
-  // return localStorage.getItem('access_token') ? menu() : login();
 });
 window.addEventListener( 'scroll', e => {
   if (window.scrollYdir != (window.scrollYdir = (window.scrollYdiff = (window.scrollYprev||0) - (window.scrollYprev = window.scrollY)) > 0)) {

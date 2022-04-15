@@ -4,19 +4,40 @@
   font-weight: normal;
   font-style: normal;
 }
-[class^="icn-"]:before {
-  font-family: AliconnectIcon;
-  font-style: normal;
-  vertical-align: text-bottom;
-  display: inline-block;
-  /* height:100%; */
+
+nav>button, nav>a, .abtn, [class^="icn-"] {
+  background: transparent no-repeat center center none;
+  color: inherit;
+  border: none;
+  border-radius: 0;
+  display: flex;
+  font: inherit;
+  line-height: inherit;
+  white-space: nowrap;
+  outline: none;
+  cursor: pointer;
+  padding: 0 3px;
+  margin: 0;
+  align-items: center;
+  text-decoration: none;
 }
-[class^="icn-"][caption]:after {
+
+[class^="icn-"]:before, nav>button::before, nav>a::before, .abtn:before {
+  font-family: 'AliconnectIcon';
+  text-align: center;
+  padding: 0 3px;
+  min-width: 24px;
+  font-style: normal;
+  /* --icn-color: rgb(0, 120, 212); */
+  /* color: inherit; */
+  color: var(--icn-color);
+  direction: ltr;
+
+}
+[class^="icn-"][caption]:after, nav>button[caption]::after, nav>a[caption]::after, .abtn[caption]::after {
   content: attr(caption);
-  vertical-align: text-bottom;
-  /* vertical-align: top; */
-  display: inline-block;
-  /* height:100%; */
+  /* padding-right: 10px; */
+  padding: 0 3px;
 }
 .icn-menu::before,.abtn.menu::before{content:'\f05c';}
 .icn-more::before,.abtn.more::before{content:'\f01b';}
