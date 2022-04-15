@@ -2317,6 +2317,7 @@
       $('span.pos').text(rows.length + (rowsVisible.length === rows.length ? '' : '/' + rowsVisible.length));
       $('.lv>nav').text('').append(
         filter.length ? $('button').class('abtn filter').on('click', e => $('.lv').attr('hidefilter', aim.showfilter ^= 1)) : null,
+        $('span').style('margi-right:auto;'),
         ...navList.map(fn => fn()),
         $('button').class('abtn view').append(
           $('nav').append(
