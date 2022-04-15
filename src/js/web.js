@@ -82,14 +82,14 @@
 
           $('span').class('pagemenu'),
           $('button').class('abtn dark').on('click', e => $(document.documentElement).attr('dark', getItem('dark', getItem('dark')^1))),
-          $('button').class('abtn shop').on('click', e => aim.showBag()).append(
-            $('nav').append(
-              $('button').text('bestellen').on('click', e => {
-                e.stopPropagation();
-                aim.orderBag();
-              }),
-            ),
-          ),
+          // $('button').class('abtn shop').on('click', e => aim.showBag()).append(
+          //   $('nav').append(
+          //     $('button').text('bestellen').on('click', e => {
+          //       e.stopPropagation();
+          //       aim.orderBag();
+          //     }),
+          //   ),
+          // ),
           $('button').class('abtn account').append(
             $('span').append(
               $('span').class('user'),
@@ -286,8 +286,8 @@
         // ['/page/top.md', '.pagemenu'],
         // ['/page/footer.md', 'body>footer>article'],
         // ['/nav-left.md', 'button.menu'],
-        ['/nav-top.md', '.pagemenu'],
-        ['/footer.md', 'body>footer>article'],
+        ['/docs/Nav-Top.md', '.pagemenu'],
+        ['/docs/Page-Footer.md', 'body>footer>article'],
       ];
       for ([filename, selector] of docs) {
         // await aim.fetch(filename).then(res => console.log(res));
@@ -302,7 +302,7 @@
       // } else
       if (!searchParams.get('id')) {
         const data = document.querySelector('data') ? JSON.parse(atob(document.querySelector('data').getAttribute('md'))) : {
-          md: await aim.fetch(document.location.pathname === '/' ? '/Home.md' : document.location.pathname+'.md').then(res => {
+          md: await aim.fetch(document.location.pathname === '/' ? '/docs/Home.md' : '/docs'+document.location.pathname+'.md').then(res => {
             // console.log(res)
             return res.text()
           }),

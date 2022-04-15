@@ -2623,7 +2623,7 @@
           // }
           resolve(data);
         } catch (err) {
-          alert(xhr.responseText);
+          // alert(xhr.responseText);
           console.error(xhr.responseText);
           fail(err);
         }
