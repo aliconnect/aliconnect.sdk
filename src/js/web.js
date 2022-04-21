@@ -1995,42 +1995,44 @@
           });
         });
         cols = Object.values(cols);
-        return $('table').class('products').append(
-          $('thead').append(
-            $('tr').append(
-              $('th').append(
-                $('i').class('checkbox'),
-              ),
-              cols.map(col => $('th').append(
-                $('div').text(col.title || aim.displayName(col.name)).class(this.sortName === col.name ? 'sort' : '', this.sortDir ? 'asc' : '').on('click', e => {
-                  this.sortDir = this.sortName === col.name ? this.sortDir ^ 1 : 0;
-                  const sortFactor = 1-2*this.sortDir;
-                  // console.log(this.sortName, col.name, sortFactor, this.sortDir);
-                  this.sortName = col.name;
-                  rowsVisible.sort((a,b) => sortFactor * String(a[col.name]).localeCompare(String(b[col.name]), undefined, {numeric: true}));
-                  aim.om.listview(rows, options.type, filter, rowsVisible);
-                })
-              ))
-            )
-          ),
-          $('tbody').append(
-            rowsVisible.map(row => {
-              const elem = row.elemList = $('tr').append(
-                $('td').append(
-                  $('i').class('checkbox').on('click', e => {
-                    e.stopPropagation();
-                    elem.checked(row.checked ^= 1)
-                  }),
+        return $('div').append(
+          $('table').class('products').append(
+            $('thead').append(
+              $('tr').append(
+                $('th').append(
+                  $('i').class('checkbox'),
                 ),
-                cols.map(col => $('td').class(col.name).style(isNaN(row[col.name]) ? '' : 'text-align:right;').append(valueTag(col,row))),
-              ).on('click', e => {
-                rowsVisible.forEach(row => row.elemList.checked(row.checked = 0));
-                elem.checked(row.checked = 1);
-                select(elem);
-              });
-              elem.row = row;
-              return elem;
-            })
+                cols.map(col => $('th').append(
+                  $('div').text(col.title || aim.displayName(col.name)).class(this.sortName === col.name ? 'sort' : '', this.sortDir ? 'asc' : '').on('click', e => {
+                    this.sortDir = this.sortName === col.name ? this.sortDir ^ 1 : 0;
+                    const sortFactor = 1-2*this.sortDir;
+                    // console.log(this.sortName, col.name, sortFactor, this.sortDir);
+                    this.sortName = col.name;
+                    rowsVisible.sort((a,b) => sortFactor * String(a[col.name]).localeCompare(String(b[col.name]), undefined, {numeric: true}));
+                    aim.om.listview(rows, options.type, filter, rowsVisible);
+                  })
+                ))
+              )
+            ),
+            $('tbody').append(
+              rowsVisible.map(row => {
+                const elem = row.elemList = $('tr').append(
+                  $('td').append(
+                    $('i').class('checkbox').on('click', e => {
+                      e.stopPropagation();
+                      elem.checked(row.checked ^= 1)
+                    }),
+                  ),
+                  cols.map(col => $('td').class(col.name).style(isNaN(row[col.name]) ? '' : 'text-align:right;').append(valueTag(col,row))),
+                ).on('click', e => {
+                  rowsVisible.forEach(row => row.elemList.checked(row.checked = 0));
+                  elem.checked(row.checked = 1);
+                  select(elem);
+                });
+                elem.row = row;
+                return elem;
+              })
+            )
           )
         )
       },
@@ -2278,28 +2280,9 @@
       return rows.filter(row => !filter.some(val => !val.values.some(value => value.rows.includes(row))));
     }
 
-    $('.lv').attr('hidefilter', aim.showfilter).text('');
-    $('.lv').append(
-      $('nav'),
-      $('div').append(
-        $('aside').class('oa filter').css('width', $().storage('aside.filter.width') || '200px'),
-        $('div').seperator('aside.filter'),
-        $('div').class('oa list').tabindex(0)
-        .on('keydown', e => {
-          switch (e.key) {
-            case 'ArrowDown': {
-              e.preventDefault();
-              return focusElem.nextElementSibling ? focus(focusElem.nextElementSibling) : null;
-            }
-            case 'ArrowUp': {
-              e.preventDefault();
-              return focusElem.previousElementSibling ? focus(focusElem.previousElementSibling) : null;
-            }
-          }
-          // console.log(e);
-        })
-        .on('keyup', e => selectTimeout = setTimeout(() => select(), 300)),
-      ),
+    // $('.lv').attr('hidefilter', aim.showfilter).text('');
+    $('.lv').text('').append(
+      $('div').class('list'),
     );
     // const navElem = $('nav').parent($('.lv'));
     // const listContainerElem = $('div').parent($('.lv'));
@@ -2315,57 +2298,76 @@
       aim.listRows = rowsVisible = rowsFiltered(checkedFilters);
       // console.log('checkedFilters', checkedFilters, rows, rowsVisible);
       $('span.pos').text(rows.length + (rowsVisible.length === rows.length ? '' : '/' + rowsVisible.length));
-      $('.lv>nav').text('').append(
-        filter.length ? $('button').class('abtn filter').on('click', e => $('.lv').attr('hidefilter', aim.showfilter ^= 1)) : null,
-        $('span').style('margi-right:auto;'),
-        ...navList.map(fn => fn()),
-        $('button').class('abtn view').append(
-          $('nav').append(
-            $('button').class('icn-rows').caption('Rijen').on('click', e => buildlist(type = 'rows')),
-            $('button').class('icn-cols').caption('Kaarten').on('click', e => buildlist(type = 'cols')),
-            $('button').class('icn-table').caption('Tabel').on('click', e => buildlist(type = 'table')),
-            // Object.keys(types).map(key => $('button').class('abtn', key).on('click', e => buildlist(type = key)))
+      $('.lv .list').text('').append(
+        $('nav').append(
+          filter.length ? $('button').class('abtn filter').on('click', e => $('.lv').attr('hidefilter', aim.showfilter ^= 1)) : null,
+          $('span').style('margi-right:auto;'),
+          ...navList.map(fn => fn()),
+          $('button').class('abtn view').append(
+            $('nav').append(
+              $('button').class('icn-rows').caption('Rijen').on('click', e => buildlist(type = 'rows')),
+              $('button').class('icn-cols').caption('Kaarten').on('click', e => buildlist(type = 'cols')),
+              $('button').class('icn-table').caption('Tabel').on('click', e => buildlist(type = 'table')),
+              // Object.keys(types).map(key => $('button').class('abtn', key).on('click', e => buildlist(type = key)))
+            ),
           ),
         ),
+        $('div').append(
+          $('aside').class('oa filter').css('width', $().storage('aside.filter.width') || '200px').append(
+            filter.filter(col => col.checked).map(col => $('div').append(
+              $('span').text(col.title),
+              $('i').class('icn-cross-mark-small').on('click', e => {
+                col.values.forEach(v => delete(v.checked));
+                buildlist();
+              }),
+              ': ',
+              $('b').text(col.values.filter(val => val.checked).map(val => val.title).join(', ')),
+            )),
+            filter.filter(col => col.checked || col.values.some(val => val.rows.some(row => rowsVisible.includes(row)))).map(col => {
+              // const colRowsVisible = rows.filter(row => !checkedFilters.filter(fcol => fcol.name !== col.name).some(val => !val.values.includes(String(row[val.name]).toLowerCase())));
+              const colRowsVisible = rowsFiltered(checkedFilters.filter(fcol => fcol.name !== col.name));
+              const values = col.values.filter(val => col.checked || val.rows.some(row => colRowsVisible.includes(row)));
+              if(values.some(val => val.checked) || values.length>1) {
+                return $('div').attr('more', col.more).append(
+                  $('legend').text(aim.displayName(col.title)),
+                  values
+                  .filter(val => val.value !== null)
+                  .filter(val => val.rows.filter(row => colRowsVisible.includes(row)).length).map((val,i) => [
+                    i == 5 ? $('div').class('more').on('click', e => e.target.parentElement.setAttribute('more', col.more ^= 1)) : null,
+                    $('div')
+                    .append(
+                      $('i').class('checkbox'),
+                      $('span').text(val.title)
+                    )
+                    .checked(val.checked)
+                    .attr('cnt', val.rows.filter(row => colRowsVisible.includes(row)).length)
+                    .on('click', e => buildlist(type, val.checked ^= 1))
+                  ])
+                );
+              }
+            })
+          ),
+          $('i').seperator('aside.filter'),
+          $('div').append(
+            (types[type] ? types[type]() : types.cols())
+          )
+          .tabindex(0)
+          .on('keydown', e => {
+            switch (e.key) {
+              case 'ArrowDown': {
+                e.preventDefault();
+                return focusElem.nextElementSibling ? focus(focusElem.nextElementSibling) : null;
+              }
+              case 'ArrowUp': {
+                e.preventDefault();
+                return focusElem.previousElementSibling ? focus(focusElem.previousElementSibling) : null;
+              }
+            }
+            // console.log(e);
+          })
+          .on('keyup', e => selectTimeout = setTimeout(() => select(), 300)),
+        ),
       )
-      $('.lv>div>.filter').text('').append(
-        filter.filter(col => col.checked).map(col => $('div').append(
-          $('span').text(col.title),
-          $('i').class('icn-cross-mark-small').on('click', e => {
-            col.values.forEach(v => delete(v.checked));
-            buildlist();
-          }),
-          ': ',
-          $('b').text(col.values.filter(val => val.checked).map(val => val.title).join(', ')),
-        )),
-        filter.filter(col => col.checked || col.values.some(val => val.rows.some(row => rowsVisible.includes(row)))).map(col => {
-          // const colRowsVisible = rows.filter(row => !checkedFilters.filter(fcol => fcol.name !== col.name).some(val => !val.values.includes(String(row[val.name]).toLowerCase())));
-          const colRowsVisible = rowsFiltered(checkedFilters.filter(fcol => fcol.name !== col.name));
-          const values = col.values.filter(val => col.checked || val.rows.some(row => colRowsVisible.includes(row)));
-          if(values.some(val => val.checked) || values.length>1) {
-            return $('div').attr('more', col.more).append(
-              $('legend').text(aim.displayName(col.title)),
-              values
-              .filter(val => val.value !== null)
-              .filter(val => val.rows.filter(row => colRowsVisible.includes(row)).length).map((val,i) => [
-                i == 5 ? $('div').class('more').on('click', e => e.target.parentElement.setAttribute('more', col.more ^= 1)) : null,
-                $('div')
-                .append(
-                  $('i').class('checkbox'),
-                  $('span').text(val.title)
-                )
-                .checked(val.checked)
-                .attr('cnt', val.rows.filter(row => colRowsVisible.includes(row)).length)
-                .on('click', e => buildlist(type, val.checked ^= 1))
-              ])
-            );
-          }
-        })
-      );
-      $('.lv>div>.list').text('').append(
-        types[type] ? types[type]() : types.cols(),
-      );
-      // console.log('done builddom');
     })()
   }
   function _search(search){
@@ -6896,11 +6898,13 @@
     resizable: { value: function () {
       this.class('resizable');
       const table = this.elem;
-      const row = table.getElementsByTagName('tr')[0];
-      if (!row) return;
+      const row = table.querySelector('thead>tr');
+      console.log(table,row);
+      // const row = table.getElementsByTagName('tr')[0];
+      if (!row) return this;
       const cols = [...row.children];
       cols.forEach(elem => {
-        $('i').parent(elem).class('resizer').on('mousedown', function (e) {
+        $('i').parent(elem).class('resizer').on('mousedown', e => {
           let pageX,curCol,nxtCol,curColWidth,nxtColWidth;
           table.style.cursor = 'col-resize';
           curCol = e.target.parentElement;
@@ -6931,7 +6935,7 @@
           document.addEventListener('mousemove', mousemove);
           document.addEventListener('mouseup', mouseup);
         });
-        elem.style.width = elem.offsetWidth + 'px';
+        elem.style.width = Math.max(elem.offsetWidth+5,50) + 'px';
       });
       table.style.tableLayout = 'fixed';
       let to;
@@ -6946,6 +6950,7 @@
       function getStyleVal(elm,css){
         return (window.getComputedStyle(elm, null).getPropertyValue(css))
       }
+      return this;
     },},
     sample: { value: function (selector, sample) {
       const htmlScript = `
