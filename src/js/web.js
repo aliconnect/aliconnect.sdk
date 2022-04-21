@@ -155,12 +155,12 @@
           ),
           // .contextmenu(this.menu)
           $('div').seperator('.tv'),
-          $('aside').class('left'),
+          // $('aside').class('left'),
           $('section').class('pv doc-content').css('width', $().storage('.pv.width') || '700px'),
           $('div').class('lv'),
           $('div').seperator('.pv', -1),
           $('div').class('dv'),
-          $('aside').class('right'),
+          // $('aside').class('right'),
           $('div').class('prompt'),
         )),
         $('footer').class('page').append(
@@ -309,10 +309,16 @@
         };
         let body = data.md;
         // console.log(data, body)
-        $('.pv').text('')
+        $('.pv').text('').append(
+          $('div').class('page').append(
+            $('aside').class('left'),
+            $('div').html(aim.markdown().render(body)),
+            $('aside').class('right'),
+          )
+        );
+        $('.page>aside.right').index('.page>div');
         // .attr('contenteditable','')
-        .html(aim.markdown().render(body));
-        $('aside.right').index('.pv');
+        // $('aside.right').index('.pv');
         window.scroll(0,sessionStorage.getItem('scrollY'));
       }
     },

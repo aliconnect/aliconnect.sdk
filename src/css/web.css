@@ -363,6 +363,13 @@ body>header{
   display: flex;
 }
 
+.page>aside {
+  position: sticky;
+  top: 48px;
+  max-height: calc(100vh - 150px);
+  overflow: auto;
+  /* font-size:0.8em; */
+}
 
 aside {
   /* position: sticky; */
@@ -1213,11 +1220,14 @@ details>summary:only-child::after{
   background-color: var(--rowselect);
 }
 
+div.page {
+  display: flex;
+  /* flex-direction: column; */
+}
+
 .pv {
   /* max-width: 800px; */
   width: -webkit-fill-available;
-  display: flex;
-  flex-direction: column;
   flex: 0 0 auto;
   /* background-color: var(--trans1); */
   margin: 0 auto;
