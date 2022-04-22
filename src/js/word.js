@@ -41,22 +41,22 @@ $().on('load', async e => {
       word.lines2word(writelines);
     },
     write2word: function (row) {
-		var row = row || this.row;
-		writelines = []; wrlines = [];
-		if (row.images) for (var iImg = 0, file; file = row.images[iImg]; iImg++) writelines.push({ src: file.src });
-		for (var key in api.definitions[row.schema].properties) if (row.values[key]) {
-			var prop = api.definitions[row.schema].properties;
-			writelines.push({ html: '<br><p><small>' + (prop.title || key) + '</small><br>' + row.values[key] + '</p>' });
-		}
-		console.log('lines', writelines);
-		word.lines2word(writelines);
-	},
+      var row = row || this.row;
+      writelines = []; wrlines = [];
+      if (row.images) for (var iImg = 0, file; file = row.images[iImg]; iImg++) writelines.push({ src: file.src });
+      for (var key in api.definitions[row.schema].properties) if (row.values[key]) {
+        var prop = api.definitions[row.schema].properties;
+        writelines.push({ html: '<br><p><small>' + (prop.title || key) + '</small><br>' + row.values[key] + '</p>' });
+      }
+      console.log('lines', writelines);
+      word.lines2word(writelines);
+    },
   })
 });
 
 try {
-	Office.initialize = function (reason) {
-		if (Office.context.requirements.isSetSupported('WordApi', 1.1)) mswordapi = true;
-		else document.getElementById('aPage').innerText = 'This code requires Word 2016 or greater.';
-	};
+  Office.initialize = function (reason) {
+    if (Office.context.requirements.isSetSupported('WordApi', 1.1)) mswordapi = true;
+    else document.getElementById('aPage').innerText = 'This code requires Word 2016 or greater.';
+  };
 } catch (err) { }

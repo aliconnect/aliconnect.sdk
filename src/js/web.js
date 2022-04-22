@@ -291,9 +291,7 @@
       ];
       for ([filename, selector] of docs) {
         // await aim.fetch(filename).then(res => console.log(res));
-        await aim.fetch(filename).then(res => res.status !== 200 ? null : res.text().then(body => {
-          $(selector).html(aim.markdown().render(body));
-        }));
+        aim.fetch(filename).get().then(body => $(selector).html(aim.markdown().render(body)));
       }
       aim.om = new Om();
       aim.om.treeview(aim.config.navleft);
@@ -301,25 +299,33 @@
       //   search(searchParams.get('search'));
       // } else
       if (!searchParams.get('id')) {
-        const data = document.querySelector('data') ? JSON.parse(atob(document.querySelector('data').getAttribute('md'))) : {
-          md: await aim.fetch(document.location.pathname === '/' ? '/docs/Home.md' : '/docs'+document.location.pathname+'.md').then(res => {
-            // console.log(res)
-            return res.text()
-          }),
-        };
-        let body = data.md;
+        function setBody(body){
+          $('.pv').text('').append(
+            $('div').class('page').append(
+              $('aside').class('left'),
+              $('div').html(aim.markdown().render(body)),
+              $('aside').class('right'),
+            )
+          );
+          $('.page>aside.right').index('.page>div');
+          // .attr('contenteditable','')
+          // $('aside.right').index('.pv');
+          window.scroll(0,sessionStorage.getItem('scrollY'));
+        }
+        if (document.querySelector('data')) {
+          var data = JSON.parse(atob(document.querySelector('data').getAttribute('md')));
+          setBody(data.md);
+        } else {
+          aim.fetch(document.location.pathname === '/' || document.location.pathname.match(/\./) ? '/docs/Home.md' : '/docs'+document.location.pathname+'.md').get().then(setBody)
+        }
+        // const data = document.querySelector('data') ? JSON.parse(atob(document.querySelector('data').getAttribute('md'))) : {
+        //   md: await aim.fetch(document.location.pathname === '/' ? '/docs/Home.md' : '/docs'+document.location.pathname+'.md').then(res => {
+        //     // console.log(res)
+        //     return res.text()
+        //   }),
+        // };
+        // let body = data.md;
         // console.log(data, body)
-        $('.pv').text('').append(
-          $('div').class('page').append(
-            $('aside').class('left'),
-            $('div').html(aim.markdown().render(body)),
-            $('aside').class('right'),
-          )
-        );
-        $('.page>aside.right').index('.page>div');
-        // .attr('contenteditable','')
-        // $('aside.right').index('.pv');
-        window.scroll(0,sessionStorage.getItem('scrollY'));
       }
     },
     async page1() {
@@ -1921,7 +1927,7 @@
   function listview(rows, options = {}){
     $('.tv').attr('hide',1);
     rows = this.rows = rows || this.rows;
-    // console.log('startlist');
+    console.log('startlist', rows);
     rows = rows.map(row => row.data ? Object.assign(row,JSON.parse(row.data)) : row);
     let filter = {}
     function focus(elem){
@@ -1958,6 +1964,7 @@
             const app = schema.app || {};
             const div = $('div')
             .class(row.schemaName+row.id)
+            .attr('status', row.status ? row.status.split(/-/)[0] : null)
             .on('focus', e => focus(div))
             .on('click', e => select(div))
             if (aim.pageTag === row.schemaName+row.id) {
@@ -2098,54 +2105,125 @@
     });
 
     let rowsVisible = aim.listRows = rows || [];
+    if (rows.some(row => row.afleverAdres1)) {
+      types.route = () => {
+        const mapelem = $('div').class('googlemap').css('width:100%;height:100%;');
+        (async function(){
+          await aim.maps();
+          const mapOptions = {
+            zoom: 10,
+            mapTypeId: google.maps.MapTypeId.ROADMAP,
+            // styles: [
+            //   {
+            //     featureType: 'landscape',
+            //     elementType: 'labels',
+            //     stylers: [
+            //       {
+            //         visibility: 'off'
+            //       },
+            //     ]
+            //   },
+            //   {
+            //     featureType: 'poi',
+            //     stylers: [
+            //       {
+            //         visibility: 'simplified'
+            //       },
+            //       {
+            //         saturation: -100,
+            //       },
+            //       {
+            //         lightness: 45,
+            //       },
+            //     ]
+            //   },
+            // ],
+            styles: aim.config.maps.styles,
+          };
+          $('.pv').text('').append(
+            $('div').class('directions').style('background:white;flex:1 0 0;overflow:overlay;'),
+            $('div').class('total'),
+          )
+          const map = new google.maps.Map(mapelem.elem, mapOptions);
+          const directionsService = new google.maps.DirectionsService();
+          const directionsRenderer = new google.maps.DirectionsRenderer({
+            draggable: true,
+            map,
+            panel: document.querySelector('.pv>.directions'),//document.getElementById("panel"),
+          });
+
+          directionsRenderer.addListener("directions_changed", () => {
+            const directions = directionsRenderer.getDirections();
+            if (directions) {
+              computeTotalDistance(directions);
+            }
+          });
+          displayRoute(
+            aim.config.maps.home,
+            aim.config.maps.home,
+            directionsService,
+            directionsRenderer
+          );
+          function displayRoute(origin, destination, service, display) {
+            service
+            .route({
+              origin: origin,
+              destination: destination,
+              waypoints: rowsVisible
+              .filter(row => row.afleverAdres1 && row.afleverAdres2)
+              .map(row => Object({
+                location: [
+                  row.afleverAdres1,
+                  row.afleverAdres2,
+                ].join(',')
+              })),
+              optimizeWaypoints: true,
+              travelMode: google.maps.TravelMode.DRIVING,
+              avoidTolls: true,
+            })
+            .then((result) => {
+              display.setDirections(result);
+            })
+            .catch((e) => {
+              alert("Could not display directions due to: " + e);
+            });
+          }
+
+          function computeTotalDistance(result) {
+            let total = 0;
+            const myroute = result.routes[0];
+
+            if (!myroute) {
+              return;
+            }
+
+            for (let i = 0; i < myroute.legs.length; i++) {
+              total += myroute.legs[i].distance.value;
+            }
+
+            total = total / 1000;
+            document.querySelector('.pv>.total').innerHTML = total + " km";
+          }
+        })();
+        return mapelem;
+      }
+    }
+
     if (rows.some(row => row.geolocatie)) {
       types.map = () => {
         const mapelem = $('div').class('googlemap').css('width:100%;height:100%;');
-        aim.maps().then(maps => {
+        (async function(){
+          await aim.maps();
           // console.log(config);
           const mapOptions = {
             zoom: 10,
-            center: { lat: 51, lng: 6 },//new maps.LatLng(51,6),
-            mapTypeId: maps.MapTypeId.ROADMAP,
-            // mapId: 'cb830478947dbf25',
-            // styles: [
-            //   {
-            //     "featureType": "all",
-            //     "stylers": [
-            //       { "color": "#C0C0C0" }
-            //     ]
-            //   },
-            //   {
-            //     "featureType": "road.arterial",
-            //     "elementType": "geometry",
-            //     "stylers": [
-            //       { "color": "#CCFFFF" }
-            //     ]
-            //   },
-            //   {
-            //     "featureType": "landscape",
-            //     "elementType": "labels",
-            //     "stylers": [
-            //       { "visibility": "off" }
-            //     ]
-            //   }
-            // ],
-            // https://mapstyle.withgoogle.com/
-            // styles: [
-            //   {
-            //     "featureType": "poi",
-            //     "stylers": [
-            //       {
-            //         "visibility": "off"
-            //       }
-            //     ]
-            //   }
-            // ],
-            styles: config.maps.styles,
+            center: { lat: 51, lng: 6 },
+            mapTypeId: google.maps.MapTypeId.ROADMAP,
+            styles: aim.config.maps.styles,
           };
           // console.log(mapOptions.styles);
-          const map = new maps.Map(mapelem.elem, mapOptions);
-          var bounds = new maps.LatLngBounds();
+          const map = new google.maps.Map(mapelem.elem, mapOptions);
+          var bounds = new google.maps.LatLngBounds();
           // const dataItems = rowsVisible.filter(row => row.geolocatie);
           // if (dataItems.length) {
           //   dataItems.forEach(item => item.value = Object.values(item.data.data).reduce((a,b) => a+b));
@@ -2156,7 +2234,7 @@
           // this.itemsVisible.filter(item => item.data.colorid && item.schema.colorid).forEach(item => item.color = item.schema.colorid[item.data.colorid] || item.schema.colorid.default);
           rowsVisible.filter(row => row.geolocatie).forEach(row => {
             const loc = row.geolocatie.split(',');
-            const marker = new maps.Marker({
+            const marker = new google.maps.Marker({
               position: {
                 lat: Number(loc[0]),
                 lng: Number(loc[1]),
@@ -2174,7 +2252,7 @@
                 //origin: new google.maps.Point(0, 0),
                 //// The anchor for this image is the base of the flagpole at (0, 32).
                 //anchor: new google.maps.Point(0, 32)
-                path: maps.SymbolPath.CIRCLE,
+                path: google.maps.SymbolPath.CIRCLE,
                 fillColor: 'red',
                 fillOpacity: .6,
                 fillOpacity: 1,
@@ -2209,7 +2287,7 @@
                 // strokeColor: 'white',
                 strokeColor: 'black',
                 rotation: 0,
-                anchor: new maps.Point(15, 30),
+                anchor: new google.maps.Point(15, 30),
               },
               //icon: (row.state) ? 'icon/' + row.state.value + '.png' : null,
             });
@@ -2220,12 +2298,12 @@
           // if (bounds) {
           map.fitBounds(bounds);
           // //console.log(google.maps);
-          if (maps.e) {
-            maps.e.addListenerOnce(map, 'bounds_changed', function () {
+          if (google.maps.e) {
+            google.maps.e.addListenerOnce(map, 'bounds_changed', function () {
               this.setZoom(Math.min(15, this.getZoom()));
             });
           }
-        });
+        })();
         return mapelem;
       }
     }
@@ -2311,10 +2389,10 @@
           ...navList.map(fn => fn()),
           $('button').class('abtn view').append(
             $('nav').append(
-              $('button').class('icn-rows').caption('Rijen').on('click', e => buildlist(type = 'rows')),
-              $('button').class('icn-cols').caption('Kaarten').on('click', e => buildlist(type = 'cols')),
-              $('button').class('icn-table').caption('Tabel').on('click', e => buildlist(type = 'table')),
-              // Object.keys(types).map(key => $('button').class('abtn', key).on('click', e => buildlist(type = key)))
+              // $('button').class('icn-rows').caption('Rijen').on('click', e => buildlist(type = 'rows')),
+              // $('button').class('icn-cols').caption('Kaarten').on('click', e => buildlist(type = 'cols')),
+              // $('button').class('icn-table').caption('Tabel').on('click', e => buildlist(type = 'table')),
+              Object.keys(types).map(key => $('button').caption(key).class('abtn', key).on('click', e => buildlist(type = key)))
             ),
           ),
         ),
@@ -2504,57 +2582,59 @@
     document.title = headers[0];
     (function createPage(elem){
       return elem.append(
-        $('nav').append(
-          editmode ? [
-            // $('button').class('icn-del'),
-            // $('span'),
-            $('button').class('icn-close').style('margin-left: auto;').on('click', e => pageviewrow(row)),
-          ] : [
-            $('button').class('icn-edit').on('click', e => pageviewrow(row, true)),
-            app.nav ? app.nav(row) : null,
-            // $('span'),
-            $('button').class('icn-popout').style('margin-left: auto;').on('click', e => {
-              const [top,left,width,height] = [0,0,600,600];
-              // const win = window.open(null, null, `top=${top},left=${left},width=${width},height=${height}`);
-              var win = openwindows.find(win => win.name == tag);
-              if (win) return win.focus();
-              win = window.open('card.html', tag, `scrollbars=no,resizable=yes,toolbar=no,width=${width},height=${height}`);
-              openwindows.push(win);
-              const main = $('main').append($('article').append(
-                createPage($('section').class('pv doc-content').css('max-width', 'none')),
-              ));
-              win.onload = function () {
-                win.document.title = headers[0];
-                win.document.body.append(main.elem);
-              }
-            }),
-            $('button').class('icn-close').on('click', e => elem.text('')),
-          ],
-          // $('button').text('select').on('click', e => {
-          //   sessionStorage.setItem('clientId', body.id);
-          //   document.location.href = '/';
-          // })
-        ),
-        $('header').append(
-          $('div').class('icon').append(
-            icon ? $('img').src(icon) : $('span').text(initials),
+        $('div').class('form view').append(
+          $('nav').append(
+            editmode ? [
+              // $('button').class('icn-del'),
+              // $('span'),
+              $('button').class('icn-close').style('margin-left: auto;').on('click', e => pageviewrow(row)),
+            ] : [
+              $('button').class('icn-edit').on('click', e => pageviewrow(row, true)),
+              app.nav ? app.nav(row) : null,
+              // $('span'),
+              $('button').class('icn-popout').style('margin-left: auto;').on('click', e => {
+                const [top,left,width,height] = [0,0,600,600];
+                // const win = window.open(null, null, `top=${top},left=${left},width=${width},height=${height}`);
+                var win = openwindows.find(win => win.name == tag);
+                if (win) return win.focus();
+                win = window.open('card.html', tag, `scrollbars=no,resizable=yes,toolbar=no,width=${width},height=${height}`);
+                openwindows.push(win);
+                const main = $('main').append($('article').append(
+                  createPage($('section').class('pv doc-content').css('max-width', 'none')),
+                ));
+                win.onload = function () {
+                  win.document.title = headers[0];
+                  win.document.body.append(main.elem);
+                }
+              }),
+              $('button').class('icn-close').on('click', e => elem.text('')),
+            ],
+            // $('button').text('select').on('click', e => {
+            //   sessionStorage.setItem('clientId', body.id);
+            //   document.location.href = '/';
+            // })
           ),
-          $('div').class('aco').append(
-            headers.map((s,i)=>$('h'+(i+1)).text(s)),
-            app.header ? app.header(row) : null,
+          $('header').append(
+            $('div').class('icon').append(
+              icon ? $('img').src(icon) : $('span').text(initials),
+            ),
+            $('div').class('aco').append(
+              headers.map((s,i)=>$('h'+(i+1)).text(s)),
+              app.header ? app.header(row) : null,
+            ),
           ),
-        ),
-        $('form').buildForm(data, cfg, editmode),
-        // (
-        //
-        // $('div').append(
-        //   Object.entries(schema.properties)
-        //   .filter(([name, property]) => aim.readOnly === false || data[name])
-        //   .map(([name, property]) => $('div').class('attr').append(
-        //     $('label').text(property.title || name),
-        //     $(aim.readOnly === false ? 'input' : 'span').text(data[name]).value(data[name] || ''),
-        //   ))
-        // )
+          $('form').buildForm(data, cfg, editmode),
+          // (
+          //
+          // $('div').append(
+          //   Object.entries(schema.properties)
+          //   .filter(([name, property]) => aim.readOnly === false || data[name])
+          //   .map(([name, property]) => $('div').class('attr').append(
+          //     $('label').text(property.title || name),
+          //     $(aim.readOnly === false ? 'input' : 'span').text(data[name]).value(data[name] || ''),
+          //   ))
+          // )
+        )
       )
     })($('.pv').text(''));
     if (editmode) $('.pv input').focus();
@@ -3659,23 +3739,29 @@
       return this;
     },
     printp() {
-      console.log('print', 1);
       return new Promise((success,fail) => {
+        console.log('maak print iframe');
         const iframe = $('iframe')
         .parent(document.body)
-        .style('width:0;height:0;position:absolute;visibility:hidden;');
+        // .style('width:0;height:0;position:absolute;visibility:hidden;');
+        .style('width:0;height:0;position:absolute;');
         const doc = iframe.elem.contentWindow.document;
         const body = document.createElement('body');
         doc.open();
         doc.appendChild(body);
         doc.close();
         body.innerHTML = this.elem.innerHTML;
+        console.log('wacht 3s, opbouwen beeld');
         setTimeout(e => {
-          console.log('print', 2);
+          console.log('start print opdracht');
           iframe.elem.contentWindow.print();
           iframe.elem.remove();
-          success();
-        }, 1000);
+          console.log(`wacht 10s, zeker weten alle pagina's naar printer verstuurd`);
+          setTimeout(() => {
+            console.log('print actie klaar gereed');
+            success();
+          },10000);
+        }, 3000);
       })
     },
     printbody() {

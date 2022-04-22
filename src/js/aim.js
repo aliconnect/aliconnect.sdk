@@ -672,7 +672,6 @@
     return String(s||'').replace(/^\w/,v => v.toUpperCase()).replace(/([a-z])([A-Z|\d])(\w|)/g, (v,p1,p2,p3) => p1+' '+(p3.match(/[A-Z]/) ? p2 : p2.toLowerCase())+p3).replace(/_/g, ' ');
   }
 
-
   Object.defineProperties(Array.prototype, {
     unique: { value: function () {
       return this.filter((e,i,arr) => arr.indexOf(e) === i)
@@ -2719,6 +2718,7 @@
         if (!context) {
           return options.body;
         }
+        console.log(context.constructor.name, context);
         switch(context.constructor.name) {
           case 'CustomEvent':
           case 'SubmitEvent': {
@@ -2760,7 +2760,7 @@
             break;
           }
           default: {
-            options.body = context;
+            options.body = document.querySelector(context) ? new FormData(document.querySelector(context)) : context;
             break;
           }
         }
@@ -7294,9 +7294,9 @@
     [...currentScript.attributes].forEach(attribute => aim.extend({config: minimist(['--'+attribute.name.replace(/^--/, ''), attribute.value])}));
     (new URLSearchParams(document.location.search)).forEach((value,key)=>aim.extend({config: minimist([key,value])}));
 
-    $().on('load', e => {
-      // aim.fetch('/api/docs.php').post(JSON.stringify(defineClasses.classes, (k,v) => typeof v === 'function' ? String(v).replace(/\r/g,'') : v, 2)).then(console.error);
-    })
+    // $().on('load', e => {
+    //   // aim.fetch('/api/docs.php').post(JSON.stringify(defineClasses.classes, (k,v) => typeof v === 'function' ? String(v).replace(/\r/g,'') : v, 2)).then(console.error);
+    // })
 
   } else {
     this.fs = require('fs');

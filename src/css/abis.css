@@ -1,141 +1,67 @@
-* {
-  box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  -webkit-box-sizing: border-box;
-  position: relative;
-  z-index: 0;
-}
-body{
-  --hh: 48px;
-  --fh: 20px;
-  font-family: sans-serif;
-  padding:0;
-  margin:0;
-  height: 100vh;
+form.product {
   display: flex;
-  flex-direction: column;
+  /* line-height: 30px; */
 }
-body>header{
-  display: flex;
-  flex: 0 0 var(--hh);
-  /* height: var(--hh); */
-}
-body>section{
-  display: flex;
-  height: calc( 100vh - var(--hh) - var(--fh));
-}
-body>footer{
-  display: flex;
-  flex: 0 0 var(--fh);
-  /* height: var(--fh); */
-}
-section.list{
-  /* overflow:auto; */
-  /* height:100%; */
-}
-.col.err {
-  position: fixed;
-}
-
-nav.top{
-  position: sticky;
-  top:0px;
-  background-color:blue;
-  line-height:48px;
-  z-index: 1;
-}
-table{
-  border-collapse: collapse;
-}
-nav.top {
-  color:white;
-}
-nav a {
-  color:inherit;
-  padding: 0 10px;
-}
-.aantal,.day,.datum,.factuurDatum,.totExcl,.totIncl,.totBtw,.faktuurNr {
+form.product>div {
+  flex: 1 0 auto;
+  margin-right:auto;
   text-align: right;
 }
-.row {
-  display: -webkit-box;
-  display: -moz-box;
-  display: -ms-flexbox;
-  display: flex;
-  display: -webkit-flex;
-  flex-flow: row;
-  -webkit-flex-flow: row;
+form.product>div span {
+  margin: 0 5px;
 }
-.col {
-  display: flex;
-  display: -webkit-flex;
-  flex-flow: column;
-  -webkit-flex-flow: column;
+form.product .small {
+  font-size: 0.8em;
+  color: rgba(180,180,180,0.8);
 }
-.col > * {
+.bruto {
+  text-decoration: line-through;
+}
+.netto {
+  color: orange;
+}
+.incl {
+  margin: 0 5px;
+}
+.product input {
+  width: 40px;
+  border: solid 1px rgba(180,180,180,0.4);
+  padding: 5px;
   flex: 0 0 auto;
-  -webkit-flex: 0 0 auto;
-  -ms-flex: 0 0 auto;
+  text-align: right;
 }
-.aco {
-  flex: 1 1 auto;
-  -webkit-flex: 1 1 auto;
-  -ms-flex: 1 1 auto;
-}
-
-
-#om-main {
-  height: 100vh;
-}
-
-.prompt{
-  display:none;
-}
-table{
-  table-layout: fixed;
-  width:auto;
-}
-td{
-  height: 30px;
-
-}
-td>*{
-  display: inline-block;
-  width:100%;
-  height:100%;
-  padding:5px;
-  box-sizing: border-box ;
-  min-width: none;
-}
-table input{
-  position: absolute;
-  background:yellow;
-  font: inherit;
+.product button {
+  border-radius: 5px;
+  width: 24px;
   border: none;
-  margin: 0;
+}
+.inkkorting {
+  /* width: 120px; */
+  text-align: right;
+  white-space: nowrap;
+}
+nav>.title {
+  display: block;
+  position: absolute;
   left:0;
-  width: 100%;
-  outline: none;
+  right:0;
+  /* margin: auto;
+  width:50%; */
+  text-align: center;
 }
-section.page{
-  flex-basis: 800px;
-}
-section.doc:empty, section.page:empty{
-  display: none;
-}
-
-section.list{
+div.search {
   display: flex;
-  flex-direction: column;
+  position: sticky;
+  position: -webkit-sticky;
+  top: 36px;
+  padding: 5px;
+  z-index: 1;
+  background: inherit;
+  transition: all 500ms;
 }
-section.list>nav{
-  display: flex;
-}
-section.list>section{
-  display: flex;
-}
-section.list>section>aside{
-}
-section.list>section>section{
-  overflow: auto;
+div.search input {
+  border-radius: 10px;
+  background-color: rgba(180,180,180,0.3);
+  padding: 10px;
+  margin: 5px;
 }

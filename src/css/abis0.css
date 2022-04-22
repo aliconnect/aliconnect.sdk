@@ -1,0 +1,141 @@
+* {
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  position: relative;
+  z-index: 0;
+}
+body{
+  --hh: 48px;
+  --fh: 20px;
+  font-family: sans-serif;
+  padding:0;
+  margin:0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+body>header{
+  display: flex;
+  flex: 0 0 var(--hh);
+  /* height: var(--hh); */
+}
+body>section{
+  display: flex;
+  height: calc( 100vh - var(--hh) - var(--fh));
+}
+body>footer{
+  display: flex;
+  flex: 0 0 var(--fh);
+  /* height: var(--fh); */
+}
+section.list{
+  /* overflow:auto; */
+  /* height:100%; */
+}
+.col.err {
+  position: fixed;
+}
+
+nav.top{
+  position: sticky;
+  top:0px;
+  background-color:blue;
+  line-height:48px;
+  z-index: 1;
+}
+table{
+  border-collapse: collapse;
+}
+nav.top {
+  color:white;
+}
+nav a {
+  color:inherit;
+  padding: 0 10px;
+}
+.aantal,.day,.datum,.factuurDatum,.totExcl,.totIncl,.totBtw,.faktuurNr {
+  text-align: right;
+}
+.row {
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: flex;
+  display: -webkit-flex;
+  flex-flow: row;
+  -webkit-flex-flow: row;
+}
+.col {
+  display: flex;
+  display: -webkit-flex;
+  flex-flow: column;
+  -webkit-flex-flow: column;
+}
+.col > * {
+  flex: 0 0 auto;
+  -webkit-flex: 0 0 auto;
+  -ms-flex: 0 0 auto;
+}
+.aco {
+  flex: 1 1 auto;
+  -webkit-flex: 1 1 auto;
+  -ms-flex: 1 1 auto;
+}
+
+
+#om-main {
+  height: 100vh;
+}
+
+.prompt{
+  display:none;
+}
+table{
+  table-layout: fixed;
+  width:auto;
+}
+td{
+  height: 30px;
+
+}
+td>*{
+  display: inline-block;
+  width:100%;
+  height:100%;
+  padding:5px;
+  box-sizing: border-box ;
+  min-width: none;
+}
+table input{
+  position: absolute;
+  background:yellow;
+  font: inherit;
+  border: none;
+  margin: 0;
+  left:0;
+  width: 100%;
+  outline: none;
+}
+section.page{
+  flex-basis: 800px;
+}
+section.doc:empty, section.page:empty{
+  display: none;
+}
+
+section.list{
+  display: flex;
+  flex-direction: column;
+}
+section.list>nav{
+  display: flex;
+}
+section.list>section{
+  display: flex;
+}
+section.list>section>aside{
+}
+section.list>section>section{
+  overflow: auto;
+}
