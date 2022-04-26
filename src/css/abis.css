@@ -34,6 +34,7 @@ form.product .small {
   border-radius: 5px;
   width: 24px;
   border: none;
+  background:green;
 }
 .inkkorting {
   /* width: 120px; */

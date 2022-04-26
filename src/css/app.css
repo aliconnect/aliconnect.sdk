@@ -28,6 +28,9 @@ nav {
   background: inherit;
   line-height: 26px;
 }
+nav>:nth-child(3){
+  margin-left:auto;
+}
 select,textarea,input,option {
   flex: 1 0 auto;
   /* background-color: rgba(180,180,180,0.3); */

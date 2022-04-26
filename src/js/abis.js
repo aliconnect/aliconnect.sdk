@@ -5,7 +5,41 @@ abis = (function(){
       Authorization: 'bearer ' + localStorage.getItem('access_token'),
     } : {});
   }
+  function newpage(parent, title){
+    window.scrollTo(0,0);
+    const elem = $('div').parent(parent).append(
+      $('nav').append(
+        $('div').class('title').text(title),
+        $('a').class('icn-back').caption('Terug').on('click', e => elem.remove()),
+      ),
+    )
+    return elem;
+  }
   return {
+    login(parent){
+      $('form').parent(parent).on('submit', async e => {
+        e.preventDefault();
+        // localStorage.setItem('client_id', e.target.client_id.value);
+        try {
+          // console.log(await api('/login').post(e.target));
+          const {access_token} = await api('/app/login').post(e.target);
+          localStorage.setItem('access_token', access_token);
+          location.reload();
+        } catch (err) {
+          alert(err);
+        }
+      }).append(
+        $('div').text('Inlognaam'),
+        $('input').name('accountname'),
+        $('div').text('Wachtwoord'),
+        $('input').name('password').type('password'),
+        // $('div').text('Client ID'),
+        // $('input').name('client_id').value(localStorage.getItem('client_id')),
+        $('div').append(
+          $('button').text('Login'),
+        ),
+      )
+    },
     contact(organisatieId,contactpersoonId) {
       const elem = $('div').class('card').parent(document.body);
       const config = {
@@ -447,11 +481,13 @@ abis = (function(){
             ),
             $('div').class('search').append(
               $('input').placeholder('Typ hier om te zoeken').value(search).on('keyup', e => {
-                $('.bestellijst>.list').text('').append(
-                  rows
-                  .filter(row => e.target.value.split(' ').every(w => row.titel.match(new RegExp(w,'i'))))
-                  .map(rowdiv),
-                )
+                const rowsselected = e.target.value.length>3 ? rows.filter(row => row.titel && e.target.value.split(' ').every(w => row.titel.match(new RegExp(w,'i')))) : rows;
+                if (e.target.value.length>3) {
+                  $('.bestellijst>.list').text('').append(
+                    rowsselected.map(rowdiv),
+                  )
+                }
+                // console.log(rows);
               }),
             ),
             rowslist(rows),
@@ -460,10 +496,10 @@ abis = (function(){
         })();
       })();
     },
-    producten() {
+    producten(parent) {
       // searchfunction = arguments.callee;
       // list('Producten');
-      const elem = $('div').parent(document.body);
+      const elem = $('div').parent(parent);
       (async function show(search){
         localStorage.setItem('searchProducten', search);
         const [rows] = await api('/app/producten').query({ search: search || '' }).get();
@@ -521,7 +557,7 @@ abis = (function(){
       (async function show(search){
         localStorage.setItem('searchContacten', search);
         const [rows] = await api('/app/contacten').query({
-          select: `organisatienaam,achternaam,roepnaam,voornamen,voorletters,tussenvoegsel,organisatieId,contactpersoonId`,
+          select: `organisatienaam,achternaam,roepnaam,voornamen,voorletters,tussenvoegsel,organisatieId,contactpersoonId,bezoekadresPlaats`,
           order: `ISNULL(achternaam,'zzz'),organisatienaam`,
           search: search || '',
         }).get();
@@ -539,6 +575,7 @@ abis = (function(){
               // $('div').append(row.roepnaam||row.voornamen||row.voorletters, row.tussenvoegsel).append($('b').text(row.achternaam))),
               $('div').append(`${row.roepnaam||row.voorletters||row.voornamen||''} ${row.tussenvoegsel||''} <b>${row.achternaam||''}</b>`),
               $('div').class('organisatienaam').text(row.organisatienaam),
+              $('div').class('organisatienaam').text(row.bezoekadresPlaats),
             ).on('click', e => {
               const scrollY = window.scrollY;
               abis.contact(row.organisatieId,row.contactpersoonId);
@@ -663,6 +700,305 @@ abis = (function(){
         )),
       )
       window.scrollTo(0,0);
+    },
+    magazijn(parent) {
+      const elem = $('div').parent(parent).append(
+        $('nav').append(
+          $('div').class('title').text('Magazijn'),
+          $('a').class('icn-back').caption('Terug').on('click', e => elem.remove()),
+        ),
+        $('div').class('list').append(
+          [
+            {
+              title: 'Visser Pakken',
+              filter: [
+                'RouteNr = 2',
+                'Verwerkt = 1',
+                'FactuurId IS NULL',
+                'OnHoldDatumTijd IS NULL',
+                'GepaktDatumTijd IS NULL',
+              ],
+            },
+            {
+              title: 'Visser Controleren',
+              filter: [
+                'RouteNr = 2',
+                'Verwerkt = 1',
+                'FactuurId IS NULL',
+                'OnHoldDatumTijd IS NULL',
+                'GepaktDatumTijd IS NOT NULL',
+                'VerwerktDatumTijd IS NULL',
+              ],
+            },
+            {
+              title: 'Visser Verzenden',
+              filter: [
+                'RouteNr = 2',
+                'Verwerkt = 1',
+                'FactuurId IS NULL',
+                'OnHoldDatumTijd IS NULL',
+                'VerwerktDatumTijd IS NOT NULL',
+                'VerstuurdDatumTijd IS NULL',
+              ],
+            },
+            {
+              title: 'Post Pakken',
+              filter: [
+                'RouteNr = 1',
+                'Verwerkt = 1',
+                'FactuurId IS NULL',
+                'OnHoldDatumTijd IS NULL',
+                'GepaktDatumTijd IS NULL',
+              ],
+            },
+            {
+              title: 'Post Controleren',
+              filter: [
+                'RouteNr = 1',
+                'Verwerkt = 1',
+                'FactuurId IS NULL',
+                'OnHoldDatumTijd IS NULL',
+                'GepaktDatumTijd IS NOT NULL',
+                'VerwerktDatumTijd IS NULL',
+              ],
+            },
+            {
+              title: 'Post Verzenden',
+              filter: [
+                'RouteNr = 1',
+                'Verwerkt = 1',
+                'FactuurId IS NULL',
+                'OnHoldDatumTijd IS NULL',
+                'VerwerktDatumTijd IS NOT NULL',
+                'VerstuurdDatumTijd IS NULL',
+              ],
+            },
+            {
+              title: 'Route Pakken',
+              filter: [
+                'RouteNr = 3',
+                'Verwerkt = 1',
+                'FactuurId IS NULL',
+                'OnHoldDatumTijd IS NULL',
+                'GepaktDatumTijd IS NULL',
+              ],
+            },
+            {
+              title: 'Route Controleren',
+              filter: [
+                'RouteNr = 3',
+                'Verwerkt = 1',
+                'FactuurId IS NULL',
+                'OnHoldDatumTijd IS NULL',
+                'GepaktDatumTijd IS NOT NULL',
+                'VerwerktDatumTijd IS NULL',
+              ],
+            },
+            {
+              title: 'Route Verzenden',
+              filter: [
+                'RouteNr = 3',
+                'Verwerkt = 1',
+                'FactuurId IS NULL',
+                'OnHoldDatumTijd IS NULL',
+                'VerwerktDatumTijd IS NOT NULL',
+                'VerstuurdDatumTijd IS NULL',
+              ],
+            },
+            {
+              title: 'Route Leveren',
+              filter: [
+                'RouteNr = 3',
+                'Verwerkt = 1',
+                'FactuurId IS NULL',
+                'OnHoldDatumTijd IS NULL',
+                'VerstuurdDatumTijd IS NOT NULL',
+                'LeverDatumTijd IS NULL',
+              ],
+            },
+          ].map(par => $('div').class(`icn panel`).text(par.title).on('click', async e => {
+            const [rows] = await api('/abis/bonverkoop').query({
+              top: 100,
+              select: `id
+              ,organisatieNaam
+              ,gepaktDatumTijd
+              ,verwerktDatumTijd
+              ,verstuurdDatumTijd
+              ,leverDatumTijd
+              `,
+              filter: par.filter.join(' AND '),
+              order: `id`
+            }).get();
+            const elem = $('div').parent(parent).append(
+              $('nav').append(
+                $('div').class('title').text(par.title),
+                $('a').class('icn-back').caption('Terug').on('click', e => elem.remove()),
+              ),
+              $('div').class('list').append(
+                rows.map(bon => $('div').append(
+                  $('div').text(bon.id, bon.organisatieNaam),
+                ).on('click', async e => {
+                  const [rows] = await api('/abis/bonregels').query({
+                    top: 100,
+                    select: `id,titel,aantal,aantalGeleverd,maglokatie,voorraad,code`,
+                    filter: `bonId = ${bon.id}`,
+                    order: `id`,
+                  }).get();
+                  function post(id, values){
+                    api('/abis/bonregels').query({ id: id }).post(values)
+                  }
+
+                  const elem = $('div').parent(parent).append(
+                    $('nav').append(
+                      $('div').class('title').text('Bon Regels'),
+                      $('a').class('icn-back').caption('Terug').on('click', e => elem.remove()),
+                      (function(){
+                        if (!bon.gepaktDatumTijd) return $('button').caption('Gepakt').on('click', e => elem.remove());
+                        if (!bon.verwerktDatumTijd) return $('button').caption('Gecontroleerd').on('click', e => elem.remove());
+                        if (!bon.verstuurdDatumTijd) return $('button').caption('Verzonden').on('click', e => elem.remove());
+                        if (!bon.leverDatumTijd) return $('button').caption('Geleverd').on('click', e => elem.remove());
+                      })()
+                    ),
+                    $('div').class('list').append(
+                      rows.map(rgl => $('div').append(
+                        $('div').text(rgl.id, rgl.titel),
+                        $('div').style('display:flex;').append(
+                          $('div').style('flex: 1 0 auto;').append(
+                            $('div').text(rgl.aantal),
+                            $('div').text(rgl.maglokatie),
+                          ),
+                          $('form').class('row product').on('submit', e => false).append(
+                            $('button').text('-').on('click', e => post(rgl.id, {
+                              aantalGeleverd: e.target.form.aantal.value = Math.max(0,Number(e.target.form.aantal.value||0) - 1),
+                            })),
+                            $('input').name('aantal').type('number').min(0).value(rgl.aantalGeleverd).on('keyup', e => post(rgl.id, {
+                              aantalGeleverd: e.target.form.aantal.value,
+                            })),
+                            $('button').text('+').on('click', e => post(rgl.id, {
+                              aantalGeleverd: e.target.form.aantal.value = Math.max(0,Number(e.target.form.aantal.value||0) + 1),
+                            })),
+                          ),
+                        ),
+                      )),
+                      // $('nav').append(
+                      //   (function(){
+                      //     if (!bon.gepaktDatumTijd) return $('button').caption('Gepakt').on('click', e => elem.remove());
+                      //     if (!bon.verwerktDatumTijd) return $('button').caption('Gecontroleerd').on('click', e => elem.remove());
+                      //     if (!bon.verstuurdDatumTijd) return $('button').caption('Verzonden').on('click', e => elem.remove());
+                      //     if (!bon.leverDatumTijd) return $('button').caption('Geleverd').on('click', e => elem.remove());
+                      //   })()
+                      // ),
+                    ),
+                  );
+                }))
+              ),
+            );
+          })),
+          $('div').class(`icn panel`).text('Ontvangst goederen').on('click', async e => {
+          }),
+        ),
+
+      );
+    },
+    inkoop(parent) {
+      const elem = $('div').parent(parent).append(
+        $('nav').append(
+          $('div').class('title').text('Inkoop'),
+          $('a').class('icn-back').caption('Terug').on('click', e => elem.remove()),
+        ),
+        $('div').class('list').append(
+          $('div').class(`icn panel`).text('Leveranciers').on('click', async e => {
+            const [rows] = await api('/abis/organisatie').query({
+              select: `id,organisatieNaam`,
+              filter: `typecode LIKE '%L%'`,
+              order: `organisatieNaam`
+            }).get();
+
+            const elem = $('div').parent(parent).append(
+              $('nav').append(
+                $('div').class('title').text('Leveranciers'),
+                $('a').class('icn-back').caption('Terug').on('click', e => elem.remove()),
+              ),
+              $('div').class('list').append(
+                rows.map(row => $('div').append(
+                  $('div').text(row.organisatieNaam),
+                ).on('click', async e => {
+                  const [rows] = await api('/abis/art').query({
+                    top: 100,
+                    select: `id,titel,maglokatie,voorraad,bestellen,inkNetto,inkKorting`,
+                    filter: `leverancierId = ${row.id}`,
+                    order: `maglokatie,titel`
+                  }).get();
+
+                  function post(id, values){
+                    api('/abis/art').query({ id: id }).post(values)
+                  }
+                  function list(rows){
+                    return rows.map(row => $('div').append(
+                      $('div').text(row.maglokatie),
+                      $('div').text(row.titel),
+                      $('div').text(row.voorraad),
+                      $('form').class('row product').on('submit', e => false).append(
+                        // $('div').append(
+                        //   $('div').append(
+                        //     $('span').class('bruto small').text('€',aim.num(row.bruto)),
+                        //     $('span').class('small').text('-'+aim.num(row.korting,0)+'%'),
+                        //     $('span').class('netto').text('€',aim.num(row.bruto * (100-row.korting) / 100)),
+                        //   ),
+                        //   $('div').append(
+                        //     $('span').class('incl small').text('€',aim.num(row.bruto * (100-row.korting) / 100 * 1.21), 'incl. btw'),
+                        //   ),
+                        // ),
+                        $('button').text('-').on('click', e => post(row.id, {
+                          bestellen: e.target.form.aantal.value = Math.max(0,Number(e.target.form.aantal.value||0) - 1),
+                        })),
+                        $('input').name('aantal').type('number').min(0).value(row.bestellen).on('keyup', e => post(row.id, {
+                          bestellen: e.target.form.aantal.value,
+                        })),
+                        $('button').text('+').on('click', e => post(row.id, {
+                          bestellen: e.target.form.aantal.value = Math.max(0,Number(e.target.form.aantal.value||0) + 1),
+                        })),
+                      ),
+                    ))
+                  };
+
+                  const scrollY = window.scrollY;
+                  window.scrollTo(0,0);
+                  const elem = $('div').parent(parent).append(
+                    $('nav').append(
+                      $('div').class('title').text('Lev art'),
+                      $('a').class('icn-back').caption('Terug').on('click', e => {
+                        elem.remove();
+                        window.scrollTo(0,scrollY);
+                      }),
+                      $('a').style('margin-left:auto;').caption('Bestellen').on('click', e => {
+                        const elem2 = $('div').parent(parent).append(
+                          $('nav').append(
+                            $('div').class('title').text('Bestellen'),
+                            $('a').class('icn-back').caption('Terug').on('click', e => elem2.remove()),
+                          ),
+                          $('div').class('list').append(
+                            list(rows.filter(row => row.bestellen)),
+                            $('nav').append(
+                              $('button').text('Verzenden').on('click', e => {
+                                elem2.remove();
+                                elem.remove();
+                              })
+                            )
+                          ),
+                        );
+                      }),
+                    ),
+                    $('div').class('list').append(
+                      list(rows),
+                    ),
+                  );
+                }))
+              ),
+            )
+          }),
+        ),
+      )
     },
   }
 })();

@@ -185,6 +185,11 @@ nav>.title {
   display: flex;
 }
 
+nav>a:last-child{
+  margin-left: auto;
+}
+
+
 form.product {
   /* line-height: 30px; */
 }
