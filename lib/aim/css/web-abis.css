@@ -1,0 +1,140 @@
+form.product {
+  display: flex;
+  /* line-height: 30px; */
+}
+form.product>div {
+  flex: 1 0 auto;
+  margin-right:auto;
+  text-align: right;
+}
+form.product>div span {
+  margin: 0 5px;
+}
+form.product .small {
+  font-size: 0.8em;
+  color: rgba(180,180,180,0.8);
+}
+nav>.title {
+  display: block;
+  position: absolute;
+  left:0;
+  right:0;
+  /* margin: auto;
+  width:50%; */
+  text-align: center;
+}
+div.search {
+  display: flex;
+  position: sticky;
+  position: -webkit-sticky;
+  top: 0;
+  padding: 5px;
+  z-index: 1;
+  background: inherit;
+  transition: all 500ms;
+}
+div.search input {
+  border-radius: 10px;
+  background-color: rgba(180,180,180,0.3);
+  padding: 10px;
+  margin: 5px;
+}
+
+
+.lv .card{
+  position:absolute;
+  margin:auto;
+  right:0;
+  bottom:0;
+  top:0;
+  width:100%;
+  max-width:600px;
+  /* display:flex;
+  flex-flow: column; */
+  z-index: 1;
+  transition: all 500ms;
+  overflow: overlay;
+}
+.lv .card>div {
+  flex: 0 0 auto !important;
+}
+.lv .card:empty {
+  right: -600px;
+}
+
+.card:not(:empty)+nav,
+.card:not(:empty)+nav+div,
+.card:not(:empty)+nav+div+.list{
+  display:none;
+}
+
+.card {
+  background: var(--bg);
+  flex-direction: column;
+}
+.card .panel {
+  /* padding: 5px; */
+  margin: 10px;;
+  background-color:rgba(180,180,180,0.1);
+  border-radius: 5px;
+  flex: 1 0 auto !important;
+}
+.card .panel:empty {
+  display: none;
+}
+.card .panel>div {
+  padding: 5px;
+  margin: 5px;
+  /* display: flex; */
+}
+.card .panel a {
+  text-decoration: none;
+}
+.card .panel>div:not(:last-child) {
+  /* border-bottom: solid 1px rgba(180,180,180,0.3); */
+}
+.card .panel > div input:not(:first-child) {
+  border-left: solid 1px rgba(180,180,180,0.3);
+  margin-left: 5px;
+  padding-left: 5px;
+  /* border-bottom: solid 1px rgba(180,180,180,0.3); */
+  /* display: inline-block; */
+  flex: 0 0 auto;
+}
+.card .panel input,
+.card .panel textarea {
+  background: none;
+  outline: none;
+  border: none;
+  color: inherit;
+  resize: none;
+  line-height: 26px;
+}
+.card .panel > input,
+.card .panel textarea {
+  display: block;
+  width:100%;
+}
+
+/* .card>div {
+display: flex;
+padding: 5px;
+background-color:rgba(180,180,180,0.1);
+border-bottom: solid 1px rgba(180,180,180,0.3);
+} */
+.card div>label {
+  font-size: 0.8em;
+  min-width: 30%;
+  /* margin: 5px; */
+  /* padding: 5px; */
+}
+
+/* @media only screen and (max-width: 600px) { */
+.list>div {
+  /* flex-direction: column; */
+  /*     height: 0; */
+}
+.card>div {
+  flex-direction: column;
+}
+/* } */

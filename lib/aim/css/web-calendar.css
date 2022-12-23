@@ -1,0 +1,185 @@
+div.week {
+	background-color: inherit;
+}
+.col.agenda {
+	flex: 0 0 200px;
+}
+.week>:first-child>div{
+	text-align: center;
+}
+.week.row > div {
+	flex: 1 1 100%;
+}
+/*#week .g {display: flex;display: -webkit-flex;}*/
+.week .g > div {
+	/* flex: 0 0 auto; */
+	height: 30px;
+	/* display: flex; */
+	/* display: -webkit-flex; */
+	/* color: black; */
+}
+.week .g > :nth-child(-n+16),
+.week .g > :nth-last-child(-n+14) {
+	background-color: rgba(180,180,180,0.2);
+}
+/* .days> :nth-child(2n) {
+border-top: solid 1px rgba(180,180,180,0.4);
+} */
+.days> :nth-child(2n+1) {
+	border-top: solid 1px rgba(180,180,180,0.4);
+}
+.week > div {
+	border-left: solid 1px transparent;
+	border-right: solid 1px rgba(180,180,180,0.4);
+}
+.days:hover {
+	border-color: #ccc;
+}
+.days>div {
+	border-top: solid 1px transparent;
+	border-bottom: solid 1px transparent;
+}
+.days>div:hover {
+	border-color: #ccc;
+}
+.week.row > :first-child {
+	flex: 0 0 46px;
+	/* text-align: center; */
+	display: flex;
+	flex-direction: column;
+}
+.week.row > :first-child > div {
+	text-align: center;
+	/* width: -webkit-fill-available; */
+}
+
+.week.row > :nth-child(1) > :nth-child(2n+1) {
+	border-bottom: solid 1px transparent;
+}
+.weeks > span {
+	display: inline-block;
+	padding: 5px 10px;
+	cursor: pointer;
+}
+.calendar > .col.aco {
+	background-color: inherit;
+}
+.weekheader {
+	/* position: absolute; */
+	/* margin-top: auto; */
+	/* top: 36px; */
+	/* left: 0; */
+	/* margin-right: 18px; */
+	height: 80px;
+	/* z-index: 1; */
+	/* color: black; */
+	border-bottom: solid 1px rgba(180,180,180,0.4);
+	display: flex;
+}
+/* .weekbody {
+padding-top: 80px;
+} */
+.maand button {
+	border: none;
+	outline: none;
+	padding: 0;
+	margin: 0;
+	background-color: none;
+}
+#weekheader > *,
+.agenda .row.top > :first-child {
+	margin-right: auto;
+	padding: 0 5px;
+}
+div.maand>div{
+	display: flex;
+	line-height: 24px;
+	text-align: center;
+	font-size: 14px;
+	border: solid 1px gray;
+	padding:  1px;
+}
+div.maand>div>* {
+	/* display: inline-block; */
+	flex: 1 0 0;
+	/* min-width: 30px; */
+	/* width: 30px; */
+	/* height: 30px; */
+	/* vertical-align: middle; */
+	/* margin: 0; */
+	/* padding: 0; */
+}
+div.maand > div > button {
+	cursor: pointer;
+}
+/*.maand > div > button:hover {background-color:#CCC;}*/
+div.maand > div > :first-child {
+	font-size: 8pt;
+	width: 15px;
+	min-width: 15px;
+}
+div.agenda span {
+	flex: 0 0 24px;
+	height: 24px;
+	border-radius: 20px;
+}
+div.agenda span[selected] {
+	color: var(--bg);
+}
+div.maand span[selected] {
+	background-color: #C0E9FF;
+}
+div.agenda [vandaag] {
+	background-color: blue;
+	color: white;
+}
+div.agenda [othermonth] { /*color:#CCC;*/
+}
+div.agenda [app] {
+	font-weight: bold;
+}
+
+div.appointment {
+	width: 100%;
+	background: rgba(200,200,255,0.5);
+	position: absolute;
+	height: 30px;
+	display: flex;
+	display: -webkit-flex;
+	flex-flow: column;
+	-webkit-flex-flow: column;
+	border: solid 1px #CCC;
+}
+
+div.appointment .content {
+	flex: 0 0 auto;
+	height: 100%;
+	overflow: auto;
+	padding-left: 10px;
+}
+
+div.appointment .left {
+	width: 5px;
+	height: 100%;
+	background: green;
+	position: absolute;
+	top: 0;
+	left: 0;
+	cursor: move;
+}
+
+div.appointment .start {
+	width: 100%;
+	height: 5px;
+	position: absolute;
+	top: 0;
+	cursor: n-resize;
+}
+
+div.appointment .eind {
+	width: 100%;
+	height: 5px;
+	position: absolute;
+	bottom: 0;
+	cursor: s-resize;
+}

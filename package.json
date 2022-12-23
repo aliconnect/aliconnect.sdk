@@ -1,0 +1,61 @@
+{
+  "name": "@aliconnect/sdk",
+  "version": "1.0.0",
+  "description": "Aliconnect AIM",
+  "homepage": "https://aliconnect.nl",
+  "author": "Max van Kampen",
+  "keywords": [
+    "aliconnect",
+    "aim",
+    "commonmark",
+    "markdown",
+    "markdown-plugin"
+  ],
+  "repository": "aliconnect/aim",
+  "license": "MIT",
+  "files": [
+    "examples/webserver1/**/*.{css,js,html}",
+    "lib/amcharts4/**/*.{css,js}",
+    "lib/go/**/*.{css,js}",
+    "lib/three/**/*.{css,js}",
+    "lib/js/**/*.{js,map}",
+    "lib/aim/font/*.{css,ttf,woff,otf,eot}",
+    "src/**/*.{php,html}",
+    "scripts/postinstall.js",
+    "lib/aim/js/aim-control.js",
+    "lib/aim/js/aim-server.js",
+    "lib/aim/js/aim.js",
+    "lib/aim/js/web-cam.js",
+    "lib/aim/js/web-calendar.js",
+    "lib/aim/css/web-calendar.css",
+    "lib/aim/js/web-ganth.js",
+    "lib/aim/css/web-ganth.css",
+    "lib/aim/js/web-abis.js",
+    "lib/aim/css/web-abis.css",
+    "lib/aim/js/web-paint.js",
+    "lib/aim/js/web.js",
+    "lib/aim/css/web.css"
+  ],
+  "_module": "lib/aim/js/aim.mjs",
+  "style": "lib/aim/css/web.css",
+  "main": "lib/aim/js/aim.js",
+  "scripts": {
+    "postinstall": "node ./scripts/postinstall.js",
+    "setup-control": "npm i jsmodbus",
+    "pack": "npm pack",
+    "test": "node src/aim/js/test.js"
+  },
+  "dependencies": {
+    "atob": "^2.1.2",
+    "serialport": "^10.5.0",
+    "ws": "^8.10.0"
+  },
+  "optionalDependencies": {
+    "check-disk-space": "^3.3.1",
+    "jsmodbus": "^4.0.6",
+    "node-cmd": "^5.0.0",
+    "os-utils": "^0.0.14",
+    "snmp-native": "^1.2.0",
+    "tedious": "^15.1.1"
+  }
+}

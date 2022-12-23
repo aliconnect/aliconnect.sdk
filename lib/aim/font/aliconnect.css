@@ -1,0 +1,6 @@
+@font-face {
+  font-family: 'AliconnectIcon';
+  src: url('aliconnect-icon.woff') format('woff'), url('aliconnect-icon.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}

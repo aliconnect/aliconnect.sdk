@@ -1,0 +1,2088 @@
+# Aliconnect
+client_id: c9b05c80-4d2b-46c1-abfb-0464854dbd9a
+scope: name email phone_number profile contact:read contact:write report:read
+cssPrintUrl: https://proving-nl.aliconnect.nl/assets/css/print2.css
+serviceRoot: https://aliconnect.nl/v1
+info:
+  title: Aliconnect
+  description: This is Alicon Aliconnect api
+  termsOfService: https://aliconnect.nl/terms/
+  contact:
+    email: max@alicon.nl
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+schemes:
+  - https
+externalDocs:
+  description: Find out more about Alicon
+  url: https://alicon.aliconnect.nl
+costs:
+  user: 16
+tags:
+  - name: crmc
+    description: Everything about your CRMC
+    cost: 8
+  - name: crmc-word
+    description: Everything about your CRMC
+  - name: crmc-outlook
+    description: Everything about your CRMC
+  - name: crm
+    description: Everything about your CRM
+    cost: 8
+    # schemas:
+    #   - company
+    #   - person
+    #   - contact
+  - name: document
+    description: Everything about your Documents
+    externalDocs:
+      description: Find out more
+      url: https://alicon.aliconnect.nl
+  - name: user
+    description: Operations about user
+  - name: outlook
+    description: Operations about user
+    cost: 4
+
+  - name: verkoop
+  - name: inkoop
+
+  - name: isa88
+
+  # - name: product
+  # - name: order
+  # - name: invoice
+
+  - name: shop
+    cost: 12
+  - name: purchase
+    # schemas:
+    #   - purchaseOrder
+    #   - purchaseOrderLine
+  - name: customerProduct
+  - name: files
+  - name: links
+  - name: messages
+  - name: productPack
+  - name: saleProduct
+  - name: salesInvoice
+  - name: webPage
+
+  - name: aliconnector
+    description: Everything about your Aliconnector
+  - name: app
+    description: Everything about your App
+  - name: word-addin
+    description: Everything about your App
+paths:
+  /:
+    patch:
+      tags:
+      - client
+      responses:
+        200:
+          description: successful operation
+  /token:
+    patch:
+      tags:
+      - client
+      responses:
+        200:
+          description: successful operation
+  /config:
+    patch:
+      tags:
+      - client
+      responses:
+        200:
+          description: successful operation
+  /config/save:
+    patch:
+      tags:
+      - client
+      responses:
+        200:
+          description: successful operation
+  /client/config:
+    patch:
+      tags:
+      - client
+      responses:
+        200:
+          description: successful operation
+  /client({clientId})/oas:
+    get:
+      tags:
+      - client
+      summary: Geeft de OAS specificatie van een client
+      responses:
+        200:
+          description: successful operation
+      parameters:
+      - name: clientId
+        in: path
+        required: true
+        schema:
+          type: string
+  /item({id})/build:
+    get:
+      tags:
+      - item
+      responses:
+        200:
+          description: successful operation
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+definitions:
+  client:
+    tablename: client
+    properties:
+      id:
+        type: string
+        format: identifier
+      client_secret:
+        type: string
+        format: identifier
+      owner_id:
+        type: string
+        format: identifier
+      ip:
+        type: string
+        size: 50
+  account:
+    tablename: account
+    properties:
+      id:
+        type: string
+        format: identifier
+      code_id:
+        type: string
+        format: identifier
+      accountname:
+        type: string
+        size: 50
+      name:
+        type: string
+        size: 50
+      given_name:
+        type: string
+        size: 50
+      family_name:
+        type: string
+        size: 50
+      middle_name:
+        type: string
+        size: 50
+      nickname:
+        type: string
+        size: 50
+      preferred_username:
+        type: string
+        size: 50
+      unique_name:
+        type: string
+        size: 50
+      email:
+        type: string
+        size: 50
+      email_verified:
+        type: boolean
+      phone_number:
+        type: string
+        size: 50
+      phone_number_verified:
+        type: boolean
+      gender:
+        type: string
+        size: 50
+      birthdate:
+        type: string
+        format: date
+        size: 50
+      zoneinfo:
+        type: string
+        size: 50
+      locale:
+        type: string
+        size: 50
+      website:
+        type: string
+        size: 50
+      address:
+        type: string
+      profile:
+        type: string
+      picture:
+        type: string
+
+      mse_access_token:
+        type: string
+      mse_id_token:
+        type: string
+      mse_refresh_token:
+        type: string
+      mse_access:
+        type: string
+      mse_id:
+        type: string
+  client_user:
+    tablename: client_user
+    properties:
+      id:
+        type: string
+        format: identifier
+      client_id:
+        type: string
+        format: identifier
+      account_id:
+        type: string
+        format: identifier
+      scope_account:
+        type: string
+  client_host:
+    tablename: client_host
+    properties:
+      id:
+        type: string
+        format: identifier
+      client_id:
+        type: string
+        format: identifier
+      hostname:
+        type: string
+
+  messages:
+    tags:
+      - outlook
+    properties:
+      id:
+        type: string
+      createdDateTime:
+        type: string
+      lastModifiedDateTime:
+        type: string
+      changeKey:
+        type: string
+      categories:
+        type: string
+      receivedDateTime:
+        type: string
+        header: 3
+      sentDateTime:
+        type: string
+        header: 3
+      hasAttachments:
+        type: string
+        filter: 1
+      internetMessageId:
+        type: string
+      subject:
+        type: string
+        header: 1
+      bodyPreview:
+        type: string
+        header: 3
+      importance:
+        type: string
+        filter: 1
+      parentFolderId:
+        type: string
+      conversationId:
+        type: string
+      conversationIndex:
+        type: string
+      isDeliveryReceiptRequested:
+        type: string
+      isReadReceiptRequested:
+        type: string
+      isRead:
+        type: string
+        filter: 1
+      isDraft:
+        type: string
+        filter: 1
+      webLink:
+        type: string
+      inferenceClassification:
+        type: string
+      body:
+        type: string
+        # ContentType: "HTML",
+        # Content:
+      sender:
+        type: object
+        header: 2
+        filter: 1
+        # EmailAddress: {
+        #   Name: "Flynth adviseurs en accountants",
+        #   Address: "info@flynth.nl"
+      from:
+        type: object
+        header: 2
+        filter: 1
+        # EmailAddress: {
+        #   Name: "Flynth adviseurs en accountants",
+        #   Address: "info@flynth.nl"
+      toRecipients:
+        type: array
+        format: objects
+            # EmailAddress: {
+            #   Name: "Max van Kampen",
+            #   Address: "max.van.kampen@alicon.nl"
+      ccRecipients:
+        type: array
+      bccRecipients:
+        type: array
+      replyTo:
+        type: array
+            # EmailAddress: {
+            #   Name: "flynth@flynth.nl",
+            #   Address: "flynth@flynth.nl"
+      flag:
+        type: object
+        filter: 1
+        # FlagStatus: "NotFlagged"
+  tasks:
+    tags:
+      - outlook
+    properties:
+      id:
+        type: string
+      createdDateTime:
+        type: string
+      lastModifiedDateTime:
+        type: string
+      changeKey:
+        type: string
+      categories:
+        type: string
+        filter: true
+      assignedTo:
+        type: string
+        filter: true
+      hasAttachments:
+        type: string
+        filter: true
+      importance:
+        type: string
+        filter: true
+      isReminderOn:
+        type: string
+        filter: true
+      owner:
+        type: string
+        header: 3
+        filter: true
+      parentFolderId:
+        type: string
+      sensitivity:
+        type: string
+        filter: true
+      status:
+        type: string
+        header: 3
+        filter: true
+      subject:
+        type: string
+        header: 1
+      body:
+        type: object
+        # ContentType: HTML
+        # Content:
+      completedDateTime:
+        type: string
+        header: 3
+      dueDateTime:
+        type: string
+        header: 3
+      recurrence:
+        type: string
+      reminderDateTime:
+        type: string
+        header: 3
+      startDateTime:
+        type: string
+        header: 3
+  calendarView:
+    tags:
+      - outlook
+    properties:
+      id:
+        type: string
+      createdDateTime:
+        type: string
+      lastModifiedDateTime:
+        type: string
+      changeKey:
+        type: string
+      categories:
+        type: array
+      transactionId:
+        type: string
+      originalStartTimeZone:
+        type: string
+      originalEndTimeZone:
+        type: string
+      iCalUId:
+        type: string
+      reminderMinutesBeforeStart:
+        type: integer
+      isReminderOn:
+        type: boolean
+      hasAttachments:
+        type: boolean
+      subject:
+        type: string
+      bodyPreview:
+        type: string
+      importance:
+        type: string
+        enum:
+          - Normal
+      sensitivity:
+        type: string
+        enum:
+          - Normal
+      isAllDay:
+        type: boolean
+      isCancelled:
+        type: boolean
+      isOrganizer:
+        type: boolean
+      isRoomRequested:
+        type: boolean
+      autoRoomBookingStatus:
+        type: string
+      responseRequested:
+        type: boolean
+      seriesMasterId:
+        type: string
+      showAs:
+        type: string
+      type:
+        type: string
+      webLink:
+        type: string
+      onlineMeetingUrl:
+        type: string
+      isOnlineMeeting:
+        type: boolean
+      onlineMeetingProvider:
+        type: string
+      allowNewTimeProposals:
+        type: boolean
+      occurrenceId:
+        type: string
+      isDraft:
+        type: boolean
+      hideAttendees:
+        type: boolean
+      calendarEventClassifications:
+        type: array
+      muteNotifications:
+        type: boolean
+      responseStatus:
+        type: object
+        # format:
+          # Response: "None",
+          # Time: "0001-01-01T00:00:00Z"
+      body:
+        type: object
+          # ContentType: "HTML",
+          # Content: "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<meta name=\"Generator\" content=\"Microsoft Exchange Server\">\r\n<!-- converted from text -->\r\n<style><!-- .EmailQuote { margin-left: 1pt; padding-left: 4pt; border-left: #800000 2px solid; } --></style></head>\r\n<body>\r\n<font size=\"2\"><span style=\"font-size:11pt;\"><div class=\"PlainText\">&nbsp;</div></span></font>\r\n</body>\r\n</html>\r\n"
+      start:
+        type: object
+          # DateTime: "2020-07-06T13:00:00.0000000",
+          # TimeZone: "UTC"
+      end:
+        type: object
+          # DateTime: "2020-07-06T15:00:00.0000000",
+          # TimeZone: "UTC"
+      location:
+        type: object
+          # DisplayName: "",
+          # LocationType: "Default",
+          # UniqueIdType: "Unknown",
+          # Address: {
+          #   Type: "Unknown"
+          # Coordinates: {}
+      locations:
+        type: array
+      recurrence:
+        type: string
+      autoRoomBookingOptions:
+        type: string
+      attendees:
+        type: array
+      organizer:
+        type: object
+        # EmailAddress: {
+        #   Name: "Max van Kampen",
+        #   Address: "max.van.kampen@alicon.nl"
+      onlineMeeting:
+        type: boolean
+  contacts:
+    tags:
+      - outlook
+    properties:
+      id:
+        type: string
+      createdDateTime:
+        type: string
+        format: datetime
+      lastModifiedDateTime:
+        type: string
+        format: datetime
+      changeKey:
+        type: string
+      categories:
+        type: array
+      parentFolderId:
+        type: string
+      birthday:
+        type: string
+        header: 3
+      fileAs:
+        type: string
+      displayName:
+        type: string
+        header: 1
+      givenName:
+        type: string
+      initials:
+        type: string
+      middleName:
+        type: string
+      nickName:
+        type: string
+      surname:
+        type: string
+      title:
+        type: string
+      yomiGivenName:
+        type: string
+      yomiSurname:
+        type: string
+      yomicompanyName:
+        type: string
+      generation:
+        type: string
+      imAddresses:
+        type: array
+      jobTitle:
+        type: string
+        header: 2
+      companyName:
+        type: string
+        header: 2
+        filter: true
+      department:
+        type: string
+        header: 2
+        filter: true
+      officeLocation:
+        type: string
+        header: 2
+        filter: true
+      profession:
+        type: string
+        header: 3
+        filter: true
+      businessHomePage:
+        type: string
+      assistantName:
+        type: string
+        header: 2
+      manager:
+        type: string
+        header: 2
+        filter: true
+      homePhones:
+        type: array
+      mobilePhone:
+        type: string
+        header: 3
+        format: tel
+      businessPhones:
+        type: array
+      spouseName:
+        type: string
+      personalNotes:
+        type: string
+      children:
+        type: array
+      emailAddresses:
+        type: array
+      homeAddress:
+        type: object
+        format: address
+        # Type: home
+      businessAddress:
+        type: object
+        format: address
+        # Type: business
+      otherAddress:
+        type: object
+        format: address
+
+  company:
+    tags:
+      - crm
+    tablename: company
+    required:
+      - titel
+      - companyName
+    type: object
+    allOf:
+      - $ref: '#/components/schemas/item'
+    properties:
+      id:
+        type: string
+      companyId:
+        type: integer
+
+      test:
+        type: string
+        size: 16
+        format: '#/components/schemas/contact1'
+      companyFiles:
+        type: array
+        items:
+          type: string
+        #
+        format: files
+        uniqueItems: true
+        minItems: 1
+        maxItems: 10
+        readOnly: true
+
+      keyname:
+        x-abis2: Zoek
+        type: string
+        size: 50
+        writeOnly: true
+      keywords:
+        type: string
+        size: 500
+      lastModifiedDateTime:
+        type: string
+        format: datetime
+      # companyId:
+      #   source: company
+      #   crmc: OrganisatieID
+      # companykeyname:
+      #   source: company
+      #   crmc: Zoek
+      #   dataType: VARCHAR(50)
+
+      companyFile1:
+        type: string
+        format: file
+      companyRadio1:
+        type: string
+        format: radio
+        enum:
+          - a
+          - b
+          - c
+        x-enumTitles:
+          - A
+          - B
+          - AC
+        x-enumColors:
+          - red
+          - green
+          - blue
+      companyRadio2:
+        type: string
+        format: radio
+        x-options:
+          r:
+            title: Red
+            color: red
+          g:
+            title: Green
+            color: green
+          b:
+            title: Blue
+            color: blue
+
+      # companyPassword:
+      #   type: string
+      #   format: password
+
+      companyMeter:
+        type: integer
+        nullable: true
+        format: meter
+        min: 0
+        low: 40
+        high: 90
+        max: 100
+        # minimum: 0
+        # maximum: 100
+        exclusiveMinimum: true
+        exclusiveMaximum: true
+        multipleOf: 10
+
+      companyBody:
+        type: string
+        # minLength: 3
+        # size: 20
+        #
+        format: html
+        pattern: '^\d{3}-\d{2}-\d{4}$'
+      companyName:
+        header: 1
+        type: string
+        size: 255
+        x-outlook: companyName
+        x-crmc: Organisatienaam
+        x-abisingen: Firma
+      # companyName2:
+      #   type: string
+      #   size: 255
+      #   crmc: Organisatienaam2
+      companyBoolean:
+        type: boolean
+      companyPicture:
+        type: string
+        #
+        format: cam
+      companyTel:
+        type: string
+        format: string
+      companyEmail:
+        type: string
+        size: 250
+        format: mailaddress
+      companySignature:
+        type: string
+        #
+        format: paint
+      companyImage:
+        type: string
+        #
+        format: image
+      # companyData:
+      #   type: string
+      #
+
+      companyNote:
+        type: string
+        size: 255
+        format: textarea
+        crmc: Opmerkingen
+        abis2: Opmerkingen
+
+      businessAddress:
+        legend: businessAddress
+        type: string
+        format: address
+        size: 500
+        outlook: businessAddress
+        # crmc: Bezoekadres
+      businessAddressPostOfficeBox:
+        type: string
+        size: 50
+        outlook: businessAddressPostOfficeBox
+      businessAddressStreet:
+        type: string
+        size: 50
+        title: Bezoekadres straat
+        outlook: businessAddressStreet
+        crmc: BezoekStraat
+        abis2: Straat
+      businessAddressStreet2:
+        type: integer
+        title: Bezoekadres straat huisnummer
+        crmc: BezoekHuisnummer
+        abis2: BezoekHuisnummer
+      businessAddressStreet3:
+        type: string
+        size: 50
+        title: Bezoekadres straat toevoeging
+        crmc: BezoekHuisnummerToevoeging
+        abis2: BezoekHuisnummerToevoeging
+      businessAddressPostalCode:
+        type: string
+        size: 50
+        outlook: businessAddressPostalCode
+        crmc: Postcode
+        abis2: Postcode
+      businessAddressCity:
+        type: string
+        size: 50
+        filter: yes
+        outlook: businessAddressCity
+        crmc: Plaats
+      businessAddressState:
+        type: string
+        size: 50
+        outlook: businessAddressState
+        crmc: BezoekProvincie
+      businessAddressCountry:
+        type: string
+        size: 50
+        filter: yes
+        crmc: BezoekLand
+        outlook: businessAddressCountry
+
+      otherAddress:
+        format: address
+        type: string
+        size: 500
+        legend: otherAddress
+        outlook: otherAddress
+      otherAddressPostOfficeBox:
+        type: string
+        size: 50
+        outlook: otherAddressPostOfficeBox
+      otherAddressStreet:
+        type: string
+        size: 50
+        outlook: otherAddressStreet
+        abis2: Straat 2
+        crmc: PostStraat
+      otherAddressStreet2:
+        type: integer
+        crmc: PostHuisnummer
+        abis2: PostHuisnummer
+      otherAddressStreet3:
+        type: string
+        size: 50
+        crmc: PostHuisnummerToevoeging
+        abis2: PostHuisnummerToevoeging
+      otherAddressPostalCode:
+        type: string
+        size: 50
+        outlook: otherAddressPostalCode
+        crmc: Postcode2
+      otherAddressCity:
+        type: string
+        size: 50
+        outlook: otherAddressCity
+        abis2: Plaats 2
+        crmc: PostPlaats
+      otherAddressState:
+        type: string
+        size: 50
+        crmc: PostProvincie
+        abis2: PostProvincie
+        outlook: otherAddressState
+      otherAddressCountry:
+        type: string
+        size: 50
+        outlook: otherAddressCountry
+        crmc: PostLand
+        abis2: PostLand
+
+      companyMainTelephoneNumber:
+        format: tel
+        type: string
+        size: 50
+        legend: Telefoon
+        outlook: companyMainTelephoneNumber
+        crmc: Telefoon
+        abis2: Telefoon
+
+      businessFaxNumber:
+        type: string
+        size: 50
+        format: tel
+        crmc: Fax
+        abis2: Fax
+        outlook: businessFaxNumber
+      otherFaxNumber:
+        format: tel
+        type: string
+        size: 50
+        outlook: otherFaxNumber
+      telexNumber:
+        format: tel
+        type: string
+        size: 50
+        outlook: TelexNumber
+      isdnNumber:
+        type: string
+        size: 50
+        outlook: ISDNNumber
+
+      businessHomePage:
+        type: string
+        size: 50
+        outlook: businessHomePage
+        crmc: WebSite
+        abis2: WebSite
+
+      computerNetworkName:
+        type: string
+        size: 50
+        outlook: ComputerNetworkName
+        title: Directory Server
+
+      # Projecten
+      mileage:
+        type: integer
+        legend: Projecten
+        description: Kilometers naar de zaak
+        outlook: Mileage
+        crmc: Km
+
+
+      # Sales
+      customerID:
+        type: integer
+        legend: Sales
+        crmc: Vrij02
+        outlook: CustomerID
+
+      # Administratie
+      debiteurNummer:
+        type: integer
+        legend: Administratie
+        title: Debiteurnummer
+        crmc: Debiteurnummer
+        abis2: DebNummer
+      vatNumber:
+        type: string
+        size: 50
+        crmc: BTWnummer
+        abis2: BTWnummer
+      bic:
+        type: string
+        size: 50
+        crmc: BIC
+        abis2: BIC
+      iban:
+        type: string
+        size: 50
+        crmc: IBAN
+        abis2: IBAN
+      billingInformation:
+        type: string
+        size: 50
+        outlook: BillingInformation
+
+      email4Address:
+        type: string
+        size: 255
+        format: mailaddress
+        crmc: FaktuurEmail
+        abis2: FaktuurEmail
+
+      # Marketing
+      branche:
+        type: string
+        size: 50
+        legend: Marketing
+        # source: company
+        crmc: Branche
+        description: SBI code
+
+      winstIndicatie:
+        type: number
+        legend: company info
+        crmc: WinstIndicatie
+      omzetIndicatie:
+        type: number
+        crmc: OmzetIndicatie
+      activaIndicatie:
+        type: number
+        crmc: ActivaIndicatie
+      #
+      # # Admin
+      # Color:
+      #   outlook: Color
+      # ColorId:
+      #   crmc: KleurID
+      # AdminAccountname:
+      #   crmc: Beheer
+      #
+      categories:
+        type: string
+        size: 50
+        crmc: TypeCode
+        outlook: categories
+        options:
+          K:
+            title: Klant
+            color: blue
+          L:
+            title: Leverancier
+            color: green
+        # filter: yes
+      #
+      #
+      # FTPSite:
+      #   outlook: FTPSite
+      #
+      # NumberEmployees:
+      #   crmc: AantalMedewerkers
+      #
+      # OrganizationalIDNumber:
+      #   outlook: OrganizationalIDNumber
+      #   crmc: KvK
+      #   abis2: KvK
+      # KvkDescription:
+      #   crmc: KvKomschrijving
+  person:
+    tablename: person
+    tags:
+      - crm
+    required:
+      - LastName
+    type: object
+    properties:
+      id:
+        type: string
+      # personId:
+      #   legend: person
+      #   source: person
+      #   crmc: ContactpersoonId
+      keyname:
+        type: string
+        size: 50
+      keywords:
+        type: string
+        size: 500
+      lastModifiedDateTime:
+        type: string
+        format: datetime
+
+      title:
+        type: string
+        size: 50
+        legend: person name
+        outlook: Title
+        crmc: Titel
+        abis2: Titel
+      nickName:
+        type: string
+        size: 50
+        description: Roepnaam van de persoon
+        outlook: NickName
+      firstName:
+        type: string
+        size: 50
+        header: 1
+        outlook: FirstName
+        abis2: Voornaam
+        crmc: Voornaam
+      initials:
+        type: string
+        size: 50
+        outlook: Initials
+        abis2: Voorletters
+        crmc: Voorletters
+      middleName:
+        type: string
+        size: 50
+        outlook: MiddleName
+        abis2: Tussenvoegsel
+        crmc: Tussenvoegsel
+      lastName:
+        type: string
+        size: 50
+        header: 1
+        outlook: LastName
+        abis2: Achternaam
+        crmc: Achternaam
+      suffix:
+        type: string
+        size: 50
+        outlook: Suffix
+        crmc: TitelNa
+        abis2: TitelNa
+  contact:
+    tablename: contact
+    tags:
+      - crm
+    properties:
+      person:
+        $ref: '#/components/schemas/person'
+      # personId:
+        # type: string
+        # format: uuid
+
+        # format: email
+        # format: uri
+        # format: hostname
+        # format: ipv4
+        # format: ipv6
+        # oneOf:
+        #   - $ref: '#/components/schemas/Cat'
+        # default: 2000-01-01
+        # $ref: '#/components/schemas/person'
+        # allOf:
+        # schemaName: person
+          # - link
+        # schema:
+        #   $ref: '#/components/schemas/person'
+      company:
+        $ref: '#/components/schemas/company'
+        # type: object
+        # links:
+        # schema:
+        #   $ref: '#/components/schemas/company'
+      # keyname:
+      #   legend: Contactpersoon
+      #   type: string
+      #   size: 50
+      # # Keywords:
+      # #   type: string
+      # #   size: 500
+      # # LastModifiedDateTime:
+      # #   format: datetime
+      #
+      personNickName:
+        legend: Persoon
+        header: 1
+      personFirstName:
+        header: 1
+      personInitials:
+        type: string
+      personMiddleName:
+        header: 1
+      personLastName:
+        header: 1
+      personSuffix:
+        type: string
+      personFullName:
+        type: string
+      #
+      companycompanyName:
+        legend: Organisatie
+        header: 2
+  document:
+    required:
+      - Titel
+    type: object
+    properties:
+      id:
+        type: string
+      soort:
+        type: string
+        enum:
+          - available
+          - pending
+          - sold
+      documentNummer:
+        type: string
+      titel:
+        type: string
+      onderwerp:
+        type: string
+      datum:
+        type: string
+      vergaderjaar:
+        type: string
+      kamer:
+        type: string
+      volgnummer:
+        type: string
+      citeertitel:
+        type: string
+      alias:
+        type: string
+      datumRegistratie:
+        type: string
+      datumOntvangst:
+        type: string
+      aanhangselnummer:
+        type: string
+      kenmerkAfzender:
+        type: string
+      organisatie:
+        type: string
+      contentType:
+        type: string
+      contentLength:
+        type: string
+      gewijzigdOp:
+        type: string
+      apiGewijzigdOp:
+        type: string
+      verwijderd:
+        type: string
+  item:
+    required:
+      - Titel
+    type: object
+    properties:
+      id:
+        readOnly: true
+      itemId:
+        readOnly: true
+      state:
+        legend: Item
+        title: State
+        format: radio
+        filter: 1
+        options:
+          run:
+            title: Stopping
+            color: green
+          stopped:
+            title: Clearing
+            color: red
+      createdDateTime:
+        type: string
+        format: datetime
+        readOnly: true
+      lastModifiedDateTime:
+        type: string
+        format: datetime
+        readOnly: true
+      lastVisitDateTime:
+        type: string
+        format: datetime
+        readOnly: true
+      startDateTime:
+        type: string
+        format: datetime
+        # readOnly: true
+      endDateTime:
+        type: string
+        format: datetime
+        # readOnly: true
+      finishDateTime:
+        type: string
+        format: datetime
+        # readOnly: true
+      parent:
+        $ref: '#/components/schemas/item'
+        # filter: true
+        # title: Onderdeel van
+        # oneOff:
+        #   - $ref: '#/components/schemas/item'
+
+        # schema: '*'
+      src:
+        $ref: '#/components/schemas/item'
+        # filter: true
+        # title: Kopie van
+        # schema: '*'
+      class:
+        $ref: '#/components/schemas/item'
+        # filter: true
+        # title: Class
+        # schema: '*'
+      # Children:
+      #   type: array
+      #   format: hidden
+      # Message:
+      #   type: array
+      #   format: hidden
+      # File:
+      #   format: files
+      # Prefix:
+      #   filter: true
+      # Tag:
+      #   type: text
+      # Title:
+      #   type: text
+      # Name:
+      #   type: text
+      # Tagname:
+      #   format: hidden
+      #   type: array
+  enterprise:
+    tags:
+      - isa88
+    allOf:
+      - $ref: '#/components/schemas/item'
+      - $ref: '#/components/schemas/company'
+    properties:
+      id:
+        type: string
+      enterpriseId:
+        type: integer
+      # typical:
+      #   type: string
+      #   header: 2
+      name:
+        type: string
+        size: 50
+      title:
+        type: string
+        size: 50
+        header: 1
+  location:
+    color: red
+    tags:
+      - isa88
+    allOf:
+      - $ref: '#/components/schemas/item'
+      - $ref: '#/components/schemas/company'
+    properties:
+      id:
+        type: string
+      locationId:
+        type: integer
+      # typical:
+      #   type: string
+      #   header: 2
+      name:
+        type: string
+        size: 50
+      title:
+        type: string
+        size: 50
+        header: 1
+  equipmentmodule:
+    color: orange
+    tags:
+      - isa88
+    allOf:
+      - $ref: '#/components/schemas/item'
+      - $ref: '#/components/schemas/company'
+    properties:
+      id:
+        type: string
+      locationId:
+        type: integer
+      # typical:
+      #   type: string
+      #   header: 2
+      name:
+        type: string
+        size: 50
+      title:
+        type: string
+        size: 50
+        header: 1
+  folder:
+    color: blue
+    tags:
+      - isa88
+    allOf:
+      - $ref: '#/components/schemas/item'
+      - $ref: '#/components/schemas/company'
+    properties:
+      id:
+        type: string
+      locationId:
+        type: integer
+      # typical:
+      #   type: string
+      #   header: 2
+      name:
+        type: string
+        size: 50
+      title:
+        type: string
+        size: 50
+        header: 1
+  website:
+    color: green
+    tags:
+      - isa88
+    allOf:
+      - $ref: '#/components/schemas/item'
+      - $ref: '#/components/schemas/company'
+    properties:
+      id:
+        type: string
+      locationId:
+        type: integer
+      # typical:
+      #   type: string
+      #   header: 2
+      name:
+        type: string
+        size: 50
+      title:
+        type: string
+        size: 50
+        header: 1
+
+  customerProduct:
+    security:
+      - medewerker
+    properties:
+      productId:
+        type: integer
+
+  product:
+    tags:
+      - product
+      - verkoop
+    tablename: product
+    security:
+      - admin
+    # searchFields: Code,Title,Brand
+    # abis2: abisingen.dbo.tblArtikel
+    # abis2idName: ArtId
+    properties:
+      id:
+        type: string
+        format: uid
+      productId:
+        type: integer
+      keyname:
+        type: string
+        size: 50
+      keywords:
+        type: string
+        size: 500
+
+      lastModifiedDateTime:
+        type: string
+        format: datetime
+      productImage:
+        type: string
+        size: 500
+        format: url
+      productGroup:
+        # abis2: ArtGroep
+        type: string
+        size: 50
+      title:
+        type: string
+        size: 500
+        header: 1
+        # abis2: Tekst
+      body:
+        type: string
+        format: html
+      # code:
+      #   type: string
+      #   size: 50
+      #   header: 1
+      #   abis2: Code
+      attributes:
+        type: string
+      supplierId:
+        type: string
+        format: guid
+      customerId:
+        type: string
+        format: guid
+      partId:
+        type: string
+        format: guid
+      quant:
+        type: integer
+      discount:
+        type: number
+
+
+      # # inhoud:
+      # #   header: 1
+      # #   type: number
+      # #   abis2: Inhoud
+      # # inhoudEenheid:
+      # #   header: 1
+      # #   type: string
+      # #   abis2: InhoudEenheid
+      weight:
+        type: number
+        unit: gram
+        # abis2: Gewicht
+      unit:
+        type: string
+        size: 50
+        # abis2: Eenheid
+      # # verpaktPer:
+      # #   type: number
+      # #   abis2: VerpaktPer
+      # # aantalStuks:
+      # #   type: number
+      # #   abis2: AantalStuks
+      ean:
+        type: string
+        size: 15
+        # abis2: Barcode
+      # # maglokatie:
+      # #   type: string
+      # #   abis2: Maglokatie
+      catalogPrice:
+        type: number
+        # abis2: Bruto
+      # # palletAantal:
+      # #   type: number
+      # #   abis2: PalletAantal
+      # # brand:
+      # #   type: string
+      # #   size: 50
+      # #   header: 1
+      # #   abis2: Merk
+      # # serie:
+      # #   type: string
+      # #   size: 50
+      # #   header: 1
+      # #   abis2: Serie
+      # # type:
+      # #   type: string
+      # #   size: 50
+      # #   header: 1
+      # #   abis2: Type
+      # # soort:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: Soort
+      # # segment:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: Segment
+      # # holes:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: Gaten
+      # # grofte:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: Grofte
+      # # diameter:
+      # #   type: string
+      # #   format: number
+      # #   header: 1
+      # #   abis2: Diameter
+      # # dimensions:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: Afmeting
+      # # material:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: Material
+      # # color:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: Kleur
+      # # verhouding:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: Verhouding
+      # # soortelijkGewicht:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: SoortelijkGewicht
+      # # extra1:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: Extra1
+      # # extra2:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: Extra2
+      # # incl:
+      # #   type: string
+      # #   size: 500
+      # #   header: 1
+      # #   abis2: Incl
+      # # tbv:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: Type
+      # # vorm:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: Vorm
+      # # lengte:
+      # #   type: string
+      # #   unit: m
+      # #   header: 1
+      # #   abis2: Lengte
+      # # schroefdraad:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: Schroefdraad
+      # # bevestiging:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: Bevestiging
+      # # verbinding:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: Verbinding
+      # # maat:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: Maat
+      # # ral:
+      # #   type: string
+      # #   header: 1
+      # #   abis2: RAL
+      # # dikte:
+      # #   type: string
+      # #   header: 1
+      # #   unit: mm
+      # #   abis2: Dikte
+      # # hittebestendig:
+      # #   header: 1
+      # #   type: string
+      # #   abis2: Hittebestendig
+      # # dichtheid:
+      # #   header: 1
+      # #   type: string
+      # #   abis2: Dichtheid
+      # # vermogen:
+      # #   header: 1
+      # #   type: string
+      # #   abis2: Vermogen
+      # # spanning:
+      # #   header: 1
+      # #   type: string
+      # #   abis2: Spanning
+      # # overig:
+      # #   header: 1
+      # #   type: string
+      # #   size: 500
+      # #   abis2: Overig
+  productPack:
+    # tags:
+    #   - purchase
+    security:
+      - medewerker
+    properties:
+      Product:
+        $ref: '#/components/schemas/product'
+      PackQuantity:
+        type: integer
+      PackUnit:
+        type: string
+        size: 50
+  saleProduct:
+    security:
+      - medewerker
+    properties:
+      ProductPack:
+        $ref: '#/components/schemas/productPack'
+      Supplier:
+        $ref: '#/components/schemas/company'
+      Customer:
+        $ref: '#/components/schemas/company'
+      Discount:
+        type: number
+
+  purchaseorder:
+    tablename: purchaseorder
+    tags:
+      - verkoop
+      - inkoop
+      # - purchase
+    # abis2: abisingen.dbo.tblBon
+    # abis2idName: Id
+    security:
+      - medewerker
+    searchFields: SalesOrder
+    properties:
+      id:
+        readOnly: true
+      purchaseorderId:
+        type: integer
+        header: 1
+      invoiceId:
+        type: integer
+        abis2: FactuurId
+      # Supplier:
+      #   schema: company
+      # Customer:
+      #   schema: company
+      customerCompanyName:
+        header: 1
+        filter: 1
+      supplierCompanyName:
+        header: 2
+      # SupplierId:
+      #   abis2: BedrijfId
+      # CustomerId:
+      #   abis2: OrganisatieId
+
+
+      orderDateTime:
+        format: datetime
+        abis2: DatumBesteld
+        header: 2
+      scheduleSendDateTime:
+        format: datetime
+        abis2: Datum
+        header: 2
+      printedDateTime:
+        format: datetime
+        abis2: DatumGeprint
+        header: 2
+      completedDateTime:
+        format: datetime
+        abis2: DatumGeprint
+      uwRef:
+        type: string
+        abis2: UwRef
+        header: 3
+      routeNr:
+        type: integer
+        abis2: RouteNr
+        header: 3
+      volgNr:
+        type: integer
+        abis2: VolgNr
+        header: 3
+      aanbieding:
+        type: boolean
+        abis2: Aanbieding
+      verwerkt:
+        type: boolean
+        abis2: Verwerkt
+  purchaseorderLine:
+    tablename: purchaseorderLine
+    tags:
+      - verkoop
+      - inkoop
+      # - purchase
+    abis2: abisingen.dbo.OrderRegels
+    abis2idName: Id
+    security:
+      - medewerker
+    properties:
+      id:
+        readOnly: true
+      purchaseOrder:
+        $ref: '#/components/schemas/purchaseorder'
+      salesOrderId:
+        type: integer
+        abis2: BonId
+      salesItemId:
+        type: integer
+        abis2: ArtId
+      inkBruto:
+        type: number
+        abis2: InkBruto
+      inkKorting:
+        type: number
+        abis2: InkKorting
+      bruto:
+        type: number
+        abis2: Bruto
+      korting:
+        type: number
+        abis2: Korting
+      netto:
+        type: number
+        abis2: Netto
+      orderQuantity:
+        type: number
+        abis2: Aantal
+      suppliedQuantity:
+        type: number
+        abis2: AantalGeleverd
+
+  salesInvoice:
+    security:
+      - medewerker
+    properties:
+      clientId:
+        type: integer
+  customerSaleItem:
+    security:
+      - medewerker
+    properties:
+      clientId:
+        type: integer
+
+  webpage:
+    security:
+      - admin
+    properties:
+      keyname:
+        abis2: Zoek
+        type: string
+        size: 50
+      Keywords:
+        type: string
+        size: 500
+      Description:
+        type: string
+        size: 500
+      Body:
+        type: string
+
+        format: html
+      ParentId:
+        format: guid
+
+        format: html
+
+
+  message:
+    security:
+      - admin
+    properties:
+      createdDateTime:
+        format: datetime
+      audId:
+        format: guid
+      subId:
+        format: guid
+      parentId:
+        format: guid
+      clientId:
+        format: guid
+      userId:
+        format: guid
+      value:
+        type: string
+        size: 5000
+
+
+  link:
+    security:
+      - admin
+    properties:
+      createdDateTime:
+        format: datetime
+      audId:
+        format: guid
+      subId:
+        format: guid
+      typeId:
+        type: integer
+      fromClientId:
+        format: guid
+      fromId:
+        format: guid
+      fromSchemaName:
+        type: string
+        size: 50
+      toClientId:
+        format: guid
+      toId:
+        format: guid
+      toSchemaName:
+        type: string
+        size: 50
+
+
+  file:
+    security:
+      - admin
+    properties:
+      createdDateTime:
+        type: string
+        size: 16
+        format: datetime
+      audId:
+        type: string
+        format: guid
+      subId:
+        type: string
+        format: guid
+      parentId:
+        type: string
+        format: guid
+      clientId:
+        type: string
+        format: guid
+      userId:
+        type: string
+        format: guid
+      name:
+        type: string
+        size: 250
+      lastModified:
+        type: integer
+      lastModifiedDate:
+        format: datetime
+      size:
+        type: integer
+      type:
+        type: string
+        size: 500
+      dirname:
+        type: string
+        size: 500
+      basename:
+        type: string
+        size: 500
+      src:
+        type: string
+        size: 500
+pages:
+  pagemenu: /docs/Nav-Top.md
+  footer: /docs/Page-Footer.md
+  home: /docs/Home.md
+forms:
+  clientConfig:
+    properties:
+      info:
+        type: object
+        legend: Info
+        properties:
+          # name:
+          #   placeholder: Domein naam
+          title:
+            placeholder: Uw bedrijfs naam
+          description:
+            placeholder: Omschrijving bedrijf
+          version:
+            defaultValue: 1.0.0
+          contact:
+            properties:
+              name:
+                placeholder: Uw naam
+              jobTitle:
+                placeholder: Uw functie
+              email:
+                placeholder: Uw email adres
+              phone_number:
+                placeholder: Uw 06
+              billingEmail:
+                placeholder: factuur email adres
+          license:
+            properties:
+              name:
+                defaultValue: Apache 2.0
+              url:
+                defaultValue: http://www.apache.org/licenses/LICENSE-2.0.html
+      client:
+        type: object
+        legend: Client
+        properties:
+          dataController:
+            properties:
+              companyName:
+                placeholder: Uw bedrijfs naam
+              businessAddress:
+                properties:
+                  street:
+                    placeholder: Straat
+                  postalCode:
+                    placeholder: Postcode
+                  city:
+                    placeholder: Plaats
+                  state:
+                    placeholder: Provincie
+                  country:
+                    placeholder: Land
+              email:
+                placeholder: Email
+              phone_number:
+                placeholder: Telefoon
+              responsibleContact:
+                properties:
+                  name:
+                    placeholder: Naam
+                  jobTitle:
+                    placeholder: Functie
+                  email:
+                    placeholder: Email
+                  phone_number:
+                    placeholder: Telefoon
+              operationalContact:
+                properties:
+                  name:
+                    placeholder: Naam
+                  jobTitle:
+                    placeholder: Functie
+                  email:
+                    placeholder: Email
+                  phone_number:
+                    placeholder: Telefoon
+              gdprOfficer:
+                properties:
+                  name:
+                    placeholder: Naam
+                  jobTitle:
+                    placeholder: Functie
+                  email:
+                    placeholder: Email
+                  phone_number:
+                    placeholder: Telefoon
+          dataProcessor:
+            properties:
+              companyName:
+                placeholder: Bedrijfsnaam
+                defaultValue: Alicon Projects B.V.
+              businessAddress:
+                properties:
+                  street:
+                    placeholder: Straat
+                    defaultValue: Klingelbeekseweg 67
+                  postalcode:
+                    placeholder: Postcode
+                    defaultValue: 6862 VS
+                  city:
+                    placeholder: Plaats
+                    defaultValue: Oosterbeek
+                  country:
+                    placeholder: Land
+                    defaultValue: Nederland
+              maxDuurMelding:
+                placeholder: maxDuurMelding
+                defaultValue: 72
+              boeteGeheimhouding:
+                placeholder: boeteGeheimhouding
+                defaultValue: 5000
+              boeteMeldingDatalek:
+                placeholder: boeteMeldingDatalek
+                defaultValue: 2500
+              boeteMeldenSubverwerkers:
+                placeholder: boeteMeldenSubverwerkers
+                defaultValue: 500
+              locatieGegevens:
+                placeholder: Locatie
+                defaultValue: Alleen binnen Europa
+              responsibleContact:
+                properties:
+                  name:
+                    placeholder: Naam
+                    defaultValue: Max van Kampen
+                  jobTitle:
+                    placeholder: Functie
+                    defaultValue: Directeur
+                  email:
+                    placeholder: Email
+                    defaultValue: max@alicon.nl
+                  phone_number:
+                    placeholder: Telefoon
+                    defaultValue: +31(0)263390790
+          subDataProcessor:
+            properties:
+              companyName:
+                placeholder: Bedrijfsnaam
+                defaultValue: Alicon Systems BV
+              businessAddress:
+                properties:
+                  street:
+                    placeholder: Straat
+                    defaultValue: Klingelbeekseweg 67
+                  postalcode:
+                    placeholder: Postcode
+                    defaultValue: 6862 VS
+                  city:
+                    placeholder: Plaats
+                    defaultValue: Oosterbeek
+                  country:
+                    placeholder: Land
+                    defaultValue: Nederland
+maps:
+  home: Het Ambacht 42, 6931 EZ Westervoort
+  options:
+    zoom: 10
+    center:
+      lat: 51
+      lng: 6
+    styles:
+      - featureType: landscape
+        elementType: labels
+        stylers:
+          - visibility: 'off'
+      - featureType: poi
+        stylers:
+          # - visibility: 'off'
+          - visibility: simplified
+          - saturation: -100
+          - lightness: 45
+server:
+  http:
+    port: 444
+    ca: /aliconnect/config/cert/__aliconnect_nl.ca
+    key: /aliconnect/config/cert/__aliconnect_nl.key
+    cert: /aliconnect/config/cert/__aliconnect_nl.cer

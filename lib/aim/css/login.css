@@ -1,0 +1,98 @@
+html {
+  height: 100%;
+}
+body {
+  height: 100%;
+  background: linear-gradient(125deg, rgba(21,87,153,0.2), rgba(0,0,0,0.1), rgba(21,153,87,0.2));
+  color: #1b1b1b;
+}
+body>main {
+  display: table;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+}
+body>main>div {
+  display: table-cell;
+  vertical-align: middle;
+}
+body>main>div>div.prompt {
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  padding: 44px;
+  background-color: #fff;
+  overflow: hidden;
+  display: flex;
+  min-height: 100%;
+  font-family: 'Segoe UI Webfont';
+  /* padding: 50px 20px 20px 20px; */
+  flex-direction: column;
+}
+body>main>div>div.prompt::before {
+  content: 'Aliconnect';
+  font-family: 'Segoe UI Webfont';
+  font-weight: bold;
+  color: #999;
+  font-size: 20px;
+  padding-left: 35px;
+  background: url('/assets/img/icon/icon-transparent.png') no-repeat;
+  background-size: contain;
+  margin-bottom: 10px;
+  position: absolute;
+}
+body>main>div>div.prompt>div {
+  margin-top: 40px;
+}
+body>main>div>div.prompt>div>form {
+  display: flex;
+  flex-direction: column;
+  height: -webkit-fill-available;
+  flex:  1 0 auto;
+}
+body>main>div>div.prompt>div>form>nav:last-child {
+  margin-top: auto;
+}
+body>main>div>div.prompt>div>form input:not([type="checkbox"]) {
+  font: inherit;
+  line-height: 36px;
+  display: block;
+  padding: 0;
+  border: none;
+  border-bottom: solid 1px gray;
+  width:100%;
+  margin-bottom: 5px;
+  outline: none;
+  border-radius: 0;
+}
+body>main>div>div.prompt h1 {
+  font-family: 'Segoe UI Webfont';
+  margin: 0 0 12px 0;
+}
+body>main>div>div.prompt a {
+  color: var(--rowselect);
+  cursor: pointer;
+}
+input.hidden {
+  position: absolute;
+  opacity: 0;
+}
+form.login{
+  padding-right:100px;
+}
+/* PC ONLY */
+@media only screen and (min-width: 520px) {
+  body>main>div>div.prompt {
+    -webkit-box-shadow: 0 2px 6px rgb(0 0 0 / 20%);
+    -moz-box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 20%);
+    min-width: 320px;
+    min-height: 338px;
+    min-height: 350px;
+    max-width: 440px;
+    width: calc(100% - 40px);
+    margin-bottom: 28px;
+  }
+
+
+}

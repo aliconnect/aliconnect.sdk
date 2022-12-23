@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>STATION MD</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <link href="https://aliconnect.nl/aliconnect/aliconnect.font@0.0.0/dist/aliconnect-icon.css" rel="stylesheet" />
+
+  <link href="https://aliconnect.nl/aliconnect/aliconnect.sdk/src/css/markdown.css" rel="stylesheet" />
+  <link href="https://aliconnect.nl/aliconnect/aliconnect.sdk/src/css/web.css" rel="stylesheet" />
+  <link href="https://aliconnect.nl/aliconnect/aliconnect.sdk/src/css/doc.css" rel="stylesheet" />
+  <link href="https://aliconnect.nl/assets/css/src/aliconnect.css" rel="stylesheet" />
+
+  <script src="https://aliconnect.nl/aliconnect/aliconnect.sdk/src/js/aim.js"></script>
+  <script src="https://aliconnect.nl/aliconnect/aliconnect.sdk/src/js/aim/web.js"></script>
+
+  <style>
+  article li a{
+    text-decoration: none;
+    border-radius: 2px;
+    padding: .1em .2em;
+    margin: -.1em;
+    color: #43853d;
+  }
+  article li a:hover{
+    background-color: #43853d;
+    color:white;
+  }
+  article li{
+    list-style: square outside;
+  }
+  section>header {
+    margin-top: 50px;
+  }
+  @media print {
+    nav,aside,button,#doc-header {
+      display:none;
+    }
+  }
+  </style>
+</head>
+<body class="col">
+  <nav></nav>
+  <main class="row">
+    <section class="aco doc-content">
+      <nav id="doc-nav"></nav>
+      <header id="doc-header"></header>
+      <article id="doc-content"></article>
+    </section>
+    <aside class="right"><ul id="doc-index"></ul></aside>
+  </main>
+  <footer>FOOTER</footer>
+  <script>
+  function load(href) {
+    href = href.replace(/\/blob\/main|\.md$/g,'')
+    $().url(href+'.md').get().then(e => {
+      const headers = e.target.getAllResponseHeaders();
+      document.title = e.target.responseURL.split('/').pop().replace(/\.md$/,'').replace(/-/g,' ');
+      const lastModified = new Date(e.target.getResponseHeader('last-modified'));
+      // console.log(document.title, headers);
+      $("doc-nav").text('').append(
+        $('a').text('Home').href('/aliconnect/aliconnect.sdk/wiki/Home')
+      );
+      $("doc-header").text('').append(
+        $('h1').text(document.title),
+        $('time').text('Laatst gewijzigd', lastModified.toLocaleDateString(), lastModified.toLocaleTimeString()),
+      );
+      $("doc-content").text('').append(
+        aim.markdown().render(e.body),
+        // $('footer').text('FOOTER').append(
+        // ),
+      ).renderCode(e.target.responseURL);
+      $("doc-index").index("doc-content");
+      if (document.location.hash) {
+        const hash = document.location.hash.substr(1);
+        const anchor = (document.getElementsByName(hash)||[])[0];
+        anchor.scrollIntoView({ block: "nearest", inline: "nearest" });
+      }
+    });
+  };
+  load(document.location.pathname);
+  $(window).on('click', e => {
+    // console.log(e.target)
+    if (e.target && e.target.hasAttribute('open')) {
+      e.target.setAttribute('open', e.target.getAttribute('open') ^1)
+    }
+  })
+  // $.initEvents();
+  </script>
+</body>
+</html>

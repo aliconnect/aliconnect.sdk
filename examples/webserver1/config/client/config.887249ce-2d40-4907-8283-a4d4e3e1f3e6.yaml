@@ -1,0 +1,27 @@
+client_id: 887249ce-2d40-4907-8283-a4d4e3e1f3e6
+definitions:
+  company:
+    tablename: company
+    properties:
+      id:
+        type: string
+        format: identifier
+      companyId:
+        type: integer
+      companyName:
+        type: string
+        size: 50
+  verkeerslicht:
+    tablename: verkeerslicht
+    properties:
+      id:
+        type: string
+        format: identifier
+      verkeerslichtId:
+        type: integer
+      stand:
+        type: string
+        size: 50
+      handstand:
+        type: string
+        size: 50

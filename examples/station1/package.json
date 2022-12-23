@@ -1,0 +1,23 @@
+{
+  "name": "schiphol-nl-station-v2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "station.js",
+  "dependencies": {
+    "@schiphol-nl/station": "^1.0.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/schiphol-nl/schiphol-nl-station-v2.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/schiphol-nl/schiphol-nl-station-v2/issues"
+  },
+  "homepage": "https://github.com/schiphol-nl/schiphol-nl-station-v2#readme"
+}

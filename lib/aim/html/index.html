@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Aliconnect Mailer</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script src="https://aliconnect.nl/sdk@0.0.10/src/js/aim.js"></script>
+  <script src="https://aliconnect.nl/sdk@0.0.10/src/js/web.js"></script>
+</head>
+<body>
+  <script>
+    const serviceRoot = 'https://aliconnect.nl/v1';
+    (function send(){
+      aim.fetch(serviceRoot+'/mailer/send').get().then(body => {
+        $('body>pre').text('').html(body);
+        setTimeout(send, 5000);
+      })
+    })()
+  </script>
+  <pre></pre>
+</body>
+</html>

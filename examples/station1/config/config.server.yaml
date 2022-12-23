@@ -1,0 +1,398 @@
+systemTimeoutMs: 2000
+connectTimeoutMs: 20000
+pollIntervalMs: 400
+items: []
+server:
+  client_id: 866d9065-7f0f-4706-9cf4-5950f6ca6b5c
+  http:
+    port: 8080
+  sqlsrv:
+    server: localhost
+    port: 1433
+    userName: aim
+    password: '******'
+    database: aim
+attributeTypes:
+  failure:
+    title: Storing
+    filtertype: alarm
+    stateButton: CriticalFailure
+  criticalfailure:
+    title: Storing urgent
+    filtertype: alarm
+    stateButton: CriticalFailure
+  noncriticalfailure:
+    title: Storing niet urgent
+    filtertype: alarm
+    stateButton: NonCriticalFailure
+  locking:
+    title: Vergrendeling
+    filtertype: alarm
+    stateButton: NonCriticalFailure
+  maintenance:
+    title: Service request
+    filtertype: alarm
+    stateButton: NonCriticalFailure
+  running:
+    title: Bedrijf
+    filtertype: state
+    stateButton: Running
+  runningmode:
+    title: Bedrijfsmode
+    filtertype: state
+    stateButton: Running
+  security:
+    title: Beveiliging
+    filtertype: alarm
+    stateButton: NonCriticalFailure
+  preWarning_1:
+    title: Voorwaarschuwing 1
+    filtertype: alarm
+    stateButton: Warning
+  preWarning_2:
+    title: Voorwaarschuwing 2
+    filtertype: alarm
+    stateButton: Warning
+  preWarning_3:
+    title: Voorwaarschuwing 3
+    filtertype: alarm
+    stateButton: Warning
+  preWarning_4:
+    title: Voorwaarschuwing 4
+    filtertype: alarm
+    stateButton: Warning
+  preWarning_5:
+    title: Voorwaarschuwing 5
+    filtertype: alarm
+    stateButton: Warning
+  preWarning_6:
+    title: Voorwaarschuwing 6
+    filtertype: alarm
+    stateButton: Warning
+  preWarning_7:
+    title: Voorwaarschuwing 7
+    filtertype: alarm
+    stateButton: Warning
+  measurement_1:
+    title: Meetwaarde 1
+    filtertype: measurement
+  measurement_2:
+    title: Meetwaarde 2
+    filtertype: measurement
+  measurement_3:
+    title: Meetwaarde 3
+    filtertype: measurement
+  measurement_4:
+    title: Meetwaarde 4
+    filtertype: measurement
+  measurement_5:
+    title: Meetwaarde 5
+    filtertype: measurement
+  measurement_6:
+    title: Meetwaarde 6
+    filtertype: measurement
+  measurement_7:
+    title: Meetwaarde 7
+    filtertype: measurement
+  measurementerrorflag:
+    title: ""
+    filtertype: measurement
+items:
+  - name: DEMO1
+    systemId: 27
+    parent: MONITORING
+    tag: SYSTEEM
+    children:
+    - name: MEMORY_USED_SPACE
+      systemId: 27
+      attributeType: measurement_1
+      title: Status
+      children:
+      - name: HOOG
+        title: HDD opslag te hoog
+        systemId: 27
+        high: 70
+        attributeType: prewarning_1
+        enumeration: No failure, Failure
+    - systemId: 27
+      name: HDD_USED_SPACE
+      attributeType: measurement_1
+      title: Status
+      children:
+      - systemId: 27
+        high: 70
+        name: HOOG
+        title: HDD opslag te hoog
+        attributeType: prewarning_1
+        enumeration: No failure, Failure
+    - systemId: 27
+      name: TIME_SYNC
+      attributeType: measurement_1
+      title: Status
+      enumeration: No failure, Failure
+    - systemId: 27
+      name: WATCHDOG_ACSM
+      attributeType: measurement_1
+      title: 'Status '
+    id: 10000
+  - device: SW
+    host: 192.168.2.1
+    slot: 1
+    terminal: 1
+    active: 1
+    systemId: 107
+    parent: MONITORING.NETWERK.SW
+    typical: SW
+    tag: OPER1
+    attributeName: SWITCH-8P
+    attributeType: ""
+    instantie: SW-MON-OPER
+    enumeration: Not defined, Up, Down, Testing, Unknown, Dormant, Not present, lower
+      layer down
+    id: 10001
+  - device: SNMP
+    name: SW-OPER1
+    host: 192.168.2.1
+    children:
+    - typical: NWP
+      name: P1
+      oid: 1.3.6.1.2.1.2.2.1.8.1
+      children:
+      - ne: 1
+        systemId: 107
+        name: SW.OPER.P1.POORT_DISCONNECTED
+        enumeration: Not defined, Up, Down, Testing, Unknown, Dormant, Not present,
+          lower layer down
+        attributeType: criticalfailure
+        title: Status van poort 1
+    - typical: NWP
+      name: P2
+      oid: 1.3.6.1.2.1.2.2.1.8.2
+      children:
+      - ne: 1
+        systemId: 107
+        name: SW.OPER.P2.POORT_DISCONNECTED
+        enumeration: Not defined, Up, Down, Testing, Unknown, Dormant, Not present,
+          lower layer down
+        attributeType: criticalfailure
+        title: Status van poort 2
+    id: 10002
+  - device: SW
+    host: 192.168.2.2
+    slot: 1
+    terminal: 1
+    active: 1
+    systemId: 108
+    parent: MONITORING.NETWERK.SW
+    typical: SW
+    tag: OPER2
+    attributeName: SWITCH-8P
+    attributeType: ""
+    instantie: SW-MON-OPER
+    enumeration: Not defined, Up, Down, Testing, Unknown, Dormant, Not present, lower
+      layer down
+    id: 10011
+  - device: SNMP
+    name: SW-OPER2
+    host: 192.168.2.2
+    children:
+    - typical: NWP
+      name: P1
+      oid: 1.3.6.1.2.1.2.2.1.8.1
+      children:
+      - ne: 1
+        systemId: 108
+        name: SW.OPER.P1.POORT_DISCONNECTED
+        enumeration: Not defined, Up, Down, Testing, Unknown, Dormant, Not present,
+          lower layer down
+        attributeType: criticalfailure
+        title: Status van poort 1
+    - ~
+    - typical: NWP
+      name: P3
+      oid: 1.3.6.1.2.1.2.2.1.8.3
+      children:
+      - ne: 1
+        systemId: 108
+        name: SW.OPER.P3.POORT_DISCONNECTED
+        enumeration: Not defined, Up, Down, Testing, Unknown, Dormant, Not present,
+          lower layer down
+        attributeType: criticalfailure
+        title: Status van poort 3
+    - typical: NWP
+      name: P4
+      oid: 1.3.6.1.2.1.2.2.1.8.4
+      children:
+      - ne: 1
+        systemId: 108
+        name: SW.OPER.P4.POORT_DISCONNECTED
+        enumeration: Not defined, Up, Down, Testing, Unknown, Dormant, Not present,
+          lower layer down
+        attributeType: criticalfailure
+        title: Status van poort 4
+    id: 10012
+  - device: TA
+    host: 192.168.2.5
+    slot: ""
+    terminal: 1
+    active: 1
+    systemId: 96
+    parent: GEBOUW.KLIMAAT.METERS
+    typical: TA
+    tag: OPER
+    attributeType: ""
+    instantie: TA-OPER
+    extraInfo: '*10 (dus 1 cijfer na de komma nauwkeurig)'
+    id: 10003
+  - device: MODBUS
+    host: 192.168.2.5
+    pollInterval: 500
+    readAddress: 48
+    name: OPER
+    children:
+    - children:
+      - systemId: 96
+        type: UInt
+        name: T
+        title: Temperatuur
+        attributeType: measurement_1
+        minRawValue: -300
+        maxRawValue: 800
+        minEngValue: -30
+        maxEngValue: 80
+        rawMin: 200
+        rawMax: 300
+        validMin: 180
+        validMax: 320
+        engMin: 20
+        engMax: 30
+        minValidValue: -300
+        maxValidValue: 800
+        hysteresis: 0.500000
+        deadband: 5
+        children:
+        - systemId: 96
+          low: -30
+          name: LAAG
+          title: Temp te laag
+          attributeType: prewarning_2
+        - systemId: 96
+          high: 105
+          name: HOOG
+          title: Temp te hoog
+          attributeType: prewarning_1
+    - children:
+      - systemId: 96
+        type: UInt
+        name: V
+        title: Vocht
+        attributeType: measurement_2
+        rawMin: 200
+        rawMax: 400
+        minRawValue: 0
+        maxRawValue: 1000
+        minEngValue: 0
+        maxEngValue: 100
+        deadband: 20
+        children:
+        - systemId: 96
+          high: 32
+          name: V.HOOG
+          title: Vocht te hoog
+          attributeType: prewarning_3
+    id: 10004
+  - device: RIO
+    host: 192.168.2.3
+    terminal: 1
+    active: 1
+    systemId: 147
+    parent: MONITORING.NETWERK.RIO
+    typical: IO
+    tag: OPER
+    attributeType: ""
+    instantie: IO-MON-OPER
+    prio: 2
+    ams: "\u221A"
+    extraInfo: via snmp
+    enumeration: No failure, Failure
+    id: 10005
+  - device: DI
+    slot: 1
+    terminal: 1
+    active: 1
+    systemId: 59
+    parent: GEBOUW.BRAND
+    typical: BMC
+    attributeName: IN_BEDRIJF
+    attributeType: running
+    attributeTitle: BMC in bedrijf
+    instantie: BMC
+    enumeration: Not active, active
+    id: 10006
+  - device: MODBUS
+    typical: RIO
+    name: OPER-OP1
+    host: 192.168.2.3
+    pollInterval: 500
+    readAddress: 0
+    children:
+    - ~
+    - name: M1
+      children:
+      - type: Bool
+        systemId: 59
+        name: IN_BEDRIJF
+        typical: BMC
+        attributeType: running
+        title: BMC in bedrijf
+        enumeration: Not active, active
+      - type: Bool
+        systemId: 59
+        name: BMC_ALG_STORING
+        typical: BMC
+        attributeType: criticalfailure
+        title: BMC algemene storing
+        enumeration: No failure, Failure
+      - type: Bool
+        systemId: 59
+        name: BRAND_MELDER
+        typical: BMC
+        attributeType: prewarning_2
+        title: Brandmelding
+        enumeration: No failure, Failure
+      - type: Bool
+        systemId: 59
+        name: MELDER_DEFECT_GEB_ALG
+        typical: BMC
+        attributeType: prewarning_1
+        title: Brandmelder defect gebied algemeen
+        enumeration: No failure, Failure
+      - type: Bool
+        systemId: 59
+        name: MELDER_DEFECT_FUNCTIEGEBIED_1
+        typical: BMC
+        attributeType: prewarning_1
+        title: Brandmelder defect gebied baan 04-22
+        enumeration: No failure, Failure
+      - type: Bool
+        systemId: 59
+        name: MELDER_DEFECT_FUNCTIEGEBIED_2
+        typical: BMC
+        attributeType: prewarning_1
+        title: Brandmelder defect gebied 09-27
+        enumeration: No failure, Failure
+      - type: Bool
+        systemId: 59
+        name: MELDER_DEFECT_FUNCTIEGEBIED_3
+        typical: BMC
+        attributeType: prewarning_1
+        title: Brandmelder defect gebied rijbaangebied
+        enumeration: No failure, Failure
+      - type: Bool
+        systemId: 59
+        name: MELDER_DEFECT_HS
+        typical: BMC
+        attributeType: prewarning_1
+        title: Brandmelder defect gebied HS ruimte
+        enumeration: No failure, Failure
+    id: 10007

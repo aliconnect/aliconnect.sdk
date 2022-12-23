@@ -1,0 +1,1 @@
+require('@aliconnect/sdk').init()

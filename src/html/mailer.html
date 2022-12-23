@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Aliconnect Mailer</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script src="../../lib/aim/js/aim.js"></script>
+  <script src="../../lib/aim/js/web.js"></script>
+</head>
+<body>
+  <script>
+    (function send(){
+      fetch('../?response_type=mailer_send').then(res => res.text()).then(body => {
+        // return console.log(body);
+        $('body>pre').text('').html(body);
+        setTimeout(send, 5000);
+      })
+    })()
+  </script>
+  <pre></pre>
+</body>
+</html>

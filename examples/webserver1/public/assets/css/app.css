@@ -1,0 +1,29 @@
+li.company[companyname]::before {
+  content: attr(companyname);
+  color: red;
+}
+
+
+.verkeerslicht {
+  display: inline-block;
+  background: black;
+  border: solid 2px black;
+  border-radius: 20px;
+}
+.verkeerslicht>div {
+  /* display: block; */
+  border-radius: 20px;
+  border: solid 2px black;
+  width: 10px;
+  height: 10px;
+  background-color: #333;
+}
+.verkeerslicht[stand='rood']>div.rood {
+  background-color: red;
+}
+.verkeerslicht[stand='geel']>div.geel {
+  background-color: yellow;
+}
+.verkeerslicht[stand='groen']>div.groen {
+  background-color: lightgreen;
+}

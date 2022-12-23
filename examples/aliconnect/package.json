@@ -1,0 +1,15 @@
+{
+  "name": "aliconnecttest",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run pack --prefix /aliconnect/public/sdk@1.0.0 && npm update",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aliconnect/sdk": "file:../aliconnect/public/sdk@1.0.0/aliconnect-sdk-1.0.0.tgz"
+  },
+  "description": ""
+}
