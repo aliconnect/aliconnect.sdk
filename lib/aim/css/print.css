@@ -106,7 +106,7 @@ div.header {
 }
  */
 .bc{
-  font-family: barcode;
+  font-family: 'barcode';
   font-size: 20mm;
   /* font-size:30mm; */
   display:inline-block;
@@ -115,7 +115,7 @@ div.header {
 }
 
 table {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   width: 100%;
   border-collapse: collapse;
   margin: 0;

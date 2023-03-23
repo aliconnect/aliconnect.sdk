@@ -153,6 +153,12 @@ html.dark {
     font-weight: 200;
     font-style: normal
 }
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../font/Montserrat-Regular.ttf') format('truetype');
+    font-weight: 200;
+    font-style: normal
+}
 * {
   box-sizing: border-box;
   -moz-box-sizing: border-box;
@@ -725,7 +731,7 @@ blockquote {
   margin-inline-end: 0px;
 }
 blockquote[class] {
-  min-height: 60px;
+  min-height: 50px;
 }
 blockquote+blockquote {
   margin-top:10px;
@@ -735,7 +741,7 @@ blockquote::before {
   display:inline-block;
   position: absolute;
   left: 10px;
-  top: 15px;
+  top: 10px;
   width: 30px;
   text-align: center;
   font-size: 30px;
@@ -747,8 +753,8 @@ blockquote.note {
   padding-left:50px;
 }
 blockquote.note::before {
-  content: '\f00B';
-  font-size: 24px;
+  content: '\e349';
+  /* font-size: 24px; */
   color: var(--yellow);
 }
 blockquote.idea {
@@ -757,7 +763,7 @@ blockquote.idea {
   padding-left:50px;
 }
 blockquote.idea::before {
-  content: '\f0A8';
+  content: '\e871';
   color: var(--green);
 }
 blockquote.warning {
@@ -766,7 +772,7 @@ blockquote.warning {
   padding-left:50px;
 }
 blockquote.warning::before {
-  content: '\f2DB';
+  content: '\e365';
   color: var(--yellow);
 }
 blockquote.bug {
@@ -775,26 +781,26 @@ blockquote.bug {
   padding-left:50px;
 }
 blockquote.bug::before {
-  content: '\f2DB';
+  content: '\e25b';
   color: var(--red);
 }
 blockquote.debug {
-  border-color: var(--blue);
-  background-color: var(--blue-bg);
-  padding-left:50px;
-}
-blockquote.debug::before {
-  content: '\f2DA';
-  color: var(--blue);
-}
-blockquote.todo {
   border-color: var(--red);
   background-color: var(--red-bg);
   padding-left:50px;
 }
-blockquote.todo::before {
-  content: '\f2DC';
+blockquote.debug::before {
+  content: '\e355';
   color: var(--red);
+}
+blockquote.todo {
+  border-color: var(--blue);
+  background-color: var(--blue-bg);
+  padding-left:50px;
+}
+blockquote.todo::before {
+  content: '\e383';
+  color: var(--blue);
 }
 blockquote.Syntax {
   font-family: consolas,monaco,"Andale Mono",monospace;
@@ -897,14 +903,16 @@ div.page li+li {
   font-family:bc;
 }
 
-table>tr:first-child{
+table>thead{
   position:sticky;
   top:0;
   font-size: 0.8em;
   font-weight: bold;
   background-color: var(--bg);
   z-index:1;
+  /* border-bottom: solid 1px gray; */
 }
+
 
 @keyframes pulse {
   0% { opacity: 1; }
@@ -963,17 +971,13 @@ table.resizable i.resizer {
   z-index: 1;
 }
 
-div.page img {
+.page img {
   max-width: 100%;
 }
 div.page table {
   border-collapse: collapse;
 }
-div.page table tr>* {
-  padding: 5px 10px;
-  border: solid 1px rgba(180,180,180,0.3);
-}
-div.page>div[class^="explore-legal"] h1,h2,h3 {
+div.page>div[class^="explore-legal"] h1,div.page>div[class^="explore-legal"] h2,div.page>div[class^="explore-legal"] h3 {
   font-size: 1.2em;
 }
 div.page>div[class^="explore-legal"] {
@@ -1026,6 +1030,35 @@ div.page.pdf>div[class^="explore-legal"] ol>li::before {
   object-fit: contain;
   background-color: white;
 } */
+
+.headerindex {
+  counter-reset: h1;
+}
+.headerindex h1 {
+  counter-increment: h1;
+  counter-reset: h2;
+  font-size: 1.2em;
+}
+.headerindex h1::before {
+  content: counter(h1) " ";
+}
+.headerindex h2 {
+  counter-increment: h2;
+  counter-reset: h3;
+  font-size: 1.1em;
+}
+.headerindex h2::before {
+  content: counter(h1) "." counter(h2) " ";
+}
+.headerindex h3 {
+  counter-increment: h3;
+  font-size: 1.0em;
+}
+.headerindex h3::before {
+  content: counter(h1) "." counter(h2) "." counter(h3) " ";
+}
+
+
 
 
 .highlight {
@@ -2752,7 +2785,7 @@ main>div>.prompt>div>div {
     cursor: pointer;
   }
   div.page>aside:empty {
-    display: none;
+    /* display: none; */
   }
   body>*>article {
     display: flex;
@@ -2853,12 +2886,6 @@ main>div>.prompt>div>div {
 @media (hover: none) {
   .tv summary {
     line-height: 36px;
-  }
-}
-
-@media only print {
-  body>nav, body>header, body>footer, aside {
-    display: none;
   }
 }
 
@@ -3178,13 +3205,17 @@ table.grid td, table.grid th {
  /* width: 0%; */
 }
 
+table.grid thead th {
+  border-bottom: solid 1px rgba(180,180,180,9);
+}
+
 table.grid th {
   vertical-align: top;
   text-align: left;
   padding: 0 2mm;
-  font-size: 0.8em;
-  font-weight: normal;
-  color: rgba(180,180,180,0.8);
+  font-size: 0.9em;
+  /* font-weight: normal; */
+  /* color: rgba(180,180,180,0.8); */
   border: solid 1px rgba(180,180,180,0.3);
   white-space: nowrap;
 }
@@ -3192,4 +3223,50 @@ table.grid td {
   vertical-align: top;
   padding: 0 2mm;
   border: solid 1px rgba(180,180,180,0.3);
+}
+
+@media only print {
+  table tr {
+    page-break-inside: avoid;
+  }
+  h1,h2,h3 {
+    page-break-after: avoid;
+  }
+  nav, header, aside, body>footer, body>footer.statusbar {
+    display: none;
+  }
+}
+
+sup.version {
+  padding:0 2px;
+
+}
+thead>tr>th {
+  text-align: left;
+  white-space: nowrap;
+}
+table th,table td{
+  vertical-align: top;
+}
+
+div.page table tr>* {
+  padding: 2px 5px;
+  border: solid 1px rgba(180,180,180,0.3);
+}
+div.page table th{
+  text-align: left;
+}
+div.page table>thead>tr>th{
+  border-bottom: solid 1px gray;
+}
+table.schedule {
+  font-size:0.7em;
+}
+table.schedule td:not(:first-child) {
+  text-align: right;
+  /* min-width: 30px; */
+  white-space: nowrap;
+}
+table.schedule td.busy {
+  background: lightblue;
 }

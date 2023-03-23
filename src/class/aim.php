@@ -1475,7 +1475,14 @@ class Aim {
     //   }
     // }
 
-    $request_uri = explode(dirname($_SERVER['PHP_SELF']), $_SERVER['REQUEST_URI'])[1];
+    $domain = explode('.',$_SERVER['HTTP_HOST'])[0];
+    $php_self = dirname($_SERVER['PHP_SELF']);
+    $php_self = str_replace("{$domain}/","",$php_self);
+    $request_uri = explode($php_self, $_SERVER['REQUEST_URI'])[1];
+    // error(200,[
+    //   $_SERVER['PHP_SELF'],
+    //   $_SERVER['REQUEST_URI'],
+    // ]);
     if (preg_match_all('/\/(\w+?)\((.*?)\)/',$request_uri,$matches,PREG_SET_ORDER)) {
       foreach ($matches as $match) {
         $_REQUEST[$match[1]."_id"] = trim($match[2], "'");
@@ -1518,7 +1525,7 @@ class Aim {
       'baseurl'=> $origin . $dirname,
       'service_root'=> $origin . $dirname,
 
-      'domain'=> explode('.',$_SERVER['HTTP_HOST'])[0],
+      'domain'=> $domain,
       // 'url'=> $url = parse_url(explode(dirname($_SERVER['SCRIPT_NAME']),$_SERVER['REQUEST_URI'])[1]),
 
       'headers'=> $headers,
@@ -1533,7 +1540,6 @@ class Aim {
     // response(200,$GLOBALS['aim']);
   }
   public function api(){
-    // error(401);
     extract(AIM);
     $top = $this->top = empty($_GET['$top']) ? 10 : $request['$top'];
     $user_id = null;
@@ -1564,6 +1570,11 @@ class Aim {
     // error(400, self::$config->paths);
     // response(200, $sources);
     // response(200,$filename);
+    // error(402, [
+    //   $_SERVER['PHP_SELF'],
+    //   $_SERVER['HTTP_HOST'],
+    //   AIM,
+    // ]);
     $libname = explode('/',$request_path)[1];
     if (file_exists($filename = __ROOT__."/domain/{$libname}.php")) {
       $request_path = preg_replace("/^\/{$libname}/","",$request_path) ?: '/';
@@ -1674,6 +1685,7 @@ class Aim {
         }
 
         $odata = new OData;
+        // error_log('ja');
 
         if (!$id && $request_method === 'post') {
           $data = file_get_contents('php://input');
