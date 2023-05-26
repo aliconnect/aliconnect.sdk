@@ -159,6 +159,12 @@ html.dark {
     font-weight: 200;
     font-style: normal
 }
+@font-face {
+    font-family: 'Montserrat Light';
+    src: url('../font/Montserrat-Light.ttf') format('truetype');
+    font-weight: 200;
+    font-style: normal
+}
 * {
   box-sizing: border-box;
   -moz-box-sizing: border-box;

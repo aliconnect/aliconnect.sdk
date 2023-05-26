@@ -13,7 +13,6 @@ $this->find_parameters = [
   ['name'=> '$order', 'in'=> "query", 'schema'=> ['type'=> "string"]],
 ];
 
-
 $this->outlook_request = function () {
   // ok($this->request_path);
   $account = sql_fetch(sql_query("SELECT mse_access_token FROM auth.dbo.client_user_view WHERE id = ?", [$this->access['oid']]));
@@ -175,6 +174,15 @@ class Item {
 
 Aim::$config->extend([
   'paths'=> [
+    '/test1'=> [
+      'get'=> [
+        'responses'=> [200=>['description'=>"successful operation"]],
+        'operation'=> function($params) {
+          error(200, "Test1 OK");
+        },
+      ],
+    ],
+
     '/client({client_id})/openapi'=> [
       'get'=> [
         'responses'=> [200=>['description'=>"successful operation"]],
@@ -1327,6 +1335,14 @@ Aim::$config->extend([
       ],
     ],
     '/mailer'=> [
+      // 'get'=> [
+      //   'responses'=> [200=>['description'=>"successful operation"]],
+      //   'operation'=> function(){
+      //     $data = json_decode(file_get_contents('php://input'),true);
+      //     aim()->mail($data);
+      //     response(200, $data);
+      //   }
+      // ],
       'post'=> [
         'responses'=> [200=>['description'=>"successful operation"]],
         'operation'=> function(){
@@ -1681,10 +1697,6 @@ Aim::$config->extend([
         },
       ],
     ],
-
-
-
-
   ],
   'operation'=> [
     'init_get'=> function(){
