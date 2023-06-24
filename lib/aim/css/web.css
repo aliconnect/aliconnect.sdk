@@ -3211,6 +3211,8 @@ table.grid td, table.grid th {
  /* width: 0%; */
 }
 
+table.grid thead {
+}
 table.grid thead th {
   border-bottom: solid 1px rgba(180,180,180,9);
 }
