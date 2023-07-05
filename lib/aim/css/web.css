@@ -912,7 +912,7 @@ div.page li+li {
 table>thead{
   position:sticky;
   top:0;
-  font-size: 0.8em;
+  font-size: 0.9em;
   font-weight: bold;
   background-color: var(--bg);
   z-index:1;
@@ -3221,7 +3221,7 @@ table.grid th {
   vertical-align: top;
   text-align: left;
   padding: 0 2mm;
-  font-size: 0.9em;
+  /* font-size: 0.9em; */
   /* font-weight: normal; */
   /* color: rgba(180,180,180,0.8); */
   border: solid 1px rgba(180,180,180,0.3);
