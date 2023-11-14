@@ -214,8 +214,7 @@ body {
   margin: 0;
 }
 nav {
-  --bg-button-hover:
-  var(--trans5);
+  --bg-button-hover: var(--trans5);
   display: flex;
   flex: 0 0 36px;
   /* line-height: 36px; */
