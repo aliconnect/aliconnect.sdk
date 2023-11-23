@@ -421,14 +421,23 @@ nav .pagemenu>ul>li>ul>li>ul {
   column-width: 200px;
   -webkit-box-shadow: var(--shadow);
   box-shadow: var(--shadow);
-  display: flex;
+  /* display: flex; */
   line-height: 1.5;
+  /* flex-wrap: wrap; */
+  column-count: 3;
+  column-gap:  40px;
+  /* column-rule:  1px solid lightgray; */
 }
 nav .pagemenu>ul>li>ul>li:not(:hover)>ul {
   display: none;
 }
 nav .pagemenu>ul>li>ul>li>ul>li {
-  flex: 1 0 auto;
+  /* flex: 1 0 auto; */
+  margin-bottom: 10px;
+  break-inside: avoid;
+}
+nav .pagemenu>ul>li>ul>li>ul>li>a {
+  font-weight: bold;
 }
 nav .pagemenu>ul>li>ul>li>ul>li a:hover {
   text-decoration: underline;
@@ -3311,4 +3320,9 @@ table.schedule td.busy {
 }
 .errorlist>div>span.lastModifiedDateTime {
   flex: 0 1 150px;
+}
+
+
+.col.chapters {
+  height: fit-content;
 }
