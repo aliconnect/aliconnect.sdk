@@ -1,0 +1,14 @@
+.cbox::before {
+  content: '';
+  display:inline-block;
+  margin-right: 5px;
+  width: 10px;
+  height: 10px;
+  border: solid 2px var(--fg);
+}
+.cbox.on::before {
+  background-color: var(--fg);
+}
+.checklist label {
+  display:inline-block;
+}

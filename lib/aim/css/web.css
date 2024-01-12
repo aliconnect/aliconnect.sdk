@@ -245,7 +245,7 @@ div>nav+*{
 }
 div>nav>button::before{
 }
-div>nav:not(:hover){
+div:not(.chapters)>nav:not(:hover){
   overflow: hidden;
 }
 
@@ -1073,6 +1073,28 @@ div.page.pdf>div[class^="explore-legal"] ol>li::before {
 }
 .headerindex h3::before {
   content: counter(h1) "." counter(h2) "." counter(h3) " ";
+}
+.dcounter {
+  counter-reset: c1;
+}
+.dcounter details {
+  margin-top: 10px;
+}
+.dcounter>details {
+  counter-reset: c2;
+}
+.dcounter>details>summary::before {
+  counter-increment: c1;
+  content: counter(c1);
+  margin-right: 5px;
+}
+.dcounter>details>details {
+  /* counter-reset: c3; */
+}
+.dcounter>details>details>summary::before {
+  counter-increment: c2;
+  content: counter(c1) "." counter(c2);
+  margin-right: 5px;
 }
 
 
