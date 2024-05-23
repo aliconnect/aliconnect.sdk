@@ -192,7 +192,9 @@ class Mailer extends PHPMailer {
 					ini_set('log_errors', 1);
           $dompdf = new Dompdf(['enable_remote' => true]);
 					$dompdf->load_html($attachement['content']);
-					$dompdf->set_paper("a4");
+          $dompdf->set_paper("a4");
+          // $dompdf->set_option('defaultMediaType', 'all');
+          // $dompdf->set_option('isFontSubsettingEnabled', true);
 					$dompdf->render();
 					$remove_files[] = $attachement['filename'] = $_SERVER['DOCUMENT_ROOT']."/../tmp/".uniqid().".pdf";
 					file_put_contents($attachement['filename'], $dompdf->output());
