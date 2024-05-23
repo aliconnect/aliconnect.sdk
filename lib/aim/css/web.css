@@ -159,6 +159,12 @@ html.dark {
     font-weight: 200;
     font-style: normal
 }
+@font-face {
+    font-family: 'Montserrat Light';
+    src: url('../font/Montserrat-Light.ttf') format('truetype');
+    font-weight: 200;
+    font-style: normal
+}
 * {
   box-sizing: border-box;
   -moz-box-sizing: border-box;
@@ -208,8 +214,7 @@ body {
   margin: 0;
 }
 nav {
-  --bg-button-hover:
-  var(--trans5);
+  --bg-button-hover: var(--trans5);
   display: flex;
   flex: 0 0 36px;
   /* line-height: 36px; */
@@ -240,7 +245,7 @@ div>nav+*{
 }
 div>nav>button::before{
 }
-div>nav:not(:hover){
+div:not(.chapters)>nav:not(:hover){
   overflow: hidden;
 }
 
@@ -353,6 +358,9 @@ nav .pagemenu a {
   color: inherit;
   text-decoration: none;
 }
+nav .pagemenu ul {
+  z-index: 10;
+}
 nav .pagemenu>ul {
   display: flex;
   margin: 0 0 auto;
@@ -413,14 +421,23 @@ nav .pagemenu>ul>li>ul>li>ul {
   column-width: 200px;
   -webkit-box-shadow: var(--shadow);
   box-shadow: var(--shadow);
-  display: flex;
+  /* display: flex; */
   line-height: 1.5;
+  /* flex-wrap: wrap; */
+  column-count: 3;
+  column-gap:  40px;
+  /* column-rule:  1px solid lightgray; */
 }
 nav .pagemenu>ul>li>ul>li:not(:hover)>ul {
   display: none;
 }
 nav .pagemenu>ul>li>ul>li>ul>li {
-  flex: 1 0 auto;
+  /* flex: 1 0 auto; */
+  margin-bottom: 10px;
+  break-inside: avoid;
+}
+nav .pagemenu>ul>li>ul>li>ul>li>a {
+  font-weight: bold;
 }
 nav .pagemenu>ul>li>ul>li>ul>li a:hover {
   text-decoration: underline;
@@ -906,7 +923,7 @@ div.page li+li {
 table>thead{
   position:sticky;
   top:0;
-  font-size: 0.8em;
+  font-size: 0.9em;
   font-weight: bold;
   background-color: var(--bg);
   z-index:1;
@@ -1056,6 +1073,28 @@ div.page.pdf>div[class^="explore-legal"] ol>li::before {
 }
 .headerindex h3::before {
   content: counter(h1) "." counter(h2) "." counter(h3) " ";
+}
+.dcounter {
+  counter-reset: c1;
+}
+.dcounter details {
+  margin-top: 10px;
+}
+.dcounter>details {
+  counter-reset: c2;
+}
+.dcounter>details>summary::before {
+  counter-increment: c1;
+  content: counter(c1);
+  margin-right: 5px;
+}
+.dcounter>details>details {
+  /* counter-reset: c3; */
+}
+.dcounter>details>details>summary::before {
+  counter-increment: c2;
+  content: counter(c1) "." counter(c2);
+  margin-right: 5px;
 }
 
 
@@ -1958,6 +1997,31 @@ form.pageview, .pageview form {
   opacity: 0.8;
   font-size: 0.8em;
 }
+
+.pageview .properties.view {
+  display: block;
+}
+.pageview .properties.view tr {
+  display: flex;
+}
+.pageview .properties.view th {
+  text-align: left;
+  font-weight: normal;
+  flex: 0 0 200px;
+  font-size: 0.8em;
+  color: var(--trans8);
+}
+
+.pageview .images.view {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.pageview .images.view img {
+  flex: 0 0 200px;
+  max-height: 200px;
+}
+
 
 .attr meter::-webkit-meter-optimum-value {
   background: green;
@@ -3205,6 +3269,8 @@ table.grid td, table.grid th {
  /* width: 0%; */
 }
 
+table.grid thead {
+}
 table.grid thead th {
   border-bottom: solid 1px rgba(180,180,180,9);
 }
@@ -3213,7 +3279,7 @@ table.grid th {
   vertical-align: top;
   text-align: left;
   padding: 0 2mm;
-  font-size: 0.9em;
+  /* font-size: 0.9em; */
   /* font-weight: normal; */
   /* color: rgba(180,180,180,0.8); */
   border: solid 1px rgba(180,180,180,0.3);
@@ -3301,4 +3367,9 @@ table.schedule td.busy {
 }
 .errorlist>div>span.lastModifiedDateTime {
   flex: 0 1 150px;
+}
+
+
+.col.chapters {
+  height: fit-content;
 }

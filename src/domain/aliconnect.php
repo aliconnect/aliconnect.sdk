@@ -13,7 +13,6 @@ $this->find_parameters = [
   ['name'=> '$order', 'in'=> "query", 'schema'=> ['type'=> "string"]],
 ];
 
-
 $this->outlook_request = function () {
   // ok($this->request_path);
   $account = sql_fetch(sql_query("SELECT mse_access_token FROM auth.dbo.client_user_view WHERE id = ?", [$this->access['oid']]));
@@ -175,6 +174,162 @@ class Item {
 
 Aim::$config->extend([
   'paths'=> [
+    '/sitescan'=> [
+      'get'=> [
+        'responses'=> [200=>['description'=>"successful operation"]],
+        'operation'=> function($params) {
+          switch ($_GET['response_type']) {
+            case 'list': {
+              $this->http_response_query([
+                "DECLARE @domainId INT = ?",
+                "SELECT TOP 1000 id,data FROM import.dbo.url2 WHERE domainId = @domainId AND data > ''",
+              ], [
+                $_GET['domainId'],
+              ]);
+            }
+          }
+        },
+      ],
+      'post'=> [
+        'responses'=> [200=>['description'=>"successful operation"]],
+        'operation'=> function($params) {
+          $contents = file_get_contents('php://input');
+          switch ($_GET['data_type']) {
+            case 'page': {
+              $data = json_decode($contents, true);
+              sql_query([
+                "DECLARE @domainId INT = ?",
+                "DECLARE @url NVARCHAR(800) = ?",
+                "IF NOT EXISTS (SELECT 0 FROM import.dbo.url2 WHERE domainId = @domainId AND url = @url) INSERT import.dbo.url2(domainId,url) VALUES (@domainId,@url)",
+                "UPDATE import.dbo.url2 SET html = ?, origin = ?, loadDateTime = GETDATE() WHERE domainId = @domainId AND url = @url",
+              ], [
+                $data['domainId'],
+                $data['url'],
+                $data['html'],
+                $data['origin'],
+                // $data['href'],
+              ]);
+              foreach($data['refs'] as $href) {
+                sql_query([
+                  "DECLARE @domainId INT = ?",
+                  "DECLARE @url NVARCHAR(800) = ?",
+                  "IF NOT EXISTS (SELECT 0 FROM import.dbo.url2 WHERE domainId = @domainId AND url = @url)
+                  INSERT import.dbo.url2(domainId,url) VALUES (@domainId,@url)",
+                ], [
+                  $data['domainId'],
+                  $href,
+                ]);
+              }
+              $this->http_response_query([
+                "DECLARE @domainId INT = ?",
+                "DECLARE @url NVARCHAR(800) = ?",
+                "SELECT id FROM import.dbo.url2 WHERE domainId = @domainId AND url = @url",
+                "SELECT TOP 1 url FROM import.dbo.url2 WHERE domainId = @domainId AND loadDateTime IS NULL",
+              ], [
+                $data['domainId'],
+                $data['url'],
+              ]);
+            }
+            case 'analyse_page_load': {
+              $this->http_response_query([
+                "DECLARE @domainId INT = ?",
+                "SELECT TOP 1 id,html FROM import.dbo.url2 WHERE domainId = @domainId AND scanDateTime IS NULL",
+              ], [
+                $_GET['domainId'],
+              ]);
+            }
+            case 'analyse_page_save': {
+              $data = json_decode($contents, true);
+              $res = sql_query([
+                "SELECT CONCAT('/',domainId,basename) AS basename FROM import.dbo.page_image INNER JOIN import.dbo.image ON image.id = page_image.imageId WHERE page_image.pageId = ?",
+              ], [
+                $_GET['id'],
+              ]);
+              $data['images'] = [];
+
+              while ($row = sql_fetch($res)) {
+                $data['icon'] = $data['icon'] ?: $row['basename'];
+                $data['images'][] = ['src'=>$row['basename']];
+              }
+
+              $this->http_response_query([
+                "UPDATE import.dbo.url2 SET data = ?,scanDateTime = GETDATE() WHERE id = ?",
+              ], [
+                json_encode($data),
+                $_GET['id'],
+              ]);
+            }
+
+            case 'upload_img': {
+              error_reporting(E_ALL ^ E_WARNING);
+
+              if (isset($_GET['basename'])) {
+                if (isset($_GET['src'])) {
+                  $content = file_get_contents($_GET['src']);
+                } else {
+                  $content = file_get_contents('php://input');
+                  $content = base64_decode(explode('base64,',$content)[1]);
+                }
+                // $basename = basename(explode('?',$_GET['basename'])[0]);
+                $basename = $_GET['basename'];
+                // http_response(200, [$basename]);
+                sql_query([
+                  "DECLARE @domainId INT = ?",
+                  "DECLARE @pageId INT = ?",
+                  "DECLARE @basename NVARCHAR(800) = ?",
+                  "DECLARE @imageId INT",
+                  "IF NOT EXISTS (SELECT 0 FROM import.dbo.image WHERE domainId = @domainId AND basename = @basename)
+                  INSERT import.dbo.image(domainId,basename) VALUES (@domainId,@basename)",
+                  "SELECT @imageId = id FROM import.dbo.image WHERE domainId = @domainId AND basename = @basename",
+                  "IF NOT EXISTS (SELECT 0 FROM import.dbo.page_image WHERE pageId = @pageId AND imageId = @imageId)
+                  INSERT import.dbo.page_image(pageId,imageId) VALUES (@pageId,@imageId)",
+                ], [
+                  $domainId = $_GET['domainId'],
+                  $_GET['pageId'],
+                  $basename = $_GET['basename'],
+                ]);
+                // sql_query($q="UPDATE import.dbo.img SET loadDateTime=GETDATE() WHERE id = $id");
+                $ext = pathinfo($basename, PATHINFO_EXTENSION);
+                $filename = "/aliconnect/public/shared/multimedia/$domainId/$basename";
+                mkdir(dirname($filename), 0777, true);
+                file_put_contents($filename, $content);
+                // http_response(200);
+              }
+              http_response(200);
+              // $row = json_decode(file_get_contents('php://input'));
+              // // http_response(200,["SELECT * FROM import.dbo.img WHERE src = '$row->src'"]);
+              // http_response(200, aim()->sql_resultset("SELECT * FROM import.dbo.img WHERE src = '$row->src'"));
+            }
+          }
+          http_response(200, "Test1 NOK");
+          // if ($_GET['data'] === 'prijzen') {
+          //   file_put_contents("prijzen.json", $contents);
+          //   die();
+          // }
+          // if ($_GET['data'] === 'page') {
+          //   $filename = __DIR__."/pages".rtrim($_GET["pathname"],'/').".json";
+          //   mkdir(dirname($filename), 0777, true);
+          //   file_put_contents($filename, $contents);
+          //   die($filename);
+          // }
+          // if ($_GET['data'] === 'img') {
+          //   $content = base64_decode(explode('base64,',$content)[1]);
+          //   $filename = __DIR__."/multimedia".$_GET["filename"];
+          //   mkdir(dirname($filename), 0777, true);
+          //   file_put_contents($filename, $content);
+          // }
+        },
+      ],
+    ],
+    '/test1'=> [
+      'get'=> [
+        'responses'=> [200=>['description'=>"successful operation"]],
+        'operation'=> function($params) {
+          error(200, "Test1 OK");
+        },
+      ],
+    ],
+
     '/client({client_id})/openapi'=> [
       'get'=> [
         'responses'=> [200=>['description'=>"successful operation"]],
@@ -319,6 +474,51 @@ Aim::$config->extend([
       ],
     ],
 
+    '/polymac/project/checklist'=> [
+      'get'=> [
+        'responses'=> [200=>['description'=>"successful operation"]],
+        'operation'=> function($client_id) {
+          if (!empty($_GET['username'])) {
+            $this->http_response_query([
+              "SELECT project,id,status,remark,status,description,owner,role,prio,phase FROM polymac.dbo.project_checklist WHERE owner = ? AND isnull(status,0) <> 3",
+            ], [
+              $_GET['username'],
+            ]);
+          }
+          $this->http_response_query([
+            "DECLARE @project VARCHAR(50) = ?",
+            "SELECT project,id,status,remark,status,description,owner,role,prio,phase FROM polymac.dbo.project_checklist WHERE project = @project",
+            "SELECT project,phase,min(startDateTime) AS startDateTime,max(lastModifiedDateTime) AS endDateTime,sum(ISNULL([work],1)) AS [work] FROM polymac.dbo.project_checklist WHERE status IS NOT NULL AND project = @project GROUP BY project,phase",
+            "SELECT project,phase,[role],sum(ISNULL([work],1)) AS [work] FROM polymac.dbo.project_checklist WHERE project = @project GROUP BY project,phase,[role]",
+          ], [
+            $_REQUEST['project'],
+          ]);
+          // response(200);
+        },
+      ],
+      'post'=> [
+        'responses'=> [200=>['description'=>"successful operation"]],
+        'operation'=> function($client_id) {
+          $content = json_decode(file_get_contents('php://input'), true);
+          $res = sql_query([
+            "DECLARE @project VARCHAR(50) = ?,@id INT = ?",
+            "INSERT INTO polymac.dbo.project_checklist (project,id) SELECT @project,@id WHERE NOT EXISTS (SELECT 0 FROM polymac.dbo.project_checklist WHERE project = @project AND id = @id)",
+            "UPDATE polymac.dbo.project_checklist SET startDateTime = CASE WHEN lastModifiedDateTime IS NOT NULL THEN ISNULL(startDateTime,GETDATE()) END, status = ?,remark = ?,owner = ?,description = ?,phase = ?,prio = ?,role = ?,lastModifiedDateTime = GETDATE() WHERE project = @project AND id = @id",
+          ], [
+            $content['project'],
+            $content['id'],
+            $content['status'],
+            $content['remark'],
+            $content['owner'],
+            $content['description'],
+            $content['phase'],
+            $content['prio'],
+            $content['role'],
+          ]);
+          response(200);
+        },
+      ],
+    ],
 
     '/client({client_id})/item'=> [
       'post'=> [
@@ -1327,6 +1527,14 @@ Aim::$config->extend([
       ],
     ],
     '/mailer'=> [
+      // 'get'=> [
+      //   'responses'=> [200=>['description'=>"successful operation"]],
+      //   'operation'=> function(){
+      //     $data = json_decode(file_get_contents('php://input'),true);
+      //     aim()->mail($data);
+      //     response(200, $data);
+      //   }
+      // ],
       'post'=> [
         'responses'=> [200=>['description'=>"successful operation"]],
         'operation'=> function(){
@@ -1681,10 +1889,6 @@ Aim::$config->extend([
         },
       ],
     ],
-
-
-
-
   ],
   'operation'=> [
     'init_get'=> function(){

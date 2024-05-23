@@ -1,0 +1,15 @@
+{
+  "server": {
+    "http": {
+      "port": 8081
+    }
+  },
+  "name": "webserver1",
+  "client_id": "887249ce-2d40-4907-8283-a4d4e3e1f3e6",
+  "description": "",
+  "author": "",
+  "ip": "84.83.118.234",
+  "secret": {
+    "client_secret": "ad0ddc84-7ab6-4377-a922-4435453c199e"
+  }
+}

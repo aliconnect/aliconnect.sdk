@@ -1,0 +1,70 @@
+{
+  "client_id": "887249ce-2d40-4907-8283-a4d4e3e1f3e6",
+  "info": {
+    "title": null,
+    "description": null,
+    "termsOfService": null,
+    "contact": {
+      "email": null
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version": "1.0.0"
+  },
+  "client": null,
+  "options": [
+    "clientYaml"
+  ],
+  "tags": [],
+  "definitions": {
+    "company": {
+      "tablename": "company",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "identifier"
+        },
+        "companyId": {
+          "type": "integer"
+        },
+        "companyName": {
+          "type": "string",
+          "size": 50
+        }
+      }
+    },
+    "verkeerslicht": {
+      "tablename": "verkeerslicht",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "identifier"
+        },
+        "verkeerslichtId": {
+          "type": "integer"
+        },
+        "stand": {
+          "type": "string",
+          "size": 50
+        },
+        "handstand": {
+          "type": "string",
+          "size": 50
+        }
+      }
+    }
+  },
+  "outlook": null,
+  "crmc": null,
+  "server": {
+    "http": {
+      "port": 8081
+    }
+  },
+  "name": "webserver1",
+  "description": "",
+  "author": "",
+  "ip": "84.83.118.234"
+}

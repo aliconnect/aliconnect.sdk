@@ -1550,11 +1550,12 @@ class Aim {
 			"INSERT INTO dbo.client_request (period,requestDateTime,client_id,method,uri,user_id)
 			VALUES (@period,@now,?,?,?,?)",
 		], [
-			$client_id,
+			$client_id ?: '00000000-0000-0000-0000-000000000000',
 			$_SERVER['REQUEST_METHOD'],
 			$_SERVER['REQUEST_URI'],
 			Aim::$access['oid'],
 		]);
+
     // response(200,$GLOBALS['aim']);
 
     $sources = [
